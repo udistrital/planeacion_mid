@@ -1,6 +1,8 @@
 lastupdate.tmp
 .vscode/
 planes_mid
+go.mod
+go.sum
 main
 .scannerwork/
 swagger/*.png
@@ -15,3 +17,4 @@ swagger/images/
 swagger/lang/
 swagger/lib/
 sga_mid.exe
+
