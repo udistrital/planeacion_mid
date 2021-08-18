@@ -7,4 +7,5 @@ require (
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/udistrital/administrativa_mid_api v0.0.0-20210803202554-67635a2402d2
 	github.com/udistrital/utils_oas v0.0.0-20210421184521-1d702419e42a
+	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
 )

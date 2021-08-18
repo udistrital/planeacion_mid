@@ -115,8 +115,8 @@ paths:
     delete:
       tags:
       - arbol
-      description: delete the Arbol
-      operationId: ArbolController.Delete
+      description: delete the Plan Arbol
+      operationId: ArbolController.DeletePlan
       parameters:
       - in: path
         name: id
