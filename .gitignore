@@ -1,6 +1,7 @@
 lastupdate.tmp
 .vscode/
 planeacion_mid
+planeacion_mid.exe
 go.mod
 go.sum
 main
@@ -10,5 +11,6 @@ main
 swagger/**
 !swagger/*.json
 !swagger/*.yml
+swagger.zip
 
 
