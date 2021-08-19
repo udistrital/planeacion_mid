@@ -15,5 +15,7 @@ swagger/fonts/
 swagger/images/
 swagger/lang/
 swagger/lib/
-planeacion_mid
+!swagger/swagger.yml
+!swagger/swagger.json
+
 
