@@ -5,17 +5,10 @@ go.mod
 go.sum
 main
 .scannerwork/
-swagger/*.png
-swagger/*.html
-swagger/*.js
-swagger/*.map
-swagger/*.css
-swagger/css/
-swagger/fonts/
-swagger/images/
-swagger/lang/
-swagger/lib/
-!swagger/swagger.yml
-!swagger/swagger.json
+*.env
+!.env
+swagger/**
+!swagger/*.json
+!swagger/*.yml
 
 
