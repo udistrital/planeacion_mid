@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 
 	"github.com/astaxie/beego"
-	"github.com/udistrital/planes_mid/helpers"
-	"github.com/udistrital/planes_mid/helpers/arbolHelper"
-	"github.com/udistrital/planes_mid/models"
+	"github.com/udistrital/planeacion_mid/helpers"
+	"github.com/udistrital/planeacion_mid/helpers/arbolHelper"
+	"github.com/udistrital/planeacion_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
 
