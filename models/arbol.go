@@ -1,9 +1,11 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type Nodo struct {
-	Id                 string    `json: "_id" `
+	Id                 string    `bson:"_id" json: "_id, omitempty" `
 	Nombre             string    `json: "nombre" `
 	Descripcion        string    `json: "descripcion" `
 	Hijos              []string  `json: "hijos" `

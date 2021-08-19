@@ -45,7 +45,7 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/planes_mid/controllers:ArbolController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planes_mid/controllers:ArbolController"],
         beego.ControllerComments{
-            Method: "Delete",
+            Method: "DeletePlan",
             Router: "/:id",
             AllowHTTPMethods: []string{"delete"},
             MethodParams: param.Make(),
