@@ -2,7 +2,7 @@
     "swagger": "2.0",
     "info": {
         "title": "beego Test API",
-        "description": "beego has a very cool tools to autogenerate documents for your API",
+        "description": "beego has a very cool tools to autogenerate documents for your API\n",
         "version": "1.0.0",
         "termsOfService": "http://beego.me/",
         "contact": {
@@ -20,7 +20,7 @@
                 "tags": [
                     "arbol"
                 ],
-                "description": "get Arbol",
+                "description": "get Arbol\n\u003cbr\u003e",
                 "operationId": "ArbolController.GetAll",
                 "parameters": [
                     {
@@ -76,7 +76,7 @@
                 "tags": [
                     "arbol"
                 ],
-                "description": "create Arbol",
+                "description": "create Arbol\n\u003cbr\u003e",
                 "operationId": "ArbolController.Create",
                 "parameters": [
                     {
@@ -107,7 +107,7 @@
                 "tags": [
                     "arbol"
                 ],
-                "description": "get Arbol by id",
+                "description": "get Arbol by id\n\u003cbr\u003e",
                 "operationId": "ArbolController.GetArbol",
                 "parameters": [
                     {
@@ -134,7 +134,7 @@
                 "tags": [
                     "arbol"
                 ],
-                "description": "update the Arbol",
+                "description": "update the Arbol\n\u003cbr\u003e",
                 "operationId": "ArbolController.Put",
                 "parameters": [
                     {
@@ -170,7 +170,7 @@
                 "tags": [
                     "arbol"
                 ],
-                "description": "delete the Plan Arbol",
+                "description": "delete the Plan Arbol\n\u003cbr\u003e",
                 "operationId": "ArbolController.DeletePlan",
                 "parameters": [
                     {
