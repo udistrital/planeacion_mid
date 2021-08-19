@@ -1,20 +1,14 @@
 lastupdate.tmp
 .vscode/
-planes_mid
+planeacion_mid
 go.mod
 go.sum
 main
 .scannerwork/
-swagger/*.png
-swagger/*.html
-swagger/*.js
-swagger/*.map
-swagger/*.css
-swagger/*.yml
-swagger/css/
-swagger/fonts/
-swagger/images/
-swagger/lang/
-swagger/lib/
-planeacion_mid.exe
+*.env
+!.env
+swagger/**
+!swagger/*.json
+!swagger/*.yml
+
 
