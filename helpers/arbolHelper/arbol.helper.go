@@ -17,7 +17,11 @@ func BuildTree(hijos []models.Nodo, hijosID []map[string]interface{}) []map[stri
 		forkData["id"] = hijosID[i]["_id"]
 		forkData["nombre"] = hijos[i].Nombre
 		forkData["descripcion"] = hijos[i].Descripcion
-		forkData["activo"] = hijos[i].Activo
+		if hijos[i].Activo == true {
+			forkData["activo"] = "activo"
+		} else {
+			forkData["activo"] = "inactivo"
+		}
 
 		if len(hijos[i].Hijos) > 0 {
 			forkData["children"] = make([]map[string]interface{}, len(getChildren(hijos[i].Hijos)))
@@ -48,7 +52,12 @@ func getChildren(children []string) (childrenTree []map[string]interface{}) {
 		forkData["id"] = nodoId["_id"]
 		forkData["nombre"] = nodo.Nombre
 		forkData["descripcion"] = nodo.Descripcion
-		forkData["activo"] = nodo.Activo
+
+		if nodo.Activo == true {
+			forkData["activo"] = "activo"
+		} else {
+			forkData["activo"] = "inactivo"
+		}
 
 		if len(nodo.Hijos) > 0 {
 			forkData["children"] = getChildren(nodo.Hijos)
