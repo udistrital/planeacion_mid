@@ -1,7 +1,8 @@
 swagger: "2.0"
 info:
   title: beego Test API
-  description: beego has a very cool tools to autogenerate documents for your API
+  description: |
+    beego has a very cool tools to autogenerate documents for your API
   version: 1.0.0
   termsOfService: http://beego.me/
   contact:
@@ -15,7 +16,9 @@ paths:
     get:
       tags:
       - arbol
-      description: get Arbol
+      description: |-
+        get Arbol
+        <br>
       operationId: ArbolController.GetAll
       parameters:
       - in: query
@@ -32,8 +35,7 @@ paths:
         type: string
       - in: query
         name: order
-        description: Order corresponding to each sortby field, if single value, apply
-          to all sortby fields. e.g. desc,asc ...
+        description: Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ...
         type: string
       - in: query
         name: limit
@@ -53,7 +55,9 @@ paths:
     post:
       tags:
       - arbol
-      description: create Arbol
+      description: |-
+        create Arbol
+        <br>
       operationId: ArbolController.Create
       parameters:
       - in: body
@@ -73,7 +77,9 @@ paths:
     get:
       tags:
       - arbol
-      description: get Arbol by id
+      description: |-
+        get Arbol by id
+        <br>
       operationId: ArbolController.GetArbol
       parameters:
       - in: path
@@ -91,7 +97,9 @@ paths:
     put:
       tags:
       - arbol
-      description: update the Arbol
+      description: |-
+        update the Arbol
+        <br>
       operationId: ArbolController.Put
       parameters:
       - in: path
@@ -115,7 +123,9 @@ paths:
     delete:
       tags:
       - arbol
-      description: delete the Plan Arbol
+      description: |-
+        delete the Plan Arbol
+        <br>
       operationId: ArbolController.DeletePlan
       parameters:
       - in: path
