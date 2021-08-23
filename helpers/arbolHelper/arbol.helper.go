@@ -17,7 +17,7 @@ func BuildTree(hijos []models.Nodo, hijosID []map[string]interface{}) []map[stri
 		forkData["id"] = hijosID[i]["_id"]
 		forkData["nombre"] = hijos[i].Nombre
 		forkData["descripcion"] = hijos[i].Descripcion
-		if hijos[i].Activo == true {
+		if hijos[i].Activo {
 			forkData["activo"] = "activo"
 		} else {
 			forkData["activo"] = "inactivo"
