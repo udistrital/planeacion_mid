@@ -21,6 +21,11 @@ func init() {
 				&controllers.ArbolController{},
 			),
 		),
+		beego.NSNamespace("/formato",
+			beego.NSInclude(
+				&controllers.FormatoController{},
+			),
+		),
 	)
 	beego.AddNamespace(ns)
 }

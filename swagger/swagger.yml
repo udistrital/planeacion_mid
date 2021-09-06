@@ -1,8 +1,7 @@
 swagger: "2.0"
 info:
   title: beego Test API
-  description: |
-    beego has a very cool tools to autogenerate documents for your API
+  description: beego has a very cool tools to autogenerate documents for your API
   version: 1.0.0
   termsOfService: http://beego.me/
   contact:
@@ -16,9 +15,7 @@ paths:
     get:
       tags:
       - arbol
-      description: |-
-        get Arbol
-        <br>
+      description: get Arbol
       operationId: ArbolController.GetAll
       parameters:
       - in: query
@@ -35,7 +32,8 @@ paths:
         type: string
       - in: query
         name: order
-        description: Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ...
+        description: Order corresponding to each sortby field, if single value, apply
+          to all sortby fields. e.g. desc,asc ...
         type: string
       - in: query
         name: limit
@@ -55,9 +53,7 @@ paths:
     post:
       tags:
       - arbol
-      description: |-
-        create Arbol
-        <br>
+      description: create Arbol
       operationId: ArbolController.Create
       parameters:
       - in: body
@@ -77,9 +73,7 @@ paths:
     get:
       tags:
       - arbol
-      description: |-
-        get Arbol by id
-        <br>
+      description: get Arbol by id
       operationId: ArbolController.GetArbol
       parameters:
       - in: path
@@ -97,9 +91,7 @@ paths:
     put:
       tags:
       - arbol
-      description: |-
-        update the Arbol
-        <br>
+      description: update the Arbol
       operationId: ArbolController.Put
       parameters:
       - in: path
@@ -123,10 +115,125 @@ paths:
     delete:
       tags:
       - arbol
-      description: |-
-        delete the Plan Arbol
-        <br>
+      description: delete the Plan Arbol
       operationId: ArbolController.DeletePlan
+      parameters:
+      - in: path
+        name: id
+        description: The id you want to delete
+        required: true
+        type: string
+      responses:
+        "200":
+          description: '{string} delete success!'
+        "403":
+          description: id is empty
+  /formato/:
+    get:
+      tags:
+      - formato
+      description: get Formato
+      operationId: FormatoController.GetAll
+      parameters:
+      - in: query
+        name: query
+        description: Filter. e.g. col1:v1,col2:v2 ...
+        type: string
+      - in: query
+        name: fields
+        description: Fields returned. e.g. col1,col2 ...
+        type: string
+      - in: query
+        name: sortby
+        description: Sorted-by fields. e.g. col1,col2 ...
+        type: string
+      - in: query
+        name: order
+        description: Order corresponding to each sortby field, if single value, apply
+          to all sortby fields. e.g. desc,asc ...
+        type: string
+      - in: query
+        name: limit
+        description: Limit the size of result set. Must be an integer
+        type: string
+      - in: query
+        name: offset
+        description: Start position of result set. Must be an integer
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formato'
+        "403":
+          description: ""
+    post:
+      tags:
+      - formato
+      description: create Formato
+      operationId: FormatoController.Create
+      parameters:
+      - in: body
+        name: body
+        description: body for Formato content
+        required: true
+        schema:
+          $ref: '#/definitions/models.Formato'
+      responses:
+        "201":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formato'
+        "403":
+          description: body is empty
+  /formato/{id}:
+    get:
+      tags:
+      - formato
+      description: get Formato by id
+      operationId: FormatoController.GetFormato
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formato'
+        "403":
+          description: :id is empty
+    put:
+      tags:
+      - formato
+      description: update the Formato
+      operationId: FormatoController.Put
+      parameters:
+      - in: path
+        name: id
+        description: The id you want to update
+        required: true
+        type: string
+      - in: body
+        name: body
+        description: body for Formato content
+        required: true
+        schema:
+          $ref: '#/definitions/models.Formato'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formato'
+        "403":
+          description: :id is not int
+    delete:
+      tags:
+      - formato
+      description: delete the Formato
+      operationId: FormatoController.Delete
       parameters:
       - in: path
         name: id
@@ -142,7 +249,13 @@ definitions:
   models.Arbol:
     title: Arbol
     type: object
+  models.Formato:
+    title: Formato
+    type: object
 tags:
 - name: arbol
   description: |
     ArbolController operations for Arbol
+- name: formato
+  description: |
+    FormatoController operations for Formato
