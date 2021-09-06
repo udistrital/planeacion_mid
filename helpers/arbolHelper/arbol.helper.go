@@ -1,6 +1,8 @@
 package arbolHelper
 
 import (
+	//"fmt"
+
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
 	"github.com/udistrital/planeacion_mid/models"
@@ -42,7 +44,6 @@ func getChildren(children []string) (childrenTree []map[string]interface{}) {
 		forkData := make(map[string]interface{})
 
 		err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/"+child, &res)
-
 		if err != nil {
 			return
 		}
