@@ -2,6 +2,7 @@ package formatoHelper
 
 import (
 	"encoding/json"
+
 	//"fmt"
 
 	"github.com/astaxie/beego"
@@ -110,16 +111,16 @@ func getChildren(children []string) (childrenTree []map[string]interface{}) {
 }
 
 func contains(s []string, e string) bool {
-    for _, a := range s {
-        if a == e {
-            return true
-        }
-    }
-    return false
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }
 
 func add(id string) {
-	if !contains(validDataT, id){
+	if !contains(validDataT, id) {
 		validDataT = append(validDataT, id)
 	}
 }
