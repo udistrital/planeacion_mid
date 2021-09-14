@@ -26,6 +26,11 @@ func init() {
 				&controllers.FormatoController{},
 			),
 		),
+		beego.NSNamespace("/formulacion",
+			beego.NSInclude(
+				&controllers.FormulacionController{},
+			),
+		),
 	)
 	beego.AddNamespace(ns)
 }
