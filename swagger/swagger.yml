@@ -245,12 +245,43 @@ paths:
           description: '{string} delete success!'
         "403":
           description: id is empty
+  /formulacion/clonar_formato/{id}:
+    post:
+      tags:
+      - formulacion
+      description: post Formulacion by id
+      operationId: FormulacionController.ClonarFormato
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
 definitions:
+  '{}':
+    title: '{}'
+    type: object
   models.Arbol:
     title: Arbol
     type: object
   models.Formato:
     title: Formato
+    type: object
+  models.Formulacion:
+    title: Formulacion
     type: object
 tags:
 - name: arbol
@@ -259,3 +290,6 @@ tags:
 - name: formato
   description: |
     FormatoController operations for Formato
+- name: formulacion
+  description: |
+    FormulacionController operations for Formulacion

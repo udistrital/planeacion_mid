@@ -50,12 +50,18 @@ func (c *FormatoController) GetFormato() {
 	id := c.Ctx.Input.Param(":id")
 	var res map[string]interface{}
 	var hijos []models.Nodo
+	var plan map[string]interface{}
 	var hijosID []map[string]interface{}
 
 	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &hijos)
 		helpers.LimpiezaRespuestaRefactor(res, &hijosID)
-		formatoHelper.Limpia()
+		err := request.GetJson(beego.AppConfig.String("PlanesService")+"/plan/"+id, &res)
+		if err != nil {
+			return
+		}
+		helpers.LimpiezaRespuestaRefactor(res, &plan)
+		formatoHelper.Limpia(plan)
 		tree := formatoHelper.BuildTreeFa(hijos, hijosID)
 		c.Data["json"] = tree
 	} else {

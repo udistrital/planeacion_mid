@@ -12,9 +12,12 @@ import (
 )
 
 var validDataT = []string{}
+var estadoPlan string
 
-func Limpia() {
+func Limpia(plan map[string]interface{}) {
 	validDataT = []string{}
+	jsonString, _ := json.Marshal(plan["estado_plan_id"])
+	json.Unmarshal(jsonString, &estadoPlan)
 }
 
 func BuildTreeFa(hijos []models.Nodo, hijosID []map[string]interface{}) [][]map[string]interface{} {
@@ -130,6 +133,12 @@ func convert(valid []string) []map[string]interface{} {
 	forkData := make(map[string]interface{})
 	for _, v := range valid {
 		forkData[v] = ""
+		if (estadoPlan == "614d3ad301c7a200482fabfd"){
+			
+		} else if (estadoPlan == "614d3aeb01c7a245952fabff" || estadoPlan == "614d3b0301c7a2a44e2fac01" || 
+		estadoPlan == "614d3b1e01c7a265372fac03" || estadoPlan == "614d3b4401c7a222052fac05"){
+			forkData[v+"_o"] = ""
+		}
 	}
 	validadores = append(validadores, forkData)
 	return validadores
