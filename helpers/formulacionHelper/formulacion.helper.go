@@ -157,8 +157,6 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 				forkData["sub"] = make([]map[string]interface{}, len(getChildren(hijos[i]["hijos"].([]interface{}))))
 				forkData["sub"] = getChildren(hijos[i]["hijos"].([]interface{}))
 			} else {
-
-				fmt.Println(len(hijos[i]["hijos"].([]interface{})))
 				forkData["sub"] = ""
 			}
 
