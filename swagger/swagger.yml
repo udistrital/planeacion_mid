@@ -270,6 +270,7 @@ paths:
             $ref: '#/definitions/models.Formulacion'
         "403":
           description: :id is empty
+
   /formulacion/get_plan/{id}/{index}:
     get:
       tags:
@@ -349,6 +350,7 @@ paths:
             $ref: '#/definitions/models.Formulacion'
         "403":
           description: :id is empty
+
 definitions:
   '{}':
     title: '{}'
