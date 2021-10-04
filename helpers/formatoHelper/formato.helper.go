@@ -129,6 +129,7 @@ func add(id string) {
 }
 
 func convert(valid []string) []map[string]interface{} {
+
 	var validadores []map[string]interface{}
 	forkData := make(map[string]interface{})
 	for _, v := range valid {
@@ -140,6 +141,7 @@ func convert(valid []string) []map[string]interface{} {
 			forkData[v+"_o"] = ""
 		}
 	}
+
 	validadores = append(validadores, forkData)
 	return validadores
 }
