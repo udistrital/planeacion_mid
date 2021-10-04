@@ -2,7 +2,6 @@ package formatoHelper
 
 import (
 	"encoding/json"
-	"fmt"
 
 	//"fmt"
 
@@ -130,7 +129,6 @@ func add(id string) {
 }
 
 func convert(valid []string) []map[string]interface{} {
-	fmt.Println(valid)
 
 	var validadores []map[string]interface{}
 	forkData := make(map[string]interface{})
@@ -145,6 +143,5 @@ func convert(valid []string) []map[string]interface{} {
 	}
 
 	validadores = append(validadores, forkData)
-	fmt.Println(validadores)
 	return validadores
 }
