@@ -31,6 +31,7 @@ func ClonarHijos(hijos []map[string]interface{}, padre string) {
 		hijo["descripcion"] = hijos[i]["descripcion"]
 		hijo["activo"] = hijos[i]["activo"]
 		hijo["padre"] = padre
+		hijo["bandera_tabla"] = hijos[i]["bandera_tabla"]
 
 		var resPost map[string]interface{}
 		var resLimpia map[string]interface{}
