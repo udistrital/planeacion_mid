@@ -66,6 +66,7 @@ func (c *FormulacionController) ClonarFormato() {
 		plan["formato"] = false
 		plan["vigencia"] = parametros["vigencia"].(string)
 		plan["dependencia_id"] = parametros["dependencia_id"].(string)
+		plan["estado_plan_id"] = "614d3ad301c7a200482fabfd"
 
 		var resPost map[string]interface{}
 		var resLimpia map[string]interface{}
