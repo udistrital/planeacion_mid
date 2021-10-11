@@ -250,12 +250,21 @@ func convert(valid []string, index string) []map[string]interface{} {
 				if subgrupo_detalle[0]["dato_plan"] != nil {
 					dato_plan_str := subgrupo_detalle[0]["dato_plan"].(string)
 					json.Unmarshal([]byte(dato_plan_str), &dato_plan)
-					actividad = dato_plan[index].(map[string]interface{})
-					forkData[v] = actividad["dato"]
-					if actividad["observacion"] != nil {
-						keyObservacion := v + "_o"
-						forkData[keyObservacion] = getObservacion(actividad)
+
+					if dato_plan[index] == nil {
+
+					} else {
+						actividad = dato_plan[index].(map[string]interface{})
+						if actividad["activo"] == true {
+							forkData[v] = actividad["dato"]
+							if actividad["observacion"] != nil {
+								keyObservacion := v + "_o"
+								forkData[keyObservacion] = getObservacion(actividad)
+							}
+						}
+
 					}
+
 				} else {
 					forkData[v] = ""
 				}
@@ -264,8 +273,6 @@ func convert(valid []string, index string) []map[string]interface{} {
 
 			}
 		}
-		actividad = nil
-		dato_plan = nil
 
 	}
 	validadores = append(validadores, forkData)
@@ -279,4 +286,147 @@ func getObservacion(actividad map[string]interface{}) string {
 		str := fmt.Sprintf("%v", actividad["observacion"])
 		return str
 	}
+}
+
+func RecorrerHijos(hijos []map[string]interface{}, index string) {
+	var subgrupo map[string]interface{}
+	var respuesta map[string]interface{}
+
+	for i := 0; i < len(hijos); i++ {
+		if len(hijos[i]["hijos"].([]interface{})) != 0 {
+			hijosSubgrupo := hijos[i]["hijos"].([]interface{})
+			for j := 0; j < len(hijosSubgrupo); j++ {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/"+hijosSubgrupo[j].(string), &respuesta); err == nil {
+					helpers.LimpiezaRespuestaRefactor(respuesta, &subgrupo)
+					if len(subgrupo["hijos"].([]interface{})) != 0 {
+						recorrerSubgrupos(subgrupo["hijos"].([]interface{}), index)
+					} else {
+						desactivarActividad(subgrupo["_id"].(string), index)
+					}
+				} else {
+					panic(map[string]interface{}{"funcion": "DeleteActividad", "err": "Error obteniendo subgrupo \"subgrupo[\"_id\"].(string)\"", "status": "400", "log": err})
+				}
+			}
+		} else {
+			desactivarActividad(hijos[i]["_id"].(string), index)
+		}
+	}
+}
+
+func recorrerSubgrupos(hijos []interface{}, index string) {
+	var respuesta map[string]interface{}
+	var subgrupo map[string]interface{}
+
+	for i := 0; i < len(hijos); i++ {
+		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/"+hijos[i].(string), &respuesta); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuesta, &subgrupo)
+			if len(subgrupo["hijos"].([]interface{})) != 0 {
+				recorrerSubgrupos(subgrupo["hijos"].([]interface{}), index)
+			} else {
+				desactivarActividad(subgrupo["_id"].(string), index)
+			}
+		} else {
+			panic(map[string]interface{}{"funcion": "DeleteActividad", "err": "Error obteniendo subgrupo \"subgrupo[\"_id\"].(string)\"", "status": "400", "log": err})
+		}
+	}
+}
+
+func desactivarActividad(subgrupo_id string, index string) {
+	var respuesta map[string]interface{}
+	var res map[string]interface{}
+	var respuestaLimpia []map[string]interface{}
+	var subgrupoDetalle map[string]interface{}
+	var dato_plan map[string]interface{}
+
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+subgrupo_id, &respuesta); err == nil {
+		helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
+		subgrupoDetalle = respuestaLimpia[0]
+		if subgrupoDetalle["dato_plan"] != nil {
+			actividad := make(map[string]interface{})
+			dato_plan_str := subgrupoDetalle["dato_plan"].(string)
+			json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+			for index_actividad := range dato_plan {
+				if index_actividad == index {
+					aux_actividad := dato_plan[index_actividad].(map[string]interface{})
+					actividad["index"] = index_actividad
+					actividad["dato"] = aux_actividad["dato"]
+					if aux_actividad["observacion"] != nil {
+						actividad["observacion"] = aux_actividad["observacion"]
+					}
+					actividad["activo"] = false
+					dato_plan[index_actividad] = actividad
+				}
+			}
+			b, _ := json.Marshal(dato_plan)
+			str := string(b)
+			subgrupoDetalle["dato_plan"] = str
+		}
+		if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupoDetalle["_id"].(string), "PUT", &res, subgrupoDetalle); err != nil {
+			panic(map[string]interface{}{"funcion": "DeleteActividad", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
+		}
+	} else {
+		panic(map[string]interface{}{"funcion": "DeleteActividad", "err": "Error obteniendo subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
+	}
+}
+
+func GetTabla(hijos []interface{}) []map[string]interface{} {
+	var tabla []map[string]interface{}
+	var respuesta map[string]interface{}
+	var subgrupo map[string]interface{}
+	var data_source []map[string]interface{}
+	var displayed_columns []string
+	for i := 0; i < len(hijos); i++ {
+		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/"+hijos[i].(string), &respuesta); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuesta, &subgrupo)
+			if subgrupo["bandera_tabla"] == true {
+				fmt.Println("entra")
+				displayed_columns = append(displayed_columns, subgrupo["nombre"].(string))
+				aux := getActividadTabla(subgrupo, data_source)
+				data_source = aux
+				fmt.Println(data_source)
+				fmt.Println(displayed_columns)
+			}
+
+			if len(subgrupo["hijos"].([]interface{})) != 0 {
+				var respuestaHijos map[string]interface{}
+				var subgrupoHijo map[string]interface{}
+				for j := 0; j < len(subgrupo["hijos"].([]interface{})); j++ {
+					if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/"+hijos[i].(string), &respuestaHijos); err == nil {
+						helpers.LimpiezaRespuestaRefactor(respuesta, &subgrupoHijo)
+						if subgrupo["bandera_tabla"] == true {
+							fmt.Println("entra")
+							displayed_columns = append(displayed_columns, subgrupoHijo["nombre"].(string))
+							aux := getActividadTabla(subgrupoHijo, data_source)
+							data_source = aux
+							fmt.Println(data_source)
+							fmt.Println(displayed_columns)
+						}
+					}
+				}
+			}
+		}
+	}
+	return tabla
+}
+
+func getActividadTabla(subgrupo map[string]interface{}, data_source []map[string]interface{}) []map[string]interface{} {
+	var respuesta map[string]interface{}
+	var subgrupo_detalle map[string]interface{}
+	var dato_plan map[string]interface{}
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+subgrupo["_id"].(string), &respuesta); err == nil {
+		helpers.LimpiezaRespuestaRefactor(respuesta, &subgrupo_detalle)
+		if subgrupo_detalle["dato_plan"] != nil {
+			dato_plan_str := subgrupo_detalle["dato_plan"].(string)
+			json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+			for key := range dato_plan {
+				actividad := make(map[string]interface{})
+				element := dato_plan[key].(map[string]interface{})
+
+				actividad["index"] = key
+				actividad[subgrupo["nombre"].(string)] = element["dato"]
+				data_source = append(data_source, actividad)
+			}
+		}
+	}
+	return data_source
 }

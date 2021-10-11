@@ -27,7 +27,9 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("ClonarFormato", c.ClonarFormato)
 	c.Mapping("GuardarActividad", c.GuardarActividad)
 	c.Mapping("GetPlan", c.GetPlan)
-	c.Mapping("GuardarObservacion", c.GuardarObservacion)
+	c.Mapping("ActualizarActividad", c.ActualizarActividad)
+	c.Mapping("DeleteActividad", c.DeleteActividad)
+	c.Mapping("GetAllActividades", c.GetAllActividades)
 
 }
 
@@ -147,13 +149,13 @@ func (c *FormulacionController) GuardarActividad() {
 				panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error get subgrupo-detalle \"key\"", "status": "400", "log": err})
 			}
 			helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
-
 			subgrupo_detalle = respuestaLimpia[0]
 			actividad := make(map[string]interface{})
 
 			if subgrupo_detalle["dato_plan"] == nil {
 				actividad["index"] = 1
 				actividad["dato"] = element
+				actividad["activo"] = true
 				i := strconv.Itoa(actividad["index"].(int))
 				dato_plan[i] = actividad
 
@@ -178,6 +180,7 @@ func (c *FormulacionController) GuardarActividad() {
 
 				actividad["index"] = maxIndex + 1
 				actividad["dato"] = element
+				actividad["activo"] = true
 				i := strconv.Itoa(actividad["index"].(int))
 				dato_plan[i] = actividad
 				b, _ := json.Marshal(dato_plan)
@@ -205,12 +208,12 @@ func (c *FormulacionController) GuardarActividad() {
 func (c *FormulacionController) GetPlan() {
 	id := c.Ctx.Input.Param(":id")
 	index := c.Ctx.Input.Param(":index")
-
 	var res map[string]interface{}
 	var hijos []map[string]interface{}
 
 	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &hijos)
+		formulacionhelper.Limpia()
 		tree := formulacionhelper.BuildTreeFa(hijos, index)
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": tree}
 	} else {
@@ -221,16 +224,16 @@ func (c *FormulacionController) GetPlan() {
 	c.ServeJSON()
 }
 
-// GuardarObservacion ...
-// @Title GuardarActividad
+// ActualizarActividad ...
+// @Title ActualizarActividad
 // @Description put Formulacion by id
 // @Param	id		path 	string	true		"The key for staticblock"
 // @Param	index		path 	string	true		"The key for staticblock"
 // @Param	body		body 	{}	true		"body for Plan content"
 // @Success 200 {object} models.Formulacion
 // @Failure 403 :id is empty
-// @router /guardar_observacion/:id/:index [put]
-func (c *FormulacionController) GuardarObservacion() {
+// @router /actualizar_actividad/:id/:index [put]
+func (c *FormulacionController) ActualizarActividad() {
 	id := c.Ctx.Input.Param(":id")
 	index := c.Ctx.Input.Param(":index")
 
@@ -320,4 +323,62 @@ func (c *FormulacionController) GuardarObservacion() {
 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": entrada}
 	c.ServeJSON()
 
+}
+
+// DeleteActividad ...
+// @Title DeleteActividad
+// @Description put Formulacion by id
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Param	index		path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /delete_actividad/:id/:index [put]
+func (c *FormulacionController) DeleteActividad() {
+	id := c.Ctx.Input.Param(":id")
+	index := c.Ctx.Input.Param(":index")
+
+	var res map[string]interface{}
+	var hijos []map[string]interface{}
+
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
+		helpers.LimpiezaRespuestaRefactor(res, &hijos)
+		formulacionhelper.RecorrerHijos(hijos, index)
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "Actividades Inactivas"}
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+		c.Abort("400")
+	}
+
+	c.ServeJSON()
+}
+
+// GetAllActividades ...
+// @Title GetAllActividades
+// @Description put Formulacion by id
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /get_all_actividades/:id/ [get]
+func (c *FormulacionController) GetAllActividades() {
+	id := c.Ctx.Input.Param(":id")
+	fmt.Println(id)
+	var res map[string]interface{}
+	var hijos []map[string]interface{}
+	var tabla []map[string]interface{}
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
+		fmt.Println(res)
+		helpers.LimpiezaRespuestaRefactor(res, &hijos)
+		for i := 0; i < len(hijos); i++ {
+			if len(hijos[i]["hijos"].([]interface{})) != 0 {
+				tabla = formulacionhelper.GetTabla(hijos[i]["hijos"].([]interface{}))
+				fmt.Println(tabla)
+			}
+		}
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": tabla}
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+		c.Abort("400")
+	}
+	c.ServeJSON()
 }
