@@ -362,17 +362,15 @@ func (c *FormulacionController) DeleteActividad() {
 // @router /get_all_actividades/:id/ [get]
 func (c *FormulacionController) GetAllActividades() {
 	id := c.Ctx.Input.Param(":id")
-	fmt.Println(id)
 	var res map[string]interface{}
 	var hijos []map[string]interface{}
-	var tabla []map[string]interface{}
+	var tabla map[string]interface{}
+	formulacionhelper.LimpiaTabla()
 	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
-		fmt.Println(res)
 		helpers.LimpiezaRespuestaRefactor(res, &hijos)
 		for i := 0; i < len(hijos); i++ {
 			if len(hijos[i]["hijos"].([]interface{})) != 0 {
 				tabla = formulacionhelper.GetTabla(hijos[i]["hijos"].([]interface{}))
-				fmt.Println(tabla)
 			}
 		}
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": tabla}
