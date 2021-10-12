@@ -300,6 +300,7 @@ paths:
             $ref: '#/definitions/models.Formulacion'
         "403":
           description: :id is empty
+
   /formulacion/delete_actividad/{id}/{index}:
     put:
       tags:
@@ -398,6 +399,7 @@ paths:
             $ref: '#/definitions/models.Formulacion'
         "403":
           description: :id is empty
+
 definitions:
   '{}':
     title: '{}'
