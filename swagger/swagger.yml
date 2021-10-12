@@ -245,12 +245,91 @@ paths:
           description: '{string} delete success!'
         "403":
           description: id is empty
+  /formulacion/actualizar_actividad/{id}/{index}:
+    put:
+      tags:
+      - formulacion
+      description: put Formulacion by id
+      operationId: FormulacionController.ActualizarActividad
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: index
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
   /formulacion/clonar_formato/{id}:
     post:
       tags:
       - formulacion
       description: post Formulacion by id
       operationId: FormulacionController.ClonarFormato
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /formulacion/delete_actividad/{id}/{index}:
+    put:
+      tags:
+      - formulacion
+      description: put Formulacion by id
+      operationId: FormulacionController.DeleteActividad
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: index
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /formulacion/get_all_actividades/{id}/:
+    get:
+      tags:
+      - formulacion
+      description: put Formulacion by id
+      operationId: FormulacionController.GetAllActividades
       parameters:
       - in: path
         name: id
@@ -303,36 +382,6 @@ paths:
       parameters:
       - in: path
         name: id
-        description: The key for staticblock
-        required: true
-        type: string
-      - in: body
-        name: body
-        description: body for Plan content
-        required: true
-        schema:
-          $ref: '#/definitions/{}'
-      responses:
-        "200":
-          description: ""
-          schema:
-            $ref: '#/definitions/models.Formulacion'
-        "403":
-          description: :id is empty
-  /formulacion/guardar_observacion/{id}/{index}:
-    put:
-      tags:
-      - formulacion
-      description: put Formulacion by id
-      operationId: FormulacionController.GuardarActividad
-      parameters:
-      - in: path
-        name: id
-        description: The key for staticblock
-        required: true
-        type: string
-      - in: path
-        name: index
         description: The key for staticblock
         required: true
         type: string

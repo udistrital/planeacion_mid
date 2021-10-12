@@ -368,22 +368,26 @@ func desactivarActividad(subgrupo_id string, index string) {
 	}
 }
 
-func GetTabla(hijos []interface{}) []map[string]interface{} {
-	var tabla []map[string]interface{}
+var data_source []map[string]interface{}
+var displayed_columns []string
+
+func LimpiaTabla() {
+	data_source = nil
+	displayed_columns = nil
+}
+
+func GetTabla(hijos []interface{}) map[string]interface{} {
+	tabla := make(map[string]interface{})
 	var respuesta map[string]interface{}
 	var subgrupo map[string]interface{}
-	var data_source []map[string]interface{}
-	var displayed_columns []string
+
 	for i := 0; i < len(hijos); i++ {
 		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/"+hijos[i].(string), &respuesta); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &subgrupo)
 			if subgrupo["bandera_tabla"] == true {
-				fmt.Println("entra")
 				displayed_columns = append(displayed_columns, subgrupo["nombre"].(string))
 				aux := getActividadTabla(subgrupo, data_source)
 				data_source = aux
-				fmt.Println(data_source)
-				fmt.Println(displayed_columns)
 			}
 
 			if len(subgrupo["hijos"].([]interface{})) != 0 {
@@ -393,27 +397,30 @@ func GetTabla(hijos []interface{}) []map[string]interface{} {
 					if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/"+hijos[i].(string), &respuestaHijos); err == nil {
 						helpers.LimpiezaRespuestaRefactor(respuesta, &subgrupoHijo)
 						if subgrupo["bandera_tabla"] == true {
-							fmt.Println("entra")
 							displayed_columns = append(displayed_columns, subgrupoHijo["nombre"].(string))
 							aux := getActividadTabla(subgrupoHijo, data_source)
 							data_source = aux
-							fmt.Println(data_source)
-							fmt.Println(displayed_columns)
 						}
 					}
 				}
 			}
 		}
 	}
+	tabla["displayed_columns"] = displayed_columns
+	tabla["data_source"] = data_source
 	return tabla
 }
 
 func getActividadTabla(subgrupo map[string]interface{}, data_source []map[string]interface{}) []map[string]interface{} {
 	var respuesta map[string]interface{}
+	var respuestaLimpia []map[string]interface{}
+
 	var subgrupo_detalle map[string]interface{}
 	var dato_plan map[string]interface{}
 	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+subgrupo["_id"].(string), &respuesta); err == nil {
-		helpers.LimpiezaRespuestaRefactor(respuesta, &subgrupo_detalle)
+		helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
+		subgrupo_detalle = respuestaLimpia[0]
+
 		if subgrupo_detalle["dato_plan"] != nil {
 			dato_plan_str := subgrupo_detalle["dato_plan"].(string)
 			json.Unmarshal([]byte(dato_plan_str), &dato_plan)
