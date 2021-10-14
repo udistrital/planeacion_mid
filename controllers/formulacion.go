@@ -268,6 +268,7 @@ func (c *FormulacionController) ActualizarActividad() {
 							aux_actividad := dato_plan[index_actividad].(map[string]interface{})
 							actividad["index"] = index_actividad
 							actividad["dato"] = aux_actividad["dato"]
+							actividad["activo"] = aux_actividad["activo"]
 							actividad["observacion"] = element
 
 							dato_plan[index_actividad] = actividad
@@ -302,6 +303,7 @@ func (c *FormulacionController) ActualizarActividad() {
 							aux_actividad := dato_plan[index_actividad].(map[string]interface{})
 							actividad["index"] = index_actividad
 							actividad["dato"] = element
+							actividad["activo"] = aux_actividad["activo"]
 							if aux_actividad["observacion"] != nil {
 								actividad["observacion"] = aux_actividad["observacion"]
 							}
