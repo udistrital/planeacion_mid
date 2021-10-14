@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
@@ -126,6 +127,7 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 	var tree []map[string]interface{}
 	var requeridos []map[string]interface{}
 	var res map[string]interface{}
+	var resLimpia []map[string]interface{}
 	var result [][]map[string]interface{}
 	var nodo map[string]interface{}
 
@@ -140,10 +142,11 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 			json.Unmarshal(jsonString, &id)
 
 			if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id, &res); err == nil {
-				helpers.LimpiezaRespuestaRefactor(res, &nodo)
+				helpers.LimpiezaRespuestaRefactor(res, &resLimpia)
+				nodo = resLimpia[0]
 				if len(nodo) == 0 {
-					// forkData["type"] = ""
-					// forkData["required"] = ""
+					//forkData["type"] = ""
+					//forkData["required"] = ""
 				} else {
 					var deta map[string]interface{}
 					dato_str := nodo["dato"].(string)
@@ -197,6 +200,7 @@ func getChildren(children []interface{}) (childrenTree []map[string]interface{})
 					// forkData["type"] = ""
 					// forkData["required"] = ""
 				} else {
+
 					var deta map[string]interface{}
 					dato_str := fmt.Sprintf("%v", detalle[0]["dato"])
 					json.Unmarshal([]byte(dato_str), &deta)
@@ -387,8 +391,7 @@ func GetTabla(hijos []interface{}) map[string]interface{} {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &subgrupo)
 			if subgrupo["bandera_tabla"] == true {
 				displayed_columns = append(displayed_columns, subgrupo["nombre"].(string))
-				aux := getActividadTabla(subgrupo, data_source)
-				data_source = aux
+				getActividadTabla(subgrupo)
 			}
 
 			if len(subgrupo["hijos"].([]interface{})) != 0 {
@@ -399,8 +402,7 @@ func GetTabla(hijos []interface{}) map[string]interface{} {
 						helpers.LimpiezaRespuestaRefactor(respuesta, &subgrupoHijo)
 						if subgrupo["bandera_tabla"] == true {
 							displayed_columns = append(displayed_columns, subgrupoHijo["nombre"].(string))
-							aux := getActividadTabla(subgrupoHijo, data_source)
-							data_source = aux
+							getActividadTabla(subgrupoHijo)
 						}
 					}
 				}
@@ -412,28 +414,39 @@ func GetTabla(hijos []interface{}) map[string]interface{} {
 	return tabla
 }
 
-func getActividadTabla(subgrupo map[string]interface{}, data_source []map[string]interface{}) []map[string]interface{} {
+func getActividadTabla(subgrupo map[string]interface{}) {
 	var respuesta map[string]interface{}
 	var respuestaLimpia []map[string]interface{}
-
 	var subgrupo_detalle map[string]interface{}
 	var dato_plan map[string]interface{}
 	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+subgrupo["_id"].(string), &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
 		subgrupo_detalle = respuestaLimpia[0]
+		if data_source == nil {
+			if subgrupo_detalle["dato_plan"] != nil {
+				dato_plan_str := subgrupo_detalle["dato_plan"].(string)
+				json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+				for key := range dato_plan {
+					actividad := make(map[string]interface{})
+					element := dato_plan[key].(map[string]interface{})
 
-		if subgrupo_detalle["dato_plan"] != nil {
-			dato_plan_str := subgrupo_detalle["dato_plan"].(string)
-			json.Unmarshal([]byte(dato_plan_str), &dato_plan)
-			for key := range dato_plan {
-				actividad := make(map[string]interface{})
-				element := dato_plan[key].(map[string]interface{})
+					actividad["index"] = key
+					actividad[subgrupo["nombre"].(string)] = element["dato"]
+					data_source = append(data_source, actividad)
+				}
+			}
+		} else {
+			for i := 0; i < len(data_source); i++ {
+				if subgrupo_detalle["dato_plan"] != nil {
+					var data = data_source[i]
+					dato_plan_str := subgrupo_detalle["dato_plan"].(string)
+					json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+					element := dato_plan[strconv.Itoa(i+1)].(map[string]interface{})
+					data[subgrupo["nombre"].(string)] = element["dato"]
+				}
 
-				actividad["index"] = key
-				actividad[subgrupo["nombre"].(string)] = element["dato"]
-				data_source = append(data_source, actividad)
 			}
 		}
+
 	}
-	return data_source
 }
