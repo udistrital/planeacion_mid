@@ -148,11 +148,18 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 					//forkData["type"] = ""
 					//forkData["required"] = ""
 				} else {
+
 					var deta map[string]interface{}
 					dato_str := nodo["dato"].(string)
 					json.Unmarshal([]byte(dato_str), &deta)
-					forkData["type"] = deta["type"]
-					forkData["required"] = deta["required"]
+					if (deta["type"] != nil) && (deta["required"] != nil) {
+						forkData["type"] = deta["type"]
+						forkData["required"] = deta["required"]
+					} else {
+						forkData["type"] = " "
+						forkData["required"] = " "
+					}
+
 				}
 			}
 
@@ -259,12 +266,11 @@ func convert(valid []string, index string) []map[string]interface{} {
 
 					} else {
 						actividad = dato_plan[index].(map[string]interface{})
-						if actividad["activo"] == true {
-							forkData[v] = actividad["dato"]
-							if actividad["observacion"] != nil {
-								keyObservacion := v + "_o"
-								forkData[keyObservacion] = getObservacion(actividad)
-							}
+						forkData[v] = actividad["dato"]
+						if actividad["observacion"] != nil {
+							keyObservacion := v + "_o"
+							forkData[keyObservacion] = getObservacion(actividad)
+
 						}
 
 					}
@@ -429,9 +435,9 @@ func getActividadTabla(subgrupo map[string]interface{}) {
 				for key := range dato_plan {
 					actividad := make(map[string]interface{})
 					element := dato_plan[key].(map[string]interface{})
-
 					actividad["index"] = key
 					actividad[subgrupo["nombre"].(string)] = element["dato"]
+					actividad["activo"] = element["activo"]
 					data_source = append(data_source, actividad)
 				}
 			}
@@ -443,6 +449,7 @@ func getActividadTabla(subgrupo map[string]interface{}) {
 					json.Unmarshal([]byte(dato_plan_str), &dato_plan)
 					element := dato_plan[strconv.Itoa(i+1)].(map[string]interface{})
 					data[subgrupo["nombre"].(string)] = element["dato"]
+
 				}
 
 			}
