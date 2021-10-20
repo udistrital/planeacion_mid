@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
@@ -447,7 +446,7 @@ func getActividadTabla(subgrupo map[string]interface{}) {
 					var data = data_source[i]
 					dato_plan_str := subgrupo_detalle["dato_plan"].(string)
 					json.Unmarshal([]byte(dato_plan_str), &dato_plan)
-					element := dato_plan[strconv.Itoa(i+1)].(map[string]interface{})
+					element := dato_plan[data["index"].(string)].(map[string]interface{})
 					data[subgrupo["nombre"].(string)] = element["dato"]
 
 				}
@@ -456,4 +455,49 @@ func getActividadTabla(subgrupo map[string]interface{}) {
 		}
 
 	}
+}
+
+func GetArmonizacion(id string) map[string]interface{} {
+	var armonizacion map[string]interface{}
+	var respuesta map[string]interface{}
+	var subgrupo map[string]interface{}
+	var recorrido []map[string]interface{}
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/"+id, &respuesta); err == nil {
+		helpers.LimpiezaRespuestaRefactor(respuesta, &subgrupo)
+		recorrido = append(recorrido, subgrupo)
+		for subgrupo != nil || subgrupo["padre"] != nil {
+			var auxRes map[string]interface{}
+			var auxSub map[string]interface{}
+			if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/"+subgrupo["padre"].(string), &auxRes); err == nil {
+				helpers.LimpiezaRespuestaRefactor(auxRes, &auxSub)
+				recorrido = append(recorrido, auxSub)
+			}
+			subgrupo = auxSub
+		}
+	}
+	recorrido = recorrido[:len(recorrido)-1]
+	armonizacion = getRama(recorrido)
+
+	return armonizacion
+}
+
+func getRama(recorrido []map[string]interface{}) map[string]interface{} {
+
+	var armonizacion map[string]interface{}
+
+	for i := 0; i < len(recorrido); i++ {
+		forkData := make(map[string]interface{})
+		forkData["_id"] = recorrido[i]["_id"]
+		forkData["nombre"] = recorrido[i]["nombre"]
+		forkData["descripcion"] = recorrido[i]["descripcion"]
+		forkData["activo"] = recorrido[i]["activo"]
+		if armonizacion != nil {
+			forkData["children"] = armonizacion
+		}
+
+		armonizacion = forkData
+
+	}
+
+	return armonizacion
 }
