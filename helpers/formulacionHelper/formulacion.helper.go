@@ -152,9 +152,13 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 					var deta map[string]interface{}
 					dato_str := nodo["dato"].(string)
 					json.Unmarshal([]byte(dato_str), &deta)
-					if (deta["type"] != nil) && (deta["required"] != nil) {
+					if (deta["type"] != nil) && (deta["required"] != nil) && (deta["options"] == nil) {
 						forkData["type"] = deta["type"]
 						forkData["required"] = deta["required"]
+					} else if (deta["type"] != nil) && (deta["required"] != nil) && (deta["options"] != nil) {
+						forkData["type"] = deta["type"]
+						forkData["required"] = deta["required"]
+						forkData["options"] = deta["options"]
 					} else {
 						forkData["type"] = " "
 						forkData["required"] = " "
@@ -211,8 +215,19 @@ func getChildren(children []interface{}) (childrenTree []map[string]interface{})
 					var deta map[string]interface{}
 					dato_str := fmt.Sprintf("%v", detalle[0]["dato"])
 					json.Unmarshal([]byte(dato_str), &deta)
-					forkData["type"] = deta["type"]
-					forkData["required"] = deta["required"]
+					// forkData["type"] = deta["type"]
+					// forkData["required"] = deta["required"]
+					if (deta["type"] != nil) && (deta["required"] != nil) && (deta["options"] == nil) {
+						forkData["type"] = deta["type"]
+						forkData["required"] = deta["required"]
+					} else if (deta["type"] != nil) && (deta["required"] != nil) && (deta["options"] != nil) {
+						forkData["type"] = deta["type"]
+						forkData["required"] = deta["required"]
+						forkData["options"] = deta["options"]
+					} else {
+						forkData["type"] = " "
+						forkData["required"] = " "
+					}
 				}
 			}
 			if len(nodo["hijos"].([]interface{})) > 0 {
