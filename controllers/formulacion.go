@@ -120,10 +120,16 @@ func (c *FormulacionController) ClonarFormato() {
 // @router /guardar_actividad/:id [put]
 func (c *FormulacionController) GuardarActividad() {
 	id := c.Ctx.Input.Param(":id")
+	var body map[string]interface{}
 	var res map[string]interface{}
 	var entrada map[string]interface{}
 	var resPlan map[string]interface{}
 	var plan map[string]interface{}
+	var armonizacionExecuted bool = false
+	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+
+	entrada = body["entrada"].(map[string]interface{})
+	armonizacion := body["armo"]
 
 	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/plan/"+id, &resPlan); err != nil {
 		panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error get Plan \"id\"", "status": "400", "log": err})
@@ -137,8 +143,8 @@ func (c *FormulacionController) GuardarActividad() {
 		}
 	}
 
-	json.Unmarshal(c.Ctx.Input.RequestBody, &entrada)
 	for key, element := range entrada {
+
 		var respuesta map[string]interface{}
 		var respuestaLimpia []map[string]interface{}
 		var subgrupo_detalle map[string]interface{}
@@ -162,6 +168,14 @@ func (c *FormulacionController) GuardarActividad() {
 				b, _ := json.Marshal(dato_plan)
 				str := string(b)
 				subgrupo_detalle["dato_plan"] = str
+				if !armonizacionExecuted {
+					armonizacion_dato := make(map[string]interface{})
+					armonizacion_dato[i] = armonizacion
+					c, _ := json.Marshal(armonizacion_dato)
+					strArmonizacion := string(c)
+					subgrupo_detalle["armonizacion_dato"] = strArmonizacion
+					armonizacionExecuted = true
+				}
 			} else {
 				dato_plan_str := subgrupo_detalle["dato_plan"].(string)
 				json.Unmarshal([]byte(dato_plan_str), &dato_plan)
@@ -186,6 +200,21 @@ func (c *FormulacionController) GuardarActividad() {
 				b, _ := json.Marshal(dato_plan)
 				str := string(b)
 				subgrupo_detalle["dato_plan"] = str
+
+				if !armonizacionExecuted {
+					armonizacion_dato := make(map[string]interface{})
+					if subgrupo_detalle["armonizacion_dato"] != nil {
+						armonizacion_dato_str := subgrupo_detalle["armonizacion_dato"].(string)
+						json.Unmarshal([]byte(armonizacion_dato_str), &armonizacion_dato)
+					}
+
+					armonizacion_dato[i] = armonizacion
+					c, _ := json.Marshal(armonizacion_dato)
+					strArmonizacion := string(c)
+					subgrupo_detalle["armonizacion_dato"] = strArmonizacion
+					armonizacionExecuted = true
+
+				}
 			}
 			if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupo_detalle["_id"].(string), "PUT", &res, subgrupo_detalle); err != nil {
 				panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
@@ -380,5 +409,29 @@ func (c *FormulacionController) GetAllActividades() {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 		c.Abort("400")
 	}
+	c.ServeJSON()
+}
+
+// GetArbolArmonizacion ...
+// @Title GetArbolArmonizacion
+// @Description post Formulacion by id
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /get_arbol_armonizacion/:id/ [post]
+func (c *FormulacionController) GetArbolArmonizacion() {
+
+	var entrada map[string][]string
+	var arregloId []string
+	var armonizacion []map[string]interface{}
+	id := c.Ctx.Input.Param(":id")
+	json.Unmarshal(c.Ctx.Input.RequestBody, &entrada)
+	arregloId = entrada["Data"]
+	fmt.Println(id)
+	for i := 0; i < len(arregloId); i++ {
+		armonizacion = append(armonizacion, formulacionhelper.GetArmonizacion(arregloId[i]))
+	}
+	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": armonizacion}
 	c.ServeJSON()
 }

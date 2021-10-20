@@ -524,6 +524,44 @@
                 }
             }
         },
+        "/formulacion/get_arbol_armonizacion/{id}/": {
+            "post": {
+                "tags": [
+                    "formulacion"
+                ],
+                "description": "post Formulacion by id",
+                "operationId": "FormulacionController.GetArbolArmonizacion",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Formulacion"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
         "/formulacion/get_plan/{id}/{index}": {
             "get": {
                 "tags": [
@@ -597,7 +635,6 @@
                     }
                 }
             }
-
         }
     },
     "definitions": {
