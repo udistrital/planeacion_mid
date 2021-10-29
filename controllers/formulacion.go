@@ -268,13 +268,19 @@ func (c *FormulacionController) ActualizarActividad() {
 
 	var res map[string]interface{}
 	var entrada map[string]interface{}
+	var body map[string]interface{}
+
 	fmt.Println(id)
-	json.Unmarshal(c.Ctx.Input.RequestBody, &entrada)
+	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+	entrada = body["entrada"].(map[string]interface{})
+	armonizacion := body["armo"]
+
 	for key, element := range entrada {
 		var respuesta map[string]interface{}
 		var respuestaLimpia []map[string]interface{}
 		var subgrupo_detalle map[string]interface{}
 		dato_plan := make(map[string]interface{})
+		var armonizacion_dato map[string]interface{}
 		var id_subgrupoDetalle string
 		keyStr := strings.Split(key, "_")
 
@@ -287,7 +293,6 @@ func (c *FormulacionController) ActualizarActividad() {
 				helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
 
 				subgrupo_detalle = respuestaLimpia[0]
-
 				if subgrupo_detalle["dato_plan"] != nil {
 					actividad := make(map[string]interface{})
 					dato_plan_str := subgrupo_detalle["dato_plan"].(string)
@@ -322,7 +327,17 @@ func (c *FormulacionController) ActualizarActividad() {
 				helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
 
 				subgrupo_detalle = respuestaLimpia[0]
+				if subgrupo_detalle["armonizacion_dato"] != nil {
+					dato_armonizacion_str := subgrupo_detalle["armonizacion_dato"].(string)
+					json.Unmarshal([]byte(dato_armonizacion_str), &armonizacion_dato)
+					if armonizacion_dato[index] != nil {
+						armonizacion_dato[index] = armonizacion
+					}
+					c, _ := json.Marshal(armonizacion_dato)
+					strArmonizacion := string(c)
+					subgrupo_detalle["armonizacion_dato"] = strArmonizacion
 
+				}
 				if subgrupo_detalle["dato_plan"] != nil {
 					actividad := make(map[string]interface{})
 					dato_plan_str := subgrupo_detalle["dato_plan"].(string)
@@ -425,10 +440,8 @@ func (c *FormulacionController) GetArbolArmonizacion() {
 	var entrada map[string][]string
 	var arregloId []string
 	var armonizacion []map[string]interface{}
-	id := c.Ctx.Input.Param(":id")
 	json.Unmarshal(c.Ctx.Input.RequestBody, &entrada)
 	arregloId = entrada["Data"]
-	fmt.Println(id)
 	for i := 0; i < len(arregloId); i++ {
 		armonizacion = append(armonizacion, formulacionhelper.GetArmonizacion(arregloId[i]))
 	}

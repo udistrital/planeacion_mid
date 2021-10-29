@@ -125,6 +125,7 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 
 	var tree []map[string]interface{}
 	var requeridos []map[string]interface{}
+	armonizacion := make([]map[string]interface{}, 1)
 	var res map[string]interface{}
 	var resLimpia []map[string]interface{}
 	var result [][]map[string]interface{}
@@ -178,9 +179,10 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 			add(id)
 		}
 	}
-	requeridos = convert(validDataT, index)
+	requeridos, armonizacion[0] = convert(validDataT, index)
 	result = append(result, tree)
 	result = append(result, requeridos)
+	result = append(result, armonizacion)
 	return result
 }
 
@@ -259,19 +261,26 @@ func add(id string) {
 	}
 }
 
-func convert(valid []string, index string) []map[string]interface{} {
+func convert(valid []string, index string) ([]map[string]interface{}, map[string]interface{}) {
 	var validadores []map[string]interface{}
 	var res map[string]interface{}
 	var subgrupo_detalle []map[string]interface{}
 	var dato_plan map[string]interface{}
 	var actividad map[string]interface{}
-
+	var dato_armonizacion map[string]interface{}
+	armonizacion := make(map[string]interface{})
 	forkData := make(map[string]interface{})
+
 	for _, v := range valid {
 		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+v, &res); err == nil {
 			helpers.LimpiezaRespuestaRefactor(res, &subgrupo_detalle)
 
 			if len(subgrupo_detalle) > 0 {
+				if subgrupo_detalle[0]["armonizacion_dato"] != nil {
+					dato_armonizacion_str := subgrupo_detalle[0]["armonizacion_dato"].(string)
+					json.Unmarshal([]byte(dato_armonizacion_str), &dato_armonizacion)
+					armonizacion["armo"] = dato_armonizacion[index]
+				}
 				if subgrupo_detalle[0]["dato_plan"] != nil {
 					dato_plan_str := subgrupo_detalle[0]["dato_plan"].(string)
 					json.Unmarshal([]byte(dato_plan_str), &dato_plan)
@@ -284,9 +293,7 @@ func convert(valid []string, index string) []map[string]interface{} {
 						if actividad["observacion"] != nil {
 							keyObservacion := v + "_o"
 							forkData[keyObservacion] = getObservacion(actividad)
-
 						}
-
 					}
 
 				} else {
@@ -300,7 +307,7 @@ func convert(valid []string, index string) []map[string]interface{} {
 
 	}
 	validadores = append(validadores, forkData)
-	return validadores
+	return validadores, armonizacion
 }
 
 func getObservacion(actividad map[string]interface{}) string {
