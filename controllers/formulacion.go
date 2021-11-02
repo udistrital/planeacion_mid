@@ -31,6 +31,7 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("DeleteActividad", c.DeleteActividad)
 	c.Mapping("GetAllActividades", c.GetAllActividades)
 	c.Mapping("GuardarIdentificacion", c.GuardarIdentificacion)
+	c.Mapping("GetAllIdentificacion", c.GetAllIdentificacion)
 }
 
 // ClonarFormato ...
@@ -477,4 +478,45 @@ func (c *FormulacionController) GuardarIdentificacion() {
 
 	c.ServeJSON()
 
+}
+
+// GetAllIdentificacion ...
+// @Title GetAllIdentificacion
+// @Description put Formulacion by id
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Param	idTipo		path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /get_all_identificacion/:id/:idTipo [get]
+func (c *FormulacionController) GetAllIdentificacion() {
+	id := c.Ctx.Input.Param(":id")
+	tipoIdenti := c.Ctx.Input.Param(":idTipo")
+	var respuesta []map[string]interface{}
+	var res map[string]interface{}
+	var identificacion map[string]interface{}
+	var dato map[string]interface{}
+	var data_identi []map[string]interface{}
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id+",tipo_identificacion_id:"+tipoIdenti, &res); err == nil {
+		helpers.LimpiezaRespuestaRefactor(res, &respuesta)
+		identificacion = respuesta[0]
+
+		if identificacion["dato"] != nil {	
+			dato_str := identificacion["dato"].(string)
+			json.Unmarshal([]byte(dato_str), &dato)
+			for key := range dato {
+				element := dato[key].(map[string]interface{})
+				if element["activo"] == true {
+					data_identi = append(data_identi, element)
+				}
+			}
+		}
+
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": data_identi}
+
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+		c.Abort("400")
+	}
+
+	c.ServeJSON()
 }
