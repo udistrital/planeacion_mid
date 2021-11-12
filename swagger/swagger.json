@@ -524,6 +524,42 @@
                 }
             }
         },
+        "/formulacion/get_all_identificacion/{id}/{idTipo}": {
+            "get": {
+                "tags": [
+                    "formulacion"
+                ],
+                "description": "put Formulacion by id",
+                "operationId": "FormulacionController.GetAllIdentificacion",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "idTipo",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Formulacion"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
         "/formulacion/get_arbol_armonizacion/{id}/": {
             "post": {
                 "tags": [
@@ -598,6 +634,49 @@
                 }
             }
         },
+        "/formulacion/get_plan_versiones/{unidad}/{vigencia}/{nombre}": {
+            "get": {
+                "tags": [
+                    "formulacion"
+                ],
+                "description": "get Formulacion by id",
+                "operationId": "FormulacionController.GetPlanVersiones",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "unidad",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "vigencia",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "nombre",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Formulacion"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
         "/formulacion/guardar_actividad/{id}": {
             "put": {
                 "tags": [
@@ -621,6 +700,80 @@
                         "schema": {
                             "$ref": "#/definitions/{}"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Formulacion"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
+        "/formulacion/guardar_identificacion/{id}/{idTipo}": {
+            "put": {
+                "tags": [
+                    "formulacion"
+                ],
+                "description": "put Formulacion by id",
+                "operationId": "FormulacionController.GuardarIdentificacion",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "idTipo",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Formulacion"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
+        "/formulacion/versionar_plan/{id}": {
+            "post": {
+                "tags": [
+                    "formulacion"
+                ],
+                "description": "post Formulacion by id",
+                "operationId": "FormulacionController.VersionarPlan",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
                     }
                 ],
                 "responses": {
