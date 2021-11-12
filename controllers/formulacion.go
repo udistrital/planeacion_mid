@@ -32,6 +32,7 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("GetAllActividades", c.GetAllActividades)
 	c.Mapping("GuardarIdentificacion", c.GuardarIdentificacion)
 	c.Mapping("GetAllIdentificacion", c.GetAllIdentificacion)
+	c.Mapping("DeleteIdentificacion", c.DeleteIdentificacion)
 }
 
 // ClonarFormato ...
@@ -513,7 +514,7 @@ func (c *FormulacionController) GetAllIdentificacion() {
 		helpers.LimpiezaRespuestaRefactor(res, &respuesta)
 		identificacion = respuesta[0]
 
-		if identificacion["dato"] != nil {	
+		if identificacion["dato"] != nil {
 			dato_str := identificacion["dato"].(string)
 			json.Unmarshal([]byte(dato_str), &dato)
 			for key := range dato {
@@ -526,6 +527,62 @@ func (c *FormulacionController) GetAllIdentificacion() {
 
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": data_identi}
 
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+		c.Abort("400")
+	}
+
+	c.ServeJSON()
+}
+
+// DeleteIdentificacion ...
+// @Title DeleteIdentificacion
+// @Description put Formulacion by id
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Param	idTipo		path 	string	true		"The key for staticblock"
+// @Param	index		path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /delete_identificacion/:id/:idTipo/:index [put]
+func (c *FormulacionController) DeleteIdentificacion() {
+	id := c.Ctx.Input.Param(":id")
+	index := c.Ctx.Input.Param(":index")
+	idTipo := c.Ctx.Input.Param(":idTipo")
+	var idStr string
+	var res map[string]interface{}
+	var respuesta []map[string]interface{}
+	var identificacion map[string]interface{}
+	var dato map[string]interface{}
+	var resJ map[string]interface{}
+
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id+",tipo_identificacion_id:"+idTipo, &res); err == nil {
+		helpers.LimpiezaRespuestaRefactor(res, &respuesta)
+		identificacion = respuesta[0]
+
+		jsonString, _ := json.Marshal(respuesta[0]["_id"])
+		json.Unmarshal(jsonString, &idStr)
+
+		if identificacion["dato"] != nil {
+			dato_str := identificacion["dato"].(string)
+			json.Unmarshal([]byte(dato_str), &dato)
+			for key := range dato {
+				intVar, _ := strconv.Atoi(key)
+				intVar = intVar + 1
+				strr := strconv.Itoa(intVar)
+				if strr == index {
+					element := dato[key].(map[string]interface{})
+					element["activo"] = false
+					dato[key] = element
+				}
+			}
+			b, _ := json.Marshal(dato)
+			str := string(b)
+			identificacion["dato"] = str
+		}
+		if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/identificacion/"+idStr, "PUT", &resJ, identificacion); err != nil {
+			panic(map[string]interface{}{"funcion": "DeleteIdentificacion", "err": "Error eliminando identificacion \"idStr\"", "status": "400", "log": err})
+		}
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "Identificación Inactiva"}
 	} else {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 		c.Abort("400")
