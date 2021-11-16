@@ -589,7 +589,7 @@ func (c *FormulacionController) DeleteIdentificacion() {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 		c.Abort("400")
 	}
-
+}
 
 // VersionarPlan ...
 // @Title VersionarPlan
