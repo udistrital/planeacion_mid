@@ -33,6 +33,9 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("GuardarIdentificacion", c.GuardarIdentificacion)
 	c.Mapping("GetAllIdentificacion", c.GetAllIdentificacion)
 	c.Mapping("DeleteIdentificacion", c.DeleteIdentificacion)
+	c.Mapping("VersionarPlan", c.VersionarPlan)
+	c.Mapping("GetPlanVersiones", c.GetPlanVersiones)
+
 }
 
 // ClonarFormato ...
@@ -416,7 +419,6 @@ func (c *FormulacionController) GetAllActividades() {
 	formulacionhelper.LimpiaTabla()
 	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &hijos)
-		fmt.Println(res)
 		for i := 0; i < len(hijos); i++ {
 			if len(hijos[i]["hijos"].([]interface{})) != 0 {
 				tabla = formulacionhelper.GetTabla(hijos[i]["hijos"].([]interface{}))
@@ -588,5 +590,79 @@ func (c *FormulacionController) DeleteIdentificacion() {
 		c.Abort("400")
 	}
 
+
+// VersionarPlan ...
+// @Title VersionarPlan
+// @Description post Formulacion by id
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /versionar_plan/:id [post]
+func (c *FormulacionController) VersionarPlan() {
+
+	id := c.Ctx.Input.Param(":id")
+
+	var respuesta map[string]interface{}
+	var respuestaHijos map[string]interface{}
+	var hijos []map[string]interface{}
+	var planPadre map[string]interface{}
+	var respuestaPost map[string]interface{}
+	var planVersionado map[string]interface{}
+	plan := make(map[string]interface{})
+
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/plan/"+id, &respuesta); err == nil {
+
+		helpers.LimpiezaRespuestaRefactor(respuesta, &planPadre)
+
+		plan["nombre"] = planPadre["nombre"].(string)
+		plan["descripcion"] = planPadre["descripcion"].(string)
+		plan["tipo_plan_id"] = planPadre["tipo_plan_id"].(string)
+		plan["aplicativo_id"] = planPadre["aplicativo_id"].(string)
+		plan["activo"] = planPadre["activo"]
+		plan["formato"] = false
+		plan["vigencia"] = planPadre["vigencia"].(string)
+		plan["dependencia_id"] = planPadre["dependencia_id"].(string)
+		plan["estado_plan_id"] = "614d3ad301c7a200482fabfd"
+		plan["padre_plan_id"] = id
+
+		if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/plan", "POST", &respuestaPost, plan); err != nil {
+			panic(map[string]interface{}{"funcion": "VersionarPlan", "err": "Error versionando plan \"plan[\"_id\"].(string)\"", "status": "400", "log": err})
+		}
+		planVersionado = respuestaPost["Data"].(map[string]interface{})
+
+		c.Data["json"] = respuestaPost
+
+		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &respuestaHijos); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuestaHijos, &hijos)
+			formulacionhelper.VersionarHijos(hijos, planVersionado["_id"].(string))
+		}
+
+	}
+	c.ServeJSON()
+}
+
+// GetPlanVersiones ...
+// @Title GetPlanVersiones
+// @Description get Formulacion by id
+// @Param	unidad		path 	string	true		"The key for staticblock"
+// @Param	vigencia		path 	string	true		"The key for staticblock"
+// @Param	nombre		path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /get_plan_versiones/:unidad/:vigencia/:nombre [get]
+func (c *FormulacionController) GetPlanVersiones() {
+	unidad := c.Ctx.Input.Param(":unidad")
+	vigencia := c.Ctx.Input.Param(":vigencia")
+	nombre := c.Ctx.Input.Param(":nombre")
+
+	var respuesta map[string]interface{}
+	var versiones []map[string]interface{}
+
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/plan?query=dependencia_id:"+unidad+",vigencia:"+vigencia+",formato:false,nombre:"+nombre, &respuesta); err == nil {
+		helpers.LimpiezaRespuestaRefactor(respuesta, &versiones)
+		versionesOrdenadas := formulacionhelper.OrdenarVersiones(versiones)
+		c.Data["json"] = versionesOrdenadas
+
+	}
 	c.ServeJSON()
 }
