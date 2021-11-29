@@ -151,11 +151,10 @@ func convert(valid []string) []map[string]interface{} {
 	var validadores []map[string]interface{}
 	forkData := make(map[string]interface{})
 	for _, v := range valid {
-		forkData[v] = ""
-		if (estadoPlan == "614d3ad301c7a200482fabfd"){
-			
-		} else if (estadoPlan == "614d3aeb01c7a245952fabff" || estadoPlan == "614d3b0301c7a2a44e2fac01" || 
-		estadoPlan == "614d3b1e01c7a265372fac03" || estadoPlan == "614d3b4401c7a222052fac05"){
+		if v == "" {
+
+		} else {
+			forkData[v] = ""
 			forkData[v+"_o"] = ""
 		}
 	}

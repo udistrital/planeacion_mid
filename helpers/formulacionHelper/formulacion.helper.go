@@ -270,7 +270,7 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 	var dato_armonizacion map[string]interface{}
 	armonizacion := make(map[string]interface{})
 	forkData := make(map[string]interface{})
-
+	//fmt.Print(valid)
 	for _, v := range valid {
 		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+v, &res); err == nil {
 			helpers.LimpiezaRespuestaRefactor(res, &subgrupo_detalle)
@@ -289,10 +289,15 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 
 					} else {
 						actividad = dato_plan[index].(map[string]interface{})
-						forkData[v] = actividad["dato"]
-						if actividad["observacion"] != nil {
-							keyObservacion := v + "_o"
-							forkData[keyObservacion] = getObservacion(actividad)
+						if v != "" {
+							forkData[v] = actividad["dato"]
+							if actividad["observacion"] != nil {
+								keyObservacion := v + "_o"
+								forkData[keyObservacion] = getObservacion(actividad)
+							} else {
+								keyObservacion := v + "_o"
+								forkData[keyObservacion] = "Sin observación"
+							}
 						}
 					}
 
