@@ -720,6 +720,26 @@
                 }
             }
         },
+        "/formulacion/get_rubros": {
+            "get": {
+                "tags": [
+                    "formulacion"
+                ],
+                "description": "get Formulacion by id",
+                "operationId": "FormulacionController.GetRubros",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Formulacion"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
         "/formulacion/guardar_actividad/{id}": {
             "put": {
                 "tags": [
@@ -788,6 +808,35 @@
                         "schema": {
                             "$ref": "#/definitions/{}"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Formulacion"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
+        "/formulacion/ponderacion_actividades/{plan}": {
+            "get": {
+                "tags": [
+                    "formulacion"
+                ],
+                "description": "get Formulacion by id",
+                "operationId": "FormulacionController.GetPonderacionActividades",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "plan",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
                     }
                 ],
                 "responses": {

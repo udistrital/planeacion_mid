@@ -608,3 +608,25 @@ func getVersionHija(id interface{}, versiones []map[string]interface{}) map[stri
 	}
 	return nil
 }
+
+func GetHijosRubro(entrada []interface{}) []map[string]interface{} {
+	var hojas []map[string]interface{}
+
+	var respuesta map[string]interface{}
+	var resLimpia interface{}
+
+	for i := 0; i < len(entrada); i++ {
+		if err := request.GetJson(beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro/"+entrada[i].(string), &respuesta); err == nil {
+			resLimpia = respuesta["Body"].(map[string]interface{})
+			if len(resLimpia.(map[string]interface{})["Hijos"].([]interface{})) != 0 {
+				var aux = resLimpia.(map[string]interface{})["Hijos"]
+				hojas = append(hojas, GetHijosRubro(aux.([]interface{}))...)
+			} else {
+				hojas = append(hojas, resLimpia.(map[string]interface{}))
+			}
+		} else {
+			panic(map[string]interface{}{"funcion": "GetHijosRubros", "err": "Error arbol_rubros", "status": "400", "log": err})
+		}
+	}
+	return hojas
+}
