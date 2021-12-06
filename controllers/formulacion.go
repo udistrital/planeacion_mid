@@ -35,6 +35,8 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("DeleteIdentificacion", c.DeleteIdentificacion)
 	c.Mapping("VersionarPlan", c.VersionarPlan)
 	c.Mapping("GetPlanVersiones", c.GetPlanVersiones)
+	c.Mapping("PonderacionActividades", c.PonderacionActividades)
+	c.Mapping("GetRubros", c.GetRubros)
 
 }
 
@@ -663,6 +665,90 @@ func (c *FormulacionController) GetPlanVersiones() {
 		versionesOrdenadas := formulacionhelper.OrdenarVersiones(versiones)
 		c.Data["json"] = versionesOrdenadas
 
+	}
+	c.ServeJSON()
+}
+
+// GetPonderacionActividades ...
+// @Title GetPonderacionActividades
+// @Description get Formulacion by id
+// @Param	plan		path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /ponderacion_actividades/:plan [get]
+func (c *FormulacionController) PonderacionActividades() {
+	plan := c.Ctx.Input.Param(":plan")
+	var respuesta map[string]interface{}
+	var respuestaDetalle map[string]interface{}
+	var respuestaLimpiaDetalle []map[string]interface{}
+	var subgrupoDetalle map[string]interface{}
+	var hijos []map[string]interface{}
+
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan, &respuesta); err == nil {
+		helpers.LimpiezaRespuestaRefactor(respuesta, &hijos)
+
+		for i := 0; i < len(hijos); i++ {
+			if strings.Contains(strings.ToUpper(hijos[i]["nombre"].(string)), "PONDERACIÓN") && strings.Contains(strings.ToUpper(hijos[i]["nombre"].(string)), "ACTIVIDAD") || strings.Contains(strings.ToUpper(hijos[i]["nombre"].(string)), "PONDERACIÓN") {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijos[i]["_id"].(string), &respuestaDetalle); err == nil {
+
+					helpers.LimpiezaRespuestaRefactor(respuestaDetalle, &respuestaLimpiaDetalle)
+					subgrupoDetalle = respuestaLimpiaDetalle[0]
+
+					if subgrupoDetalle["dato_plan"] != nil {
+						var suma float64 = 0
+						datoPlan := make(map[string]map[string]interface{})
+						json.Unmarshal([]byte(subgrupoDetalle["dato_plan"].(string)), &datoPlan)
+
+						ponderacionActividades := make(map[string]interface{})
+
+						for j := 1; j <= len(datoPlan); j++ {
+							if datoPlan[strconv.Itoa(j)]["activo"] != false {
+								ponderacionActividades["Actividad "+strconv.Itoa(j)] = datoPlan[strconv.Itoa(j)]["dato"]
+								suma += datoPlan[strconv.Itoa(j)]["dato"].(float64)
+							}
+
+						}
+
+						ponderacionActividades["Total"] = suma
+						c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": ponderacionActividades}
+					}
+
+				} else {
+					panic(map[string]interface{}{"funcion": "PonderacionActividades", "err": "Error subgrupo_detalle plan \"plan\"", "status": "400", "log": err})
+				}
+			}
+		}
+	} else {
+		panic(map[string]interface{}{"funcion": "PonderacionActividades", "err": "Error subgrupo_hijos plan \"plan\"", "status": "400", "log": err})
+	}
+
+	c.ServeJSON()
+}
+
+// GetRubros ...
+// @Title GetRubros
+// @Description get Formulacion by id
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /get_rubros [get]
+func (c *FormulacionController) GetRubros() {
+
+	var respuesta map[string]interface{}
+	var rubros []interface{}
+	if err := request.GetJson(beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro", &respuesta); err == nil {
+		rubros = respuesta["Body"].([]interface{})
+		for i := 0; i < len(rubros); i++ {
+			if rubros[i].(map[string]interface{})["Nombre"] == "GASTOS" {
+				aux := rubros[i].(map[string]interface{})
+				hojas := formulacionhelper.GetHijosRubro(aux["Hijos"].([]interface{}))
+
+				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": hojas}
+				break
+			}
+		}
+
+	} else {
+		panic(map[string]interface{}{"funcion": "GetRubros", "err": "Error arbol_rubros", "status": "400", "log": err})
 	}
 	c.ServeJSON()
 }
