@@ -727,7 +727,7 @@ func (c *FormulacionController) PonderacionActividades() {
 
 // GetRubros ...
 // @Title GetRubros
-// @Description get Formulacion by id
+// @Description get Rubros
 // @Success 200 {object} models.Formulacion
 // @Failure 403 :id is empty
 // @router /get_rubros [get]
@@ -735,7 +735,9 @@ func (c *FormulacionController) GetRubros() {
 
 	var respuesta map[string]interface{}
 	var rubros []interface{}
-	if err := request.GetJson(beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro", &respuesta); err == nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro", &respuesta); err != nil {
+		panic(map[string]interface{}{"funcion": "GetRubros", "err": "Error arbol_rubros", "status": "400", "log": err})
+	} else {
 		rubros = respuesta["Body"].([]interface{})
 		for i := 0; i < len(rubros); i++ {
 			if rubros[i].(map[string]interface{})["Nombre"] == "GASTOS" {
@@ -746,9 +748,6 @@ func (c *FormulacionController) GetRubros() {
 				break
 			}
 		}
-
-	} else {
-		panic(map[string]interface{}{"funcion": "GetRubros", "err": "Error arbol_rubros", "status": "400", "log": err})
 	}
 	c.ServeJSON()
 }
