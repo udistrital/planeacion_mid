@@ -735,7 +735,7 @@ func (c *FormulacionController) GetRubros() {
 
 	var respuesta map[string]interface{}
 	var rubros []interface{}
-	if err := request.GetJson(beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro", &respuesta); err != nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro", &respuesta); err != nil {
 		panic(map[string]interface{}{"funcion": "GetRubros", "err": "Error arbol_rubros", "status": "400", "log": err})
 	} else {
 		rubros = respuesta["Body"].([]interface{})
