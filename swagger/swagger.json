@@ -725,7 +725,7 @@
                 "tags": [
                     "formulacion"
                 ],
-                "description": "get Formulacion by id",
+                "description": "get Rubros",
                 "operationId": "FormulacionController.GetRubros",
                 "responses": {
                     "200": {
