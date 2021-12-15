@@ -616,7 +616,7 @@ func GetHijosRubro(entrada []interface{}) []map[string]interface{} {
 	var resLimpia interface{}
 
 	for i := 0; i < len(entrada); i++ {
-		if err := request.GetJson(beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro/"+entrada[i].(string), &respuesta); err == nil {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro/"+entrada[i].(string), &respuesta); err == nil {
 			resLimpia = respuesta["Body"].(map[string]interface{})
 			if len(resLimpia.(map[string]interface{})["Hijos"].([]interface{})) != 0 {
 				var aux = resLimpia.(map[string]interface{})["Hijos"]
