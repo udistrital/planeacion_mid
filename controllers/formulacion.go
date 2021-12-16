@@ -605,11 +605,13 @@ func (c *FormulacionController) VersionarPlan() {
 	id := c.Ctx.Input.Param(":id")
 
 	var respuesta map[string]interface{}
-	var respuestaHijos map[string]interface{}
-	var hijos []map[string]interface{}
+	//var respuestaHijos map[string]interface{}
+	var respuestaIdentificacion map[string]interface{}
+	//var hijos []map[string]interface{}
+	var identificaciones []map[string]interface{}
 	var planPadre map[string]interface{}
-	var respuestaPost map[string]interface{}
-	var planVersionado map[string]interface{}
+	//var respuestaPost map[string]interface{}
+	//var planVersionado map[string]interface{}
 	plan := make(map[string]interface{})
 
 	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/plan/"+id, &respuesta); err == nil {
@@ -626,18 +628,25 @@ func (c *FormulacionController) VersionarPlan() {
 		plan["dependencia_id"] = planPadre["dependencia_id"].(string)
 		plan["estado_plan_id"] = "614d3ad301c7a200482fabfd"
 		plan["padre_plan_id"] = id
-
-		if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/plan", "POST", &respuestaPost, plan); err != nil {
-			panic(map[string]interface{}{"funcion": "VersionarPlan", "err": "Error versionando plan \"plan[\"_id\"].(string)\"", "status": "400", "log": err})
+		/*
+			if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/plan", "POST", &respuestaPost, plan); err != nil {
+				panic(map[string]interface{}{"funcion": "VersionarPlan", "err": "Error versionando plan \"plan[\"_id\"].(string)\"", "status": "400", "log": err})
+			}
+			planVersionado = respuestaPost["Data"].(map[string]interface{})
+			c.Data["json"] = respuestaPost
+		*/
+		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id, &respuestaIdentificacion); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuestaIdentificacion, &identificaciones)
+			fmt.Println(identificaciones)
+			if len(identificaciones) != 0 {
+				formulacionhelper.VersionarIdentificaciones(identificaciones, "prueba")
+			}
 		}
-		planVersionado = respuestaPost["Data"].(map[string]interface{})
-
-		c.Data["json"] = respuestaPost
-
-		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &respuestaHijos); err == nil {
-			helpers.LimpiezaRespuestaRefactor(respuestaHijos, &hijos)
-			formulacionhelper.VersionarHijos(hijos, planVersionado["_id"].(string))
-		}
+		/*
+			if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &respuestaHijos); err == nil {
+				helpers.LimpiezaRespuestaRefactor(respuestaHijos, &hijos)
+				formulacionhelper.VersionarHijos(hijos, planVersionado["_id"].(string))
+			}*/
 
 	}
 	c.ServeJSON()
