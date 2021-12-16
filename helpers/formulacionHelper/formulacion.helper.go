@@ -584,6 +584,25 @@ func VersionarHijosDetalle(subHijosDetalle []map[string]interface{}, subgrupo_id
 	}
 }
 
+func VersionarIdentificaciones(identificaciones []map[string]interface{}, id string) {
+	for i := 0; i < len(identificaciones); i++ {
+		var aux map[string]interface{} = identificaciones[i]
+		identificacion := make(map[string]interface{})
+		var respuestaPost map[string]interface{}
+
+		identificacion["nombre"] = aux["nombre"]
+		identificacion["descripcion"] = aux["descripcion"]
+		identificacion["plan_id"] = id
+		identificacion["dato"] = aux["dato"]
+		identificacion["tipo_identificacion_id"] = aux["tipo_identificacion_id"]
+		identificacion["activo"] = aux["activo"]
+
+		if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/identificacion", "POST", &respuestaPost, identificacion); err != nil {
+			panic(map[string]interface{}{"funcion": "VersionaIdentificaciones", "err": "Error versionando identificaciones", "status": "400", "log": err})
+		}
+	}
+}
+
 func OrdenarVersiones(versiones []map[string]interface{}) []map[string]interface{} {
 	var versionesOrdenadas []map[string]interface{}
 
