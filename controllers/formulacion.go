@@ -37,6 +37,7 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("GetPlanVersiones", c.GetPlanVersiones)
 	c.Mapping("PonderacionActividades", c.PonderacionActividades)
 	c.Mapping("GetRubros", c.GetRubros)
+	c.Mapping("GetUnidades", c.GetUnidades)
 
 }
 
@@ -757,5 +758,133 @@ func (c *FormulacionController) GetRubros() {
 			}
 		}
 	}
+	c.ServeJSON()
+}
+
+// GetUnidades ...
+// @Title GetUnidades
+// @Description get Unidades
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /get_unidades [get]
+func (c *FormulacionController) GetUnidades() {
+
+	var respuesta []map[string]interface{}
+	var unidades []map[string]interface{}
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=TipoDependenciaId:2&limit=0", &respuesta); err == nil {
+		for i := 0; i < len(respuesta); i++ {
+			unidades = append(unidades, respuesta[i]["DependenciaId"].(map[string]interface{}))
+		}
+		respuesta = nil
+
+		if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=TipoDependenciaId:3&limit=0", &respuesta); err == nil {
+			for i := 0; i < len(respuesta); i++ {
+				unidades = append(unidades, respuesta[i]["DependenciaId"].(map[string]interface{}))
+			}
+			respuesta = nil
+
+			if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=TipoDependenciaId:4&limit=0", &respuesta); err == nil {
+				for i := 0; i < len(respuesta); i++ {
+					unidades = append(unidades, respuesta[i]["DependenciaId"].(map[string]interface{}))
+				}
+				respuesta = nil
+
+				if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=TipoDependenciaId:5&limit=0", &respuesta); err == nil {
+					for i := 0; i < len(respuesta); i++ {
+						unidades = append(unidades, respuesta[i]["DependenciaId"].(map[string]interface{}))
+					}
+					respuesta = nil
+					if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=TipoDependenciaId:6&limit=0", &respuesta); err == nil {
+						for i := 0; i < len(respuesta); i++ {
+							unidades = append(unidades, respuesta[i]["DependenciaId"].(map[string]interface{}))
+						}
+						respuesta = nil
+						if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=TipoDependenciaId:7&limit=0", &respuesta); err == nil {
+							for i := 0; i < len(respuesta); i++ {
+								unidades = append(unidades, respuesta[i]["DependenciaId"].(map[string]interface{}))
+							}
+							respuesta = nil
+
+							if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=TipoDependenciaId:8&limit=0", &respuesta); err == nil {
+								for i := 0; i < len(respuesta); i++ {
+									unidades = append(unidades, respuesta[i]["DependenciaId"].(map[string]interface{}))
+								}
+								respuesta = nil
+
+								if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=TipoDependenciaId:13&limit=0", &respuesta); err == nil {
+									for i := 0; i < len(respuesta); i++ {
+										unidades = append(unidades, respuesta[i]["DependenciaId"].(map[string]interface{}))
+									}
+									respuesta = nil
+
+									if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=TipoDependenciaId:15&limit=0", &respuesta); err == nil {
+										for i := 0; i < len(respuesta); i++ {
+											aux := respuesta[i]["DependenciaId"]
+											if strings.Contains(aux.(map[string]interface{})["Nombre"].(string), "DOCTORADO") {
+												unidades = append(unidades, respuesta[i]["DependenciaId"].(map[string]interface{}))
+											}
+										}
+										respuesta = nil
+
+										if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=TipoDependenciaId:11&limit=0", &respuesta); err == nil {
+											for i := 0; i < len(respuesta); i++ {
+												unidades = append(unidades, respuesta[i]["DependenciaId"].(map[string]interface{}))
+											}
+											respuesta = nil
+
+											if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=TipoDependenciaId:28&limit=0", &respuesta); err == nil {
+												for i := 0; i < len(respuesta); i++ {
+													unidades = append(unidades, respuesta[i]["DependenciaId"].(map[string]interface{}))
+												}
+												respuesta = nil
+
+												if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=TipoDependenciaId:33&limit=0", &respuesta); err == nil {
+													for i := 0; i < len(respuesta); i++ {
+														unidades = append(unidades, respuesta[i]["DependenciaId"].(map[string]interface{}))
+													}
+													respuesta = nil
+													c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": unidades}
+
+												} else {
+													panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+												}
+
+											} else {
+												panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+											}
+										} else {
+											panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+										}
+									} else {
+										panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+									}
+								} else {
+									panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+								}
+							} else {
+								panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+							}
+						} else {
+							panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+						}
+					} else {
+						panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+					}
+				} else {
+					panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+				}
+			} else {
+				panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+			}
+
+		} else {
+			panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+		}
+
+	} else {
+		panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+	}
+
 	c.ServeJSON()
 }
