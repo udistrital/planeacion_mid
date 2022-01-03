@@ -38,7 +38,6 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("PonderacionActividades", c.PonderacionActividades)
 	c.Mapping("GetRubros", c.GetRubros)
 	c.Mapping("GetUnidades", c.GetUnidades)
-
 }
 
 // ClonarFormato ...
@@ -482,9 +481,11 @@ func (c *FormulacionController) GuardarIdentificacion() {
 		helpers.LimpiezaRespuestaRefactor(res, &respuesta)
 		jsonString, _ := json.Marshal(respuesta[0]["_id"])
 		json.Unmarshal(jsonString, &idStr)
+
 		identificacion = respuesta[0]
 		b, _ := json.Marshal(entrada)
 		str := string(b)
+
 		identificacion["dato"] = str
 		if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/identificacion/"+idStr, "PUT", &resJ, identificacion); err != nil {
 			panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error actualizando identificacion \"idStr\"", "status": "400", "log": err})
@@ -515,26 +516,90 @@ func (c *FormulacionController) GetAllIdentificacion() {
 	var identificacion map[string]interface{}
 	var dato map[string]interface{}
 	var data_identi []map[string]interface{}
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id+",tipo_identificacion_id:"+tipoIdenti, &res); err == nil {
-		helpers.LimpiezaRespuestaRefactor(res, &respuesta)
-		identificacion = respuesta[0]
+	if tipoIdenti == "61897518f6fc97091727c3c3" {
+		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id+",tipo_identificacion_id:"+tipoIdenti, &res); err == nil {
+			helpers.LimpiezaRespuestaRefactor(res, &respuesta)
+			identificacion = respuesta[0]
+			if identificacion["dato"] != nil || identificacion["dato"] != "{}" {
+				result := make(map[string]interface{})
+				dato_str := identificacion["dato"].(string)
+				json.Unmarshal([]byte(dato_str), &dato)
 
-		if identificacion["dato"] != nil {
-			dato_str := identificacion["dato"].(string)
-			json.Unmarshal([]byte(dato_str), &dato)
-			for key := range dato {
-				element := dato[key].(map[string]interface{})
-				if element["activo"] == true {
-					data_identi = append(data_identi, element)
+				var identi map[string]interface{}
+				dato_aux := dato["honorarios"].(string)
+				json.Unmarshal([]byte(dato_aux), &identi)
+
+				for key := range identi {
+					element := identi[key].(map[string]interface{})
+					if element["activo"] == true {
+						data_identi = append(data_identi, element)
+					}
 				}
+				result["honorarios"] = data_identi
+				data_identi = nil
+
+				dato_aux = dato["prestacional"].(string)
+				json.Unmarshal([]byte(dato_aux), &identi)
+				for key := range identi {
+					element := identi[key].(map[string]interface{})
+					if element["activo"] == true {
+						data_identi = append(data_identi, element)
+					}
+				}
+				result["prestacional"] = data_identi
+				data_identi = nil
+
+				dato_aux = dato["tco"].(string)
+				json.Unmarshal([]byte(dato_aux), &identi)
+				for key := range identi {
+					element := identi[key].(map[string]interface{})
+					if element["activo"] == true {
+						data_identi = append(data_identi, element)
+					}
+				}
+				result["tco"] = data_identi
+				data_identi = nil
+
+				dato_aux = dato["mto"].(string)
+				json.Unmarshal([]byte(dato_aux), &identi)
+				for key := range identi {
+					element := identi[key].(map[string]interface{})
+					if element["activo"] == true {
+						data_identi = append(data_identi, element)
+					}
+				}
+				result["mto"] = data_identi
+				data_identi = nil
+
+				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": result}
+
 			}
+
 		}
 
-		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": data_identi}
-
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-		c.Abort("400")
+		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id+",tipo_identificacion_id:"+tipoIdenti, &res); err == nil {
+			helpers.LimpiezaRespuestaRefactor(res, &respuesta)
+			identificacion = respuesta[0]
+
+			if identificacion["dato"] != nil {
+				dato_str := identificacion["dato"].(string)
+				json.Unmarshal([]byte(dato_str), &dato)
+				for key := range dato {
+					element := dato[key].(map[string]interface{})
+					if element["activo"] == true {
+						data_identi = append(data_identi, element)
+					}
+				}
+			}
+
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": data_identi}
+
+		} else {
+			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+			c.Abort("400")
+		}
+
 	}
 
 	c.ServeJSON()
@@ -744,7 +809,6 @@ func (c *FormulacionController) GetRubros() {
 
 	var respuesta map[string]interface{}
 	var rubros []interface{}
-	fmt.Print("http://" + beego.AppConfig.String("PlanCuentasService") + "/arbol_rubro")
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro", &respuesta); err != nil {
 		panic(map[string]interface{}{"funcion": "GetRubros", "err": "Error arbol_rubros", "status": "400", "log": err})
 	} else {
