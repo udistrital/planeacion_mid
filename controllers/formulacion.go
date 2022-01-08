@@ -520,7 +520,7 @@ func (c *FormulacionController) GetAllIdentificacion() {
 		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id+",tipo_identificacion_id:"+tipoIdenti, &res); err == nil {
 			helpers.LimpiezaRespuestaRefactor(res, &respuesta)
 			identificacion = respuesta[0]
-			if identificacion["dato"] != nil || identificacion["dato"] != "{}" {
+			if identificacion["dato"] != nil && identificacion["dato"] != "{}" {
 				result := make(map[string]interface{})
 				dato_str := identificacion["dato"].(string)
 				json.Unmarshal([]byte(dato_str), &dato)
