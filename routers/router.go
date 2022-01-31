@@ -31,6 +31,11 @@ func init() {
 				&controllers.FormulacionController{},
 			),
 		),
+		beego.NSNamespace("/seguimiento",
+			beego.NSInclude(
+				&controllers.SeguimientoController{},
+			),
+		),
 	)
 	beego.AddNamespace(ns)
 }
