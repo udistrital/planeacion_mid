@@ -12,22 +12,22 @@ func GetTrimestres(vigencia string) []map[string]interface{} {
 	var trimestre []map[string]interface{}
 	var trimestres []map[string]interface{}
 
-	if err := request.GetJson(beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=PeriodoId:"+vigencia+",ParametroId:641", &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=PeriodoId:"+vigencia+",ParametroId:641", &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &trimestre)
 		trimestres = append(trimestres, trimestre...)
 
 		trimestre = nil
-		if err := request.GetJson(beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=PeriodoId:"+vigencia+",ParametroId:642", &res); err == nil {
+		if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=PeriodoId:"+vigencia+",ParametroId:642", &res); err == nil {
 			helpers.LimpiezaRespuestaRefactor(res, &trimestre)
 			trimestres = append(trimestres, trimestre...)
 
 			trimestre = nil
-			if err := request.GetJson(beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=PeriodoId:"+vigencia+",ParametroId:643", &res); err == nil {
+			if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=PeriodoId:"+vigencia+",ParametroId:643", &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &trimestre)
 				trimestres = append(trimestres, trimestre...)
 
 				trimestre = nil
-				if err := request.GetJson(beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=PeriodoId:"+vigencia+",ParametroId:644", &res); err == nil {
+				if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=PeriodoId:"+vigencia+",ParametroId:644", &res); err == nil {
 					helpers.LimpiezaRespuestaRefactor(res, &trimestre)
 					trimestres = append(trimestres, trimestre...)
 				} else {
