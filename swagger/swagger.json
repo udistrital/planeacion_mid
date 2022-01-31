@@ -900,6 +900,84 @@
                     }
                 }
             }
+        },
+        "/seguimiento/crear_reportes/{plan}/{tipo}": {
+            "post": {
+                "tags": [
+                    "seguimiento"
+                ],
+                "description": "get Seguimiento",
+                "operationId": "SeguimientoController.CrearReportes",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "periodo",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "403": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/seguimiento/get_periodos/{vigencia}": {
+            "get": {
+                "tags": [
+                    "seguimiento"
+                ],
+                "description": "get Seguimiento",
+                "operationId": "SeguimientoController.GetPeriodos",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "periodo",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "403": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/seguimiento/habilitar_reportes/{periodo}": {
+            "put": {
+                "tags": [
+                    "seguimiento"
+                ],
+                "description": "get Seguimiento",
+                "operationId": "SeguimientoController.HabilitarReportes",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "periodo",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "403": {
+                        "description": ""
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -932,6 +1010,10 @@
         {
             "name": "formulacion",
             "description": "FormulacionController operations for Formulacion\n"
+        },
+        {
+            "name": "seguimiento",
+            "description": "SeguimientoController operations for Seguimiento\n"
         }
     ]
 }
