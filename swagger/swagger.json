@@ -927,6 +927,32 @@
                 }
             }
         },
+        "/seguimiento/get_actividades/{plan_id}": {
+            "get": {
+                "tags": [
+                    "seguimiento"
+                ],
+                "description": "get Seguimiento",
+                "operationId": "SeguimientoController.GetActividadeGenerales",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "periodo",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "403": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/seguimiento/get_periodos/{vigencia}": {
             "get": {
                 "tags": [
