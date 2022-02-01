@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"strings"
+
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
 	seguimientohelper "github.com/udistrital/planeacion_mid/helpers/seguimientoHelper"
@@ -17,6 +19,8 @@ func (c *SeguimientoController) URLMapping() {
 	c.Mapping("HabilitarReportes", c.HabilitarReportes)
 	c.Mapping("CrearReportes", c.CrearReportes)
 	c.Mapping("GetPeriodos", c.GetPeriodos)
+	c.Mapping("GetActividadesGenerales", c.GetActividadesGenerales)
+
 }
 
 // HabilitarReportes ...
@@ -110,5 +114,35 @@ func (c *SeguimientoController) GetPeriodos() {
 	vigencia := c.Ctx.Input.Param(":vigencia")
 	trimestres := seguimientohelper.GetTrimestres(vigencia)
 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": trimestres}
+	c.ServeJSON()
+}
+
+// GetActividadesGenerales ...
+// @Title GetActividadeGenerales
+// @Description get Seguimiento
+// @Param	periodo 	path 	string	true		"The key for staticblock"
+// @Success 200
+// @Failure 403
+// @router /get_actividades/:plan_id [get]
+func (c *SeguimientoController) GetActividadesGenerales() {
+	plan_id := c.Ctx.Input.Param(":plan_id")
+	var res map[string]interface{}
+	var subgrupos []map[string]interface{}
+
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id, &res); err == nil {
+		helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
+
+		for i := 0; i < len(subgrupos); i++ {
+			if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") && strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "general") {
+				actividades := seguimientohelper.GetActividades(subgrupos[i]["_id"].(string))
+				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": actividades}
+
+				break
+			}
+		}
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+		c.Abort("400")
+	}
 	c.ServeJSON()
 }
