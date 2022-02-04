@@ -20,6 +20,7 @@ func (c *SeguimientoController) URLMapping() {
 	c.Mapping("CrearReportes", c.CrearReportes)
 	c.Mapping("GetPeriodos", c.GetPeriodos)
 	c.Mapping("GetActividadesGenerales", c.GetActividadesGenerales)
+	c.Mapping("GetDataActividad", c.GetDataActividad)
 
 }
 
@@ -144,5 +145,30 @@ func (c *SeguimientoController) GetActividadesGenerales() {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 		c.Abort("400")
 	}
+	c.ServeJSON()
+}
+
+// GetDataActividad ...
+// @Title GetDataActividad
+// @Description get Seguimiento
+// @Param	periodo 	path 	string	true		"The key for staticblock"
+// @Success 200
+// @Failure 403
+// @router /get_data/:plan_id/:index [get]
+func (c *SeguimientoController) GetDataActividad() {
+	plan_id := c.Ctx.Input.Param(":plan_id")
+	index := c.Ctx.Input.Param(":index")
+	var res map[string]interface{}
+	var hijos []map[string]interface{}
+
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan_id, &res); err == nil {
+		helpers.LimpiezaRespuestaRefactor(res, &hijos)
+		data := seguimientohelper.GetDataSubgrupos(hijos, index)
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": data}
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+		c.Abort("400")
+	}
+
 	c.ServeJSON()
 }
