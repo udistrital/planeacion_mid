@@ -2,6 +2,7 @@ package seguimientohelper
 
 import (
 	"encoding/json"
+
 	"log"
 	"strings"
 
@@ -107,20 +108,29 @@ func GetDataSubgrupos(subgrupos []map[string]interface{}, index string) map[stri
 		if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "indicador") {
 			var res map[string]interface{}
 			var hijos []map[string]interface{}
+			var indicadores []map[string]interface{}
+			var metas []map[string]interface{}
 			if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+subgrupos[i]["_id"].(string), &res); err != nil {
 				panic(map[string]interface{}{"funcion": "GetDataSubgrupos", "err": "Error get indicador \"key\"", "status": "400", "log": err})
 			}
+
 			helpers.LimpiezaRespuestaRefactor(res, &hijos)
 			for j := range hijos {
 				if strings.Contains(strings.ToLower(hijos[j]["nombre"].(string)), "indicador") {
 					aux := getSubgrupoDetalle(hijos[j]["_id"].(string), index)
 					auxSubgrupo["indicador"] = aux["dato"]
+					indicadores = append(indicadores, aux)
 				}
 				if strings.Contains(strings.ToLower(hijos[j]["nombre"].(string)), "meta") {
 					aux := getSubgrupoDetalle(hijos[j]["_id"].(string), index)
 					auxSubgrupo["meta"] = aux["dato"]
+					metas = append(metas, aux)
+
 				}
 			}
+			auxSubgrupo["indicador"] = indicadores
+			auxSubgrupo["meta"] = metas
+
 		}
 
 		if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "tarea") {
