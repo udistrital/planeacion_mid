@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"strings"
 
 	"github.com/astaxie/beego"
@@ -21,6 +22,8 @@ func (c *SeguimientoController) URLMapping() {
 	c.Mapping("GetPeriodos", c.GetPeriodos)
 	c.Mapping("GetActividadesGenerales", c.GetActividadesGenerales)
 	c.Mapping("GetDataActividad", c.GetDataActividad)
+	c.Mapping("GuardarSeguimiento", c.GuardarSeguimiento)
+	c.Mapping("GetSeguimiento", c.GetSeguimiento)
 
 }
 
@@ -165,6 +168,97 @@ func (c *SeguimientoController) GetDataActividad() {
 		helpers.LimpiezaRespuestaRefactor(res, &hijos)
 		data := seguimientohelper.GetDataSubgrupos(hijos, index)
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": data}
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+		c.Abort("400")
+	}
+
+	c.ServeJSON()
+}
+
+// GuardarSeguimiento ...
+// @Title GuardarSeguimiento
+// @Description post Seguimiento by id
+// @Param	plan_id		path 	string	true		"The key for staticblock"
+// @Param	index		path 	string	true		"The key for staticblock"
+// @Param	trimestre	path 	string	true		"The key for staticblock"
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Success 200 {object} models.Seguimiento
+// @Failure 403 :plan_id is empty
+// @router /guardar_seguimiento/:plan_id/:index/:trimestre [post]
+func (c *SeguimientoController) GuardarSeguimiento() {
+	planId := c.Ctx.Input.Param(":plan_id")
+	indexActividad := c.Ctx.Input.Param(":index")
+	trimestre := c.Ctx.Input.Param(":trimestre")
+
+	var body map[string]interface{}
+	var respuesta map[string]interface{}
+	var seguimiento map[string]interface{}
+	dato := make(map[string]interface{})
+
+	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_id:"+trimestre, &respuesta); err == nil {
+		aux := make([]map[string]interface{}, 1)
+		helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
+		seguimiento = aux[0]
+		if seguimiento["dato"] == "{}" {
+			dato[indexActividad] = body
+			b, _ := json.Marshal(dato)
+			str := string(b)
+			seguimiento["dato"] = str
+		} else {
+			datoStr := seguimiento["dato"].(string)
+			json.Unmarshal([]byte(datoStr), &dato)
+
+			dato[indexActividad] = body
+			b, _ := json.Marshal(dato)
+			str := string(b)
+			seguimiento["dato"] = str
+		}
+		if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+			panic(map[string]interface{}{"funcion": "GuardarSeguimiento", "err": "Error actualizando seguimiento \"seguimiento[\"_id\"].(string)\"", "status": "400", "log": err})
+		}
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": respuesta["Data"]}
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+		c.Abort("400")
+	}
+	c.ServeJSON()
+
+}
+
+// GetSeguimiento ...
+// @Title GetSeguimiento
+// @Description get Seguimiento
+// @Param	periodo 	path 	string	true		"The key for staticblock"
+// @Success 200
+// @Failure 403
+// @router /get_seguimiento/:plan_id/:index/:trimestre [get]
+func (c *SeguimientoController) GetSeguimiento() {
+	planId := c.Ctx.Input.Param(":plan_id")
+	indexActividad := c.Ctx.Input.Param(":index")
+	trimestre := c.Ctx.Input.Param(":trimestre")
+	var respuesta map[string]interface{}
+	var seguimiento map[string]interface{}
+	var seguimientoActividad map[string]interface{}
+	dato := make(map[string]interface{})
+
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_id:"+trimestre, &respuesta); err == nil {
+		aux := make([]map[string]interface{}, 1)
+		helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
+		seguimiento = aux[0]
+
+		if seguimiento["dato"] == "{}" {
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": ""}
+		} else {
+			datoStr := seguimiento["dato"].(string)
+			json.Unmarshal([]byte(datoStr), &dato)
+
+			seguimientoActividad = dato[indexActividad].(map[string]interface{})
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": seguimientoActividad}
+
+		}
 	} else {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 		c.Abort("400")

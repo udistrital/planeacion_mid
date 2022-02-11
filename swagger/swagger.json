@@ -1005,6 +1005,84 @@
                 }
             }
         },
+        "/seguimiento/get_seguimiento/{plan_id}/{index}/{trimestre}": {
+            "get": {
+                "tags": [
+                    "seguimiento"
+                ],
+                "description": "get Seguimiento",
+                "operationId": "SeguimientoController.GetSeguimiento",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "periodo",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "403": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/seguimiento/guardar_seguimiento/{plan_id}/{index}/{trimestre}": {
+            "post": {
+                "tags": [
+                    "seguimiento"
+                ],
+                "description": "post Seguimiento by id",
+                "operationId": "SeguimientoController.GuardarSeguimiento",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "plan_id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "index",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "trimestre",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Seguimiento"
+                        }
+                    },
+                    "403": {
+                        "description": ":plan_id is empty"
+                    }
+                }
+            }
+        },
         "/seguimiento/habilitar_reportes/{periodo}": {
             "put": {
                 "tags": [
@@ -1043,6 +1121,10 @@
         },
         "models.Formulacion": {
             "title": "Formulacion",
+            "type": "object"
+        },
+        "models.Seguimiento": {
+            "title": "Seguimiento",
             "type": "object"
         },
         "{}": {
