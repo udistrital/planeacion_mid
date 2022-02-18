@@ -650,6 +650,23 @@ paths:
           description: ""
         "403":
           description: ""
+  /seguimiento/get_indicadores/{plan_id}:
+    get:
+      tags:
+      - seguimiento
+      description: get Seguimiento
+      operationId: SeguimientoController.Indicadores
+      parameters:
+      - in: path
+        name: plan_id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+        "403":
+          description: ""
   /seguimiento/get_periodos/{vigencia}:
     get:
       tags:

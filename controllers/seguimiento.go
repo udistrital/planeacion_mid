@@ -24,6 +24,7 @@ func (c *SeguimientoController) URLMapping() {
 	c.Mapping("GetDataActividad", c.GetDataActividad)
 	c.Mapping("GuardarSeguimiento", c.GuardarSeguimiento)
 	c.Mapping("GetSeguimiento", c.GetSeguimiento)
+	c.Mapping("GetIndicadores", c.GetIndicadores)
 
 }
 
@@ -254,7 +255,6 @@ func (c *SeguimientoController) GetSeguimiento() {
 		} else {
 			datoStr := seguimiento["dato"].(string)
 			json.Unmarshal([]byte(datoStr), &dato)
-
 			seguimientoActividad = dato[indexActividad].(map[string]interface{})
 			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": seguimientoActividad}
 
@@ -264,5 +264,48 @@ func (c *SeguimientoController) GetSeguimiento() {
 		c.Abort("400")
 	}
 
+	c.ServeJSON()
+}
+
+// GetIndicadores ...
+// @Title Indicadores
+// @Description get Seguimiento
+// @Param	plan_id 	path 	string	true		"The key for staticblock"
+// @Success 200
+// @Failure 403
+// @router /get_indicadores/:plan_id [get]
+func (c *SeguimientoController) GetIndicadores() {
+	plan_id := c.Ctx.Input.Param(":plan_id")
+	var res map[string]interface{}
+	var subgrupos []map[string]interface{}
+	var hijos []map[string]interface{}
+	var indicadores []map[string]interface{}
+
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id, &res); err == nil {
+		helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
+
+		for i := 0; i < len(subgrupos); i++ {
+			if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "indicador") {
+
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+subgrupos[i]["_id"].(string), &res); err == nil {
+					helpers.LimpiezaRespuestaRefactor(res, &hijos)
+					for j := range hijos {
+						if strings.Contains(strings.ToLower(hijos[j]["nombre"].(string)), "indicador") {
+							aux := hijos[j]
+							indicadores = append(indicadores, aux)
+						}
+					}
+					c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": indicadores}
+				} else {
+					c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+					c.Abort("400")
+				}
+				break
+			}
+		}
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+		c.Abort("400")
+	}
 	c.ServeJSON()
 }
