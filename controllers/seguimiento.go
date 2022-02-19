@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"strings"
+	"encoding/json"
+	"fmt"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
@@ -21,6 +23,7 @@ func (c *SeguimientoController) URLMapping() {
 	c.Mapping("GetPeriodos", c.GetPeriodos)
 	c.Mapping("GetActividadesGenerales", c.GetActividadesGenerales)
 	c.Mapping("GetDataActividad", c.GetDataActividad)
+	c.Mapping("GetAvanceIndicador", c.GetAvanceIndicador)
 
 }
 
@@ -169,6 +172,55 @@ func (c *SeguimientoController) GetDataActividad() {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 		c.Abort("400")
 	}
+
+	c.ServeJSON()
+}
+
+// GetAvanceIndicador ...
+// @Title GetAvanceIndicador
+// @Description post Seguimiento
+// @Param	periodo 	path 	string	true		"The key for staticblock"
+// @Success 200
+// @Failure 403
+// @router /get_avance [post]
+func (c *SeguimientoController) GetAvanceIndicador() {
+	var avance map[string]interface{}
+	var res map[string]interface{}
+	var avancedata []map[string]interface{}
+	var dato map[string]interface{}
+	var seguimiento map[string]interface{}
+	// var nombreIndicador map[string]interface{}
+	json.Unmarshal(c.Ctx.Input.RequestBody, &avance)
+
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+avance["plan_id"].(string)+",periodo_id:"+avance["periodo_id"].(string), &res); err == nil {
+		helpers.LimpiezaRespuestaRefactor(res, &avancedata)
+		seguimiento = avancedata[0]
+		datoStr := seguimiento["dato"].(string)
+		json.Unmarshal([]byte(datoStr), &dato)
+		// pruebita := dato[avance["index"].(string)]
+		// testensayo := pruebita["Nombre_del_indicador"]
+		// json.Unmarshal([]byte(pruebita), &nombreIndicador)
+		// data := seguimientohelper.GetDataSubgrupos(hijos, index)
+		fmt.Println(datoStr)
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": dato[avance["index"].(string)]}
+		fmt.Println(dato)
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+		c.Abort("400")
+	}
+
+
+	// var res map[string]interface{}
+	// var hijos []map[string]interface{}
+
+	// if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan_id, &res); err == nil {
+	// 	helpers.LimpiezaRespuestaRefactor(res, &hijos)
+	// 	data := seguimientohelper.GetDataSubgrupos(hijos, index)
+	// 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": data}
+	// } else {
+	// 	c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+	// 	c.Abort("400")
+	// }
 
 	c.ServeJSON()
 }
