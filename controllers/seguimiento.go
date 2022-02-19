@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"strings"
 	"encoding/json"
+	"strings"
 	"fmt"
 
 	"github.com/astaxie/beego"
@@ -23,8 +23,10 @@ func (c *SeguimientoController) URLMapping() {
 	c.Mapping("GetPeriodos", c.GetPeriodos)
 	c.Mapping("GetActividadesGenerales", c.GetActividadesGenerales)
 	c.Mapping("GetDataActividad", c.GetDataActividad)
+	c.Mapping("GuardarSeguimiento", c.GuardarSeguimiento)
+	c.Mapping("GetSeguimiento", c.GetSeguimiento)
+	c.Mapping("GetIndicadores", c.GetIndicadores)
 	c.Mapping("GetAvanceIndicador", c.GetAvanceIndicador)
-
 }
 
 // HabilitarReportes ...
@@ -176,6 +178,139 @@ func (c *SeguimientoController) GetDataActividad() {
 	c.ServeJSON()
 }
 
+// GuardarSeguimiento ...
+// @Title GuardarSeguimiento
+// @Description post Seguimiento by id
+// @Param	plan_id		path 	string	true		"The key for staticblock"
+// @Param	index		path 	string	true		"The key for staticblock"
+// @Param	trimestre	path 	string	true		"The key for staticblock"
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Success 200 {object} models.Seguimiento
+// @Failure 403 :plan_id is empty
+// @router /guardar_seguimiento/:plan_id/:index/:trimestre [post]
+func (c *SeguimientoController) GuardarSeguimiento() {
+	planId := c.Ctx.Input.Param(":plan_id")
+	indexActividad := c.Ctx.Input.Param(":index")
+	trimestre := c.Ctx.Input.Param(":trimestre")
+
+	var body map[string]interface{}
+	var respuesta map[string]interface{}
+	var seguimiento map[string]interface{}
+	dato := make(map[string]interface{})
+
+	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_id:"+trimestre, &respuesta); err == nil {
+		aux := make([]map[string]interface{}, 1)
+		helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
+		seguimiento = aux[0]
+		if seguimiento["dato"] == "{}" {
+			dato[indexActividad] = body
+			b, _ := json.Marshal(dato)
+			str := string(b)
+			seguimiento["dato"] = str
+		} else {
+			datoStr := seguimiento["dato"].(string)
+			json.Unmarshal([]byte(datoStr), &dato)
+
+			dato[indexActividad] = body
+			b, _ := json.Marshal(dato)
+			str := string(b)
+			seguimiento["dato"] = str
+		}
+		if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+			panic(map[string]interface{}{"funcion": "GuardarSeguimiento", "err": "Error actualizando seguimiento \"seguimiento[\"_id\"].(string)\"", "status": "400", "log": err})
+		}
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": respuesta["Data"]}
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+		c.Abort("400")
+	}
+	c.ServeJSON()
+
+}
+
+// GetSeguimiento ...
+// @Title GetSeguimiento
+// @Description get Seguimiento
+// @Param	periodo 	path 	string	true		"The key for staticblock"
+// @Success 200
+// @Failure 403
+// @router /get_seguimiento/:plan_id/:index/:trimestre [get]
+func (c *SeguimientoController) GetSeguimiento() {
+	planId := c.Ctx.Input.Param(":plan_id")
+	indexActividad := c.Ctx.Input.Param(":index")
+	trimestre := c.Ctx.Input.Param(":trimestre")
+	var respuesta map[string]interface{}
+	var seguimiento map[string]interface{}
+	var seguimientoActividad map[string]interface{}
+	dato := make(map[string]interface{})
+
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_id:"+trimestre, &respuesta); err == nil {
+		aux := make([]map[string]interface{}, 1)
+		helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
+		seguimiento = aux[0]
+
+		if seguimiento["dato"] == "{}" {
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": ""}
+		} else {
+			datoStr := seguimiento["dato"].(string)
+			json.Unmarshal([]byte(datoStr), &dato)
+			seguimientoActividad = dato[indexActividad].(map[string]interface{})
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": seguimientoActividad}
+
+		}
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+		c.Abort("400")
+	}
+
+	c.ServeJSON()
+}
+
+// GetIndicadores ...
+// @Title Indicadores
+// @Description get Seguimiento
+// @Param	plan_id 	path 	string	true		"The key for staticblock"
+// @Success 200
+// @Failure 403
+// @router /get_indicadores/:plan_id [get]
+func (c *SeguimientoController) GetIndicadores() {
+	plan_id := c.Ctx.Input.Param(":plan_id")
+	var res map[string]interface{}
+	var subgrupos []map[string]interface{}
+	var hijos []map[string]interface{}
+	var indicadores []map[string]interface{}
+
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id, &res); err == nil {
+		helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
+
+		for i := 0; i < len(subgrupos); i++ {
+			if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "indicador") {
+
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+subgrupos[i]["_id"].(string), &res); err == nil {
+					helpers.LimpiezaRespuestaRefactor(res, &hijos)
+					for j := range hijos {
+						if strings.Contains(strings.ToLower(hijos[j]["nombre"].(string)), "indicador") {
+							aux := hijos[j]
+							indicadores = append(indicadores, aux)
+						}
+					}
+					c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": indicadores}
+				} else {
+					c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+					c.Abort("400")
+				}
+				break
+			}
+		}
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+		c.Abort("400")
+	}
+	c.ServeJSON()
+}
+
 // GetAvanceIndicador ...
 // @Title GetAvanceIndicador
 // @Description post Seguimiento
@@ -209,7 +344,7 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 		c.Abort("400")
 	}
 
-
+	
 	// var res map[string]interface{}
 	// var hijos []map[string]interface{}
 
