@@ -115,8 +115,8 @@ paths:
     delete:
       tags:
       - arbol
-      description: delete the Arbol
-      operationId: ArbolController.Delete
+      description: delete the Plan Arbol
+      operationId: ArbolController.DeletePlan
       parameters:
       - in: path
         name: id
@@ -128,11 +128,657 @@ paths:
           description: '{string} delete success!'
         "403":
           description: id is empty
+  /formato/:
+    get:
+      tags:
+      - formato
+      description: get Formato
+      operationId: FormatoController.GetAll
+      parameters:
+      - in: query
+        name: query
+        description: Filter. e.g. col1:v1,col2:v2 ...
+        type: string
+      - in: query
+        name: fields
+        description: Fields returned. e.g. col1,col2 ...
+        type: string
+      - in: query
+        name: sortby
+        description: Sorted-by fields. e.g. col1,col2 ...
+        type: string
+      - in: query
+        name: order
+        description: Order corresponding to each sortby field, if single value, apply
+          to all sortby fields. e.g. desc,asc ...
+        type: string
+      - in: query
+        name: limit
+        description: Limit the size of result set. Must be an integer
+        type: string
+      - in: query
+        name: offset
+        description: Start position of result set. Must be an integer
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formato'
+        "403":
+          description: ""
+    post:
+      tags:
+      - formato
+      description: create Formato
+      operationId: FormatoController.Create
+      parameters:
+      - in: body
+        name: body
+        description: body for Formato content
+        required: true
+        schema:
+          $ref: '#/definitions/models.Formato'
+      responses:
+        "201":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formato'
+        "403":
+          description: body is empty
+  /formato/{id}:
+    get:
+      tags:
+      - formato
+      description: get Formato by id
+      operationId: FormatoController.GetFormato
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formato'
+        "403":
+          description: :id is empty
+    put:
+      tags:
+      - formato
+      description: update the Formato
+      operationId: FormatoController.Put
+      parameters:
+      - in: path
+        name: id
+        description: The id you want to update
+        required: true
+        type: string
+      - in: body
+        name: body
+        description: body for Formato content
+        required: true
+        schema:
+          $ref: '#/definitions/models.Formato'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formato'
+        "403":
+          description: :id is not int
+    delete:
+      tags:
+      - formato
+      description: delete the Formato
+      operationId: FormatoController.Delete
+      parameters:
+      - in: path
+        name: id
+        description: The id you want to delete
+        required: true
+        type: string
+      responses:
+        "200":
+          description: '{string} delete success!'
+        "403":
+          description: id is empty
+  /formulacion/actualizar_actividad/{id}/{index}:
+    put:
+      tags:
+      - formulacion
+      description: put Formulacion by id
+      operationId: FormulacionController.ActualizarActividad
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: index
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /formulacion/clonar_formato/{id}:
+    post:
+      tags:
+      - formulacion
+      description: post Formulacion by id
+      operationId: FormulacionController.ClonarFormato
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /formulacion/delete_actividad/{id}/{index}:
+    put:
+      tags:
+      - formulacion
+      description: put Formulacion by id
+      operationId: FormulacionController.DeleteActividad
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: index
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /formulacion/delete_identificacion/{id}/{idTipo}/{index}:
+    put:
+      tags:
+      - formulacion
+      description: put Formulacion by id
+      operationId: FormulacionController.DeleteIdentificacion
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: idTipo
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: index
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /formulacion/get_all_actividades/{id}/:
+    get:
+      tags:
+      - formulacion
+      description: put Formulacion by id
+      operationId: FormulacionController.GetAllActividades
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /formulacion/get_all_identificacion/{id}/{idTipo}:
+    get:
+      tags:
+      - formulacion
+      description: put Formulacion by id
+      operationId: FormulacionController.GetAllIdentificacion
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: idTipo
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /formulacion/get_arbol_armonizacion/{id}/:
+    post:
+      tags:
+      - formulacion
+      description: post Formulacion by id
+      operationId: FormulacionController.GetArbolArmonizacion
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /formulacion/get_plan/{id}/{index}:
+    get:
+      tags:
+      - formulacion
+      description: get Plan by id
+      operationId: FormulacionController.GetPlan
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: index
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /formulacion/get_plan_versiones/{unidad}/{vigencia}/{nombre}:
+    get:
+      tags:
+      - formulacion
+      description: get Formulacion by id
+      operationId: FormulacionController.GetPlanVersiones
+      parameters:
+      - in: path
+        name: unidad
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: vigencia
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: nombre
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /formulacion/get_rubros:
+    get:
+      tags:
+      - formulacion
+      description: get Rubros
+      operationId: FormulacionController.GetRubros
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /formulacion/get_unidades:
+    get:
+      tags:
+      - formulacion
+      description: get Unidades
+      operationId: FormulacionController.GetUnidades
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /formulacion/guardar_actividad/{id}:
+    put:
+      tags:
+      - formulacion
+      description: put Formulacion by id
+      operationId: FormulacionController.GuardarActividad
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /formulacion/guardar_identificacion/{id}/{idTipo}:
+    put:
+      tags:
+      - formulacion
+      description: put Formulacion by id
+      operationId: FormulacionController.GuardarIdentificacion
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: idTipo
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /formulacion/ponderacion_actividades/{plan}:
+    get:
+      tags:
+      - formulacion
+      description: get Formulacion by id
+      operationId: FormulacionController.GetPonderacionActividades
+      parameters:
+      - in: path
+        name: plan
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /formulacion/versionar_plan/{id}:
+    post:
+      tags:
+      - formulacion
+      description: post Formulacion by id
+      operationId: FormulacionController.VersionarPlan
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /seguimiento/crear_reportes/{plan}/{tipo}:
+    post:
+      tags:
+      - seguimiento
+      description: get Seguimiento
+      operationId: SeguimientoController.CrearReportes
+      parameters:
+      - in: path
+        name: periodo
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+        "403":
+          description: ""
+  /seguimiento/get_actividades/{plan_id}:
+    get:
+      tags:
+      - seguimiento
+      description: get Seguimiento
+      operationId: SeguimientoController.GetActividadeGenerales
+      parameters:
+      - in: path
+        name: periodo
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+        "403":
+          description: ""
+  /seguimiento/get_data/{plan_id}/{index}:
+    get:
+      tags:
+      - seguimiento
+      description: get Seguimiento
+      operationId: SeguimientoController.GetDataActividad
+      parameters:
+      - in: path
+        name: periodo
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+        "403":
+          description: ""
+  /seguimiento/get_indicadores/{plan_id}:
+    get:
+      tags:
+      - seguimiento
+      description: get Seguimiento
+      operationId: SeguimientoController.Indicadores
+      parameters:
+      - in: path
+        name: plan_id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+        "403":
+          description: ""
+  /seguimiento/get_periodos/{vigencia}:
+    get:
+      tags:
+      - seguimiento
+      description: get Seguimiento
+      operationId: SeguimientoController.GetPeriodos
+      parameters:
+      - in: path
+        name: periodo
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+        "403":
+          description: ""
+  /seguimiento/get_seguimiento/{plan_id}/{index}/{trimestre}:
+    get:
+      tags:
+      - seguimiento
+      description: get Seguimiento
+      operationId: SeguimientoController.GetSeguimiento
+      parameters:
+      - in: path
+        name: periodo
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+        "403":
+          description: ""
+  /seguimiento/guardar_seguimiento/{plan_id}/{index}/{trimestre}:
+    post:
+      tags:
+      - seguimiento
+      description: post Seguimiento by id
+      operationId: SeguimientoController.GuardarSeguimiento
+      parameters:
+      - in: path
+        name: plan_id
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: index
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: trimestre
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Seguimiento'
+        "403":
+          description: :plan_id is empty
+  /seguimiento/habilitar_reportes/{periodo}:
+    put:
+      tags:
+      - seguimiento
+      description: get Seguimiento
+      operationId: SeguimientoController.HabilitarReportes
+      parameters:
+      - in: path
+        name: periodo
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+        "403":
+          description: ""
 definitions:
+  '{}':
+    title: '{}'
+    type: object
   models.Arbol:
     title: Arbol
+    type: object
+  models.Formato:
+    title: Formato
+    type: object
+  models.Formulacion:
+    title: Formulacion
+    type: object
+  models.Seguimiento:
+    title: Seguimiento
     type: object
 tags:
 - name: arbol
   description: |
     ArbolController operations for Arbol
+- name: formato
+  description: |
+    FormatoController operations for Formato
+- name: formulacion
+  description: |
+    FormulacionController operations for Formulacion
+- name: seguimiento
+  description: |
+    SeguimientoController operations for Seguimiento

@@ -3,10 +3,12 @@ package controllers
 import (
 	//"fmt"
 
+	"encoding/json"
+
 	"github.com/astaxie/beego"
-	"github.com/udistrital/planes_mid/helpers"
-	"github.com/udistrital/planes_mid/helpers/arbolHelper"
-	"github.com/udistrital/planes_mid/models"
+	"github.com/udistrital/planeacion_mid/helpers"
+	"github.com/udistrital/planeacion_mid/helpers/arbolHelper"
+	"github.com/udistrital/planeacion_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -47,9 +49,11 @@ func (c *ArbolController) GetArbol() {
 	id := c.Ctx.Input.Param(":id")
 	var res map[string]interface{}
 	var hijos []models.Nodo
+	var hijosID []map[string]interface{}
 	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &hijos)
-		tree := arbolHelper.BuildTree(hijos)
+		helpers.LimpiezaRespuestaRefactor(res, &hijosID)
+		tree := arbolHelper.BuildTree(hijos, hijosID)
 		c.Data["json"] = tree
 	} else {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
@@ -89,12 +93,47 @@ func (c *ArbolController) Put() {
 }
 
 // Delete ...
-// @Title Delete
-// @Description delete the Arbol
+// @Title DeletePlan
+// @Description delete the Plan Arbol
 // @Param	id		path 	string	true		"The id you want to delete"
 // @Success 200 {string} delete success!
 // @Failure 403 id is empty
 // @router /:id [delete]
-func (c *ArbolController) Delete() {
+func (c *ArbolController) DeletePlan() {
+	id := c.Ctx.Input.Param(":id")
+	var plan map[string]interface{}
+
+	if err := request.SendJson(beego.AppConfig.String("PlanesService")+"/plan/delete_plan/"+id, "PUT", &plan, plan); err == nil {
+
+		var res map[string]interface{}
+		var hijos []models.Nodo
+		var hijosId []map[string]interface{}
+		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
+
+			helpers.LimpiezaRespuestaRefactor(res, &hijos)
+			helpers.LimpiezaRespuestaRefactor(res, &hijosId)
+
+			for i := 0; i < len(hijos); i++ {
+				var subgrupo map[string]interface{}
+				var idSubgrupo string
+
+				jsonString, _ := json.Marshal(hijosId[i]["_id"])
+				json.Unmarshal(jsonString, &idSubgrupo)
+				request.SendJson(beego.AppConfig.String("PlanesService")+"/subgrupo/delete_nodo/"+idSubgrupo, "PUT", &res, subgrupo)
+			}
+
+		} else {
+			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": res, "Type": "error subgrupo"}
+			c.Abort("400")
+		}
+
+		c.Data["json"] = plan
+
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error plan"}
+		c.Abort("400")
+	}
+
+	c.ServeJSON()
 
 }

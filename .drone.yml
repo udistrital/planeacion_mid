@@ -11,41 +11,41 @@ kind: pipeline
 name: oas_api_ci
 
 steps:
-# - name: check_readme
-#   image: jjvargass/qa_develoment:latest
-#   commands:
-#   - python /app/check_readme.py
-#   when:
-#     branch:
-#     - develop
-#     - feature/*
-#     - release/*
-#     event:
-#     - push
+- name: check_readme
+  image: jjvargass/qa_develoment:latest
+  commands:
+  - python /app/check_readme.py
+  when:
+    branch:
+    - develop
+    - feature/*
+    - release/*
+    event:
+    - push
 
-# - name: check_branch
-#   image: jjvargass/qa_develoment:latest
-#   commands:
-#   - python /app/check_branch.py -H ${DRONE_GIT_HTTP_URL}
-#   when:
-#     branch:
-#     - develop
-#     - feature/*
-#     - release/*
-#     event:
-#     - push
+- name: check_branch
+  image: jjvargass/qa_develoment:latest
+  commands:
+  - python /app/check_branch.py -H ${DRONE_GIT_HTTP_URL}
+  when:
+    branch:
+    - develop
+    - feature/*
+    - release/*
+    event:
+    - push
 
-# - name: check_commits
-#   image: jjvargass/qa_develoment:latest
-#   commands:
-#   - python /app/check_commits.py
-#   when:
-#     branch:
-#     - develop
-#     - feature/*
-#     - release/*
-#     event:
-#     - push
+- name: check_commits
+  image: jjvargass/qa_develoment:latest
+  commands:
+  - python /app/check_commits.py
+  when:
+    branch:
+    - develop
+    - feature/*
+    - release/*
+    event:
+    - push
 
 - name: go_build
   image: golang:1.14
@@ -62,27 +62,27 @@ steps:
     event:
     - push
 
-- name: go_run_test
-  image: golang:1.14
-  commands:
-  - go get -t
-  - go get github.com/smartystreets/goconvey/convey
-  - GO111MODULE=off go get -u gopkg.in/alecthomas/gometalinter.v1
-  - GO111MODULE=off gometalinter.v1 --install
-  - go get github.com/axw/gocov/...
-  - go get github.com/AlekSi/gocov-xml
-  - go get -u github.com/jstemmer/go-junit-report
-  - GO111MODULE=off gometalinter.v1 ./... --checkstyle | tee report.xml
-  # - gocov test ./... | gocov-xml > coverage.xml
-  # - go test -v ./... | go-junit-report > test.xml
-  when:
-    branch:
-    - develop
-    - feature/*
-    - release/*
+# - name: go_run_test
+#   image: golang:1.14
+#   commands:
+#   - go get -t
+#   - go get github.com/smartystreets/goconvey/convey
+#   - GO111MODULE=off go get -u gopkg.in/alecthomas/gometalinter.v1
+#   - GO111MODULE=off gometalinter.v1 --install
+#   - go get github.com/axw/gocov/...
+#   - go get github.com/AlekSi/gocov-xml
+#   - go get -u github.com/jstemmer/go-junit-report
+#   - GO111MODULE=off gometalinter.v1 ./... --checkstyle | tee report.xml
+#   # - gocov test ./... | gocov-xml > coverage.xml
+#   # - go test -v ./... | go-junit-report > test.xml
+#   when:
+#     branch:
+#     - develop
+#     - feature/*
+#     - release/*
    
-    event:
-    - push
+#     event:
+#     - push
 
 - name: run_sonar_scanner
   image: aosapps/drone-sonar-plugin

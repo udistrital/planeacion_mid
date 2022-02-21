@@ -1,31 +1,34 @@
 package arbolHelper
 
 import (
-	"fmt"
+	//"fmt"
 
 	"github.com/astaxie/beego"
-	"github.com/udistrital/planes_mid/helpers"
-	"github.com/udistrital/planes_mid/models"
+	"github.com/udistrital/planeacion_mid/helpers"
+	"github.com/udistrital/planeacion_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
 
-func BuildTree(hijos []models.Nodo) []map[string]interface{} {
+func BuildTree(hijos []models.Nodo, hijosID []map[string]interface{}) []map[string]interface{} {
 
 	var tree []map[string]interface{}
 
-	for _, hijo := range hijos {
+	for i := 0; i < len(hijos); i++ {
+
 		forkData := make(map[string]interface{})
-		//forkData["data"] = hijo
-		forkData["id"] = hijo.Id
-		forkData["nombre"] = hijo.Nombre
-		forkData["descripcion"] = hijo.Descripcion
-		forkData["activo"] = hijo.Activo
-		fmt.Println(getChildren(hijo.Hijos))
-		if len(hijo.Hijos) > 0 {
-			forkData["children"] = make([]map[string]interface{}, len(getChildren(hijo.Hijos)))
-			forkData["children"] = getChildren(hijo.Hijos)
+		forkData["id"] = hijosID[i]["_id"]
+		forkData["nombre"] = hijos[i].Nombre
+		forkData["descripcion"] = hijos[i].Descripcion
+		if hijos[i].Activo {
+			forkData["activo"] = "activo"
+		} else {
+			forkData["activo"] = "inactivo"
 		}
-		//fmt.Println(forkData["children"])
+
+		if len(hijos[i].Hijos) > 0 {
+			forkData["children"] = make([]map[string]interface{}, len(getChildren(hijos[i].Hijos)))
+			forkData["children"] = getChildren(hijos[i].Hijos)
+		}
 		tree = append(tree, forkData)
 	}
 
@@ -36,20 +39,26 @@ func BuildTree(hijos []models.Nodo) []map[string]interface{} {
 func getChildren(children []string) (childrenTree []map[string]interface{}) {
 	var res map[string]interface{}
 	var nodo models.Nodo
+	var nodoId map[string]interface{}
 	for _, child := range children {
 		forkData := make(map[string]interface{})
 
-		err := request.GetJson(beego.AppConfig.String("UrlCrud")+"/subgrupo/"+child, &res)
+		err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/"+child, &res)
 		if err != nil {
 			return
 		}
+
 		helpers.LimpiezaRespuestaRefactor(res, &nodo)
-		//forkData["data"] = nodo
-		fmt.Println(res)
-		forkData["id"] = nodo.Id
+		helpers.LimpiezaRespuestaRefactor(res, &nodoId)
+		forkData["id"] = nodoId["_id"]
 		forkData["nombre"] = nodo.Nombre
 		forkData["descripcion"] = nodo.Descripcion
-		forkData["activo"] = nodo.Activo
+
+		if nodo.Activo == true {
+			forkData["activo"] = "activo"
+		} else {
+			forkData["activo"] = "inactivo"
+		}
 
 		if len(nodo.Hijos) > 0 {
 			forkData["children"] = getChildren(nodo.Hijos)

@@ -8,7 +8,7 @@
 package routers
 
 import (
-	"github.com/udistrital/planes_mid/controllers"
+	"github.com/udistrital/planeacion_mid/controllers"
 
 	"github.com/astaxie/beego"
 )
@@ -19,6 +19,21 @@ func init() {
 		beego.NSNamespace("/arbol",
 			beego.NSInclude(
 				&controllers.ArbolController{},
+			),
+		),
+		beego.NSNamespace("/formato",
+			beego.NSInclude(
+				&controllers.FormatoController{},
+			),
+		),
+		beego.NSNamespace("/formulacion",
+			beego.NSInclude(
+				&controllers.FormulacionController{},
+			),
+		),
+		beego.NSNamespace("/seguimiento",
+			beego.NSInclude(
+				&controllers.SeguimientoController{},
 			),
 		),
 	)
