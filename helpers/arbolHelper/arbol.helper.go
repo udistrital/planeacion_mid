@@ -43,7 +43,7 @@ func getChildren(children []string) (childrenTree []map[string]interface{}) {
 	for _, child := range children {
 		forkData := make(map[string]interface{})
 
-		err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/"+child, &res)
+		err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+child, &res)
 		if err != nil {
 			return
 		}

@@ -50,7 +50,7 @@ func (c *ArbolController) GetArbol() {
 	var res map[string]interface{}
 	var hijos []models.Nodo
 	var hijosID []map[string]interface{}
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &hijos)
 		helpers.LimpiezaRespuestaRefactor(res, &hijosID)
 		tree := arbolHelper.BuildTree(hijos, hijosID)
@@ -103,12 +103,12 @@ func (c *ArbolController) DeletePlan() {
 	id := c.Ctx.Input.Param(":id")
 	var plan map[string]interface{}
 
-	if err := request.SendJson(beego.AppConfig.String("PlanesService")+"/plan/delete_plan/"+id, "PUT", &plan, plan); err == nil {
+	if err := request.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/delete_plan/"+id, "PUT", &plan, plan); err == nil {
 
 		var res map[string]interface{}
 		var hijos []models.Nodo
 		var hijosId []map[string]interface{}
-		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
 
 			helpers.LimpiezaRespuestaRefactor(res, &hijos)
 			helpers.LimpiezaRespuestaRefactor(res, &hijosId)
@@ -119,7 +119,7 @@ func (c *ArbolController) DeletePlan() {
 
 				jsonString, _ := json.Marshal(hijosId[i]["_id"])
 				json.Unmarshal(jsonString, &idSubgrupo)
-				request.SendJson(beego.AppConfig.String("PlanesService")+"/subgrupo/delete_nodo/"+idSubgrupo, "PUT", &res, subgrupo)
+				request.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/delete_nodo/"+idSubgrupo, "PUT", &res, subgrupo)
 			}
 
 		} else {
