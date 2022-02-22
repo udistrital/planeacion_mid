@@ -56,7 +56,7 @@ func GetActividades(subgrupo_id string) []map[string]interface{} {
 	var subgrupoDetalle map[string]interface{}
 	var datoPlan map[string]interface{}
 	var actividades []map[string]interface{}
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=subgrupo_id:"+subgrupo_id, &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=subgrupo_id:"+subgrupo_id, &res); err == nil {
 		aux := make([]map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(res, &aux)
 		subgrupoDetalle = aux[0]
@@ -110,7 +110,7 @@ func GetDataSubgrupos(subgrupos []map[string]interface{}, index string) map[stri
 			var hijos []map[string]interface{}
 			var indicadores []map[string]interface{}
 			var metas []map[string]interface{}
-			if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+subgrupos[i]["_id"].(string), &res); err != nil {
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+subgrupos[i]["_id"].(string), &res); err != nil {
 				panic(map[string]interface{}{"funcion": "GetDataSubgrupos", "err": "Error get indicador \"key\"", "status": "400", "log": err})
 			}
 
@@ -169,7 +169,7 @@ func getSubgrupoDetalle(subgrupo_id string, index string) map[string]interface{}
 	var subgrupoDetalle map[string]interface{}
 	var datoPlan map[string]interface{}
 	var data map[string]interface{}
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+subgrupo_id, &respuesta); err != nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+subgrupo_id, &respuesta); err != nil {
 		panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error get subgrupo-detalle \"key\"", "status": "400", "log": err})
 	}
 	aux := make([]map[string]interface{}, 1)

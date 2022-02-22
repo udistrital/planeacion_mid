@@ -41,13 +41,13 @@ func (c *SeguimientoController) HabilitarReportes() {
 	var resPut map[string]interface{}
 	var reportes []map[string]interface{}
 
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=periodo_id:"+periodo, &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=periodo_id:"+periodo, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &reportes)
 		for key, element := range reportes {
 			_ = key
 			element["activo"] = true
 
-			if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+element["_id"].(string), "PUT", &resPut, element); err != nil {
+			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+element["_id"].(string), "PUT", &resPut, element); err != nil {
 				panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
 			}
 
@@ -79,7 +79,7 @@ func (c *SeguimientoController) CrearReportes() {
 
 	trimestres := seguimientohelper.GetTrimestres("25")
 
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/plan/"+plan_id, &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+plan_id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &plan)
 	} else {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
@@ -96,7 +96,7 @@ func (c *SeguimientoController) CrearReportes() {
 		reporte["tipo_seguimiento_id"] = tipo
 		reporte["dato"] = "{}"
 
-		if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &respuestaPost, reporte); err != nil {
+		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &respuestaPost, reporte); err != nil {
 			panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error creando reporte", "status": "400", "log": err})
 		}
 
@@ -134,7 +134,7 @@ func (c *SeguimientoController) GetActividadesGenerales() {
 	var res map[string]interface{}
 	var subgrupos []map[string]interface{}
 
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id, &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
 
 		for i := 0; i < len(subgrupos); i++ {
@@ -165,7 +165,7 @@ func (c *SeguimientoController) GetDataActividad() {
 	var res map[string]interface{}
 	var hijos []map[string]interface{}
 
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan_id, &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan_id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &hijos)
 		data := seguimientohelper.GetDataSubgrupos(hijos, index)
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": data}
@@ -199,7 +199,7 @@ func (c *SeguimientoController) GuardarSeguimiento() {
 
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_id:"+trimestre, &respuesta); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_id:"+trimestre, &respuesta); err == nil {
 		aux := make([]map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
 		seguimiento = aux[0]
@@ -217,7 +217,7 @@ func (c *SeguimientoController) GuardarSeguimiento() {
 			str := string(b)
 			seguimiento["dato"] = str
 		}
-		if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
 			panic(map[string]interface{}{"funcion": "GuardarSeguimiento", "err": "Error actualizando seguimiento \"seguimiento[\"_id\"].(string)\"", "status": "400", "log": err})
 		}
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": respuesta["Data"]}
@@ -245,7 +245,7 @@ func (c *SeguimientoController) GetSeguimiento() {
 	var seguimientoActividad map[string]interface{}
 	dato := make(map[string]interface{})
 
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_id:"+trimestre, &respuesta); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_id:"+trimestre, &respuesta); err == nil {
 		aux := make([]map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
 		seguimiento = aux[0]
@@ -281,13 +281,13 @@ func (c *SeguimientoController) GetIndicadores() {
 	var hijos []map[string]interface{}
 	var indicadores []map[string]interface{}
 
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id, &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
 
 		for i := 0; i < len(subgrupos); i++ {
 			if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "indicador") {
 
-				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+subgrupos[i]["_id"].(string), &res); err == nil {
+				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+subgrupos[i]["_id"].(string), &res); err == nil {
 					helpers.LimpiezaRespuestaRefactor(res, &hijos)
 					for j := range hijos {
 						if strings.Contains(strings.ToLower(hijos[j]["nombre"].(string)), "indicador") {
