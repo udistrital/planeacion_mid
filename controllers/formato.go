@@ -53,10 +53,10 @@ func (c *FormatoController) GetFormato() {
 	var plan map[string]interface{}
 	var hijosID []map[string]interface{}
 
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &hijos)
 		helpers.LimpiezaRespuestaRefactor(res, &hijosID)
-		err := request.GetJson(beego.AppConfig.String("PlanesService")+"/plan/"+id, &res)
+		err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &res)
 		if err != nil {
 			return
 		}
