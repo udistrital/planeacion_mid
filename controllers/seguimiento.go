@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"strings"
 	"fmt"
+	"reflect"
+	// "strconv"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
@@ -313,31 +315,62 @@ func (c *SeguimientoController) GetIndicadores() {
 
 // GetAvanceIndicador ...
 // @Title GetAvanceIndicador
-// @Description post Seguimiento
-// @Param	periodo 	path 	string	true		"The key for staticblock"
-// @Success 200
-// @Failure 403
+// @Description post Seguimiento by id
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Success 201 {object} models.Seguimiento
+// @Failure 403 :plan_id is empty
 // @router /get_avance [post]
 func (c *SeguimientoController) GetAvanceIndicador() {
-	var avance map[string]interface{}
+	var body map[string]interface{}
 	var res map[string]interface{}
 	var avancedata []map[string]interface{}
+	var parametro_periodo []map[string]interface{}
 	var dato map[string]interface{}
 	var seguimiento map[string]interface{}
+	// var ParametroId map[string]interface{}
 	// var nombreIndicador map[string]interface{}
-	json.Unmarshal(c.Ctx.Input.RequestBody, &avance)
+	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+avance["plan_id"].(string)+",periodo_id:"+avance["periodo_id"].(string), &res); err == nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_id:"+body["periodo_id"].(string), &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &avancedata)
+
+		if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+body["periodo_id"].(string), &res); err == nil {
+			helpers.LimpiezaRespuestaRefactor(res, &parametro_periodo)
+			paramIdlen := parametro_periodo[0]
+			paramId := paramIdlen["ParametroId"].(map[string]interface{})
+			var test1 string
+			if paramId["CodigoAbreviacion"] == "T3"{
+				// test := paramId["CodigoAbreviacion"].(string)
+				test1 = body["periodo_id"].(string)
+
+			}
+			// json.Unmarshal([]byte(paramId), &ParametroId)
+			// fmt.Println(parametro_periodo)
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": test1}
+		}else {
+			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+			c.Abort("400")
+		}
 		seguimiento = avancedata[0]
 		datoStr := seguimiento["dato"].(string)
 		json.Unmarshal([]byte(datoStr), &dato)
-		// pruebita := dato[avance["index"].(string)]
-		// testensayo := pruebita["Nombre_del_indicador"]
-		// json.Unmarshal([]byte(pruebita), &nombreIndicador)
-		// data := seguimientohelper.GetDataSubgrupos(hijos, index)
-		fmt.Println(datoStr)
-		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": dato[avance["index"].(string)]}
+		indicador := dato[body["index"].(string)].(map[string]interface{})
+		avanceIndicador := indicador[body["Nombre_del_indicador"].(string)].(map[string]interface{})
+		avancePeriodo := avanceIndicador[body["avancePeriodo"].(string)]
+		avanceAcumulado := avanceIndicador[body["avanceAcumulado"].(string)]
+		// aPe, err := strconv.ParseFloat(avancePeriodo.(string), 8)
+		// if err != nil {
+		// 	fmt.Println(err)
+		// }
+		// // fmt.Println(aPe, err, reflect.TypeOf(aPe))
+		// aAc, err := strconv.ParseFloat(avanceAcumulado.(string), 8)
+		// if err != nil {
+		// 	fmt.Println(err)
+		// }
+		// totalAcumulado := aPe + aAc
+		fmt.Println(avanceAcumulado, reflect.TypeOf(avanceAcumulado))
+		fmt.Println(avancePeriodo, reflect.TypeOf(avancePeriodo))
+		// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": totalAcumulado}
 		fmt.Println(dato)
 	} else {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
