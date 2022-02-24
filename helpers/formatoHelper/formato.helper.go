@@ -36,7 +36,7 @@ func BuildTreeFa(hijos []models.Nodo, hijosID []map[string]interface{}) [][]map[
 			forkData["nombre"] = hijos[i].Nombre
 			jsonString, _ := json.Marshal(hijosID[i]["_id"])
 			json.Unmarshal(jsonString, &id)
-			if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id, &res); err == nil {
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id, &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &nodo)
 				if len(nodo) == 0 {
 					// forkData["type"] = ""
@@ -85,7 +85,7 @@ func getChildren(children []string) (childrenTree []map[string]interface{}) {
 	for _, child := range children {
 		forkData := make(map[string]interface{})
 		var id string
-		err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/"+child, &res)
+		err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+child, &res)
 		if err != nil {
 			return
 		}
@@ -96,7 +96,7 @@ func getChildren(children []string) (childrenTree []map[string]interface{}) {
 			forkData["nombre"] = nodo.Nombre
 			jsonString, _ := json.Marshal(nodoId["_id"])
 			json.Unmarshal(jsonString, &id)
-			if err_ := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id, &resp); err_ == nil {
+			if err_ := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id, &resp); err_ == nil {
 				helpers.LimpiezaRespuestaRefactor(resp, &detalle)
 				if len(detalle) == 0 {
 					// forkData["type"] = ""
