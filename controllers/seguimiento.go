@@ -3,6 +3,9 @@ package controllers
 import (
 	"encoding/json"
 	"strings"
+	"fmt"
+	"reflect"
+	"strconv"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
@@ -25,7 +28,7 @@ func (c *SeguimientoController) URLMapping() {
 	c.Mapping("GuardarSeguimiento", c.GuardarSeguimiento)
 	c.Mapping("GetSeguimiento", c.GetSeguimiento)
 	c.Mapping("GetIndicadores", c.GetIndicadores)
-
+	c.Mapping("GetAvanceIndicador", c.GetAvanceIndicador)
 }
 
 // HabilitarReportes ...
@@ -307,5 +310,94 @@ func (c *SeguimientoController) GetIndicadores() {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 		c.Abort("400")
 	}
+	c.ServeJSON()
+}
+
+// GetAvanceIndicador ...
+// @Title GetAvanceIndicador
+// @Description post Seguimiento by id
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Success 201 {object} models.Seguimiento
+// @Failure 403 :plan_id is empty
+// @router /get_avance [post]
+func (c *SeguimientoController) GetAvanceIndicador() {
+	var body map[string]interface{}
+	var res map[string]interface{}
+	var avancedata []map[string]interface{}
+	var parametro_periodo []map[string]interface{}
+	var dato map[string]interface{}
+	var seguimiento map[string]interface{}
+	var test1 string
+	var periodIdString string
+	var periodId float64
+	var avanceAcumulado string
+	var testavancePeriodo string
+	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_id:"+body["periodo_id"].(string), &res); err == nil {
+		helpers.LimpiezaRespuestaRefactor(res, &avancedata)
+		fmt.Println(res)
+		if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+body["periodo_id"].(string), &res); err == nil {
+			helpers.LimpiezaRespuestaRefactor(res, &parametro_periodo)
+			paramIdlen := parametro_periodo[0]
+			fmt.Println()
+			paramId := paramIdlen["ParametroId"].(map[string]interface{})
+			if paramId["CodigoAbreviacion"] != "T1"{
+				test1 = body["periodo_id"].(string)
+				priodoId_rest, err := strconv.ParseFloat(test1, 8)
+				if err != nil {
+					fmt.Println(err)
+				}
+				fmt.Println(test1)
+				periodId = priodoId_rest - 1
+				periodIdString = fmt.Sprint(periodId)
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_id:"+periodIdString, &res); err == nil {
+					helpers.LimpiezaRespuestaRefactor(res, &avancedata)
+					seguimiento = avancedata[0]
+					datoStr := seguimiento["dato"].(string)
+					json.Unmarshal([]byte(datoStr), &dato)
+					indicador1 := dato[body["index"].(string)].(map[string]interface{})
+					fmt.Println(len(indicador1))
+					avanceIndicador1 := indicador1[body["Nombre_del_indicador"].(string)].(map[string]interface{})
+					avanceAcumulado = avanceIndicador1["avanceAcumulado"].(string)
+					testavancePeriodo = avanceIndicador1["avancePeriodo"].(string)
+				}else{
+					c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+					c.Abort("400")
+				}
+			}else{
+				fmt.Println("hi")
+			}
+		}else {
+			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+			c.Abort("400")
+		}
+		avancePeriodo := body["avancePeriodo"].(string)
+		aPe, err := strconv.ParseFloat(avancePeriodo, 8)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(aPe, err, reflect.TypeOf(avanceAcumulado))
+		aAc, err := strconv.ParseFloat(avanceAcumulado, 8)
+		if err != nil {
+			fmt.Println(err)
+		}
+		totalAcumulado := fmt.Sprint(aPe + aAc)
+		generalData := make(map[string]interface{})
+		generalData["avancePeriodo"] = avancePeriodo
+		generalData["periodIdString"] = periodIdString
+		generalData["avanceAcumulado"] = totalAcumulado
+		generalData["avancePeriodoPrev"] = testavancePeriodo
+		generalData["avanceAcumuladoPrev"] = avanceAcumulado
+
+		fmt.Println(avanceAcumulado, reflect.TypeOf(avanceAcumulado))
+		fmt.Println(avancePeriodo, reflect.TypeOf(avancePeriodo))
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": generalData}
+		fmt.Println(dato)
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+		c.Abort("400")
+	}
+
 	c.ServeJSON()
 }
