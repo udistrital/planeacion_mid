@@ -330,17 +330,17 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 	var test1 string
 	var periodIdString string
 	var periodId float64
-	// var avanceAcumulado string
-	// var ParametroId map[string]interface{}
-	// var nombreIndicador map[string]interface{}
+	var avanceAcumulado string
+	var testavancePeriodo string
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
 	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_id:"+body["periodo_id"].(string), &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &avancedata)
-
+		fmt.Println(res)
 		if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+body["periodo_id"].(string), &res); err == nil {
 			helpers.LimpiezaRespuestaRefactor(res, &parametro_periodo)
 			paramIdlen := parametro_periodo[0]
+			fmt.Println()
 			paramId := paramIdlen["ParametroId"].(map[string]interface{})
 			if paramId["CodigoAbreviacion"] != "T1"{
 				test1 = body["periodo_id"].(string)
@@ -351,16 +351,16 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 				fmt.Println(test1)
 				periodId = priodoId_rest - 1
 				periodIdString = fmt.Sprint(periodId)
-				// periodIdString = strconv.FormatFloat(periodId, 'E', -1, 64)
-				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_id:"+body[periodIdString].(string), &res); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_id:"+periodIdString, &res); err == nil {
 					helpers.LimpiezaRespuestaRefactor(res, &avancedata)
 					seguimiento = avancedata[0]
 					datoStr := seguimiento["dato"].(string)
 					json.Unmarshal([]byte(datoStr), &dato)
 					indicador1 := dato[body["index"].(string)].(map[string]interface{})
+					fmt.Println(len(indicador1))
 					avanceIndicador1 := indicador1[body["Nombre_del_indicador"].(string)].(map[string]interface{})
-				fmt.Println(avanceIndicador1)
-					// avanceAcumulado = avanceIndicador1[body["avanceAcumulado"].(string)]
+					avanceAcumulado = avanceIndicador1["avanceAcumulado"].(string)
+					testavancePeriodo = avanceIndicador1["avancePeriodo"].(string)
 				}else{
 					c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 					c.Abort("400")
@@ -368,34 +368,27 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 			}else{
 				fmt.Println("hi")
 			}
-			// json.Unmarshal([]byte(paramId), &ParametroId)
-			// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": test1}   
 		}else {
 			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 			c.Abort("400")
 		}
-		seguimiento = avancedata[0]
-		datoStr := seguimiento["dato"].(string)
-		json.Unmarshal([]byte(datoStr), &dato)
-		indicador := dato[body["index"].(string)].(map[string]interface{})
-		avanceIndicador := indicador[body["Nombre_del_indicador"].(string)].(map[string]interface{})
-		avancePeriodo := avanceIndicador[body["avancePeriodo"].(string)]
-		avanceAcumulado := avanceIndicador[body["avanceAcumulado"].(string)]
-		aPe, err := strconv.ParseFloat(avancePeriodo.(string), 8)
+		avancePeriodo := body["avancePeriodo"].(string)
+		aPe, err := strconv.ParseFloat(avancePeriodo, 8)
 		if err != nil {
 			fmt.Println(err)
 		}
 		fmt.Println(aPe, err, reflect.TypeOf(avanceAcumulado))
-		aAc, err := strconv.ParseFloat(avanceAcumulado.(string), 8)
+		aAc, err := strconv.ParseFloat(avanceAcumulado, 8)
 		if err != nil {
 			fmt.Println(err)
 		}
-		totalAcumulado := aPe + aAc
+		totalAcumulado := fmt.Sprint(aPe + aAc)
 		generalData := make(map[string]interface{})
 		generalData["avancePeriodo"] = avancePeriodo
-		generalData["avanceAcumulado"] = avanceAcumulado
 		generalData["periodIdString"] = periodIdString
-		generalData["totalAcumulado"] = totalAcumulado
+		generalData["avanceAcumulado"] = totalAcumulado
+		generalData["avancePeriodoPrev"] = testavancePeriodo
+		generalData["avanceAcumuladoPrev"] = avanceAcumulado
 
 		fmt.Println(avanceAcumulado, reflect.TypeOf(avanceAcumulado))
 		fmt.Println(avancePeriodo, reflect.TypeOf(avancePeriodo))
