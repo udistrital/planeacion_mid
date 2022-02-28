@@ -953,6 +953,37 @@
                 }
             }
         },
+        "/seguimiento/get_avance": {
+            "post": {
+                "tags": [
+                    "seguimiento"
+                ],
+                "description": "post Seguimiento by id",
+                "operationId": "SeguimientoController.GetAvanceIndicador",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Seguimiento"
+                        }
+                    },
+                    "403": {
+                        "description": ":plan_id is empty"
+                    }
+                }
+            }
+        },
         "/seguimiento/get_data/{plan_id}/{index}": {
             "get": {
                 "tags": [
@@ -1147,6 +1178,10 @@
         },
         "models.Formulacion": {
             "title": "Formulacion",
+            "type": "object"
+        },
+        "models.Reportes": {
+            "title": "Reportes",
             "type": "object"
         },
         "models.Seguimiento": {
