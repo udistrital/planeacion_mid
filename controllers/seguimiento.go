@@ -334,7 +334,7 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 	var testavancePeriodo string
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_id:"+body["periodo_id"].(string), &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_id:"+body["periodo_id"].(string), &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &avancedata)
 		fmt.Println(res)
 		if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+body["periodo_id"].(string), &res); err == nil {
@@ -351,7 +351,7 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 				fmt.Println(test1)
 				periodId = priodoId_rest - 1
 				periodIdString = fmt.Sprint(periodId)
-				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_id:"+periodIdString, &res); err == nil {
+				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_id:"+periodIdString, &res); err == nil {
 					helpers.LimpiezaRespuestaRefactor(res, &avancedata)
 					seguimiento = avancedata[0]
 					datoStr := seguimiento["dato"].(string)
