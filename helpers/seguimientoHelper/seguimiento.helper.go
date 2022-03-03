@@ -87,6 +87,12 @@ func GetDataSubgrupos(subgrupos []map[string]interface{}, index string) map[stri
 	auxSubgrupo := make(map[string]interface{})
 
 	for i := range subgrupos {
+		if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") && strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "general") {
+			aux := getSubgrupoDetalle(subgrupos[i]["_id"].(string), index)
+			auxSubgrupo["actividad"] = aux["dato"]
+
+		}
+
 		if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "lineamiento") {
 			aux := getSubgrupoDetalle(subgrupos[i]["_id"].(string), index)
 			auxSubgrupo["lineamiento"] = aux["dato"]
