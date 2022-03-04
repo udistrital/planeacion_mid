@@ -39,9 +39,8 @@ func (c *ReportesController) Desagregado() {
 	var respuesta map[string]interface{}
 	var planesFilter []map[string]interface{}
 	var plan map[string]interface{}
-	// var nombresDependencia []map[string]interface{}
-	// var respuestaOikos map[string]interface{}
-	// var nombreDep map[string]interface{}
+	var respuestaOikos []map[string]interface{}
+	var nombreDep map[string]interface{}
 	var identificacionres []map[string]interface{}
 	var res map[string]interface{}
 	var identificacion map[string]interface{}
@@ -62,18 +61,21 @@ func (c *ReportesController) Desagregado() {
 			dependencia := plan["dependencia_id"].(string)
 			fmt.Println(dependencia)
 
-			// dependenciaId, err := strconv.ParseInt(dependencia, 10, 64)
-			// if err != nil {
-			// 	fmt.Println(err)
-			// }
+			dependenciaId, err := strconv.ParseFloat(dependencia, 8)
+			if err != nil {
+				fmt.Println(err)
+			}
+			// priodoId_rest, err := strconv.ParseFloat(test1, 8)
+			// 	if err != nil {
+			// 		fmt.Println(err)
+			// 	}
+			fmt.Println(dependenciaId+1)
 			
-			// if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia?query=Id:"+dependenciaId, &respuestaOikos); err == nil {
-			// 	helpers.LimpiezaRespuestaRefactor(respuestaOikos, &nombresDependencia)
-			// fmt.Println(respuestaOikos)
-			// 	nombreDep = nombresDependencia[0]
-			// } else {
-			// 	panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
-			// }
+			if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia?query=Id:8", &respuestaOikos); err == nil {
+				nombreDep = respuestaOikos[0]
+			} else {
+				panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+			}
 
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+planId+",tipo_identificacion_id:"+"617b6630f6fc97b776279afa", &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &identificacionres)
@@ -105,7 +107,7 @@ func (c *ReportesController) Desagregado() {
 		identificacionData["codigo"] = identificacion_data["codigo"]
 		identificacionData["concepto"] = identificacion_data["Nombre"]
 		identificacionData["valor"] = identificacion_data["valor"]
-		// identificacionData["unidad"] = nombreDep["Nombre"]
+		identificacionData["unidad"] = nombreDep["Nombre"]
 		identificacionData["descripcion"] = identificacion_data["descripcion"]
 		fmt.Println(identificacionData)
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": identificacionData}

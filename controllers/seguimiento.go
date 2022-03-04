@@ -324,14 +324,22 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 	var body map[string]interface{}
 	var res map[string]interface{}
 	var avancedata []map[string]interface{}
+	var res1 map[string]interface{}
+	var avancedata1 []map[string]interface{}
+	var res2 map[string]interface{}
+	var resName map[string]interface{}
+	var parametro_periodo_name []map[string]interface{}
+	var avancedata2 []map[string]interface{}
 	var parametro_periodo []map[string]interface{}
 	var dato map[string]interface{}
 	var seguimiento map[string]interface{}
+	var seguimiento1 map[string]interface{}
 	var test1 string
 	var periodIdString string
 	var periodId float64
 	var avanceAcumulado string
 	var testavancePeriodo string
+	var nombrePeriodo string
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_id:"+body["periodo_id"].(string), &res); err == nil {
@@ -343,17 +351,36 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 			fmt.Println()
 			paramId := paramIdlen["ParametroId"].(map[string]interface{})
 			if paramId["CodigoAbreviacion"] != "T1"{
-				test1 = body["periodo_id"].(string)
-				priodoId_rest, err := strconv.ParseFloat(test1, 8)
-				if err != nil {
-					fmt.Println(err)
+				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_id:"+body["periodo_id"].(string), &res1); err == nil {
+					helpers.LimpiezaRespuestaRefactor(res1, &avancedata1)
+					seguimiento1 = avancedata1[0]
+					datoStrUltimoTrimestre := seguimiento1["dato"].(string)
+					if datoStrUltimoTrimestre == "{}"{
+						test1 = body["periodo_id"].(string)
+						priodoId_rest, err := strconv.ParseFloat(test1, 8)
+						if err != nil {
+							fmt.Println(err)
+						}
+						fmt.Println(test1)
+						periodId = priodoId_rest - 1
+					}else{
+						test1 = body["periodo_id"].(string)
+						priodoId_rest, err := strconv.ParseFloat(test1, 8)
+						if err != nil {
+							fmt.Println(err)
+						}
+						fmt.Println(test1)
+						periodId = priodoId_rest
+					}
+
+				}else{
+					c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+					c.Abort("400")
 				}
-				fmt.Println(test1)
-				periodId = priodoId_rest - 1
 				periodIdString = fmt.Sprint(periodId)
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_id:"+periodIdString, &res); err == nil {
-					helpers.LimpiezaRespuestaRefactor(res, &avancedata)
-					seguimiento = avancedata[0]
+				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_id:"+periodIdString, &res2); err == nil {
+					helpers.LimpiezaRespuestaRefactor(res2, &avancedata2)
+					seguimiento = avancedata2[0]
 					datoStr := seguimiento["dato"].(string)
 					json.Unmarshal([]byte(datoStr), &dato)
 					indicador1 := dato[body["index"].(string)].(map[string]interface{})
@@ -361,6 +388,16 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 					avanceIndicador1 := indicador1[body["Nombre_del_indicador"].(string)].(map[string]interface{})
 					avanceAcumulado = avanceIndicador1["avanceAcumulado"].(string)
 					testavancePeriodo = avanceIndicador1["avancePeriodo"].(string)
+				}else{
+					c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+					c.Abort("400")
+				}
+				if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+body["periodo_id"].(string), &resName); err == nil {
+					helpers.LimpiezaRespuestaRefactor(resName, &parametro_periodo_name)
+					paramIdlenName := parametro_periodo_name[0]
+					fmt.Println()
+					paramIdName := paramIdlenName["ParametroId"].(map[string]interface{})
+					nombrePeriodo = paramIdName["CodigoAbreviacion"].(string)
 				}else{
 					c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 					c.Abort("400")
@@ -389,6 +426,7 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 		generalData["avanceAcumulado"] = totalAcumulado
 		generalData["avancePeriodoPrev"] = testavancePeriodo
 		generalData["avanceAcumuladoPrev"] = avanceAcumulado
+		generalData["nombrePeriodo"] = nombrePeriodo
 
 		fmt.Println(avanceAcumulado, reflect.TypeOf(avanceAcumulado))
 		fmt.Println(avancePeriodo, reflect.TypeOf(avancePeriodo))
