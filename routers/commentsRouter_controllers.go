@@ -252,6 +252,15 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:ReportesController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:ReportesController"],
         beego.ControllerComments{
+            Method: "Delete",
+            Router: "/:id",
+            AllowHTTPMethods: []string{"delete"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:ReportesController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:ReportesController"],
+        beego.ControllerComments{
             Method: "GetOne",
             Router: "/:id",
             AllowHTTPMethods: []string{"get"},
@@ -270,9 +279,18 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:ReportesController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:ReportesController"],
         beego.ControllerComments{
-            Method: "Delete",
-            Router: "/:id",
-            AllowHTTPMethods: []string{"delete"},
+            Method: "Desagregado",
+            Router: "/desagregado",
+            AllowHTTPMethods: []string{"post"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:ReportesController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:ReportesController"],
+        beego.ControllerComments{
+            Method: "PlanAccionAnual",
+            Router: "/plan_anual",
+            AllowHTTPMethods: []string{"post"},
             MethodParams: param.Make(),
             Filters: nil,
             Params: nil})
