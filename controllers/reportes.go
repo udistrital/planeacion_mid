@@ -5,10 +5,12 @@ import (
 	"fmt"
 	// "reflect"
 	"strconv"
+	// "encoding/base64"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
 	"github.com/udistrital/utils_oas/request"
+	"github.com/xuri/excelize/v2"
 )
 
 // ReportesController operations for Reportes
@@ -25,6 +27,12 @@ func (c *ReportesController) URLMapping() {
 	c.Mapping("Delete", c.Delete)
 	c.Mapping("Desagregado", c.Desagregado)
 	c.Mapping("PlanAccionAnual", c.PlanAccionAnual)
+}
+
+func CreateExcel(f *excelize.File, dir string){
+	if err := f.SaveAs(dir); err != nil{
+		fmt.Println(err)
+	}
 }
 
 // Desagregado ...
@@ -47,6 +55,14 @@ func (c *ReportesController) Desagregado() {
 	var dato map[string]interface{}
 	var data_identi []map[string]interface{}
 	var identificacion_data map[string]interface{}
+
+	// excel
+	var consolidadoExcel *excelize.File
+	consolidadoExcel = excelize.NewFile()
+	sheetName := "nuevo"
+	index := consolidadoExcel.NewSheet(sheetName)
+
+	
 
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
@@ -121,6 +137,16 @@ func (c *ReportesController) Desagregado() {
 		identificacionData["unidad"] = nombreDep["Nombre"]
 		identificacionData["descripcion"] = identificacion_data["descripcion"]
 		fmt.Println(identificacionData)
+		consolidadoExcel.SetCellValue(sheetName, "A1", "codigo del rubro")
+		consolidadoExcel.SetCellValue(sheetName, "A2", identificacion_data["codigo"])
+		consolidadoExcel.SetCellValue(sheetName, "B1", "Nombre del rubro")
+		consolidadoExcel.SetCellValue(sheetName, "B2", identificacion_data["Nombre"])
+		consolidadoExcel.SetCellValue(sheetName, "C1", "valor")
+		consolidadoExcel.SetCellValue(sheetName, "C2", identificacion_data["valor"])
+		consolidadoExcel.SetCellValue(sheetName, "D1", "Descripcion del bien y/o servicio")
+		consolidadoExcel.SetCellValue(sheetName, "D2", identificacion_data["descripcion"])
+		consolidadoExcel.SetActiveSheet(index)
+		CreateExcel(consolidadoExcel, "Consolidado Presupuestal.xls")
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": identificacionData}
 
 
