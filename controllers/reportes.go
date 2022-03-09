@@ -55,6 +55,7 @@ func (c *ReportesController) Desagregado() {
 	var dato map[string]interface{}
 	var data_identi []map[string]interface{}
 	var identificacion_data map[string]interface{}
+	var arreglo []map[string]interface{}
 
 	// excel
 	var consolidadoExcel *excelize.File
@@ -73,21 +74,19 @@ func (c *ReportesController) Desagregado() {
 		for i := 0; i < len(planesFilter); i++ {
 			plan = planesFilter[i]
 			planId := plan["_id"].(string)
+			fmt.Println("iteracion")
+			fmt.Println(i)
 			fmt.Println(plan)	
 			dependencia := plan["dependencia_id"].(string)
-			fmt.Println(dependencia)
+			// fmt.Println(dependencia)
 
 			dependenciaId, err := strconv.ParseFloat(dependencia, 8)
 			if err != nil {
 				fmt.Println(err)
 			}
-			// priodoId_rest, err := strconv.ParseFloat(test1, 8)
-			// 	if err != nil {
-			// 		fmt.Println(err)
-			// 	}
 			fmt.Println(dependenciaId+1)
 			 
-			if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia?query=Id:8", &respuestaOikos); err == nil {
+			if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia?query=Id:"+dependencia, &respuestaOikos); err == nil {
 				nombreDep = respuestaOikos[0]
 			} else {
 				panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
@@ -96,28 +95,26 @@ func (c *ReportesController) Desagregado() {
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+planId+",tipo_identificacion_id:"+"617b6630f6fc97b776279afa", &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &identificacionres)
 				identificacion = identificacionres[0]
+				fmt.Println("identificacion")		
 				fmt.Println(identificacion)		
-				if identificacion["dato"] != nil {
+				if identificacion["dato"] != "{}" {
 					dato_str := identificacion["dato"].(string)
 					json.Unmarshal([]byte(dato_str), &dato)
 					for key := range dato {
 						element := dato[key].(map[string]interface{})
 						if element["activo"] == true {
+							delete(element, "actividades")
+							delete(element, "activo")
+							delete(element, "index")
+							// aqui dentro por medio del element puedo acceder tanto al nombre y a todos los demas atributos del objeto para hacer el excel sería acá
+							element["unidad"] = nombreDep["Nombre"]
 							data_identi = append(data_identi, element)
-							fmt.Println(data_identi);
+							fmt.Println(dato);
 						}
-						// identificacion_data = data_identi[i]
-						// identificacionData := make(map[string]interface{})
-						// identificacionData["codigo"] = identificacion_data["codigo"]
-						// identificacionData["concepto"] = identificacion_data["Nombre"]
-						// identificacionData["valor"] = identificacion_data["valor"]
-						// identificacionData["unidad"] = nombreDep["Nombre"]
-						// identificacionData["descripcion"] = identificacion_data["descripcion"]
-						// fmt.Println(identificacionData)
-						// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": identificacionData}
-						c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": data_identi}
 
 					}
+					// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": data_identi}
+					arreglo = append(arreglo, data_identi...)
 		
 				} else {
 					c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": ""}
@@ -128,26 +125,38 @@ func (c *ReportesController) Desagregado() {
 				c.Abort("400")
 			}
 		}
-		
-		identificacion_data = data_identi[0]
-		identificacionData := make(map[string]interface{})
-		identificacionData["codigo"] = identificacion_data["codigo"]
-		identificacionData["concepto"] = identificacion_data["Nombre"]
-		identificacionData["valor"] = identificacion_data["valor"]
-		identificacionData["unidad"] = nombreDep["Nombre"]
-		identificacionData["descripcion"] = identificacion_data["descripcion"]
-		fmt.Println(identificacionData)
-		consolidadoExcel.SetCellValue(sheetName, "A1", "codigo del rubro")
-		consolidadoExcel.SetCellValue(sheetName, "A2", identificacion_data["codigo"])
-		consolidadoExcel.SetCellValue(sheetName, "B1", "Nombre del rubro")
-		consolidadoExcel.SetCellValue(sheetName, "B2", identificacion_data["Nombre"])
-		consolidadoExcel.SetCellValue(sheetName, "C1", "valor")
-		consolidadoExcel.SetCellValue(sheetName, "C2", identificacion_data["valor"])
-		consolidadoExcel.SetCellValue(sheetName, "D1", "Descripcion del bien y/o servicio")
-		consolidadoExcel.SetCellValue(sheetName, "D2", identificacion_data["descripcion"])
+		consolidadoExcel.SetCellValue(sheetName, "A1", "Dependencia Responsable")
+		consolidadoExcel.SetCellValue(sheetName, "A2", "codigo del rubro")
+		consolidadoExcel.SetCellValue(sheetName, "A3", identificacion_data["codigo"])
+
+		consolidadoExcel.SetCellValue(sheetName, "B1", nombreDep["Nombre"])
+		// style, err := consolidadoExcel.NewStyle(&excelize.Style{
+		// 	Font: &excelize.Font{
+		// 		Bold:   true,
+		// 		Italic: true,
+		// 		Family: "Times New Roman",
+		// 		Size:   36,
+		// 		Color:  "#777777",
+		// 	},
+		// })
+		// if err != nil {
+		// 	fmt.Println(err)
+		// }
+		// err = consolidadoExcel.SetCellStyle("Sheet1", "B1", "B1", style)
+
+		consolidadoExcel.SetCellValue(sheetName, "B2", "Nombre del rubro")
+		consolidadoExcel.SetCellValue(sheetName, "B3", identificacion_data["Nombre"])
+		consolidadoExcel.SetCellValue(sheetName, "C2", "valor")
+		consolidadoExcel.SetCellValue(sheetName, "C3", identificacion_data["valor"])
+		consolidadoExcel.SetCellValue(sheetName, "D2", "Descripcion del bien y/o servicio")
+		consolidadoExcel.SetCellValue(sheetName, "D3", identificacion_data["descripcion"])
 		consolidadoExcel.SetActiveSheet(index)
 		CreateExcel(consolidadoExcel, "Consolidado Presupuestal.xls")
-		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": identificacionData}
+
+		// func (f *File) SetCellStyle(sheet, hcell, vcell string, styleID int){
+
+		// }
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": arreglo}
 
 
 	} else {
