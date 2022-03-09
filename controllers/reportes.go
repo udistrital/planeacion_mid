@@ -67,7 +67,7 @@ func (c *ReportesController) Desagregado() {
 
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string), &respuesta); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string), &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
 		fmt.Println(respuesta)
 
@@ -92,7 +92,7 @@ func (c *ReportesController) Desagregado() {
 				panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
 			}
 
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+planId+",tipo_identificacion_id:"+"617b6630f6fc97b776279afa", &res); err == nil {
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=activo:true,plan_id:"+planId+",tipo_identificacion_id:"+"617b6630f6fc97b776279afa", &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &identificacionres)
 				identificacion = identificacionres[0]
 				fmt.Println("identificacion")		
@@ -182,6 +182,7 @@ func (c *ReportesController) PlanAccionAnual() {
 	var plan_id string
 	var resSubDetalle map[string]interface{}
 	var subgruposDetalle []map[string]interface{}
+	var dato map[string]interface{}
 
 	var generalData = make(map[string]interface{})
 	var indicadoresData = make(map[string]interface{})
@@ -189,42 +190,54 @@ func (c *ReportesController) PlanAccionAnual() {
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
 	if body["unidad_id"].(string) == ""{
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string), &respuesta); err == nil {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string), &respuesta); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
-			fmt.Println(respuesta)
+			// fmt.Println(respuesta)
 			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": planesFilter}
 		} else {
 			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 			c.Abort("400")
 		}
 	}else if body["unidad_id"].(string) != ""{
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",dependencia_id:"+body["unidad_id"].(string), &respuesta); err == nil {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",dependencia_id:"+body["unidad_id"].(string), &respuesta); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
-			fmt.Println(respuesta)
+			// fmt.Println(respuesta)
 			planesFilterData := planesFilter[0]
 			plan_id = planesFilterData["_id"].(string)
-			fmt.Println(plan_id)
+			// fmt.Println(plan_id)
 			
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id, &res); err == nil {
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=activo:true,padre:"+plan_id, &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
-				fmt.Println(subgrupos)
-				subgrupo := subgrupos[0]
-				nombreIndicador := subgrupo["nombre"]
-				descripcionIndicador := subgrupo["descripcion"]
-				subgrupo_id := subgrupo["_id"].(string)
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=subgrupo_id:"+subgrupo_id, &resSubDetalle); err == nil {
-					helpers.LimpiezaRespuestaRefactor(resSubDetalle, &subgruposDetalle)
-					fmt.Println(subgruposDetalle)
-					c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": subgruposDetalle}
-			
-				} else {
-					c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-					c.Abort("400")
-				}
+				// fmt.Println(subgrupos)
+				for i := 0; i < len(subgrupos); i++ {
+					subgrupo := subgrupos[i]
+					nombreIndicador := subgrupo["nombre"]
+					descripcionIndicador := subgrupo["descripcion"]
+					subgrupo_id := subgrupo["_id"].(string)
+					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=activo:true,subgrupo_id:"+subgrupo_id, &resSubDetalle); err == nil {
+						helpers.LimpiezaRespuestaRefactor(resSubDetalle, &subgruposDetalle)
+						for j := 0; j < len(subgruposDetalle); j++{
+							subgrupoDetalle := subgruposDetalle[j]
+							if subgrupoDetalle["dato"] != "{}"{
+								dato_str := subgrupoDetalle["dato"].(string)
+								json.Unmarshal([]byte(dato_str), &dato)
+								c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": dato}
+							}else{
+								c.Data["json"] = map[string]interface{}{"Success": true, "Status": "404", "Message": "not found", "Data": ""}
+							}
+						}
+						// fmt.Println(subgruposDetalle)
+						// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": subgruposDetalle}
+				
+					} else {
+						c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+						c.Abort("400")
+					}
 
-				indicadoresData["nombreIndicador"] = nombreIndicador
-				indicadoresData["descripcionIndicador"] = descripcionIndicador
-				// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": subgrupo}
+					indicadoresData["nombreIndicador"] = nombreIndicador
+					indicadoresData["descripcionIndicador"] = descripcionIndicador
+					// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": subgrupo}
+				}
 		
 			} else {
 				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
