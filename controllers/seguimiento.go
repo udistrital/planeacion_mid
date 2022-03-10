@@ -403,7 +403,7 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 					c.Abort("400")
 				}
 			}else{
-				fmt.Println("hi")
+				fmt.Println("")
 			}
 		}else {
 			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
