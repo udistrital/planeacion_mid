@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	// "reflect"
-	"strconv"
+	// "strconv"
 	// "encoding/base64"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
 	"github.com/udistrital/utils_oas/request"
 	"github.com/xuri/excelize/v2"
+	seguimientohelper "github.com/udistrital/planeacion_mid/helpers/seguimientoHelper"
 )
 
 // ReportesController operations for Reportes
@@ -69,7 +70,7 @@ func (c *ReportesController) Desagregado() {
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string), &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
-		fmt.Println(respuesta)
+		// fmt.Println(respuesta)
 
 		for i := 0; i < len(planesFilter); i++ {
 			plan = planesFilter[i]
@@ -80,11 +81,11 @@ func (c *ReportesController) Desagregado() {
 			dependencia := plan["dependencia_id"].(string)
 			// fmt.Println(dependencia)
 
-			dependenciaId, err := strconv.ParseFloat(dependencia, 8)
-			if err != nil {
-				fmt.Println(err)
-			}
-			fmt.Println(dependenciaId+1)
+			// dependenciaId, err := strconv.ParseFloat(dependencia, 8)
+			// if err != nil {
+			// 	fmt.Println(err)
+			// }
+			// fmt.Println(dependenciaId+1)
 			 
 			if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia?query=Id:"+dependencia, &respuestaOikos); err == nil {
 				nombreDep = respuestaOikos[0]
@@ -95,8 +96,8 @@ func (c *ReportesController) Desagregado() {
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=activo:true,plan_id:"+planId+",tipo_identificacion_id:"+"617b6630f6fc97b776279afa", &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &identificacionres)
 				identificacion = identificacionres[0]
-				fmt.Println("identificacion")		
-				fmt.Println(identificacion)		
+				// fmt.Println("identificacion")		
+				// fmt.Println(identificacion)		
 				if identificacion["dato"] != "{}" {
 					dato_str := identificacion["dato"].(string)
 					json.Unmarshal([]byte(dato_str), &dato)
@@ -109,7 +110,7 @@ func (c *ReportesController) Desagregado() {
 							// aqui dentro por medio del element puedo acceder tanto al nombre y a todos los demas atributos del objeto para hacer el excel sería acá
 							element["unidad"] = nombreDep["Nombre"]
 							data_identi = append(data_identi, element)
-							fmt.Println(dato);
+							// fmt.Println(dato);
 						}
 
 					}
@@ -180,9 +181,12 @@ func (c *ReportesController) PlanAccionAnual() {
 	var res map[string]interface{}
 	var subgrupos []map[string]interface{}
 	var plan_id string
-	var resSubDetalle map[string]interface{}
-	var subgruposDetalle []map[string]interface{}
-	var dato map[string]interface{}
+	var datad map[string]interface{}
+	// var resSubDetalle map[string]interface{}
+	// var subgruposDetalle []map[string]interface{}
+	// var data map[string]interface{}
+	// var data_identi []map[string]interface{}
+	// var arreglo []map[string]interface{}
 
 	var generalData = make(map[string]interface{})
 	var indicadoresData = make(map[string]interface{})
@@ -193,7 +197,52 @@ func (c *ReportesController) PlanAccionAnual() {
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string), &respuesta); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
 			// fmt.Println(respuesta)
-			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": planesFilter}
+			for i := 0; i < len(planesFilter); i++ {
+				planesFilterData := planesFilter[i]
+				plan_id = planesFilterData["_id"].(string)
+				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan_id, &res); err == nil {
+					helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
+					index := body["index"].(string)
+					datad = seguimientohelper.GetDataSubgrupos(subgrupos, index)
+					for i := range datad{
+						test := datad[i] 
+						// el problema está aquí porque no sirve con el .(map[string]interface{})
+						// data_identi = append(data_identi, test)
+						fmt.Println(test)
+					}
+					// if datad != nil {
+						c.Data["json"] = map[string]interface{}{"Success": true, "Status": "404", "Message": "not found", "Data": datad}
+					// 	// dato_str := identificacion["dato"].(string)
+					// 	// json.Unmarshal([]byte(data), &dato)
+					// 	// for key := range datad {
+					// 	// 	element := datad[key].(map[string]interface{})
+					// 	// 	data_identi = append(data_identi, element)
+
+					// 	// 	// if element["activo"] == true {
+					// 	// 	// 	// delete(element, "actividades")
+					// 	// 	// 	// delete(element, "activo")
+					// 	// 	// 	// delete(element, "index")
+					// 	// 	// 	// aqui dentro por medio del element puedo acceder tanto al nombre y a todos los demas atributos del objeto para hacer el excel sería acá
+					// 	// 	// 	element["unidad"] = nombreDep["Nombre"]
+					// 	// 	// 	data_identi = append(data_identi, element)
+					// 	// 	// 	fmt.Println(dato);
+					// 	// 	// }
+	
+					// 	// }
+					// 	// // c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": data_identi}
+					// 	arreglo = append(arreglo, datad...)
+			
+					// } else {
+					// 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "404", "Message": "not found", "Data": ""}
+					// }
+
+					// arreglo = append(arreglo, datad...)
+
+					// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": data}
+				}
+
+			}
+			// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": data}
 		} else {
 			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 			c.Abort("400")
@@ -206,37 +255,56 @@ func (c *ReportesController) PlanAccionAnual() {
 			plan_id = planesFilterData["_id"].(string)
 			// fmt.Println(plan_id)
 			
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=activo:true,padre:"+plan_id, &res); err == nil {
+			// if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=activo:true,padre:"+plan_id, &res); err == nil {
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan_id, &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
+				index := body["index"].(string)
+				data := seguimientohelper.GetDataSubgrupos(subgrupos, index)
+				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": data}
+
+				// if data = nil {
+				// 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "404", "Message": "not found", "Data": ""}
+				// }else {
+				// 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": data}
+				// }
+
 				// fmt.Println(subgrupos)
 				for i := 0; i < len(subgrupos); i++ {
 					subgrupo := subgrupos[i]
 					nombreIndicador := subgrupo["nombre"]
 					descripcionIndicador := subgrupo["descripcion"]
-					subgrupo_id := subgrupo["_id"].(string)
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=activo:true,subgrupo_id:"+subgrupo_id, &resSubDetalle); err == nil {
-						helpers.LimpiezaRespuestaRefactor(resSubDetalle, &subgruposDetalle)
-						for j := 0; j < len(subgruposDetalle); j++{
-							subgrupoDetalle := subgruposDetalle[j]
-							if subgrupoDetalle["dato"] != "{}"{
-								dato_str := subgrupoDetalle["dato"].(string)
-								json.Unmarshal([]byte(dato_str), &dato)
-								c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": dato}
-							}else{
-								c.Data["json"] = map[string]interface{}{"Success": true, "Status": "404", "Message": "not found", "Data": ""}
-							}
-						}
-						// fmt.Println(subgruposDetalle)
-						// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": subgruposDetalle}
-				
-					} else {
-						c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-						c.Abort("400")
+					// subgrupo_id := subgrupo["_id"].(string)
+					if subgrupo["hijos"] != "[]"{
+						dato_str := subgrupo["hijos"]
+						fmt.Println(dato_str)
+						// json.Unmarshal([]byte(dato_str), &dato)
+						// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": dato_str}
+					}else{
+						// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "404", "Message": "not found", "Data": ""}
 					}
+					// if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=activo:true,subgrupo_id:"+subgrupo_id, &resSubDetalle); err == nil {
+					// 	helpers.LimpiezaRespuestaRefactor(resSubDetalle, &subgruposDetalle)
+					// 	for j := 0; j < len(subgruposDetalle); j++ {
+					// 		subgrupoDetalle := subgruposDetalle[j]
+					// 		if subgrupoDetalle["dato"] != "{}"{
+					// 			dato_str := subgrupoDetalle["dato"].(string)
+					// 			json.Unmarshal([]byte(dato_str), &dato)
+					// 			// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": subgrupoDetalle}
+					// 		}else{
+					// 			// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "404", "Message": "not found", "Data": ""}
+					// 		}
+					// 	}
+					// 	// fmt.Println(subgruposDetalle)
+					// 	// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": subgruposDetalle}
+				
+					// } else {
+					// 	c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+					// 	c.Abort("400")
+					// }
 
 					indicadoresData["nombreIndicador"] = nombreIndicador
 					indicadoresData["descripcionIndicador"] = descripcionIndicador
-					// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": subgrupo}
+					// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": data}
 				}
 		
 			} else {
