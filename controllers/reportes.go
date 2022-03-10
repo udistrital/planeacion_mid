@@ -55,38 +55,19 @@ func (c *ReportesController) Desagregado() {
 	var identificacion map[string]interface{}
 	var dato map[string]interface{}
 	var data_identi []map[string]interface{}
-	var identificacion_data map[string]interface{}
 	var arreglo []map[string]interface{}
-
 	// excel
 	var consolidadoExcel *excelize.File
 	consolidadoExcel = excelize.NewFile()
-	sheetName := "nuevo"
-	index := consolidadoExcel.NewSheet(sheetName)
-
-	
-
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string), &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
-		// fmt.Println(respuesta)
 
 		for i := 0; i < len(planesFilter); i++ {
 			plan = planesFilter[i]
 			planId := plan["_id"].(string)
-			fmt.Println("iteracion")
-			fmt.Println(i)
-			fmt.Println(plan)	
 			dependencia := plan["dependencia_id"].(string)
-			// fmt.Println(dependencia)
-
-			// dependenciaId, err := strconv.ParseFloat(dependencia, 8)
-			// if err != nil {
-			// 	fmt.Println(err)
-			// }
-			// fmt.Println(dependenciaId+1)
-			 
 			if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia?query=Id:"+dependencia, &respuestaOikos); err == nil {
 				nombreDep = respuestaOikos[0]
 			} else {
@@ -96,8 +77,6 @@ func (c *ReportesController) Desagregado() {
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=activo:true,plan_id:"+planId+",tipo_identificacion_id:"+"617b6630f6fc97b776279afa", &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &identificacionres)
 				identificacion = identificacionres[0]
-				// fmt.Println("identificacion")		
-				// fmt.Println(identificacion)		
 				if identificacion["dato"] != "{}" {
 					dato_str := identificacion["dato"].(string)
 					json.Unmarshal([]byte(dato_str), &dato)
@@ -107,56 +86,45 @@ func (c *ReportesController) Desagregado() {
 							delete(element, "actividades")
 							delete(element, "activo")
 							delete(element, "index")
-							// aqui dentro por medio del element puedo acceder tanto al nombre y a todos los demas atributos del objeto para hacer el excel sería acá
 							element["unidad"] = nombreDep["Nombre"]
 							data_identi = append(data_identi, element)
-							// fmt.Println(dato);
 						}
 
 					}
-					// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": data_identi}
 					arreglo = append(arreglo, data_identi...)
-		
+
+					for h := 0 ; h < len(arreglo); h++ {
+
+						datosArreglo := arreglo[h]
+						fmt.Println(datosArreglo["Nombre"])
+						totalAcumulado := fmt.Sprint(h)
+						sheetName := "nuevo" + totalAcumulado
+						index := consolidadoExcel.NewSheet(sheetName)
+						consolidadoExcel.SetCellValue(sheetName, "A1", "Dependencia Responsable")
+							consolidadoExcel.SetCellValue(sheetName, "A2", "codigo del rubro")
+							consolidadoExcel.SetCellValue(sheetName, "A3", datosArreglo["codigo"])
+
+							consolidadoExcel.SetCellValue(sheetName, "B1", datosArreglo["unidad"])
+
+							consolidadoExcel.SetCellValue(sheetName, "B2", "Nombre del rubro")
+							consolidadoExcel.SetCellValue(sheetName, "B3", datosArreglo["Nombre"])
+							consolidadoExcel.SetCellValue(sheetName, "C2", "valor")
+							consolidadoExcel.SetCellValue(sheetName, "C3", datosArreglo["valor"])
+							consolidadoExcel.SetCellValue(sheetName, "D2", "Descripcion del bien y/o servicio")
+							consolidadoExcel.SetCellValue(sheetName, "D3", datosArreglo["descripcion"])
+							consolidadoExcel.SetActiveSheet(index)
+					}
+
 				} else {
 					c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": ""}
 				}
-		
+
 			} else {
 				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 				c.Abort("400")
 			}
 		}
-		consolidadoExcel.SetCellValue(sheetName, "A1", "Dependencia Responsable")
-		consolidadoExcel.SetCellValue(sheetName, "A2", "codigo del rubro")
-		consolidadoExcel.SetCellValue(sheetName, "A3", identificacion_data["codigo"])
-
-		consolidadoExcel.SetCellValue(sheetName, "B1", nombreDep["Nombre"])
-		// style, err := consolidadoExcel.NewStyle(&excelize.Style{
-		// 	Font: &excelize.Font{
-		// 		Bold:   true,
-		// 		Italic: true,
-		// 		Family: "Times New Roman",
-		// 		Size:   36,
-		// 		Color:  "#777777",
-		// 	},
-		// })
-		// if err != nil {
-		// 	fmt.Println(err)
-		// }
-		// err = consolidadoExcel.SetCellStyle("Sheet1", "B1", "B1", style)
-
-		consolidadoExcel.SetCellValue(sheetName, "B2", "Nombre del rubro")
-		consolidadoExcel.SetCellValue(sheetName, "B3", identificacion_data["Nombre"])
-		consolidadoExcel.SetCellValue(sheetName, "C2", "valor")
-		consolidadoExcel.SetCellValue(sheetName, "C3", identificacion_data["valor"])
-		consolidadoExcel.SetCellValue(sheetName, "D2", "Descripcion del bien y/o servicio")
-		consolidadoExcel.SetCellValue(sheetName, "D3", identificacion_data["descripcion"])
-		consolidadoExcel.SetActiveSheet(index)
 		CreateExcel(consolidadoExcel, "Consolidado Presupuestal.xls")
-
-		// func (f *File) SetCellStyle(sheet, hcell, vcell string, styleID int){
-
-		// }
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": arreglo}
 
 
@@ -181,7 +149,7 @@ func (c *ReportesController) PlanAccionAnual() {
 	var res map[string]interface{}
 	var subgrupos []map[string]interface{}
 	var plan_id string
-	var datad map[string]interface{}
+	// var datad map[string]interface{}
 	// var resSubDetalle map[string]interface{}
 	// var subgruposDetalle []map[string]interface{}
 	// var data map[string]interface{}
@@ -203,9 +171,9 @@ func (c *ReportesController) PlanAccionAnual() {
 				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan_id, &res); err == nil {
 					helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
 					index := body["index"].(string)
-					datad = seguimientohelper.GetDataSubgrupos(subgrupos, index)
+					datad := seguimientohelper.GetDataSubgrupos(subgrupos, index)
 					for i := range datad{
-						test := datad[i] 
+						test := datad[i]
 						// el problema está aquí porque no sirve con el .(map[string]interface{})
 						// data_identi = append(data_identi, test)
 						fmt.Println(test)
@@ -227,11 +195,11 @@ func (c *ReportesController) PlanAccionAnual() {
 					// 	// 	// 	data_identi = append(data_identi, element)
 					// 	// 	// 	fmt.Println(dato);
 					// 	// 	// }
-	
+
 					// 	// }
 					// 	// // c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": data_identi}
 					// 	arreglo = append(arreglo, datad...)
-			
+
 					// } else {
 					// 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "404", "Message": "not found", "Data": ""}
 					// }
@@ -254,12 +222,24 @@ func (c *ReportesController) PlanAccionAnual() {
 			planesFilterData := planesFilter[0]
 			plan_id = planesFilterData["_id"].(string)
 			// fmt.Println(plan_id)
-			
+
 			// if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=activo:true,padre:"+plan_id, &res); err == nil {
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan_id, &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
 				index := body["index"].(string)
 				data := seguimientohelper.GetDataSubgrupos(subgrupos, index)
+				// primeros espacios de la tabla
+				lineamiento := data["lineamiento"]
+				fmt.Println(lineamiento)
+				metaEstrategica := data["meta_estrategica"]
+				fmt.Println(metaEstrategica)
+				estrategia := data["estrategia"]
+				fmt.Println(estrategia)
+
+				// siguientes espacios de la tabla
+				tarea := data["tarea"]
+				fmt.Println(tarea)
+
 				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": data}
 
 				// if data = nil {
@@ -296,7 +276,7 @@ func (c *ReportesController) PlanAccionAnual() {
 					// 	}
 					// 	// fmt.Println(subgruposDetalle)
 					// 	// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": subgruposDetalle}
-				
+
 					// } else {
 					// 	c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 					// 	c.Abort("400")
@@ -306,7 +286,7 @@ func (c *ReportesController) PlanAccionAnual() {
 					indicadoresData["descripcionIndicador"] = descripcionIndicador
 					// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": data}
 				}
-		
+
 			} else {
 				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 				c.Abort("400")
