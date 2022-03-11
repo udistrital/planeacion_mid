@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	// "reflect"
 	// "strconv"
 	// "encoding/base64"
@@ -11,7 +12,7 @@ import (
 	"github.com/udistrital/planeacion_mid/helpers"
 	"github.com/udistrital/utils_oas/request"
 	"github.com/xuri/excelize/v2"
-	seguimientohelper "github.com/udistrital/planeacion_mid/helpers/seguimientoHelper"
+	reporteshelper "github.com/udistrital/planeacion_mid/helpers/reportesHelper"
 )
 
 // ReportesController operations for Reportes
@@ -63,7 +64,7 @@ func (c *ReportesController) Desagregado() {
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string), &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
-
+		fmt.Println(planesFilter)
 		for i := 0; i < len(planesFilter); i++ {
 			plan = planesFilter[i]
 			planId := plan["_id"].(string)
@@ -96,9 +97,9 @@ func (c *ReportesController) Desagregado() {
 					for h := 0 ; h < len(arreglo); h++ {
 
 						datosArreglo := arreglo[h]
-						fmt.Println(datosArreglo["Nombre"])
-						totalAcumulado := fmt.Sprint(h)
-						sheetName := "nuevo" + totalAcumulado
+						// fmt.Println(datosArreglo["Nombre"])
+						nombreHoja := fmt.Sprint(datosArreglo["unidad"])
+						sheetName := nombreHoja
 						index := consolidadoExcel.NewSheet(sheetName)
 						consolidadoExcel.SetCellValue(sheetName, "A1", "Dependencia Responsable")
 							consolidadoExcel.SetCellValue(sheetName, "A2", "codigo del rubro")
@@ -147,14 +148,17 @@ func (c *ReportesController) PlanAccionAnual() {
 	var respuesta map[string]interface{}
 	var planesFilter []map[string]interface{}
 	var res map[string]interface{}
+	var resSub map[string]interface{}
 	var subgrupos []map[string]interface{}
+	var hijos []map[string]interface{}
 	var plan_id string
+	var actividadName string
 	// var datad map[string]interface{}
 	// var resSubDetalle map[string]interface{}
 	// var subgruposDetalle []map[string]interface{}
 	// var data map[string]interface{}
 	// var data_identi []map[string]interface{}
-	// var arreglo []map[string]interface{}
+	var arregloPlanAnual []map[string]interface{}
 
 	var generalData = make(map[string]interface{})
 	var indicadoresData = make(map[string]interface{})
@@ -171,7 +175,7 @@ func (c *ReportesController) PlanAccionAnual() {
 				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan_id, &res); err == nil {
 					helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
 					index := body["index"].(string)
-					datad := seguimientohelper.GetDataSubgrupos(subgrupos, index)
+					datad := reporteshelper.GetDataSubgrupos(subgrupos, index)
 					for i := range datad{
 						test := datad[i]
 						// el problema está aquí porque no sirve con el .(map[string]interface{})
@@ -223,74 +227,117 @@ func (c *ReportesController) PlanAccionAnual() {
 			plan_id = planesFilterData["_id"].(string)
 			// fmt.Println(plan_id)
 
-			// if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=activo:true,padre:"+plan_id, &res); err == nil {
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan_id, &res); err == nil {
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id, &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
-				index := body["index"].(string)
-				data := seguimientohelper.GetDataSubgrupos(subgrupos, index)
-				// primeros espacios de la tabla
-				lineamiento := data["lineamiento"]
-				fmt.Println(lineamiento)
-				metaEstrategica := data["meta_estrategica"]
-				fmt.Println(metaEstrategica)
-				estrategia := data["estrategia"]
-				fmt.Println(estrategia)
-
-				// siguientes espacios de la tabla
-				tarea := data["tarea"]
-				fmt.Println(tarea)
-
-				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": data}
-
-				// if data = nil {
-				// 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "404", "Message": "not found", "Data": ""}
-				// }else {
-				// 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": data}
-				// }
-
-				// fmt.Println(subgrupos)
+		
 				for i := 0; i < len(subgrupos); i++ {
-					subgrupo := subgrupos[i]
-					nombreIndicador := subgrupo["nombre"]
-					descripcionIndicador := subgrupo["descripcion"]
-					// subgrupo_id := subgrupo["_id"].(string)
-					if subgrupo["hijos"] != "[]"{
-						dato_str := subgrupo["hijos"]
-						fmt.Println(dato_str)
-						// json.Unmarshal([]byte(dato_str), &dato)
-						// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": dato_str}
-					}else{
-						// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "404", "Message": "not found", "Data": ""}
+					if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") && strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "general") {
+						actividades := reporteshelper.GetActividades(subgrupos[i]["_id"].(string))
+						fmt.Println("este de abajo es actividaes")
+						fmt.Println(actividades)
+						for j := 0; j < len(actividades); j++ {
+							actividad := actividades[j]
+							actividadName = actividad["dato"].(string)
+							// fmt.Println(actividadName)
+							index := fmt.Sprint(actividad["index"])
+
+							if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan_id, &resSub); err == nil {
+								helpers.LimpiezaRespuestaRefactor(resSub, &hijos)
+								data := reporteshelper.GetDataSubgrupos(hijos, index)
+								generalData := make(map[string]interface{})
+								generalData["hijos"] = data
+								generalData["nombreActividad"] = actividadName
+								generalData["numeroActividad"] = index
+
+								arregloPlanAnual = append(arregloPlanAnual, generalData)
+								// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": data}
+							} else {
+								c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+								c.Abort("400")
+							}
+
+
+						}
+						c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": arregloPlanAnual}
+		
+						break
 					}
-					// if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=activo:true,subgrupo_id:"+subgrupo_id, &resSubDetalle); err == nil {
-					// 	helpers.LimpiezaRespuestaRefactor(resSubDetalle, &subgruposDetalle)
-					// 	for j := 0; j < len(subgruposDetalle); j++ {
-					// 		subgrupoDetalle := subgruposDetalle[j]
-					// 		if subgrupoDetalle["dato"] != "{}"{
-					// 			dato_str := subgrupoDetalle["dato"].(string)
-					// 			json.Unmarshal([]byte(dato_str), &dato)
-					// 			// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": subgrupoDetalle}
-					// 		}else{
-					// 			// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "404", "Message": "not found", "Data": ""}
-					// 		}
-					// 	}
-					// 	// fmt.Println(subgruposDetalle)
-					// 	// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": subgruposDetalle}
-
-					// } else {
-					// 	c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-					// 	c.Abort("400")
-					// }
-
-					indicadoresData["nombreIndicador"] = nombreIndicador
-					indicadoresData["descripcionIndicador"] = descripcionIndicador
-					// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": data}
 				}
-
 			} else {
 				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 				c.Abort("400")
 			}
+
+
+
+			// if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=activo:true,padre:"+plan_id, &res); err == nil {
+			// if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan_id, &res); err == nil {
+			// 	helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
+			// 	index := body["index"].(string)
+			// 	data := seguimientohelper.GetDataSubgrupos(subgrupos, index)
+			// 	// primeros espacios de la tabla
+			// 	lineamiento := data["lineamiento"]
+			// 	fmt.Println(lineamiento)
+			// 	metaEstrategica := data["meta_estrategica"]
+			// 	fmt.Println(metaEstrategica)
+			// 	estrategia := data["estrategia"]
+			// 	fmt.Println(estrategia)
+
+			// 	// siguientes espacios de la tabla
+			// 	tarea := data["tarea"]
+			// 	fmt.Println(tarea)
+
+			// 	// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": data}
+
+			// 	// if data = nil {
+			// 	// 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "404", "Message": "not found", "Data": ""}
+			// 	// }else {
+			// 	// 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": data}
+			// 	// }
+
+			// 	// fmt.Println(subgrupos)
+			// 	for i := 0; i < len(subgrupos); i++ {
+			// 		subgrupo := subgrupos[i]
+			// 		nombreIndicador := subgrupo["nombre"]
+			// 		descripcionIndicador := subgrupo["descripcion"]
+			// 		// subgrupo_id := subgrupo["_id"].(string)
+			// 		if subgrupo["hijos"] != "[]"{
+			// 			dato_str := subgrupo["hijos"]
+			// 			fmt.Println(dato_str)
+			// 			// json.Unmarshal([]byte(dato_str), &dato)
+			// 			// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": dato_str}
+			// 		}else{
+			// 			// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "404", "Message": "not found", "Data": ""}
+			// 		}
+			// 		// if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=activo:true,subgrupo_id:"+subgrupo_id, &resSubDetalle); err == nil {
+			// 		// 	helpers.LimpiezaRespuestaRefactor(resSubDetalle, &subgruposDetalle)
+			// 		// 	for j := 0; j < len(subgruposDetalle); j++ {
+			// 		// 		subgrupoDetalle := subgruposDetalle[j]
+			// 		// 		if subgrupoDetalle["dato"] != "{}"{
+			// 		// 			dato_str := subgrupoDetalle["dato"].(string)
+			// 		// 			json.Unmarshal([]byte(dato_str), &dato)
+			// 		// 			// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": subgrupoDetalle}
+			// 		// 		}else{
+			// 		// 			// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "404", "Message": "not found", "Data": ""}
+			// 		// 		}
+			// 		// 	}
+			// 		// 	// fmt.Println(subgruposDetalle)
+			// 		// 	// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": subgruposDetalle}
+
+			// 		// } else {
+			// 		// 	c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+			// 		// 	c.Abort("400")
+			// 		// }
+
+			// 		indicadoresData["nombreIndicador"] = nombreIndicador
+			// 		indicadoresData["descripcionIndicador"] = descripcionIndicador
+			// 		// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": data}
+			// 	}
+
+			// } else {
+			// 	c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+			// 	c.Abort("400")
+			// }
 
 			nombrePlan := planesFilterData["nombre"]
 			descripcionPlan := planesFilterData["descripcion"]
