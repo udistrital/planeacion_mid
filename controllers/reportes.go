@@ -183,7 +183,8 @@ func (c *ReportesController) PlanAccionAnual() {
 						fmt.Println(test)
 					}
 					// if datad != nil {
-						c.Data["json"] = map[string]interface{}{"Success": true, "Status": "404", "Message": "not found", "Data": datad}
+					c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": datad}
+						// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "404", "Message": "not found", "Data": ""}
 					// 	// dato_str := identificacion["dato"].(string)
 					// 	// json.Unmarshal([]byte(data), &dato)
 					// 	// for key := range datad {
