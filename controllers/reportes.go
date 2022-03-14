@@ -175,6 +175,10 @@ func (c *ReportesController) PlanAccionAnual() {
 	var nombreUnidad string
 	var planAnualGeneral []map[string]interface{}
 
+	// excel
+	var consolidadoExcelPlanAnual *excelize.File
+	consolidadoExcelPlanAnual = excelize.NewFile()
+
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
 	if body["unidad_id"].(string) == ""{
@@ -579,6 +583,21 @@ func (c *ReportesController) PlanAccionAnual() {
 								// arregloPlanAnual = append(arregloPlanAnual, generalData)
 								arregloPlanAnual = append(arregloPlanAnual, generalData)
 
+								//aquí se pone el plan y todo para el excel
+
+
+								// for excelPlan := 0; excelPlan < len(planAnual) ; excelPlan++ {
+								
+
+								// datosExcelPlan := arregloPlanAnual[0]
+								nombreHoja := fmt.Sprint(nombreUnidad)
+								sheetName := nombreHoja
+								indexPlan := consolidadoExcelPlanAnual.NewSheet(sheetName)
+								consolidadoExcelPlanAnual.SetActiveSheet(indexPlan)
+								consolidadoExcelPlanAnual.SetCellValue(sheetName, "A1", nombreUnidad)
+				
+								// }
+
 
 							}
 							// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": arregloPlanAnual}
@@ -592,7 +611,21 @@ func (c *ReportesController) PlanAccionAnual() {
 				}
 
 				planAnual = append(planAnual, arregloPlanAnual...)
+
+				//aquí se pone el plan y todo para el excel
+
+
+				// for excelPlan := 0; excelPlan < len(planAnual) ; excelPlan++ {
+				// 	datosExcelPlan := planAnual[excelPlan]
+				// 	nombreHoja := fmt.Sprint(nombreUnidad)
+				// 	sheetName := nombreHoja
+				// 	indexPlan := consolidadoExcelPlanAnual.NewSheet(sheetName)
+				// 	consolidadoExcelPlanAnual.SetActiveSheet(indexPlan)
+				// 	consolidadoExcelPlanAnual.SetCellValue(sheetName, "A1", nombreUnidad)
+	
+				// }
 			}
+			CreateExcel(consolidadoExcelPlanAnual, "Plan anual unidad.xlsx")
 			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": planAnual}
 
 		} else {
