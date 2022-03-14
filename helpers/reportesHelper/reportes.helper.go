@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"log"
-	"strings"
+	// "strings"
 	"fmt"
 
 	"github.com/astaxie/beego"
@@ -48,108 +48,6 @@ func GetActividades(subgrupo_id string) []map[string]interface{} {
 
 	}
 	return actividades
-}
-
-func GetDataSubgrupos(subgrupos []map[string]interface{}, index string) map[string]interface{} {
-	var data map[string]interface{}
-	auxSubgrupo := make(map[string]interface{})
-
-	for i := range subgrupos {
-		if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "lineamiento") {
-			aux := getSubgrupoDetalle(subgrupos[i]["_id"].(string), index)
-			auxSubgrupo["lineamiento"] = aux["dato"]
-
-		}
-
-		if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "meta") && strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "estratégica") {
-			aux := getSubgrupoDetalle(subgrupos[i]["_id"].(string), index)
-			auxSubgrupo["meta_estrategica"] = aux["dato"]
-
-		}
-
-		if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "estrategia") {
-			aux := getSubgrupoDetalle(subgrupos[i]["_id"].(string), index)
-			auxSubgrupo["estrategia"] = aux["dato"]
-
-		}
-
-		if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "indicador") {
-			var res map[string]interface{}
-			var hijos []map[string]interface{}
-			var indicadores []map[string]interface{}
-			var metas []map[string]interface{}
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+subgrupos[i]["_id"].(string), &res); err != nil {
-				panic(map[string]interface{}{"funcion": "GetDataSubgrupos", "err": "Error get indicador \"key\"", "status": "400", "log": err})
-			}
-
-			helpers.LimpiezaRespuestaRefactor(res, &hijos)
-			for j := range hijos {
-				if strings.Contains(strings.ToLower(hijos[j]["nombre"].(string)), "indicador") {
-					aux := getSubgrupoDetalle(hijos[j]["_id"].(string), index)
-					auxSubgrupo["indicador"] = aux["dato"]
-					indicadores = append(indicadores, aux)
-				}
-				if strings.Contains(strings.ToLower(hijos[j]["nombre"].(string)), "meta") {
-					aux := getSubgrupoDetalle(hijos[j]["_id"].(string), index)
-					auxSubgrupo["meta"] = aux["dato"]
-					metas = append(metas, aux)
-
-				}
-			}
-			auxSubgrupo["indicador"] = indicadores
-			auxSubgrupo["meta"] = metas
-
-		}
-
-		if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "tarea") {
-			aux := getSubgrupoDetalle(subgrupos[i]["_id"].(string), index)
-			auxSubgrupo["tarea"] = aux["dato"]
-		}
-
-		data = auxSubgrupo
-	}
-
-	if data["lineamiento"] == nil {
-		data["lineamiento"] = "No Aplica"
-	}
-
-	if data["meta_estrategica"] == nil {
-		data["meta_estrategica"] = "No Aplica"
-	}
-
-	if data["estrategia"] == nil {
-		data["estrategia"] = "No Aplica"
-	}
-
-	if data["indicador"] == nil {
-		data["indicador"] = "No Aplica"
-		data["meta"] = "No Aplica"
-	}
-
-	if data["tarea"] == nil {
-		data["tarea"] = "No Aplica"
-	}
-	return data
-}
-
-func getSubgrupoDetalle(subgrupo_id string, index string) map[string]interface{} {
-	var respuesta map[string]interface{}
-	var subgrupoDetalle map[string]interface{}
-	var datoPlan map[string]interface{}
-	var data map[string]interface{}
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+subgrupo_id, &respuesta); err != nil {
-		panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error get subgrupo-detalle \"key\"", "status": "400", "log": err})
-	}
-	aux := make([]map[string]interface{}, 1)
-	helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
-	subgrupoDetalle = aux[0]
-	if subgrupoDetalle["dato_plan"] != nil {
-		dato_plan_str := subgrupoDetalle["dato_plan"].(string)
-		json.Unmarshal([]byte(dato_plan_str), &datoPlan)
-
-		data = datoPlan[index].(map[string]interface{})
-	}
-	return data
 }
 
 func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]interface{} {

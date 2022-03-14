@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 	// "reflect"
-	"strconv"
+	// "strconv"
 	// "encoding/base64"
 
 	"github.com/astaxie/beego"
@@ -151,40 +151,28 @@ func (c *ReportesController) PlanAccionAnual() {
 	var respuesta map[string]interface{}
 	var planesFilter []map[string]interface{}
 	var res map[string]interface{}
-	var resName map[string]interface{}
-	var parametro_periodo_name []map[string]interface{}
-	var resPeriodo map[string]interface{}
-	var resPeriodos []map[string]interface{}
-	var resSub map[string]interface{}
 	var resArmo map[string]interface{}
 	var resEstrategia map[string]interface{}
 	var resMeta map[string]interface{}
 	var resLineamiento map[string]interface{}
 	var resPlan map[string]interface{}
+	var respuestaUnidad []map[string]interface{}
 	var hijosArmo []map[string]interface{}
 	var estrategiaData []map[string]interface{}
 	var metaData []map[string]interface{}
 	var LineamientoData []map[string]interface{}
 	var planData []map[string]interface{}
 	var subgrupos []map[string]interface{}
-	var hijos []map[string]interface{}
 	var plan_id string
 	var actividadName string
-	var subgrupoDetalle map[string]interface{}
 	var arregloPlanAnual []map[string]interface{}
 	var arregloEstrategia []map[string]interface{}
 	var arregloMetaEst []map[string]interface{}
 	var arregloLineamieto []map[string]interface{}
 	var planAnual []map[string]interface{}
-	var respuestaDetalle map[string]interface{}
-	var respuestaLimpiaDetalle []map[string]interface{}
-	var seguimientoPeriodo map[string]interface{}
-	var dato map[string]interface{}
-	// var datoArmo map[string]interface{}
-	var nombrePeriodo string
-	var ponderacionActividades string
 	var unidadId string
 	var nombrePlanDesarrollo string
+	var nombreUnidad string
 	var planAnualGeneral []map[string]interface{}
 
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
@@ -201,12 +189,12 @@ func (c *ReportesController) PlanAccionAnual() {
 					helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
 					for planes := 0; planes < len(planesFilter); planes ++ {
 						planesFilterData := planesFilter[planes]
-						fmt.Println(planesFilter)
+						// fmt.Println(planesFilter)
 						plan_id = planesFilterData["_id"].(string)
 		
 						if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id, &res); err == nil {
 							helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
-					
+							
 							for i := 0; i < len(subgrupos); i++ {
 								if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") && strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "general") {
 									actividades := reporteshelper.GetActividades(subgrupos[i]["_id"].(string))
@@ -214,70 +202,169 @@ func (c *ReportesController) PlanAccionAnual() {
 										actividad := actividades[j]
 										actividadName = actividad["dato"].(string)
 										index := fmt.Sprint(actividad["index"])
+										datosArmonizacion := make(map[string]interface{})
+										titulosArmonizacion := make(map[string]interface{})
 		
-										if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+plan_id, &resPeriodo); err == nil {
-											helpers.LimpiezaRespuestaRefactor(resPeriodo, &resPeriodos)
-											for p:=0 ; p < len(resPeriodos); p++ {
-												seguimientoPeriodo = resPeriodos[p]
-											}
-											seguimientoPeriodoStr := seguimientoPeriodo["dato"].(string)
-											json.Unmarshal([]byte(seguimientoPeriodoStr), &dato)
-											periodId := seguimientoPeriodo["periodo_id"].(string)
-											if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+periodId, &resName); err == nil {
-												helpers.LimpiezaRespuestaRefactor(resName, &parametro_periodo_name)
-												paramIdlenName := parametro_periodo_name[0]
-												paramIdName := paramIdlenName["ParametroId"].(map[string]interface{})
-												nombrePeriodo = paramIdName["CodigoAbreviacion"].(string)
-											}else{
-												c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-												c.Abort("400")
-											}
-											
-										}else{
-											c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-											c.Abort("400")
-										}
 		
-										if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan_id, &resSub); err == nil {
-											helpers.LimpiezaRespuestaRefactor(resSub, &hijos)
-											data := reporteshelper.GetDataSubgrupos(hijos, index)
-											generalData := make(map[string]interface{})
-		
-											for h := 0; h < len(hijos); h++ {
-												if strings.Contains(strings.ToUpper(hijos[h]["nombre"].(string)), "PONDERACIÓN") && strings.Contains(strings.ToUpper(hijos[h]["nombre"].(string)), "ACTIVIDAD") || strings.Contains(strings.ToUpper(hijos[h]["nombre"].(string)), "PONDERACIÓN") {
-													if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijos[h]["_id"].(string), &respuestaDetalle); err == nil {
-									
-														helpers.LimpiezaRespuestaRefactor(respuestaDetalle, &respuestaLimpiaDetalle)
-														subgrupoDetalle = respuestaLimpiaDetalle[0]
-									
-														if subgrupoDetalle["dato_plan"] != nil {
-															datoPlan := make(map[string]map[string]interface{})
-															json.Unmarshal([]byte(subgrupoDetalle["dato_plan"].(string)), &datoPlan)
-		
-															if datoPlan[strconv.Itoa(j+1)]["activo"] != false {
-																ponderacionActividades = fmt.Sprint(datoPlan[strconv.Itoa(j+1)]["dato"])
-															}
-														}
-									
-													} else {
-														panic(map[string]interface{}{"funcion": "PonderacionActividades", "err": "Error subgrupo_detalle plan \"plan\"", "status": "400", "log": err})
-													}
+										if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan_id, &resArmo); err == nil {
+											helpers.LimpiezaRespuestaRefactor(resArmo, &hijosArmo)
+											reporteshelper.Limpia()
+											tree := reporteshelper.BuildTreeFa(hijosArmo, index)
+											treeDatos := tree[0]
+											treeDatas := tree[1]
+											treeArmo := tree[2]
+											armonizacionTercer := treeArmo[0]
+											armonizacionTercerNivel := armonizacionTercer["armo"]
+											// fmt.Println(len(treeDatos))
+											for datoGeneral := 0; datoGeneral < len(treeDatos); datoGeneral++ {
+												treeDato := treeDatos[datoGeneral]
+												treeData := treeDatas[0]
+												if treeDato["sub"] == "" {
+													datosArmonizacion[treeDato["nombre"].(string)] = treeData[fmt.Sprint(treeDato["id"])]
 												}
 											}
+											treeIndicador := treeDatos[4]
+											subIndicador := treeIndicador["sub"].([]map[string]interface{})
 		
-											generalData["nombreActividad"] = actividadName
-											generalData["numeroActividad"] = index
-											generalData["ponderacion"] = ponderacionActividades
-											generalData["periodo_ejecucion"] = nombrePeriodo
-											generalData["hijos"] = data
-											generalData["unidad_id"] = unidadId
-
-											arregloPlanAnual = append(arregloPlanAnual, generalData)
-											// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": data}
+											for ind := 0; ind < len(subIndicador); ind++ {
+												subIndicadorRes := subIndicador[ind]
+												treeData := treeDatas[0]
+												titulosArmonizacion[subIndicadorRes["nombre"].(string)] = treeData[fmt.Sprint(subIndicadorRes["id"])]
+											}
+											datosArmonizacion["indicadores"] = titulosArmonizacion
+		
+											// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": datosArmonizacion}
+		
+											if armonizacionTercerNivel != nil {
+												// fmt.Println(armonizacionTercerNivel, reflect.TypeOf(armonizacionTercerNivel))
+												delimitador := ","
+												output := strings.Split(armonizacionTercerNivel.(string), delimitador)
+												// fmt.Println(len(output))
+												estrategiaDesc := make(map[string]interface{})
+												metaEstrategica := make(map[string]interface{})
+												lineamientoDesc := make(map[string]interface{})
+												for estrategiaArmo := 0; estrategiaArmo < len(output); estrategiaArmo++{
+													estrategiaId := output[estrategiaArmo]
+													if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=_id:"+estrategiaId, &resEstrategia); err == nil {
+														helpers.LimpiezaRespuestaRefactor(resEstrategia, &estrategiaData)
+														estrategiaEst := estrategiaData[0]
+														idPadre := estrategiaEst["padre"].(string)
+														estrategiaDataStr := fmt.Sprint(estrategiaData)
+														if estrategiaDataStr != "[]" {
+															estrategiaDesc["descripcionEstrategia"] = estrategiaEst["descripcion"]
+															estrategiaDesc["nombreEstrategia"] = estrategiaEst["nombre"]
+		
+															if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=_id:"+idPadre, &resMeta); err == nil {
+																helpers.LimpiezaRespuestaRefactor(resMeta, &metaData)				
+																metaEst := metaData[0]
+																padreMeta := metaEst["padre"].(string)
+																metaDataStr := fmt.Sprint(metaData)
+		
+																if metaDataStr != "[]"{
+																	metaEstrategica["nombreMeta"] = metaEst["nombre"]
+		
+																	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=_id:"+padreMeta, &resLineamiento); err == nil {
+																		helpers.LimpiezaRespuestaRefactor(resLineamiento, &LineamientoData)				
+																		lineamientoEst := LineamientoData[0]
+																		lineamientoDesc["nombreLineamiento"] = lineamientoEst["nombre"]
+																		padreLineamiento := lineamientoEst["padre"].(string)
+			
+																		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=_id:"+padreLineamiento, &resPlan); err == nil {
+																			helpers.LimpiezaRespuestaRefactor(resPlan, &planData)
+																			planDesarrollo := planData[0]
+																			nombrePlanDesarrollo = planDesarrollo["nombre"].(string)
+																			lineamientoDesc["nombrePlanDesarrollo"] = nombrePlanDesarrollo
+																		
+																		} else {
+																			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+																			c.Abort("400")
+																		}
+			
+																		// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": lineamientoEst}
+			
+					
+																	} else {
+																		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+																		c.Abort("400")
+																	}
+																}else{
+																	lineamientoDesc["nombreLineamiento"] = metaEst["nombre"]
+																	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=_id:"+padreMeta, &resPlan); err == nil {
+																		helpers.LimpiezaRespuestaRefactor(resPlan, &planData)
+																		planDesarrollo := planData[0]
+																		nombrePlanDesarrollo = planDesarrollo["nombre"].(string)
+																		lineamientoDesc["nombrePlanDesarrollo"] = nombrePlanDesarrollo
+		
+																	} else {
+																		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+																		c.Abort("400")
+																	}
+																}
+		
+															} else {
+																c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+																c.Abort("400")
+															}
+		
+														}else{
+															lineamientoDesc["nombreLineamiento"] = estrategiaEst["nombre"]
+															if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=_id:"+idPadre, &resPlan); err == nil {
+																helpers.LimpiezaRespuestaRefactor(resPlan, &planData)
+																planDesarrollo := planData[0]
+																nombrePlanDesarrollo = planDesarrollo["nombre"].(string)
+																lineamientoDesc["nombrePlanDesarrollo"] = nombrePlanDesarrollo
+		
+															} else {
+																c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+																c.Abort("400")
+															}
+		
+														}
+		
+													} else {
+														c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+														c.Abort("400")
+													}
+													// estrategiaDesc["descripcion"] = estrategiaData
+												}
+												arregloEstrategia = append(arregloEstrategia, estrategiaDesc)
+												metaEstrategica["estrategias"] = arregloEstrategia
+												arregloMetaEst = append(arregloMetaEst, metaEstrategica)
+												lineamientoDesc["meta"] = arregloMetaEst
+												arregloLineamieto = append(arregloLineamieto, lineamientoDesc)
+		
+												// datosArmonizacion["armonizacion"] = arregloLineamieto
+		
+												// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": arregloLineamieto}
+											}
+		
 										} else {
 											c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 											c.Abort("400")
 										}
+		
+										generalData := make(map[string]interface{})
+		
+										if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=DependenciaId:"+unidadId, &respuestaUnidad); err == nil {
+											aux := respuestaUnidad[0]
+											dependenciaNombre := aux["DependenciaId"].(map[string]interface{})
+											nombreUnidad = dependenciaNombre["Nombre"].(string)
+		
+										} else {
+											panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+										}
+		
+										generalData["nombreUnidad"] = nombreUnidad
+										generalData["nombreActividad"] = actividadName
+										generalData["numeroActividad"] = index
+										// generalData["ponderacion"] = ponderacionActividades
+										// generalData["periodo_ejecucion"] = nombrePeriodo
+										// generalData["hijos"] = data
+										generalData["datosArmonizacion"] = arregloLineamieto
+										generalData["datosComplementarios"] = datosArmonizacion
+		
+										// arregloPlanAnual = append(arregloPlanAnual, generalData)
+										arregloPlanAnual = append(arregloPlanAnual, generalData)
 		
 		
 									}
@@ -294,6 +381,7 @@ func (c *ReportesController) PlanAccionAnual() {
 						planAnual = append(planAnual, arregloPlanAnual...)
 					}
 					// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": planAnual}
+		
 				} else {
 					c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 					c.Abort("400")
@@ -314,7 +402,7 @@ func (c *ReportesController) PlanAccionAnual() {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
 			for planes := 0; planes < len(planesFilter); planes ++ {
 				planesFilterData := planesFilter[planes]
-				fmt.Println(planesFilter)
+				// fmt.Println(planesFilter)
 				plan_id = planesFilterData["_id"].(string)
 
 				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id, &res); err == nil {
@@ -327,21 +415,44 @@ func (c *ReportesController) PlanAccionAnual() {
 								actividad := actividades[j]
 								actividadName = actividad["dato"].(string)
 								index := fmt.Sprint(actividad["index"])
-								// datosArmonizacion := make(map[string]interface{})
+								datosArmonizacion := make(map[string]interface{})
+								titulosArmonizacion := make(map[string]interface{})
 
 
 								if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan_id, &resArmo); err == nil {
 									helpers.LimpiezaRespuestaRefactor(resArmo, &hijosArmo)
 									reporteshelper.Limpia()
 									tree := reporteshelper.BuildTreeFa(hijosArmo, index)
+									treeDatos := tree[0]
+									treeDatas := tree[1]
 									treeArmo := tree[2]
 									armonizacionTercer := treeArmo[0]
 									armonizacionTercerNivel := armonizacionTercer["armo"]
+									// fmt.Println(len(treeDatos))
+									for datoGeneral := 0; datoGeneral < len(treeDatos); datoGeneral++ {
+										treeDato := treeDatos[datoGeneral]
+										treeData := treeDatas[0]
+										if treeDato["sub"] == "" {
+											datosArmonizacion[treeDato["nombre"].(string)] = treeData[fmt.Sprint(treeDato["id"])]
+										}
+									}
+									treeIndicador := treeDatos[4]
+									subIndicador := treeIndicador["sub"].([]map[string]interface{})
+
+									for ind := 0; ind < len(subIndicador); ind++ {
+										subIndicadorRes := subIndicador[ind]
+										treeData := treeDatas[0]
+										titulosArmonizacion[subIndicadorRes["nombre"].(string)] = treeData[fmt.Sprint(subIndicadorRes["id"])]
+									}
+									datosArmonizacion["indicadores"] = titulosArmonizacion
+
+									// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": datosArmonizacion}
+
 									if armonizacionTercerNivel != nil {
 										// fmt.Println(armonizacionTercerNivel, reflect.TypeOf(armonizacionTercerNivel))
 										delimitador := ","
 										output := strings.Split(armonizacionTercerNivel.(string), delimitador)
-										fmt.Println(len(output))
+										// fmt.Println(len(output))
 										estrategiaDesc := make(map[string]interface{})
 										metaEstrategica := make(map[string]interface{})
 										lineamientoDesc := make(map[string]interface{})
@@ -445,71 +556,28 @@ func (c *ReportesController) PlanAccionAnual() {
 									c.Abort("400")
 								}
 
+								generalData := make(map[string]interface{})
 
-								if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+plan_id, &resPeriodo); err == nil {
-									helpers.LimpiezaRespuestaRefactor(resPeriodo, &resPeriodos)
-									for p:=0 ; p < len(resPeriodos); p++ {
-										seguimientoPeriodo = resPeriodos[p]
-									}
-									seguimientoPeriodoStr := seguimientoPeriodo["dato"].(string)
-									json.Unmarshal([]byte(seguimientoPeriodoStr), &dato)
-									periodId := seguimientoPeriodo["periodo_id"].(string)
-									if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+periodId, &resName); err == nil {
-										helpers.LimpiezaRespuestaRefactor(resName, &parametro_periodo_name)
-										paramIdlenName := parametro_periodo_name[0]
-										paramIdName := paramIdlenName["ParametroId"].(map[string]interface{})
-										nombrePeriodo = paramIdName["CodigoAbreviacion"].(string)
-									}else{
-										c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-										c.Abort("400")
-									}
-									
-								}else{
-									c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-									c.Abort("400")
-								}
+								if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=DependenciaId:"+body["unidad_id"].(string), &respuestaUnidad); err == nil {
+									aux := respuestaUnidad[0]
+									dependenciaNombre := aux["DependenciaId"].(map[string]interface{})
+									nombreUnidad = dependenciaNombre["Nombre"].(string)
 
-								if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan_id, &resSub); err == nil {
-									helpers.LimpiezaRespuestaRefactor(resSub, &hijos)
-									data := reporteshelper.GetDataSubgrupos(hijos, index)
-									generalData := make(map[string]interface{})
-
-									for h := 0; h < len(hijos); h++ {
-										if strings.Contains(strings.ToUpper(hijos[h]["nombre"].(string)), "PONDERACIÓN") && strings.Contains(strings.ToUpper(hijos[h]["nombre"].(string)), "ACTIVIDAD") || strings.Contains(strings.ToUpper(hijos[h]["nombre"].(string)), "PONDERACIÓN") {
-											if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijos[h]["_id"].(string), &respuestaDetalle); err == nil {
-							
-												helpers.LimpiezaRespuestaRefactor(respuestaDetalle, &respuestaLimpiaDetalle)
-												subgrupoDetalle = respuestaLimpiaDetalle[0]
-							
-												if subgrupoDetalle["dato_plan"] != nil {
-													datoPlan := make(map[string]map[string]interface{})
-													json.Unmarshal([]byte(subgrupoDetalle["dato_plan"].(string)), &datoPlan)
-
-													if datoPlan[strconv.Itoa(j+1)]["activo"] != false {
-														ponderacionActividades = fmt.Sprint(datoPlan[strconv.Itoa(j+1)]["dato"])
-													}
-												}
-							
-											} else {
-												panic(map[string]interface{}{"funcion": "PonderacionActividades", "err": "Error subgrupo_detalle plan \"plan\"", "status": "400", "log": err})
-											}
-										}
-									}
-
-									generalData["nombreActividad"] = actividadName
-									generalData["numeroActividad"] = index
-									generalData["ponderacion"] = ponderacionActividades
-									generalData["periodo_ejecucion"] = nombrePeriodo
-									generalData["hijos"] = data
-									generalData["datosArmonizacion"] = arregloLineamieto
-
-									// arregloPlanAnual = append(arregloPlanAnual, generalData)
-									arregloPlanAnual = append(arregloPlanAnual, generalData)
-									// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": data}
 								} else {
-									c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-									c.Abort("400")
+									panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
 								}
+
+								generalData["nombreUnidad"] = nombreUnidad
+								generalData["nombreActividad"] = actividadName
+								generalData["numeroActividad"] = index
+								// generalData["ponderacion"] = ponderacionActividades
+								// generalData["periodo_ejecucion"] = nombrePeriodo
+								// generalData["hijos"] = data
+								generalData["datosArmonizacion"] = arregloLineamieto
+								generalData["datosComplementarios"] = datosArmonizacion
+
+								// arregloPlanAnual = append(arregloPlanAnual, generalData)
+								arregloPlanAnual = append(arregloPlanAnual, generalData)
 
 
 							}
