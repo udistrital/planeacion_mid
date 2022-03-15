@@ -212,7 +212,6 @@ func getChildren(children []interface{}) (childrenTree []map[string]interface{})
 					// forkData["type"] = ""
 					// forkData["required"] = ""
 				} else {
-
 					var deta map[string]interface{}
 					dato_str := fmt.Sprintf("%v", detalle[0]["dato"])
 					json.Unmarshal([]byte(dato_str), &deta)
@@ -270,7 +269,6 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 	var dato_armonizacion map[string]interface{}
 	armonizacion := make(map[string]interface{})
 	forkData := make(map[string]interface{})
-	//fmt.Print(valid)
 	for _, v := range valid {
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+v, &res); err == nil {
 			helpers.LimpiezaRespuestaRefactor(res, &subgrupo_detalle)
@@ -473,8 +471,10 @@ func getActividadTabla(subgrupo map[string]interface{}) {
 					var data = data_source[i]
 					dato_plan_str := subgrupo_detalle["dato_plan"].(string)
 					json.Unmarshal([]byte(dato_plan_str), &dato_plan)
-					element := dato_plan[data["index"].(string)].(map[string]interface{})
-					data[subgrupo["nombre"].(string)] = element["dato"]
+					if dato_plan[data["index"].(string)] != nil {
+						element := dato_plan[data["index"].(string)].(map[string]interface{})
+						data[subgrupo["nombre"].(string)] = element["dato"]
+					}
 
 				}
 
