@@ -182,7 +182,7 @@ func (c *ReportesController) PlanAccionAnual() {
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
 	if body["unidad_id"].(string) == ""{
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string), &respuestaGeneral); err == nil {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,formato:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string), &respuestaGeneral); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuestaGeneral, &planesFilterGeneral)
 
 			for datoUnidad := 0; datoUnidad < len(planesFilterGeneral); datoUnidad ++ {
@@ -402,7 +402,7 @@ func (c *ReportesController) PlanAccionAnual() {
 		}
 
 	}else if body["unidad_id"].(string) != ""{
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",dependencia_id:"+body["unidad_id"].(string), &respuesta); err == nil {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,formato:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",dependencia_id:"+body["unidad_id"].(string), &respuesta); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
 			for planes := 0; planes < len(planesFilter); planes ++ {
 				planesFilterData := planesFilter[planes]
@@ -577,6 +577,9 @@ func (c *ReportesController) PlanAccionAnual() {
 								// generalData["ponderacion"] = ponderacionActividades
 								// generalData["periodo_ejecucion"] = nombrePeriodo
 								// generalData["hijos"] = data
+
+
+								// generalData["datosArmonizacionPED"] = arregloLineamieto
 								generalData["datosArmonizacion"] = arregloLineamieto
 								generalData["datosComplementarios"] = datosArmonizacion
 
@@ -614,18 +617,48 @@ func (c *ReportesController) PlanAccionAnual() {
 
 				//aquí se pone el plan y todo para el excel
 
+				contadorLineamiento := 4
+				// contadorMeta := 4
+				// contadorEstrategia := 4
 
-				// for excelPlan := 0; excelPlan < len(planAnual) ; excelPlan++ {
-				// 	datosExcelPlan := planAnual[excelPlan]
-				// 	nombreHoja := fmt.Sprint(nombreUnidad)
-				// 	sheetName := nombreHoja
-				// 	indexPlan := consolidadoExcelPlanAnual.NewSheet(sheetName)
-				// 	consolidadoExcelPlanAnual.SetActiveSheet(indexPlan)
-				// 	consolidadoExcelPlanAnual.SetCellValue(sheetName, "A1", nombreUnidad)
+				for excelPlan := 0; excelPlan < len(planAnual) ; excelPlan++ {
+					
+					datosExcelPlan := planAnual[excelPlan]
+					armo := datosExcelPlan["datosArmonizacion"].([]map[string]interface{})
+					unidadNombre := datosExcelPlan["nombreUnidad"]
+					nombreHoja := fmt.Sprint(nombreUnidad)
+					sheetName := nombreHoja
+					indexPlan := consolidadoExcelPlanAnual.NewSheet(sheetName)
+					// consolidadoExcelPlanAnual.MergeCell(sheetName, "A2", "B2")
+					consolidadoExcelPlanAnual.MergeCell(sheetName, "A2", "C2")
+					for dataExcelArmo := 0; dataExcelArmo < len(armo); dataExcelArmo++{
+						datosArmo := armo[dataExcelArmo]
+						lineamiento := datosArmo["nombreLineamiento"]
+						planDesarrolloName := datosArmo["nombrePlanDesarrollo"]
+						tituloExcel := fmt.Sprint(planDesarrolloName, unidadNombre)
+						consolidadoExcelPlanAnual.SetCellValue(sheetName, "A1", tituloExcel)
+						consolidadoExcelPlanAnual.SetCellValue(sheetName, "A2", planDesarrolloName)
+
+						consolidadoExcelPlanAnual.SetCellValue(sheetName, "A"+fmt.Sprint(contadorLineamiento), lineamiento)
+						contadorLineamiento = contadorLineamiento+1
+					}
+					// armoExc := datosExcelPlan[0]
+					// datosComplementariosExc := datosExcelPlan[1]
+					// nombreUnidad := datosExcelPlan[3]
+					// numeroActividad := datosExcelPlan[4]
+					// nombreHoja := fmt.Sprint(nombreUnidad)
+					// sheetName := nombreHoja
+					// indexPlan := consolidadoExcelPlanAnual.NewSheet(sheetName)
+					consolidadoExcelPlanAnual.SetActiveSheet(indexPlan)
+					// consolidadoExcelPlanAnual.SetCellValue(sheetName, "A2", armo)
 	
-				// }
+				}
 			}
 			CreateExcel(consolidadoExcelPlanAnual, "Plan anual unidad.xlsx")
+			lero := planAnual[1]
+			lerolero := lero["datosArmonizacion"].([]map[string]interface{})
+			lerolero1 := lerolero[0]
+			fmt.Println(lerolero1)
 			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": planAnual}
 
 		} else {
