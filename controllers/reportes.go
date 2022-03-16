@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"reflect"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
@@ -256,6 +257,7 @@ func (c *ReportesController) PlanAccionAnual() {
 
 	// excel
 	var consolidadoExcelPlanAnual *excelize.File
+	fmt.Println(reflect.TypeOf(consolidadoExcelPlanAnual))
 	consolidadoExcelPlanAnual = excelize.NewFile()
 
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
@@ -634,13 +636,10 @@ func (c *ReportesController) PlanAccionAnual() {
 
 								presupuestoExc := datosExcelPlan["presupuesto"].([]map[string]interface{})
 								if presupuestoExc != nil{
-									fmt.Println(len(presupuestoExc))
+									// fmt.Println(len(presupuestoExc))
 									for dataExcelPresupuesto := 0; dataExcelPresupuesto < len(presupuestoExc); dataExcelPresupuesto++ {
 										datosPresupuesto := presupuestoExc[dataExcelPresupuesto]
-										fmt.Println("los datos presupuesto")
-										fmt.Println(datosPresupuesto)
 										nombrePresupuesto := datosPresupuesto["Nombre"]
-										fmt.Println(nombrePresupuesto)
 										codigoPresupuesto := datosPresupuesto["codigo"]
 										valorPresupuesto := datosPresupuesto["valor"]
 										consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(contadorEstrategiaIn), codigoPresupuesto)
@@ -793,13 +792,9 @@ func (c *ReportesController) PlanAccionAnual() {
 
 								presupuestoExc := datosExcelPlan["presupuesto"].([]map[string]interface{})
 								if presupuestoExc != nil{
-									fmt.Println(len(presupuestoExc))
 									for dataExcelPresupuesto := 0; dataExcelPresupuesto < len(presupuestoExc); dataExcelPresupuesto++ {
 										datosPresupuesto := presupuestoExc[dataExcelPresupuesto]
-										fmt.Println("los datos presupuesto")
-										fmt.Println(datosPresupuesto)
 										nombrePresupuesto := datosPresupuesto["Nombre"]
-										fmt.Println(nombrePresupuesto)
 										codigoPresupuesto := datosPresupuesto["codigo"]
 										valorPresupuesto := datosPresupuesto["valor"]
 										consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(contadorEstrategiaIn), codigoPresupuesto)
