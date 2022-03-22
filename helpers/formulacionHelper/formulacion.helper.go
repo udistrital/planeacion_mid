@@ -277,7 +277,13 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 				if subgrupo_detalle[0]["armonizacion_dato"] != nil {
 					dato_armonizacion_str := subgrupo_detalle[0]["armonizacion_dato"].(string)
 					json.Unmarshal([]byte(dato_armonizacion_str), &dato_armonizacion)
-					armonizacion["armo"] = dato_armonizacion[index]
+					aux := dato_armonizacion[index]
+					if aux != nil {
+						fmt.Println(aux)
+						armonizacion["armo"] = aux.(map[string]interface{})["armonizacionPED"]
+						armonizacion["armoPI"] = aux.(map[string]interface{})["armonizacionPI"]
+					}
+
 				}
 				if subgrupo_detalle[0]["dato_plan"] != nil {
 					dato_plan_str := subgrupo_detalle[0]["dato_plan"].(string)
