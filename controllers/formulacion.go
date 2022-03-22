@@ -137,6 +137,8 @@ func (c *FormulacionController) GuardarActividad() {
 
 	entrada = body["entrada"].(map[string]interface{})
 	armonizacion := body["armo"]
+	armonizacionPI := body["armoPI"]
+	fmt.Println(armonizacionPI)
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &resPlan); err != nil {
 		panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error get Plan \"id\"", "status": "400", "log": err})
@@ -177,7 +179,10 @@ func (c *FormulacionController) GuardarActividad() {
 				subgrupo_detalle["dato_plan"] = str
 				if !armonizacionExecuted {
 					armonizacion_dato := make(map[string]interface{})
-					armonizacion_dato[i] = armonizacion
+					aux := make(map[string]interface{})
+					aux["armonizacionPED"] = armonizacion
+					aux["armonizacionPI"] = armonizacionPI
+					armonizacion_dato[i] = aux
 					c, _ := json.Marshal(armonizacion_dato)
 					strArmonizacion := string(c)
 					subgrupo_detalle["armonizacion_dato"] = strArmonizacion
@@ -214,8 +219,10 @@ func (c *FormulacionController) GuardarActividad() {
 						armonizacion_dato_str := subgrupo_detalle["armonizacion_dato"].(string)
 						json.Unmarshal([]byte(armonizacion_dato_str), &armonizacion_dato)
 					}
-
-					armonizacion_dato[i] = armonizacion
+					aux := make(map[string]interface{})
+					aux["armonizacionPED"] = armonizacion
+					aux["armonizacionPI"] = armonizacionPI
+					armonizacion_dato[i] = aux
 					c, _ := json.Marshal(armonizacion_dato)
 					strArmonizacion := string(c)
 					subgrupo_detalle["armonizacion_dato"] = strArmonizacion
@@ -223,6 +230,7 @@ func (c *FormulacionController) GuardarActividad() {
 
 				}
 			}
+			fmt.Println(subgrupo_detalle)
 			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupo_detalle["_id"].(string), "PUT", &res, subgrupo_detalle); err != nil {
 				panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
 			}
@@ -281,7 +289,7 @@ func (c *FormulacionController) ActualizarActividad() {
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 	entrada = body["entrada"].(map[string]interface{})
 	armonizacion := body["armo"]
-
+	armonizacionPI := body["armoPI"]
 	for key, element := range entrada {
 		var respuesta map[string]interface{}
 		var respuestaLimpia []map[string]interface{}
@@ -338,7 +346,10 @@ func (c *FormulacionController) ActualizarActividad() {
 					dato_armonizacion_str := subgrupo_detalle["armonizacion_dato"].(string)
 					json.Unmarshal([]byte(dato_armonizacion_str), &armonizacion_dato)
 					if armonizacion_dato[index] != nil {
-						armonizacion_dato[index] = armonizacion
+						aux := make(map[string]interface{})
+						aux["armonizacionPED"] = armonizacion
+						aux["armonizacionPI"] = armonizacionPI
+						armonizacion_dato[index] = aux
 					}
 					c, _ := json.Marshal(armonizacion_dato)
 					strArmonizacion := string(c)
