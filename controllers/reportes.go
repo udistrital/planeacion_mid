@@ -4,6 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"reflect"
+	"encoding/base64"
+	"io/ioutil"
+
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
@@ -201,8 +205,16 @@ func (c *ReportesController) Desagregado() {
 		}
 
 
-		CreateExcel(consolidadoExcel, "Consolidado Presupuestal.xlsx")
-		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": data_identi}
+		CreateExcel(consolidadoExcel, "static/Consolidado Presupuestal.xlsx")
+		xlsxFile, _ := ioutil.ReadFile(beego.AppConfig.String("Static")+"Consolidado Presupuestal.xlsx")
+		encoded := base64.StdEncoding.EncodeToString(xlsxFile)
+
+		dataSend := make(map[string]interface{})
+
+		dataSend["generalData"] = data_identi
+		dataSend["excelB64"] = encoded
+		
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": dataSend}
 
 
 	} else {
@@ -254,9 +266,8 @@ func (c *ReportesController) PlanAccionAnual() {
 	var nombreUnidad string
 	var unidadNombre string
 
-	// excel
-	var consolidadoExcelPlanAnual *excelize.File
-	consolidadoExcelPlanAnual = excelize.NewFile()
+	consolidadoExcelPlanAnual := excelize.NewFile()
+	fmt.Println(reflect.TypeOf(consolidadoExcelPlanAnual))
 
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
@@ -273,8 +284,9 @@ func (c *ReportesController) PlanAccionAnual() {
 					for planes := 0; planes < len(planesFilter); planes ++ {
 						planesFilterData := planesFilter[planes]
 						plan_id = planesFilterData["_id"].(string)
+						generalData := make(map[string]interface{})
 
-
+						data_identi = nil
 						if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=activo:true,plan_id:"+plan_id+",tipo_identificacion_id:"+"617b6630f6fc97b776279afa", &resPresupuesto); err == nil {
 							helpers.LimpiezaRespuestaRefactor(resPresupuesto, &identificacionres)
 							// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": identificacionres}
@@ -447,7 +459,7 @@ func (c *ReportesController) PlanAccionAnual() {
 											c.Abort("400")
 										}
 		
-										generalData := make(map[string]interface{})
+										// generalData := make(map[string]interface{})
 		
 										if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=DependenciaId:"+unidadId, &respuestaUnidad); err == nil {
 											aux := respuestaUnidad[0]
@@ -463,9 +475,9 @@ func (c *ReportesController) PlanAccionAnual() {
 										generalData["numeroActividad"] = index
 										generalData["datosArmonizacion"] = arregloLineamieto
 										generalData["datosComplementarios"] = datosArmonizacion
-										generalData["presupuesto"] = data_identi
+										// generalData["presupuesto"] = data_identi
 										
-										arregloPlanAnual = append(arregloPlanAnual, generalData)
+										// arregloPlanAnual = append(arregloPlanAnual, generalData)
 		
 		
 									}
@@ -476,6 +488,11 @@ func (c *ReportesController) PlanAccionAnual() {
 							c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 							c.Abort("400")
 						}
+
+						generalData["presupuesto"] = data_identi
+
+						arregloPlanAnual = append(arregloPlanAnual, generalData)
+
 					}
 		
 				} else {
@@ -632,27 +649,6 @@ func (c *ReportesController) PlanAccionAnual() {
 								consolidadoExcelPlanAnual.MergeCell(sheetName, "G"+fmt.Sprint(contadorEstrategiaIn), "G"+fmt.Sprint(contadorEstrategiaOut))
 								consolidadoExcelPlanAnual.MergeCell(sheetName, "H"+fmt.Sprint(contadorEstrategiaIn), "H"+fmt.Sprint(contadorEstrategiaOut))
 
-								presupuestoExc := datosExcelPlan["presupuesto"].([]map[string]interface{})
-								if presupuestoExc != nil{
-									fmt.Println(len(presupuestoExc))
-									for dataExcelPresupuesto := 0; dataExcelPresupuesto < len(presupuestoExc); dataExcelPresupuesto++ {
-										datosPresupuesto := presupuestoExc[dataExcelPresupuesto]
-										fmt.Println("los datos presupuesto")
-										fmt.Println(datosPresupuesto)
-										nombrePresupuesto := datosPresupuesto["Nombre"]
-										fmt.Println(nombrePresupuesto)
-										codigoPresupuesto := datosPresupuesto["codigo"]
-										valorPresupuesto := datosPresupuesto["valor"]
-										consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(contadorEstrategiaIn), codigoPresupuesto)
-										consolidadoExcelPlanAnual.SetCellValue(sheetName, "M"+fmt.Sprint(contadorEstrategiaIn), nombrePresupuesto)
-										consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(contadorEstrategiaIn), valorPresupuesto)
-										consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorEstrategiaIn, 70)
-
-										contadorEstrategiaIn = contadorEstrategiaIn+1
-									}
-
-								}
-
 								if contadorEstrategiaIn > contadorEstrategia{
 									contadorMeta = contadorEstrategiaIn
 								}else{
@@ -681,11 +677,12 @@ func (c *ReportesController) PlanAccionAnual() {
 					contadorLineamiento = 4
 					contadorMeta = 4
 					contadorEstrategia = 4
+					// contadorPresupuestoOut := 0
 					unidadNombre = datosExcelPlan["nombreUnidad"].(string)
 					nombreHoja := fmt.Sprint(unidadNombre)
 					sheetName := nombreHoja
 					indexPlan := consolidadoExcelPlanAnual.NewSheet(sheetName)
-					consolidadoExcelPlanAnual.MergeCell(sheetName, "A1", "K1")
+					consolidadoExcelPlanAnual.MergeCell(sheetName, "A1", "N1")
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "A2", "C2")
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "D2", "D3")
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "E2", "E3")
@@ -693,16 +690,18 @@ func (c *ReportesController) PlanAccionAnual() {
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "G2", "G3")
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "H2", "H3")
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "I2", "K2")
+					consolidadoExcelPlanAnual.MergeCell(sheetName, "L2", "N2")
 					consolidadoExcelPlanAnual.SetRowHeight(sheetName, 1, 20)
 					consolidadoExcelPlanAnual.SetRowHeight(sheetName, 2, 20)
 					consolidadoExcelPlanAnual.SetRowHeight(sheetName, 3, 20)
 					consolidadoExcelPlanAnual.SetColWidth(sheetName, "A", "C", 70)
 					consolidadoExcelPlanAnual.SetColWidth(sheetName, "I", "K", 50)
+					consolidadoExcelPlanAnual.SetColWidth(sheetName, "L", "N", 50)
 					consolidadoExcelPlanAnual.SetColWidth(sheetName, "E", "F", 20)
 					consolidadoExcelPlanAnual.SetColWidth(sheetName, "G", "H", 80)
 					consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A1", "K1", stylehead)
-					consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A2", "K2", styletitles)
-					consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A3", "K3", styletitles)
+					consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A2", "N2", styletitles)
+					consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A3", "N3", styletitles)
 
 					for dataExcelArmo := 0; dataExcelArmo < len(armo); dataExcelArmo++{
 						contadorLineamientoIn := contadorLineamiento
@@ -725,11 +724,40 @@ func (c *ReportesController) PlanAccionAnual() {
 						consolidadoExcelPlanAnual.SetCellValue(sheetName, "I3", "Nombre")
 						consolidadoExcelPlanAnual.SetCellValue(sheetName, "J3", "Fórmula")
 						consolidadoExcelPlanAnual.SetCellValue(sheetName, "K3", "Meta")
+						consolidadoExcelPlanAnual.SetCellValue(sheetName, "L2", "Presupuesto")
+						consolidadoExcelPlanAnual.SetCellValue(sheetName, "L3", "Código del rubro")
+						consolidadoExcelPlanAnual.SetCellValue(sheetName, "M3", "Nombre del rubro")
+						consolidadoExcelPlanAnual.SetCellValue(sheetName, "N3", "Valor")
 
 						// cuerpo del excel
 						consolidadoExcelPlanAnual.SetCellValue(sheetName, "A"+fmt.Sprint(contadorLineamiento), lineamiento)
 						consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A"+fmt.Sprint(contadorLineamiento), "K"+fmt.Sprint(contadorLineamiento), stylecontent)
 						consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorLineamiento, 70)
+						contadorPresupuesto := 4
+
+						presupuestoExc := datosExcelPlan["presupuesto"].([]map[string]interface{})
+						if dataExcelArmo == 0 {
+							if presupuestoExc != nil{
+								for dataExcelPresupuesto := 0; dataExcelPresupuesto < len(presupuestoExc); dataExcelPresupuesto++ {
+									datosPresupuesto := presupuestoExc[dataExcelPresupuesto]
+									nombrePresupuesto := datosPresupuesto["Nombre"]
+									codigoPresupuesto := datosPresupuesto["codigo"]
+									valorPresupuesto := datosPresupuesto["valor"]
+									consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(contadorPresupuesto), codigoPresupuesto)
+									consolidadoExcelPlanAnual.SetCellValue(sheetName, "M"+fmt.Sprint(contadorPresupuesto), nombrePresupuesto)
+									consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(contadorPresupuesto), valorPresupuesto)
+									consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorPresupuesto, 70)
+	
+									contadorPresupuesto = contadorPresupuesto+1
+
+								}
+	
+							}
+						}
+
+						
+
+
 						metaEstr := datosArmo["meta"].([]map[string]interface{})
 						for dataExcelMetaEstr := 0; dataExcelMetaEstr < len(metaEstr); dataExcelMetaEstr++ {
 							contadorMetaIn := contadorMeta
@@ -791,28 +819,7 @@ func (c *ReportesController) PlanAccionAnual() {
 								consolidadoExcelPlanAnual.MergeCell(sheetName, "G"+fmt.Sprint(contadorEstrategiaIn), "G"+fmt.Sprint(contadorEstrategiaOut))
 								consolidadoExcelPlanAnual.MergeCell(sheetName, "H"+fmt.Sprint(contadorEstrategiaIn), "H"+fmt.Sprint(contadorEstrategiaOut))
 
-								presupuestoExc := datosExcelPlan["presupuesto"].([]map[string]interface{})
-								if presupuestoExc != nil{
-									fmt.Println(len(presupuestoExc))
-									for dataExcelPresupuesto := 0; dataExcelPresupuesto < len(presupuestoExc); dataExcelPresupuesto++ {
-										datosPresupuesto := presupuestoExc[dataExcelPresupuesto]
-										fmt.Println("los datos presupuesto")
-										fmt.Println(datosPresupuesto)
-										nombrePresupuesto := datosPresupuesto["Nombre"]
-										fmt.Println(nombrePresupuesto)
-										codigoPresupuesto := datosPresupuesto["codigo"]
-										valorPresupuesto := datosPresupuesto["valor"]
-										consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(contadorEstrategiaIn), codigoPresupuesto)
-										consolidadoExcelPlanAnual.SetCellValue(sheetName, "M"+fmt.Sprint(contadorEstrategiaIn), nombrePresupuesto)
-										consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(contadorEstrategiaIn), valorPresupuesto)
-
-										consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorEstrategiaIn, 70)
-
-
-										contadorEstrategiaIn = contadorEstrategiaIn+1
-									}
-
-								}
+								
 
 								if contadorEstrategiaIn > contadorEstrategia{
 									contadorMeta = contadorEstrategiaIn
@@ -829,10 +836,13 @@ func (c *ReportesController) PlanAccionAnual() {
 							}
 							contadorMeta = contadorMeta+1
 						}
+
+
 						contadorLineamientoOut := contadorLineamiento
 
-						consolidadoExcelPlanAnual.MergeCell(sheetName, "A"+fmt.Sprint(contadorLineamientoIn), "A"+fmt.Sprint(contadorLineamientoOut))
+					
 
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "A"+fmt.Sprint(contadorLineamientoIn), "A"+fmt.Sprint(contadorLineamientoOut))
 						contadorLineamiento = contadorLineamiento+1
 					}
 					consolidadoExcelPlanAnual.SetActiveSheet(indexPlan)
@@ -840,10 +850,17 @@ func (c *ReportesController) PlanAccionAnual() {
 
 			}
 
+			CreateExcel(consolidadoExcelPlanAnual, "static/Plan anual general.xlsx")
 
-			CreateExcel(consolidadoExcelPlanAnual, "Plan anual general.xlsx")
+			xlsxFile, _ := ioutil.ReadFile(beego.AppConfig.String("Static")+"Plan anual general.xlsx")
+			encoded := base64.StdEncoding.EncodeToString(xlsxFile)
+
+			dataSend := make(map[string]interface{})
+
+			dataSend["generalData"] = arregloPlanAnual
+			dataSend["excelB64"] = encoded
 			
-			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": arregloPlanAnual}
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": dataSend}
 
 		} else {
 			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
@@ -855,7 +872,6 @@ func (c *ReportesController) PlanAccionAnual() {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
 			for planes := 0; planes < len(planesFilter); planes ++ {
 				planesFilterData := planesFilter[planes]
-				// fmt.Println(planesFilter)
 				plan_id = planesFilterData["_id"].(string)
 
 				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id, &res); err == nil {
@@ -881,7 +897,6 @@ func (c *ReportesController) PlanAccionAnual() {
 									treeArmo := tree[2]
 									armonizacionTercer := treeArmo[0]
 									armonizacionTercerNivel := armonizacionTercer["armo"]
-									// fmt.Println(len(treeDatos))
 									for datoGeneral := 0; datoGeneral < len(treeDatos); datoGeneral++ {
 										treeDato := treeDatos[datoGeneral]
 										treeData := treeDatas[0]
@@ -898,14 +913,9 @@ func (c *ReportesController) PlanAccionAnual() {
 										titulosArmonizacion[subIndicadorRes["nombre"].(string)] = treeData[fmt.Sprint(subIndicadorRes["id"])]
 									}
 									datosArmonizacion["indicadores"] = titulosArmonizacion
-
-									// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": datosArmonizacion}
-
 									if armonizacionTercerNivel != nil {
-										// fmt.Println(armonizacionTercerNivel, reflect.TypeOf(armonizacionTercerNivel))
 										delimitador := ","
 										output := strings.Split(armonizacionTercerNivel.(string), delimitador)
-										// fmt.Println(len(output))
 										estrategiaDesc := make(map[string]interface{})
 										metaEstrategica := make(map[string]interface{})
 										lineamientoDesc := make(map[string]interface{})
@@ -945,10 +955,6 @@ func (c *ReportesController) PlanAccionAnual() {
 																	c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 																	c.Abort("400")
 																}
-	
-																// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": lineamientoEst}
-	
-			
 															} else {
 																c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 																c.Abort("400")
@@ -991,7 +997,6 @@ func (c *ReportesController) PlanAccionAnual() {
 												c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 												c.Abort("400")
 											}
-											// estrategiaDesc["descripcion"] = estrategiaData
 										}
 										arregloEstrategia = append(arregloEstrategia, estrategiaDesc)
 										metaEstrategica["estrategias"] = arregloEstrategia
@@ -999,9 +1004,6 @@ func (c *ReportesController) PlanAccionAnual() {
 										lineamientoDesc["meta"] = arregloMetaEst
 										arregloLineamieto = append(arregloLineamieto, lineamientoDesc)
 
-										// datosArmonizacion["armonizacion"] = arregloLineamieto
-
-										// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": arregloLineamieto}
 									}
 
 								} else {
@@ -1030,8 +1032,6 @@ func (c *ReportesController) PlanAccionAnual() {
 
 
 							}
-							// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": arregloPlanAnual}
-			
 							break
 						}
 					}
@@ -1039,10 +1039,6 @@ func (c *ReportesController) PlanAccionAnual() {
 					c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 					c.Abort("400")
 				}
-
-				// planAnual = append(planAnual, arregloPlanAnual...)
-
-				//aquí se pone el plan y todo para el excel
 
 				contadorLineamiento := 4
 				contadorMeta := 4
@@ -1204,9 +1200,17 @@ func (c *ReportesController) PlanAccionAnual() {
 	
 				}
 			}
-			CreateExcel(consolidadoExcelPlanAnual, "Plan anual unidad.xlsx")
+			CreateExcel(consolidadoExcelPlanAnual, "static/Plan anual unidad.xlsx")
 
-			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": arregloPlanAnual}
+			xlsxFile, _ := ioutil.ReadFile(beego.AppConfig.String("Static")+"Plan anual unidad.xlsx")
+			encoded := base64.StdEncoding.EncodeToString(xlsxFile)
+
+			dataSend := make(map[string]interface{})
+
+			dataSend["generalData"] = arregloPlanAnual
+			dataSend["excelB64"] = encoded
+
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": dataSend}
 
 		} else {
 			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
