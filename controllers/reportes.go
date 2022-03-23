@@ -204,11 +204,11 @@ func (c *ReportesController) Desagregado() {
 
 		}
 
+		staticPath := beego.AppConfig.String("Static")
 
-		CreateExcel(consolidadoExcel, "static/Consolidado Presupuestal.xlsx")
-		xlsxFile, _ := ioutil.ReadFile(beego.AppConfig.String("Static")+"Consolidado Presupuestal.xlsx")
+		CreateExcel(consolidadoExcel, staticPath+"ConsolidadoPresupuestal.xlsx")
+		xlsxFile, _ := ioutil.ReadFile(staticPath+"ConsolidadoPresupuestal.xlsx")
 		encoded := base64.StdEncoding.EncodeToString(xlsxFile)
-
 		dataSend := make(map[string]interface{})
 
 		dataSend["generalData"] = data_identi
@@ -850,9 +850,11 @@ func (c *ReportesController) PlanAccionAnual() {
 
 			}
 
-			CreateExcel(consolidadoExcelPlanAnual, "static/Plan anual general.xlsx")
+			staticPath := beego.AppConfig.String("Static")
 
-			xlsxFile, _ := ioutil.ReadFile(beego.AppConfig.String("Static")+"Plan anual general.xlsx")
+			CreateExcel(consolidadoExcelPlanAnual, staticPath+"PlanAnualGeneral.xlsx")
+
+			xlsxFile, _ := ioutil.ReadFile(staticPath+"PlanAnualGeneral.xlsx")
 			encoded := base64.StdEncoding.EncodeToString(xlsxFile)
 
 			dataSend := make(map[string]interface{})
@@ -1200,9 +1202,10 @@ func (c *ReportesController) PlanAccionAnual() {
 	
 				}
 			}
-			CreateExcel(consolidadoExcelPlanAnual, "static/Plan anual unidad.xlsx")
+			staticPath := beego.AppConfig.String("Static")
+			CreateExcel(consolidadoExcelPlanAnual, staticPath+"PlanAnualUnidad.xlsx")
 
-			xlsxFile, _ := ioutil.ReadFile(beego.AppConfig.String("Static")+"Plan anual unidad.xlsx")
+			xlsxFile, _ := ioutil.ReadFile(staticPath+"PlanAnualUnidad.xlsx")
 			encoded := base64.StdEncoding.EncodeToString(xlsxFile)
 
 			dataSend := make(map[string]interface{})
