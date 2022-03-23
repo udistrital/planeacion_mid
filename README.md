@@ -8,6 +8,7 @@ Api Mid para el sistema de planeación universidad Distrital
 - BeeGo
 
 
+
 ## Variables de Entorno
 ```
   PLANES_MID_HTTP_PORT: [Puerto de ejecución API]
