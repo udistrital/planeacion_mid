@@ -6,7 +6,6 @@ import (
 	"strings"
 	"reflect"
 	"encoding/base64"
-	"io/ioutil"
 
 
 	"github.com/astaxie/beego"
@@ -203,13 +202,12 @@ func (c *ReportesController) Desagregado() {
 			}
 
 		}
-
-		staticPath := beego.AppConfig.String("Static")
-
-		CreateExcel(consolidadoExcel, staticPath+"ConsolidadoPresupuestal.xlsx")
-		xlsxFile, _ := ioutil.ReadFile(staticPath+"ConsolidadoPresupuestal.xlsx")
-		encoded := base64.StdEncoding.EncodeToString(xlsxFile)
 		dataSend := make(map[string]interface{})
+
+		buf, _ := consolidadoExcel.WriteToBuffer()
+		strings.NewReader(buf.String())
+
+		encoded := base64.StdEncoding.EncodeToString([]byte(buf.String()))
 
 		dataSend["generalData"] = data_identi
 		dataSend["excelB64"] = encoded
@@ -850,12 +848,10 @@ func (c *ReportesController) PlanAccionAnual() {
 
 			}
 
-			staticPath := beego.AppConfig.String("Static")
+			buf, _ := consolidadoExcelPlanAnual.WriteToBuffer()
+			strings.NewReader(buf.String())
 
-			CreateExcel(consolidadoExcelPlanAnual, staticPath+"PlanAnualGeneral.xlsx")
-
-			xlsxFile, _ := ioutil.ReadFile(staticPath+"PlanAnualGeneral.xlsx")
-			encoded := base64.StdEncoding.EncodeToString(xlsxFile)
+			encoded := base64.StdEncoding.EncodeToString([]byte(buf.String()))
 
 			dataSend := make(map[string]interface{})
 
@@ -1202,11 +1198,11 @@ func (c *ReportesController) PlanAccionAnual() {
 	
 				}
 			}
-			staticPath := beego.AppConfig.String("Static")
-			CreateExcel(consolidadoExcelPlanAnual, staticPath+"PlanAnualUnidad.xlsx")
 
-			xlsxFile, _ := ioutil.ReadFile(staticPath+"PlanAnualUnidad.xlsx")
-			encoded := base64.StdEncoding.EncodeToString(xlsxFile)
+			buf, _ := consolidadoExcelPlanAnual.WriteToBuffer()
+			strings.NewReader(buf.String())
+
+			encoded := base64.StdEncoding.EncodeToString([]byte(buf.String()))
 
 			dataSend := make(map[string]interface{})
 
