@@ -559,6 +559,19 @@ paths:
             $ref: '#/definitions/models.Formulacion'
         "403":
           description: :id is empty
+  /formulacion/planes:
+    get:
+      tags:
+      - formulacion
+      description: get Rubros
+      operationId: FormulacionController.Planes
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
   /formulacion/ponderacion_actividades/{plan}:
     get:
       tags:
