@@ -12,6 +12,7 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
+	"github.com/udistrital/planeacion_mid/models"
 	"github.com/udistrital/utils_oas/request"
 
 	formulacionhelper "github.com/udistrital/planeacion_mid/helpers/formulacionHelper"
@@ -38,6 +39,7 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("PonderacionActividades", c.PonderacionActividades)
 	c.Mapping("GetRubros", c.GetRubros)
 	c.Mapping("GetUnidades", c.GetUnidades)
+	c.Mapping("VinculacionTercero", c.VinculacionTercero)
 }
 
 // ClonarFormato ...
@@ -962,7 +964,7 @@ func (c *FormulacionController) GetUnidades() {
 											panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
 										}
 									} else {
-										panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+										panic(map[string]interface{}{"fuplann": "GetUnidades", "err": "Error ", "status": "400", "log": err})
 									}
 								} else {
 									panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
@@ -979,6 +981,7 @@ func (c *FormulacionController) GetUnidades() {
 				} else {
 					panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
 				}
+
 			} else {
 				panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
 			}
@@ -987,9 +990,32 @@ func (c *FormulacionController) GetUnidades() {
 			panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
 		}
 
-	} else {
-		panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+		c.ServeJSON()
 	}
+}
 
+// VinculacionTercero ...
+// @Title VinculacionTercero
+// @Description get VinculacionTercero
+// @Param	tercero_id	path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /vinculacion_tercero/:tercero_id [get]
+func (c *FormulacionController) VinculacionTercero() {
+
+	terceroId := c.Ctx.Input.Param(":tercero_id")
+	var vinculaciones []models.Vinculacion
+	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/vinculacion?query=TerceroPrincipalId:"+terceroId, &vinculaciones); err != nil {
+		panic(map[string]interface{}{"funcion": "VinculacionTercero", "err": "Error get vinculacion", "status": "400", "log": err})
+	} else {
+		for i := 0; i < len(vinculaciones); i++ {
+			if vinculaciones[i].CargoId == 319 || vinculaciones[i].CargoId == 312 {
+				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": vinculaciones[i]}
+			} else {
+				fmt.Println("entra aca")
+				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": ""}
+			}
+		}
+	}
 	c.ServeJSON()
 }
