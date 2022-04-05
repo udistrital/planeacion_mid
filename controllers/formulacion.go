@@ -40,6 +40,7 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("GetRubros", c.GetRubros)
 	c.Mapping("GetUnidades", c.GetUnidades)
 	c.Mapping("VinculacionTercero", c.VinculacionTercero)
+	c.Mapping("Planes", c.Planes)
 }
 
 // ClonarFormato ...
@@ -1016,6 +1017,59 @@ func (c *FormulacionController) VinculacionTercero() {
 				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": ""}
 			}
 		}
+	}
+	c.ServeJSON()
+}
+
+// Planes ...
+// @Title Planes
+// @Description get Rubros
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /planes [get]
+func (c *FormulacionController) Planes() {
+
+	var respuesta map[string]interface{}
+	var res map[string]interface{}
+	var planes []map[string]interface{}
+	var tipoPlanes []map[string]interface{}
+	var plan map[string]interface{}
+	var arregloPlanes []map[string]interface{}
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=formato:true", &respuesta); err == nil {
+		helpers.LimpiezaRespuestaRefactor(respuesta, &planes)
+		for i:=0; i<len(planes); i++{
+			plan = planes[i]
+			tipoPlanId := plan["tipo_plan_id"].(string)
+
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-plan?query=_id:"+tipoPlanId, &res); err == nil {
+				helpers.LimpiezaRespuestaRefactor(res, &tipoPlanes)
+				tipoPlan := tipoPlanes[0]
+				nombreTipoPlan := tipoPlan["nombre"]
+				planesTipo := make(map[string]interface{})
+				planesTipo["_id"] = plan["_id"]
+				planesTipo["nombre"] = plan["nombre"]
+				planesTipo["descripcion"] = plan["descripcion"]
+				planesTipo["tipo_plan_id"] = tipoPlanId
+				planesTipo["formato"] = plan["formato"]
+				planesTipo["vigencia"] = plan["vigencia"]
+				planesTipo["dependencia_id"] = plan["dependencia_id"]
+				planesTipo["aplicativo_id"] = plan["aplicativo_id"]
+				planesTipo["activo"] = plan["activo"]
+				planesTipo["nombre_tipo_plan"] = nombreTipoPlan
+
+				arregloPlanes = append(arregloPlanes, planesTipo)
+
+				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": arregloPlanes}
+				
+			} else {
+				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+				c.Abort("400")
+			}
+		}
+		
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+		c.Abort("400")
 	}
 	c.ServeJSON()
 }
