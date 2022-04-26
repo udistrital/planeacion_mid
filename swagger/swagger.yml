@@ -798,18 +798,19 @@ paths:
             $ref: '#/definitions/models.Seguimiento'
         "403":
           description: :plan_id is empty
-  /seguimiento/habilitar_reportes/{periodo}:
+  /seguimiento/habilitar_reportes:
     put:
       tags:
       - seguimiento
       description: get Seguimiento
       operationId: SeguimientoController.HabilitarReportes
       parameters:
-      - in: path
-        name: periodo
-        description: The key for staticblock
+      - in: body
+        name: body
+        description: body for Plan content
         required: true
-        type: string
+        schema:
+          $ref: '#/definitions/{}'
       responses:
         "200":
           description: ""
