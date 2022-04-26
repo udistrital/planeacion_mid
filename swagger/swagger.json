@@ -1188,7 +1188,7 @@
                 }
             }
         },
-        "/seguimiento/habilitar_reportes/{periodo}": {
+        "/seguimiento/habilitar_reportes": {
             "put": {
                 "tags": [
                     "seguimiento"
@@ -1197,11 +1197,13 @@
                 "operationId": "SeguimientoController.HabilitarReportes",
                 "parameters": [
                     {
-                        "in": "path",
-                        "name": "periodo",
-                        "description": "The key for staticblock",
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
                         "required": true,
-                        "type": "string"
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
                     }
                 ],
                 "responses": {

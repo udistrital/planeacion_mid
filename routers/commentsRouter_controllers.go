@@ -334,7 +334,7 @@ func init() {
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"],
         beego.ControllerComments{
             Method: "HabilitarReportes",
-            Router: "/habilitar_reportes/:periodo",
+            Router: "/habilitar_reportes",
             AllowHTTPMethods: []string{"put"},
             MethodParams: param.Make(),
             Filters: nil,
