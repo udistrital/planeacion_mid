@@ -1013,7 +1013,6 @@ func (c *FormulacionController) VinculacionTercero() {
 			if vinculaciones[i].CargoId == 319 || vinculaciones[i].CargoId == 312 {
 				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": vinculaciones[i]}
 			} else {
-				fmt.Println("entra aca")
 				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": ""}
 			}
 		}
