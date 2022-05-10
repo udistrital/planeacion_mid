@@ -540,7 +540,7 @@ func (c *FormulacionController) GetAllIdentificacion() {
 				json.Unmarshal([]byte(dato_str), &dato)
 
 				var identi map[string]interface{}
-				dato_aux := dato["honorarios"].(string)
+				dato_aux := dato["rhf"].(string)
 				json.Unmarshal([]byte(dato_aux), &identi)
 
 				for key := range identi {
@@ -549,10 +549,10 @@ func (c *FormulacionController) GetAllIdentificacion() {
 						data_identi = append(data_identi, element)
 					}
 				}
-				result["honorarios"] = data_identi
+				result["rhf"] = data_identi
 				data_identi = nil
 
-				dato_aux = dato["prestacional"].(string)
+				dato_aux = dato["rhv_pre"].(string)
 				json.Unmarshal([]byte(dato_aux), &identi)
 				for key := range identi {
 					element := identi[key].(map[string]interface{})
@@ -560,10 +560,10 @@ func (c *FormulacionController) GetAllIdentificacion() {
 						data_identi = append(data_identi, element)
 					}
 				}
-				result["prestacional"] = data_identi
+				result["rhv_pre"] = data_identi
 				data_identi = nil
 
-				dato_aux = dato["tco"].(string)
+				dato_aux = dato["rhv_pos"].(string)
 				json.Unmarshal([]byte(dato_aux), &identi)
 				for key := range identi {
 					element := identi[key].(map[string]interface{})
@@ -571,18 +571,7 @@ func (c *FormulacionController) GetAllIdentificacion() {
 						data_identi = append(data_identi, element)
 					}
 				}
-				result["tco"] = data_identi
-				data_identi = nil
-
-				dato_aux = dato["mto"].(string)
-				json.Unmarshal([]byte(dato_aux), &identi)
-				for key := range identi {
-					element := identi[key].(map[string]interface{})
-					if element["activo"] == true {
-						data_identi = append(data_identi, element)
-					}
-				}
-				result["mto"] = data_identi
+				result["rhv_pos"] = data_identi
 				data_identi = nil
 
 				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": result}
@@ -1036,7 +1025,7 @@ func (c *FormulacionController) Planes() {
 	var arregloPlanes []map[string]interface{}
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=formato:true", &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planes)
-		for i:=0; i<len(planes); i++{
+		for i := 0; i < len(planes); i++ {
 			plan = planes[i]
 			tipoPlanId := plan["tipo_plan_id"].(string)
 
@@ -1059,13 +1048,13 @@ func (c *FormulacionController) Planes() {
 				arregloPlanes = append(arregloPlanes, planesTipo)
 
 				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": arregloPlanes}
-				
+
 			} else {
 				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 				c.Abort("400")
 			}
 		}
-		
+
 	} else {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 		c.Abort("400")
