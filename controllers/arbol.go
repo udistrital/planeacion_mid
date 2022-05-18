@@ -22,6 +22,8 @@ func (c *ArbolController) URLMapping() {
 	c.Mapping("GetArbol", c.GetArbol)
 	c.Mapping("DeletePlan", c.DeletePlan)
 	c.Mapping("DeleteNodo", c.DeleteNodo)
+	c.Mapping("ActivarNodo", c.ActivarNodo)
+	c.Mapping("ActivarPlan", c.ActivarPlan)
 
 }
 
