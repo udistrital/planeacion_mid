@@ -44,7 +44,12 @@ func (c *ArbolController) GetArbol() {
 		helpers.LimpiezaRespuestaRefactor(res, &hijos)
 		helpers.LimpiezaRespuestaRefactor(res, &hijosID)
 		tree := arbolHelper.BuildTree(hijos, hijosID)
-		c.Data["json"] = tree
+		fmt.Println(tree)
+		if len(tree) != 0 {
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": tree}
+		} else {
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": ""}
+		}
 	} else {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 		c.Abort("400")
