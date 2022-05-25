@@ -1,18 +1,17 @@
 package controllers
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"reflect"
-	"encoding/base64"
-
+	"strings"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
+	reporteshelper "github.com/udistrital/planeacion_mid/helpers/reportesHelper"
 	"github.com/udistrital/utils_oas/request"
 	"github.com/xuri/excelize/v2"
-	reporteshelper "github.com/udistrital/planeacion_mid/helpers/reportesHelper"
 )
 
 // ReportesController operations for Reportes
@@ -26,10 +25,12 @@ func (c *ReportesController) URLMapping() {
 	c.Mapping("PlanAccionAnual", c.PlanAccionAnual)
 }
 
-func CreateExcel(f *excelize.File, dir string){
-	if err := f.SaveAs(dir); err != nil{
+func CreateExcel(f *excelize.File, dir string) {
+	fmt.Println(dir)
+	if err := f.Save(); err != nil {
 		fmt.Println(err)
 	}
+
 }
 
 // Desagregado ...
@@ -115,26 +116,25 @@ func (c *ReportesController) Desagregado() {
 			"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
 			"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
 		}`)
-		for h := 0 ; h < len(data_identi); h++ {
+		for h := 0; h < len(data_identi); h++ {
 
 			datosArreglo := data_identi[h]
 			nombreUnidadVerIn := datosArreglo["unidad"].(string)
-			if h == 0{
+			if h == 0 {
 				nombreUnidadVer = nombreUnidadVerIn
 			}
 
-			if nombreUnidadVerIn == nombreUnidadVer{
+			if nombreUnidadVerIn == nombreUnidadVer {
 				nombreUnidadVer = datosArreglo["unidad"].(string)
 				nombreHoja := fmt.Sprint(nombreUnidadVer)
 				sheetName := nombreHoja
 				index := consolidadoExcel.NewSheet(sheetName)
 				consolidadoExcel.MergeCell(sheetName, "B1", "D1")
-				
+
 				consolidadoExcel.SetRowHeight(sheetName, 1, 20)
 				consolidadoExcel.SetRowHeight(sheetName, 2, 20)
 				consolidadoExcel.SetRowHeight(sheetName, contadorDesagregado, 50)
 
-				
 				consolidadoExcel.SetColWidth(sheetName, "A", "A", 30)
 				consolidadoExcel.SetColWidth(sheetName, "B", "B", 50)
 				consolidadoExcel.SetColWidth(sheetName, "C", "C", 30)
@@ -147,7 +147,6 @@ func (c *ReportesController) Desagregado() {
 				consolidadoExcel.SetCellValue(sheetName, "B2", "Nombre del rubro")
 				consolidadoExcel.SetCellValue(sheetName, "C2", "valor")
 				consolidadoExcel.SetCellValue(sheetName, "D2", "Descripción del bien y/o servicio")
-
 
 				consolidadoExcel.SetCellValue(sheetName, "A"+fmt.Sprint(contadorDesagregado), datosArreglo["codigo"])
 				consolidadoExcel.SetCellValue(sheetName, "B"+fmt.Sprint(contadorDesagregado), datosArreglo["Nombre"])
@@ -160,20 +159,19 @@ func (c *ReportesController) Desagregado() {
 				consolidadoExcel.SetCellStyle(sheetName, "A"+fmt.Sprint(contadorDesagregado), "D"+fmt.Sprint(contadorDesagregado), stylecontent)
 				consolidadoExcel.SetActiveSheet(index)
 
-				contadorDesagregado = contadorDesagregado+1
-			}else{
+				contadorDesagregado = contadorDesagregado + 1
+			} else {
 				contadorDesagregado = 3
 				nombreUnidadVer = datosArreglo["unidad"].(string)
 				nombreHoja := fmt.Sprint(nombreUnidadVer)
 				sheetName := nombreHoja
 				index := consolidadoExcel.NewSheet(sheetName)
 				consolidadoExcel.MergeCell(sheetName, "B1", "D1")
-				
+
 				consolidadoExcel.SetRowHeight(sheetName, 1, 20)
 				consolidadoExcel.SetRowHeight(sheetName, 2, 20)
 				consolidadoExcel.SetRowHeight(sheetName, contadorDesagregado, 50)
 
-				
 				consolidadoExcel.SetColWidth(sheetName, "A", "A", 30)
 				consolidadoExcel.SetColWidth(sheetName, "B", "B", 50)
 				consolidadoExcel.SetColWidth(sheetName, "C", "C", 30)
@@ -186,7 +184,6 @@ func (c *ReportesController) Desagregado() {
 				consolidadoExcel.SetCellValue(sheetName, "B2", "Nombre del rubro")
 				consolidadoExcel.SetCellValue(sheetName, "C2", "valor")
 				consolidadoExcel.SetCellValue(sheetName, "D2", "Descripción del bien y/o servicio")
-
 
 				consolidadoExcel.SetCellValue(sheetName, "A"+fmt.Sprint(contadorDesagregado), datosArreglo["codigo"])
 				consolidadoExcel.SetCellValue(sheetName, "B"+fmt.Sprint(contadorDesagregado), datosArreglo["Nombre"])
@@ -211,9 +208,8 @@ func (c *ReportesController) Desagregado() {
 
 		dataSend["generalData"] = data_identi
 		dataSend["excelB64"] = encoded
-		
-		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": dataSend}
 
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": dataSend}
 
 	} else {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
@@ -269,17 +265,18 @@ func (c *ReportesController) PlanAccionAnual() {
 
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
-	if body["unidad_id"].(string) == ""{
+	if body["unidad_id"].(string) == "" {
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string), &respuestaGeneral); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuestaGeneral, &planesFilterGeneral)
-
-			for datoUnidad := 0; datoUnidad < len(planesFilterGeneral); datoUnidad ++ {
+			fmt.Println("----------planes--------------")
+			fmt.Println(planesFilterGeneral)
+			for datoUnidad := 0; datoUnidad < len(planesFilterGeneral); datoUnidad++ {
 				planesUnidad := planesFilterGeneral[datoUnidad]
 				unidadId = planesUnidad["dependencia_id"].(string)
 
 				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",dependencia_id:"+unidadId, &respuesta); err == nil {
 					helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
-					for planes := 0; planes < len(planesFilter); planes ++ {
+					for planes := 0; planes < len(planesFilter); planes++ {
 						planesFilterData := planesFilter[planes]
 						plan_id = planesFilterData["_id"].(string)
 						generalData := make(map[string]interface{})
@@ -301,25 +298,22 @@ func (c *ReportesController) PlanAccionAnual() {
 										delete(element, "index")
 										data_identi = append(data_identi, element)
 									}
-			
+
 								}
 								// arreglo = append(arreglo, data_identi...)
-			
-			
+
 							} else {
 								c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": ""}
 							}
-			
+
 						} else {
 							c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 							c.Abort("400")
 						}
 
-
-		
 						if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id, &res); err == nil {
 							helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
-							
+
 							for i := 0; i < len(subgrupos); i++ {
 								if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") && strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "general") {
 									actividades := reporteshelper.GetActividades(subgrupos[i]["_id"].(string))
@@ -329,8 +323,7 @@ func (c *ReportesController) PlanAccionAnual() {
 										index := fmt.Sprint(actividad["index"])
 										datosArmonizacion := make(map[string]interface{})
 										titulosArmonizacion := make(map[string]interface{})
-		
-		
+
 										if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan_id, &resArmo); err == nil {
 											helpers.LimpiezaRespuestaRefactor(resArmo, &hijosArmo)
 											reporteshelper.Limpia()
@@ -347,23 +340,24 @@ func (c *ReportesController) PlanAccionAnual() {
 													datosArmonizacion[treeDato["nombre"].(string)] = treeData[fmt.Sprint(treeDato["id"])]
 												}
 											}
+											fmt.Println(treeDatos)
 											treeIndicador := treeDatos[4]
 											subIndicador := treeIndicador["sub"].([]map[string]interface{})
-		
+
 											for ind := 0; ind < len(subIndicador); ind++ {
 												subIndicadorRes := subIndicador[ind]
 												treeData := treeDatas[0]
 												titulosArmonizacion[subIndicadorRes["nombre"].(string)] = treeData[fmt.Sprint(subIndicadorRes["id"])]
 											}
 											datosArmonizacion["indicadores"] = titulosArmonizacion
-									
+
 											if armonizacionTercerNivel != nil {
 												delimitador := ","
 												output := strings.Split(armonizacionTercerNivel.(string), delimitador)
 												estrategiaDesc := make(map[string]interface{})
 												metaEstrategica := make(map[string]interface{})
 												lineamientoDesc := make(map[string]interface{})
-												for estrategiaArmo := 0; estrategiaArmo < len(output); estrategiaArmo++{
+												for estrategiaArmo := 0; estrategiaArmo < len(output); estrategiaArmo++ {
 													estrategiaId := output[estrategiaArmo]
 													if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=_id:"+estrategiaId, &resEstrategia); err == nil {
 														helpers.LimpiezaRespuestaRefactor(resEstrategia, &estrategiaData)
@@ -373,72 +367,71 @@ func (c *ReportesController) PlanAccionAnual() {
 														if estrategiaDataStr != "[]" {
 															estrategiaDesc["descripcionEstrategia"] = estrategiaEst["descripcion"]
 															estrategiaDesc["nombreEstrategia"] = estrategiaEst["nombre"]
-		
+
 															if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=_id:"+idPadre, &resMeta); err == nil {
-																helpers.LimpiezaRespuestaRefactor(resMeta, &metaData)				
+																helpers.LimpiezaRespuestaRefactor(resMeta, &metaData)
 																metaEst := metaData[0]
 																padreMeta := metaEst["padre"].(string)
 																metaDataStr := fmt.Sprint(metaData)
-		
-																if metaDataStr != "[]"{
+
+																if metaDataStr != "[]" {
 																	metaEstrategica["nombreMeta"] = metaEst["nombre"]
-		
+
 																	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=_id:"+padreMeta, &resLineamiento); err == nil {
-																		helpers.LimpiezaRespuestaRefactor(resLineamiento, &LineamientoData)				
+																		helpers.LimpiezaRespuestaRefactor(resLineamiento, &LineamientoData)
 																		lineamientoEst := LineamientoData[0]
 																		lineamientoDesc["nombreLineamiento"] = lineamientoEst["nombre"]
 																		padreLineamiento := lineamientoEst["padre"].(string)
-			
+
 																		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=_id:"+padreLineamiento, &resPlan); err == nil {
 																			helpers.LimpiezaRespuestaRefactor(resPlan, &planData)
 																			planDesarrollo := planData[0]
 																			nombrePlanDesarrollo = planDesarrollo["nombre"].(string)
 																			lineamientoDesc["nombrePlanDesarrollo"] = nombrePlanDesarrollo
-																		
+
 																		} else {
 																			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 																			c.Abort("400")
 																		}
-			
-					
+
 																	} else {
 																		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 																		c.Abort("400")
 																	}
-																}else{
+																} else {
 																	lineamientoDesc["nombreLineamiento"] = metaEst["nombre"]
 																	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=_id:"+padreMeta, &resPlan); err == nil {
 																		helpers.LimpiezaRespuestaRefactor(resPlan, &planData)
 																		planDesarrollo := planData[0]
 																		nombrePlanDesarrollo = planDesarrollo["nombre"].(string)
 																		lineamientoDesc["nombrePlanDesarrollo"] = nombrePlanDesarrollo
-		
+
 																	} else {
 																		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 																		c.Abort("400")
 																	}
 																}
-		
+
 															} else {
 																c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 																c.Abort("400")
 															}
-		
-														}else{
+
+														} else {
 															lineamientoDesc["nombreLineamiento"] = estrategiaEst["nombre"]
 															if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=_id:"+idPadre, &resPlan); err == nil {
 																helpers.LimpiezaRespuestaRefactor(resPlan, &planData)
 																planDesarrollo := planData[0]
 																nombrePlanDesarrollo = planDesarrollo["nombre"].(string)
 																lineamientoDesc["nombrePlanDesarrollo"] = nombrePlanDesarrollo
-		
+
 															} else {
 																c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 																c.Abort("400")
 															}
-		
+
 														}
-		
+
 													} else {
 														c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 														c.Abort("400")
@@ -449,35 +442,34 @@ func (c *ReportesController) PlanAccionAnual() {
 												arregloMetaEst = append(arregloMetaEst, metaEstrategica)
 												lineamientoDesc["meta"] = arregloMetaEst
 												arregloLineamieto = append(arregloLineamieto, lineamientoDesc)
-		
+
 											}
-		
+
 										} else {
 											c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 											c.Abort("400")
 										}
-		
+
 										// generalData := make(map[string]interface{})
-		
+
 										if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=DependenciaId:"+unidadId, &respuestaUnidad); err == nil {
 											aux := respuestaUnidad[0]
 											dependenciaNombre := aux["DependenciaId"].(map[string]interface{})
 											nombreUnidad = dependenciaNombre["Nombre"].(string)
-		
+
 										} else {
 											panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
 										}
-		
+
 										generalData["nombreUnidad"] = nombreUnidad
 										generalData["nombreActividad"] = actividadName
 										generalData["numeroActividad"] = index
 										generalData["datosArmonizacion"] = arregloLineamieto
 										generalData["datosComplementarios"] = datosArmonizacion
 										// generalData["presupuesto"] = data_identi
-										
+
 										// arregloPlanAnual = append(arregloPlanAnual, generalData)
-		
-		
+
 									}
 									break
 								}
@@ -492,7 +484,7 @@ func (c *ReportesController) PlanAccionAnual() {
 						arregloPlanAnual = append(arregloPlanAnual, generalData)
 
 					}
-		
+
 				} else {
 					c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 					c.Abort("400")
@@ -527,10 +519,10 @@ func (c *ReportesController) PlanAccionAnual() {
 				armo := datosExcelPlan["datosArmonizacion"].([]map[string]interface{})
 
 				unidadNombreIn := datosExcelPlan["nombreUnidad"].(string)
-				if excelPlan == 0{
+				if excelPlan == 0 {
 					unidadNombre = unidadNombreIn
 				}
-				if unidadNombreIn == unidadNombre{
+				if unidadNombreIn == unidadNombre {
 					unidadNombre = datosExcelPlan["nombreUnidad"].(string)
 					nombreHoja := fmt.Sprint(unidadNombre)
 					sheetName := nombreHoja
@@ -556,7 +548,7 @@ func (c *ReportesController) PlanAccionAnual() {
 					consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A2", "N2", styletitles)
 					consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A3", "N3", styletitles)
 
-					for dataExcelArmo := 0; dataExcelArmo < len(armo); dataExcelArmo++{
+					for dataExcelArmo := 0; dataExcelArmo < len(armo); dataExcelArmo++ {
 						contadorLineamientoIn := contadorLineamiento
 						datosArmo := armo[dataExcelArmo]
 						lineamiento := datosArmo["nombreLineamiento"]
@@ -633,9 +625,9 @@ func (c *ReportesController) PlanAccionAnual() {
 									consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(contadorEstrategia+1), meta2)
 									consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A"+fmt.Sprint(contadorEstrategia+1), "N"+fmt.Sprint(contadorEstrategia+1), stylecontent)
 									consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorEstrategia+1, 70)
-									contadorEstrategia = contadorEstrategia+1
+									contadorEstrategia = contadorEstrategia + 1
 									contadorEstrategiaOut = contadorEstrategia
-								}else{
+								} else {
 									consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(contadorEstrategia), nombreIndicador1)
 									consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(contadorEstrategia), formula1)
 									consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(contadorEstrategia), meta1)
@@ -647,12 +639,12 @@ func (c *ReportesController) PlanAccionAnual() {
 								consolidadoExcelPlanAnual.MergeCell(sheetName, "G"+fmt.Sprint(contadorEstrategiaIn), "G"+fmt.Sprint(contadorEstrategiaOut))
 								consolidadoExcelPlanAnual.MergeCell(sheetName, "H"+fmt.Sprint(contadorEstrategiaIn), "H"+fmt.Sprint(contadorEstrategiaOut))
 
-								if contadorEstrategiaIn > contadorEstrategia{
+								if contadorEstrategiaIn > contadorEstrategia {
 									contadorMeta = contadorEstrategiaIn
-								}else{
+								} else {
 									contadorMeta = contadorEstrategia
 								}
-								contadorEstrategia = contadorEstrategia+1
+								contadorEstrategia = contadorEstrategia + 1
 							}
 
 							contadorMetaOut := contadorMeta
@@ -660,18 +652,17 @@ func (c *ReportesController) PlanAccionAnual() {
 							if contadorMeta >= contadorLineamiento {
 								contadorLineamiento = contadorMeta
 							}
-							contadorMeta = contadorMeta+1
+							contadorMeta = contadorMeta + 1
 						}
-
 
 						contadorLineamientoOut := contadorLineamiento
 
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "A"+fmt.Sprint(contadorLineamientoIn), "A"+fmt.Sprint(contadorLineamientoOut))
 
-						contadorLineamiento = contadorLineamiento+1
+						contadorLineamiento = contadorLineamiento + 1
 					}
 					consolidadoExcelPlanAnual.SetActiveSheet(indexPlan)
-				}else{
+				} else {
 					contadorLineamiento = 4
 					contadorMeta = 4
 					contadorEstrategia = 4
@@ -701,7 +692,7 @@ func (c *ReportesController) PlanAccionAnual() {
 					consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A2", "N2", styletitles)
 					consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A3", "N3", styletitles)
 
-					for dataExcelArmo := 0; dataExcelArmo < len(armo); dataExcelArmo++{
+					for dataExcelArmo := 0; dataExcelArmo < len(armo); dataExcelArmo++ {
 						contadorLineamientoIn := contadorLineamiento
 						datosArmo := armo[dataExcelArmo]
 						lineamiento := datosArmo["nombreLineamiento"]
@@ -735,7 +726,7 @@ func (c *ReportesController) PlanAccionAnual() {
 
 						presupuestoExc := datosExcelPlan["presupuesto"].([]map[string]interface{})
 						if dataExcelArmo == 0 {
-							if presupuestoExc != nil{
+							if presupuestoExc != nil {
 								for dataExcelPresupuesto := 0; dataExcelPresupuesto < len(presupuestoExc); dataExcelPresupuesto++ {
 									datosPresupuesto := presupuestoExc[dataExcelPresupuesto]
 									nombrePresupuesto := datosPresupuesto["Nombre"]
@@ -745,16 +736,13 @@ func (c *ReportesController) PlanAccionAnual() {
 									consolidadoExcelPlanAnual.SetCellValue(sheetName, "M"+fmt.Sprint(contadorPresupuesto), nombrePresupuesto)
 									consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(contadorPresupuesto), valorPresupuesto)
 									consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorPresupuesto, 70)
-	
-									contadorPresupuesto = contadorPresupuesto+1
+
+									contadorPresupuesto = contadorPresupuesto + 1
 
 								}
-	
+
 							}
 						}
-
-						
-
 
 						metaEstr := datosArmo["meta"].([]map[string]interface{})
 						for dataExcelMetaEstr := 0; dataExcelMetaEstr < len(metaEstr); dataExcelMetaEstr++ {
@@ -803,9 +791,9 @@ func (c *ReportesController) PlanAccionAnual() {
 									consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(contadorEstrategia+1), meta2)
 									consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A"+fmt.Sprint(contadorEstrategia+1), "N"+fmt.Sprint(contadorEstrategia+1), stylecontent)
 									consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorEstrategia+1, 70)
-									contadorEstrategia = contadorEstrategia+1
+									contadorEstrategia = contadorEstrategia + 1
 									contadorEstrategiaOut = contadorEstrategia
-								}else{
+								} else {
 									consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(contadorEstrategia), nombreIndicador1)
 									consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(contadorEstrategia), formula1)
 									consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(contadorEstrategia), meta1)
@@ -817,14 +805,12 @@ func (c *ReportesController) PlanAccionAnual() {
 								consolidadoExcelPlanAnual.MergeCell(sheetName, "G"+fmt.Sprint(contadorEstrategiaIn), "G"+fmt.Sprint(contadorEstrategiaOut))
 								consolidadoExcelPlanAnual.MergeCell(sheetName, "H"+fmt.Sprint(contadorEstrategiaIn), "H"+fmt.Sprint(contadorEstrategiaOut))
 
-								
-
-								if contadorEstrategiaIn > contadorEstrategia{
+								if contadorEstrategiaIn > contadorEstrategia {
 									contadorMeta = contadorEstrategiaIn
-								}else{
+								} else {
 									contadorMeta = contadorEstrategia
 								}
-								contadorEstrategia = contadorEstrategia+1
+								contadorEstrategia = contadorEstrategia + 1
 							}
 
 							contadorMetaOut := contadorMeta
@@ -832,21 +818,19 @@ func (c *ReportesController) PlanAccionAnual() {
 							if contadorMeta >= contadorLineamiento {
 								contadorLineamiento = contadorMeta
 							}
-							contadorMeta = contadorMeta+1
+							contadorMeta = contadorMeta + 1
 						}
-
 
 						contadorLineamientoOut := contadorLineamiento
 
-					
-
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "A"+fmt.Sprint(contadorLineamientoIn), "A"+fmt.Sprint(contadorLineamientoOut))
-						contadorLineamiento = contadorLineamiento+1
+						contadorLineamiento = contadorLineamiento + 1
 					}
 					consolidadoExcelPlanAnual.SetActiveSheet(indexPlan)
 				}
 
 			}
+			consolidadoExcelPlanAnual.SaveAs("plan_anual_.xlsx")
 
 			buf, _ := consolidadoExcelPlanAnual.WriteToBuffer()
 			strings.NewReader(buf.String())
@@ -857,7 +841,7 @@ func (c *ReportesController) PlanAccionAnual() {
 
 			dataSend["generalData"] = arregloPlanAnual
 			dataSend["excelB64"] = encoded
-			
+
 			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": dataSend}
 
 		} else {
@@ -865,16 +849,17 @@ func (c *ReportesController) PlanAccionAnual() {
 			c.Abort("400")
 		}
 
-	}else if body["unidad_id"].(string) != ""{
+	} else if body["unidad_id"].(string) != "" {
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",dependencia_id:"+body["unidad_id"].(string), &respuesta); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
-			for planes := 0; planes < len(planesFilter); planes ++ {
+			fmt.Println(planesFilter)
+			for planes := 0; planes < len(planesFilter); planes++ {
 				planesFilterData := planesFilter[planes]
 				plan_id = planesFilterData["_id"].(string)
 
 				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id, &res); err == nil {
 					helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
-					
+
 					for i := 0; i < len(subgrupos); i++ {
 						if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") && strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "general") {
 							actividades := reporteshelper.GetActividades(subgrupos[i]["_id"].(string))
@@ -885,11 +870,13 @@ func (c *ReportesController) PlanAccionAnual() {
 								datosArmonizacion := make(map[string]interface{})
 								titulosArmonizacion := make(map[string]interface{})
 
-
 								if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan_id, &resArmo); err == nil {
 									helpers.LimpiezaRespuestaRefactor(resArmo, &hijosArmo)
 									reporteshelper.Limpia()
 									tree := reporteshelper.BuildTreeFa(hijosArmo, index)
+									fmt.Println("--------------tree---------------------")
+
+									fmt.Println(tree)
 									treeDatos := tree[0]
 									treeDatas := tree[1]
 									treeArmo := tree[2]
@@ -903,6 +890,9 @@ func (c *ReportesController) PlanAccionAnual() {
 										}
 									}
 									treeIndicador := treeDatos[4]
+									fmt.Println("-----------treedatos4------------------------")
+
+									fmt.Println(treeDatos[4])
 									subIndicador := treeIndicador["sub"].([]map[string]interface{})
 
 									for ind := 0; ind < len(subIndicador); ind++ {
@@ -917,7 +907,7 @@ func (c *ReportesController) PlanAccionAnual() {
 										estrategiaDesc := make(map[string]interface{})
 										metaEstrategica := make(map[string]interface{})
 										lineamientoDesc := make(map[string]interface{})
-										for estrategiaArmo := 0; estrategiaArmo < len(output); estrategiaArmo++{
+										for estrategiaArmo := 0; estrategiaArmo < len(output); estrategiaArmo++ {
 											estrategiaId := output[estrategiaArmo]
 											if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=_id:"+estrategiaId, &resEstrategia); err == nil {
 												helpers.LimpiezaRespuestaRefactor(resEstrategia, &estrategiaData)
@@ -929,26 +919,26 @@ func (c *ReportesController) PlanAccionAnual() {
 													estrategiaDesc["nombreEstrategia"] = estrategiaEst["nombre"]
 
 													if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=_id:"+idPadre, &resMeta); err == nil {
-														helpers.LimpiezaRespuestaRefactor(resMeta, &metaData)				
+														helpers.LimpiezaRespuestaRefactor(resMeta, &metaData)
 														metaEst := metaData[0]
 														padreMeta := metaEst["padre"].(string)
 														metaDataStr := fmt.Sprint(metaData)
 
-														if metaDataStr != "[]"{
+														if metaDataStr != "[]" {
 															metaEstrategica["nombreMeta"] = metaEst["nombre"]
 
 															if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=_id:"+padreMeta, &resLineamiento); err == nil {
-																helpers.LimpiezaRespuestaRefactor(resLineamiento, &LineamientoData)				
+																helpers.LimpiezaRespuestaRefactor(resLineamiento, &LineamientoData)
 																lineamientoEst := LineamientoData[0]
 																lineamientoDesc["nombreLineamiento"] = lineamientoEst["nombre"]
 																padreLineamiento := lineamientoEst["padre"].(string)
-	
+
 																if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=_id:"+padreLineamiento, &resPlan); err == nil {
 																	helpers.LimpiezaRespuestaRefactor(resPlan, &planData)
 																	planDesarrollo := planData[0]
 																	nombrePlanDesarrollo = planDesarrollo["nombre"].(string)
 																	lineamientoDesc["nombrePlanDesarrollo"] = nombrePlanDesarrollo
-																
+
 																} else {
 																	c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 																	c.Abort("400")
@@ -957,7 +947,7 @@ func (c *ReportesController) PlanAccionAnual() {
 																c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 																c.Abort("400")
 															}
-														}else{
+														} else {
 															lineamientoDesc["nombreLineamiento"] = metaEst["nombre"]
 															if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=_id:"+padreMeta, &resPlan); err == nil {
 																helpers.LimpiezaRespuestaRefactor(resPlan, &planData)
@@ -976,7 +966,7 @@ func (c *ReportesController) PlanAccionAnual() {
 														c.Abort("400")
 													}
 
-												}else{
+												} else {
 													lineamientoDesc["nombreLineamiento"] = estrategiaEst["nombre"]
 													if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=_id:"+idPadre, &resPlan); err == nil {
 														helpers.LimpiezaRespuestaRefactor(resPlan, &planData)
@@ -1028,7 +1018,6 @@ func (c *ReportesController) PlanAccionAnual() {
 
 								arregloPlanAnual = append(arregloPlanAnual, generalData)
 
-
 							}
 							break
 						}
@@ -1057,7 +1046,7 @@ func (c *ReportesController) PlanAccionAnual() {
 					"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
 					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
 				}`)
-				for excelPlan := 0; excelPlan < len(arregloPlanAnual) ; excelPlan++ {
+				for excelPlan := 0; excelPlan < len(arregloPlanAnual); excelPlan++ {
 					datosExcelPlan := arregloPlanAnual[excelPlan]
 					armo := datosExcelPlan["datosArmonizacion"].([]map[string]interface{})
 					unidadNombre := datosExcelPlan["nombreUnidad"]
@@ -1089,7 +1078,7 @@ func (c *ReportesController) PlanAccionAnual() {
 					consolidadoExcelPlanAnual.SetCellStyle(sheetName, "L2", "M2", styletitles)
 					consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A3", "K3", styletitles)
 
-					for dataExcelArmo := 0; dataExcelArmo < len(armo); dataExcelArmo++{
+					for dataExcelArmo := 0; dataExcelArmo < len(armo); dataExcelArmo++ {
 						contadorLineamientoIn := contadorLineamiento
 						datosArmo := armo[dataExcelArmo]
 						lineamiento := datosArmo["nombreLineamiento"]
@@ -1165,9 +1154,9 @@ func (c *ReportesController) PlanAccionAnual() {
 									consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(contadorEstrategia+1), meta2)
 									consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A"+fmt.Sprint(contadorEstrategia+1), "M"+fmt.Sprint(contadorEstrategia+1), stylecontent)
 									consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorEstrategia+1, 70)
-									contadorEstrategia = contadorEstrategia+1
+									contadorEstrategia = contadorEstrategia + 1
 									contadorEstrategiaOut = contadorEstrategia
-								}else{
+								} else {
 									consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(contadorEstrategia), nombreIndicador1)
 									consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(contadorEstrategia), formula1)
 									consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(contadorEstrategia), meta1)
@@ -1180,24 +1169,26 @@ func (c *ReportesController) PlanAccionAnual() {
 								consolidadoExcelPlanAnual.MergeCell(sheetName, "H"+fmt.Sprint(contadorEstrategiaIn), "H"+fmt.Sprint(contadorEstrategiaOut))
 
 								contadorMeta = contadorEstrategia
-								contadorEstrategia = contadorEstrategia+1
+								contadorEstrategia = contadorEstrategia + 1
 							}
 
 							contadorMetaOut := contadorMeta
 							consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorMetaIn), "B"+fmt.Sprint(contadorMetaOut))
 							contadorLineamiento = contadorMeta
-							contadorMeta = contadorMeta+1
+							contadorMeta = contadorMeta + 1
 						}
 						contadorLineamientoOut := contadorLineamiento
 
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "A"+fmt.Sprint(contadorLineamientoIn), "A"+fmt.Sprint(contadorLineamientoOut))
 
-						contadorLineamiento = contadorLineamiento+1
+						contadorLineamiento = contadorLineamiento + 1
 					}
 					consolidadoExcelPlanAnual.SetActiveSheet(indexPlan)
-	
+
 				}
 			}
+
+			consolidadoExcelPlanAnual.SaveAs("plan_anual.xlsx")
 
 			buf, _ := consolidadoExcelPlanAnual.WriteToBuffer()
 			strings.NewReader(buf.String())
