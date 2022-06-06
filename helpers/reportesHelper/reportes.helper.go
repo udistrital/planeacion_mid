@@ -2,6 +2,7 @@ package reporteshelper
 
 import (
 	"encoding/json"
+	"strings"
 
 	"log"
 	// "strings"
@@ -30,8 +31,6 @@ func GetActividades(subgrupo_id string) []map[string]interface{} {
 		if subgrupoDetalle["dato_plan"] != nil {
 			dato_plan_str := subgrupoDetalle["dato_plan"].(string)
 			json.Unmarshal([]byte(dato_plan_str), &datoPlan)
-			// fmt.Println("este de abajo es dato plan")
-			// fmt.Println(aux)
 			for indexActividad, element := range datoPlan {
 				_ = indexActividad
 				if err != nil {
@@ -251,4 +250,341 @@ func getChildren(children []interface{}) (childrenTree []map[string]interface{})
 		add(id)
 	}
 	return
+}
+
+func ArbolArmonizacion(armonizacion string) []map[string]interface{} {
+
+	var respuesta map[string]interface{}
+	var lineamientos []map[string]interface{}
+	var metas []map[string]interface{}
+	var estrategias []map[string]interface{}
+	var arreglo []map[string]interface{}
+	armonizacionPED := strings.Split(armonizacion, ",")
+	for i := 0; i < len(armonizacionPED); i++ {
+		var respuestaSubgrupo map[string]interface{}
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+armonizacionPED[i], &respuesta); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaSubgrupo)
+			if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "lineamiento") {
+				lineamientos = append(lineamientos, respuestaSubgrupo)
+			}
+			if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "meta") {
+				metas = append(metas, respuestaSubgrupo)
+			}
+			if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "estrategia") {
+				estrategias = append(estrategias, respuestaSubgrupo)
+			}
+		} else {
+			panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+		}
+	}
+
+	for i := 0; i < len(lineamientos); i++ {
+		meta := make(map[string]interface{})
+		lineamiento := make(map[string]interface{})
+		estrategia := make(map[string]interface{})
+		var arregloEstrategias []map[string]interface{}
+		var arregloMetas []map[string]interface{}
+
+		estrategia["_id"] = ""
+		estrategia["nombreEstrategia"] = ""
+		estrategia["descripcionEstrategia"] = ""
+
+		arregloEstrategias = append(arregloEstrategias, estrategia)
+
+		meta["_id"] = ""
+		meta["nombreMeta"] = ""
+		meta["estrategias"] = arregloEstrategias
+
+		arregloMetas = append(arregloMetas, meta)
+
+		lineamiento["_id"] = lineamientos[i]["_id"]
+		lineamiento["nombreLineamiento"] = lineamientos[i]["nombre"]
+		lineamiento["nombrePlanDesarrollo"] = "Plan Estrategico de Desarrollo"
+		lineamiento["meta"] = arregloMetas
+
+		arreglo = append(arreglo, lineamiento)
+	}
+
+	for i := 0; i < len(metas); i++ {
+
+		meta := make(map[string]interface{})
+		estrategia := make(map[string]interface{})
+		var auxMeta = metas[i]
+		bandera := false
+		var arregloEstrategias []map[string]interface{}
+		estrategia["_id"] = ""
+		estrategia["nombreEstrategia"] = ""
+		estrategia["descripcionEstrategia"] = ""
+
+		arregloEstrategias = append(arregloEstrategias, estrategia)
+
+		meta["_id"] = auxMeta["_id"]
+		meta["nombreMeta"] = auxMeta["nombre"]
+		meta["estrategias"] = arregloEstrategias
+
+		for j := 0; j < len(arreglo); j++ {
+			if arreglo[j]["_id"] == auxMeta["padre"] {
+
+				bandera = true
+				aux := arreglo[j]["meta"].([]map[string]interface{})
+				if aux[0]["_id"] == "" {
+					aux = append(aux[:0], aux[1:]...)
+				}
+				aux = append(aux, meta)
+				arreglo[j]["meta"] = aux
+				break
+			}
+		}
+		if bandera == false {
+			lineamiento := make(map[string]interface{})
+			var arregloMetas []map[string]interface{}
+			arregloMetas = append(arregloMetas, meta)
+			lineamiento["_id"] = ""
+			lineamiento["nombreLineamiento"] = ""
+			lineamiento["nombrePlanDesarrollo"] = "Plan Estrategico de Desarrollo"
+			lineamiento["meta"] = arregloMetas
+			arreglo = append(arreglo, lineamiento)
+		}
+	}
+
+	for i := 0; i < len(estrategias); i++ {
+		var auxEstrategia = estrategias[i]
+		estrategia := make(map[string]interface{})
+		bandera := false
+
+		estrategia["_id"] = auxEstrategia["_id"]
+		estrategia["nombreEstrategia"] = auxEstrategia["nombre"]
+		estrategia["descripcionEstrategia"] = auxEstrategia["descripcion"]
+
+		for j := 0; j < len(metas); j++ {
+			if metas[j]["_id"] == auxEstrategia["padre"] {
+				for n := 0; n < len(arreglo); n++ {
+					if arreglo[n]["_id"] == metas[j]["padre"] {
+						bandera = true
+						auxMetas := arreglo[n]["meta"].([]map[string]interface{})
+
+						for k := 0; k < len(auxMetas); k++ {
+							if auxMetas[k]["_id"] == auxEstrategia["padre"] {
+								aux2 := auxMetas[k]["estrategias"].([]map[string]interface{})
+								if aux2[0]["_id"] == "" {
+									aux2 = append(aux2[:0], aux2[1:]...)
+								}
+								aux2 = append(aux2, estrategia)
+								auxMetas[k]["estrategias"] = aux2
+
+								arreglo[n]["meta"] = auxMetas
+								break
+							}
+						}
+						break
+					}
+				}
+				break
+			}
+		}
+		if !bandera {
+			meta := make(map[string]interface{})
+			lineamiento := make(map[string]interface{})
+			var arregloEstrategias []map[string]interface{}
+			var arregloMetas []map[string]interface{}
+			arregloEstrategias = append(arregloEstrategias, estrategia)
+
+			meta["_id"] = ""
+			meta["nombreMeta"] = ""
+			meta["estrategias"] = arregloEstrategias
+
+			arregloMetas = append(arregloMetas, meta)
+
+			lineamiento["_id"] = ""
+			lineamiento["nombreLineamiento"] = ""
+			lineamiento["nombrePlanDesarrollo"] = "Plan Estrategico de Desarrollo"
+			lineamiento["meta"] = arregloMetas
+			arreglo = append(arreglo, lineamiento)
+		}
+	}
+
+	return arreglo
+}
+
+func ArbolArmonizacionPI(armonizacion interface{}) []map[string]interface{} {
+
+	var respuesta map[string]interface{}
+	var lineamientos []map[string]interface{}
+	var factores []map[string]interface{}
+	var estrategias []map[string]interface{}
+	var arreglo []map[string]interface{}
+	if armonizacion != "" {
+
+		armonizacionPI := strings.Split(armonizacion.(string), ",")
+
+		for i := 0; i < len(armonizacionPI); i++ {
+			var respuestaSubgrupo map[string]interface{}
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+armonizacionPI[i], &respuesta); err == nil {
+				helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaSubgrupo)
+				if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "factores") || strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "nivel 1") {
+					factores = append(factores, respuestaSubgrupo)
+				}
+				if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "lineamientos") || strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "nivel 2") {
+					lineamientos = append(lineamientos, respuestaSubgrupo)
+				}
+				if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "estrategia") || strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "nivel 3") {
+					estrategias = append(estrategias, respuestaSubgrupo)
+				}
+			} else {
+				panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+			}
+		}
+
+		for i := 0; i < len(factores); i++ {
+			factor := make(map[string]interface{})
+			lineamiento := make(map[string]interface{})
+			estrategia := make(map[string]interface{})
+			var arregloEstrategias []map[string]interface{}
+			var arregloLineamientos []map[string]interface{}
+
+			estrategia["_id"] = ""
+			estrategia["nombreEstrategia"] = ""
+			estrategia["descripcionEstrategia"] = ""
+
+			arregloEstrategias = append(arregloEstrategias, estrategia)
+
+			lineamiento["_id"] = ""
+			lineamiento["nombreLineamiento"] = ""
+			lineamiento["estrategias"] = arregloEstrategias
+
+			arregloLineamientos = append(arregloLineamientos, lineamiento)
+
+			factor["_id"] = factores[i]["_id"]
+			factor["nombreFactor"] = factores[i]["nombre"]
+			factor["nombrePlanDesarrollo"] = "Plan Indicativo"
+			factor["lineamientos"] = arregloLineamientos
+
+			arreglo = append(arreglo, factor)
+		}
+
+		for i := 0; i < len(lineamientos); i++ {
+
+			lineamiento := make(map[string]interface{})
+			estrategia := make(map[string]interface{})
+			var auxLineamiento = lineamientos[i]
+			bandera := false
+			var arregloEstrategias []map[string]interface{}
+			estrategia["_id"] = ""
+			estrategia["nombreEstrategia"] = ""
+			estrategia["descripcionEstrategia"] = ""
+
+			arregloEstrategias = append(arregloEstrategias, estrategia)
+
+			lineamiento["_id"] = auxLineamiento["_id"]
+			lineamiento["nombreLineamiento"] = auxLineamiento["nombre"]
+			lineamiento["estrategias"] = arregloEstrategias
+
+			for j := 0; j < len(arreglo); j++ {
+
+				if arreglo[j]["_id"] == auxLineamiento["padre"] {
+
+					bandera = true
+					aux := arreglo[j]["lineamientos"].([]map[string]interface{})
+					if aux[0]["_id"] == "" {
+						aux = append(aux[:0], aux[1:]...)
+					}
+					aux = append(aux, lineamiento)
+					arreglo[j]["lineamientos"] = aux
+					break
+				}
+			}
+			if bandera == false {
+				factor := make(map[string]interface{})
+				var arregloLineamientos []map[string]interface{}
+				arregloLineamientos = append(arregloLineamientos, lineamiento)
+				factor["_id"] = ""
+				factor["nombreFactor"] = ""
+				factor["nombrePlanDesarrollo"] = "Plan Indicativo"
+				factor["lineamientos"] = arregloLineamientos
+				arreglo = append(arreglo, factor)
+			}
+		}
+
+		for i := 0; i < len(estrategias); i++ {
+			var auxEstrategia = estrategias[i]
+			estrategia := make(map[string]interface{})
+			bandera := false
+
+			estrategia["_id"] = auxEstrategia["_id"]
+			estrategia["nombreEstrategia"] = auxEstrategia["nombre"]
+			estrategia["descripcionEstrategia"] = auxEstrategia["descripcion"]
+
+			for j := 0; j < len(lineamientos); j++ {
+				if lineamientos[j]["_id"] == auxEstrategia["padre"] {
+					for n := 0; n < len(arreglo); n++ {
+						if arreglo[n]["_id"] == lineamientos[j]["padre"] {
+							bandera = true
+							auxLineamientos := arreglo[n]["lineamientos"].([]map[string]interface{})
+
+							for k := 0; k < len(auxLineamientos); k++ {
+								if auxLineamientos[k]["_id"] == auxEstrategia["padre"] {
+									aux2 := auxLineamientos[k]["estrategias"].([]map[string]interface{})
+									if aux2[0]["_id"] == "" {
+										aux2 = append(aux2[:0], aux2[1:]...)
+									}
+									aux2 = append(aux2, estrategia)
+									auxLineamientos[k]["estrategias"] = aux2
+
+									arreglo[n]["lineamientos"] = auxLineamientos
+									break
+								}
+							}
+							break
+						}
+					}
+					break
+				}
+			}
+			if !bandera {
+				lineamiento := make(map[string]interface{})
+				factor := make(map[string]interface{})
+				var arregloEstrategias []map[string]interface{}
+				var arregloLineamientos []map[string]interface{}
+				arregloEstrategias = append(arregloEstrategias, estrategia)
+
+				lineamiento["_id"] = ""
+				lineamiento["nombreLineamiento"] = ""
+				lineamiento["estrategias"] = arregloEstrategias
+
+				arregloLineamientos = append(arregloLineamientos, lineamiento)
+
+				factor["_id"] = ""
+				factor["nombreFactor"] = ""
+				factor["nombrePlanDesarrollo"] = "Plan Indicativo"
+				factor["lineamientos"] = arregloLineamientos
+				arreglo = append(arreglo, factor)
+			}
+		}
+	} else {
+		lineamiento := make(map[string]interface{})
+		factor := make(map[string]interface{})
+		estrategia := make(map[string]interface{})
+
+		estrategia["_id"] = ""
+		estrategia["nombreEstrategia"] = ""
+		estrategia["descripcionEstrategia"] = ""
+
+		var arregloEstrategias []map[string]interface{}
+		var arregloLineamientos []map[string]interface{}
+		arregloEstrategias = append(arregloEstrategias, estrategia)
+
+		lineamiento["_id"] = ""
+		lineamiento["nombreLineamiento"] = ""
+		lineamiento["estrategias"] = arregloEstrategias
+
+		arregloLineamientos = append(arregloLineamientos, lineamiento)
+
+		factor["_id"] = ""
+		factor["nombreFactor"] = ""
+		factor["nombrePlanDesarrollo"] = "Plan Indicativo"
+		factor["lineamientos"] = arregloLineamientos
+		arreglo = append(arreglo, factor)
+	}
+
+	return arreglo
 }
