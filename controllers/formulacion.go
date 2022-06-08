@@ -141,7 +141,6 @@ func (c *FormulacionController) GuardarActividad() {
 	entrada = body["entrada"].(map[string]interface{})
 	armonizacion := body["armo"]
 	armonizacionPI := body["armoPI"]
-	fmt.Println(armonizacionPI)
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &resPlan); err != nil {
 		panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error get Plan \"id\"", "status": "400", "log": err})
@@ -233,7 +232,6 @@ func (c *FormulacionController) GuardarActividad() {
 
 				}
 			}
-			fmt.Println(subgrupo_detalle)
 			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupo_detalle["_id"].(string), "PUT", &res, subgrupo_detalle); err != nil {
 				panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
 			}
