@@ -279,9 +279,9 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 					json.Unmarshal([]byte(dato_armonizacion_str), &dato_armonizacion)
 					aux := dato_armonizacion[index]
 					if aux != nil {
-						fmt.Println(aux)
 						armonizacion["armo"] = aux.(map[string]interface{})["armonizacionPED"]
 						armonizacion["armoPI"] = aux.(map[string]interface{})["armonizacionPI"]
+
 					}
 
 				}
