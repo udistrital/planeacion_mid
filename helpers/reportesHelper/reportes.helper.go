@@ -2,6 +2,7 @@ package reporteshelper
 
 import (
 	"encoding/json"
+	"strconv"
 	"strings"
 
 	"log"
@@ -9,8 +10,10 @@ import (
 	"fmt"
 
 	"github.com/astaxie/beego"
+	"github.com/leekchan/accounting"
 	"github.com/udistrital/planeacion_mid/helpers"
 	"github.com/udistrital/utils_oas/request"
+	"github.com/xuri/excelize/v2"
 )
 
 var validDataT = []string{}
@@ -138,7 +141,6 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 	var dato_armonizacion map[string]interface{}
 	armonizacion := make(map[string]interface{})
 	forkData := make(map[string]interface{})
-	//fmt.Print(valid)
 	for _, v := range valid {
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+v, &res); err == nil {
 			helpers.LimpiezaRespuestaRefactor(res, &subgrupo_detalle)
@@ -587,4 +589,658 @@ func ArbolArmonizacionPI(armonizacion interface{}) []map[string]interface{} {
 	}
 
 	return arreglo
+}
+
+func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId string) *excelize.File {
+	var res map[string]interface{}
+	var identificaciones []map[string]interface{}
+	var recursos []map[string]interface{}
+	var contratistas []map[string]interface{}
+	var docentes map[string]interface{}
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+planId, &res); err == nil {
+		helpers.LimpiezaRespuestaRefactor(res, &identificaciones)
+	}
+
+	for i := 0; i < len(identificaciones); i++ {
+		identificacion := identificaciones[i]
+		if strings.Contains(strings.ToLower(identificacion["nombre"].(string)), "recurso") {
+			if identificacion["dato"] != nil {
+				var dato map[string]interface{}
+				var data_identi []map[string]interface{}
+				dato_str := identificacion["dato"].(string)
+				json.Unmarshal([]byte(dato_str), &dato)
+				for key := range dato {
+					element := dato[key].(map[string]interface{})
+					if element["activo"] == true {
+						data_identi = append(data_identi, element)
+					}
+				}
+				recursos = data_identi
+
+			}
+		} else if strings.Contains(strings.ToLower(identificacion["nombre"].(string)), "contratista") {
+			if identificacion["dato"] != nil {
+				var dato map[string]interface{}
+				var data_identi []map[string]interface{}
+				dato_str := identificacion["dato"].(string)
+				json.Unmarshal([]byte(dato_str), &dato)
+				for key := range dato {
+					element := dato[key].(map[string]interface{})
+					if element["activo"] == true {
+						data_identi = append(data_identi, element)
+					}
+				}
+				contratistas = data_identi
+
+			}
+		} else if strings.Contains(strings.ToLower(identificacion["nombre"].(string)), "docente") {
+			var dato map[string]interface{}
+			var data_identi []map[string]interface{}
+			if identificacion["dato"] != nil && identificacion["dato"] != "{}" {
+				result := make(map[string]interface{})
+				dato_str := identificacion["dato"].(string)
+				json.Unmarshal([]byte(dato_str), &dato)
+
+				var identi map[string]interface{}
+				dato_aux := dato["rhf"].(string)
+				if dato_aux == "{}" {
+					result["rhf"] = "{}"
+				} else {
+					json.Unmarshal([]byte(dato_aux), &identi)
+					for key := range identi {
+						element := identi[key].(map[string]interface{})
+						if element["activo"] == true {
+							data_identi = append(data_identi, element)
+						}
+					}
+					result["rhf"] = data_identi
+				}
+
+				data_identi = nil
+
+				dato_aux = dato["rhv_pre"].(string)
+				if dato_aux == "{}" {
+					result["rhv_pre"] = "{}"
+				} else {
+					json.Unmarshal([]byte(dato_aux), &identi)
+					for key := range identi {
+						element := identi[key].(map[string]interface{})
+						if element["activo"] == true {
+							data_identi = append(data_identi, element)
+						}
+					}
+					result["rhv_pre"] = data_identi
+				}
+				data_identi = nil
+
+				dato_aux = dato["rhv_pos"].(string)
+				if dato_aux == "{}" {
+					result["rhv_pos"] = "{}"
+				} else {
+					json.Unmarshal([]byte(dato_aux), &identi)
+					for key := range identi {
+						element := identi[key].(map[string]interface{})
+						if element["activo"] == true {
+							data_identi = append(data_identi, element)
+						}
+					}
+					result["rhv_pos"] = data_identi
+				}
+				data_identi = nil
+
+				docentes = result
+			}
+		}
+	}
+
+	return construirTablas(consolidadoExcelPlanAnual, recursos, contratistas, docentes)
+}
+
+func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[string]interface{}, contratistas []map[string]interface{}, docentes map[string]interface{}) *excelize.File {
+
+	ac := accounting.Accounting{Symbol: "$", Precision: 2}
+	stylecontent, _ := consolidadoExcelPlanAnual.NewStyle(`{
+					"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
+					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+				}`)
+	styletitles, _ := consolidadoExcelPlanAnual.NewStyle(`{
+					"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
+					"font":{"bold":true,"family":"Arial", "size":26,"color":"#000000"},
+					"fill":{"type":"pattern","pattern":1,"color":["#F2F2F2"]},
+					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+				}`)
+
+	stylesubtitles, _ := consolidadoExcelPlanAnual.NewStyle(`{
+					"alignment":{"horizontal":"left","vertical":"center","wrap_text":true},
+					"font":{"bold":true,"family":"Arial", "size":20,"color":"#000000"},
+					"fill":{"type":"pattern","pattern":1,"color":["#F2F2F2"]},
+					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+				}`)
+	stylehead, _ := consolidadoExcelPlanAnual.NewStyle(`{
+					"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
+					"font":{"bold":true,"color":"#FFFFFF"},
+					"fill":{"type":"pattern","pattern":1,"color":["#CC0000"]},
+					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+				}`)
+
+	consolidadoExcelPlanAnual.NewSheet("Identificaciones")
+
+	consolidadoExcelPlanAnual.MergeCell("Identificaciones", "A1", "F1")
+	consolidadoExcelPlanAnual.MergeCell("Identificaciones", "A1", "A2")
+	consolidadoExcelPlanAnual.MergeCell("Identificaciones", "A3", "F3")
+	consolidadoExcelPlanAnual.MergeCell("Identificaciones", "A3", "A4")
+
+	consolidadoExcelPlanAnual.SetColWidth("Identificaciones", "A", "F", 30)
+
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A1", "Necesidades Presupuestales")
+	consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A1", "F1", styletitles)
+
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A3", "Identificación de recursos:")
+	consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A3", "F3", stylesubtitles)
+
+	consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A200", "F200", stylecontent)
+
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A5", "Código del rubro")
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B5", "Nombre del rubro")
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C5", "Valor")
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D5", "Descripción del bien y/o servicio")
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "E5", "Actividades")
+	consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A5", "E5", stylehead)
+	consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", 5, 35)
+
+	contador := 6
+	for i := 0; i < len(recursos); i++ {
+		aux := recursos[i]
+
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), aux["codigo"])
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), aux["Nombre"])
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), aux["valor"])
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), aux["descripcion"])
+		auxStrString := aux["actividades"].([]interface{})
+		var strActividades string
+		for j := 0; j < len(auxStrString); j++ {
+			if j != len(auxStrString)-1 {
+				strActividades = strActividades + " " + fmt.Sprint(auxStrString[j]) + ","
+			} else {
+				strActividades = strActividades + " " + fmt.Sprint(auxStrString[j])
+			}
+		}
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "E"+fmt.Sprint(contador), strActividades)
+
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontent)
+		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
+		contador++
+	}
+	contador++
+	consolidadoExcelPlanAnual.MergeCell("Identificaciones", "A"+fmt.Sprint(contador), "F"+fmt.Sprint(contador))
+	consolidadoExcelPlanAnual.MergeCell("Identificaciones", "A"+fmt.Sprint(contador), "A"+fmt.Sprint(contador+1))
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "Identificación de contratistas:")
+	consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "F"+fmt.Sprint(contador), stylesubtitles)
+
+	contador++
+	contador++
+
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "Descripción de la necesidad")
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Perfil")
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), "Cantidad")
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), "Valor")
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "E"+fmt.Sprint(contador), "Actividades")
+	consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylehead)
+	consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
+
+	contador++
+	var total float64 = 0
+	var valorTotal int = 0
+	for i := 0; i < len(contratistas); i++ {
+		aux := contratistas[i]
+
+		total = total + aux["cantidad"].(float64)
+
+		strValorTotal := strings.TrimLeft(aux["valorTotal"].(string), "$")
+		strValorTotal = strings.ReplaceAll(strValorTotal, ",", "")
+		arrValorTotal := strings.Split(strValorTotal, ".")
+		auxValorTotal, err := strconv.Atoi(arrValorTotal[0])
+
+		if err == nil {
+			valorTotal = valorTotal + auxValorTotal
+		}
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), aux["descripcionNecesidad"])
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), aux["perfil"])
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), aux["cantidad"])
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), aux["valorTotal"])
+		auxStrString := aux["actividades"].([]interface{})
+		var strActividades string
+		for j := 0; j < len(auxStrString); j++ {
+			if j != len(auxStrString)-1 {
+				strActividades = strActividades + " " + fmt.Sprint(auxStrString[j]) + ","
+			} else {
+				strActividades = strActividades + " " + fmt.Sprint(auxStrString[j])
+			}
+		}
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "E"+fmt.Sprint(contador), strActividades)
+
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontent)
+		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
+		contador++
+	}
+
+	consolidadoExcelPlanAnual.MergeCell("Identificaciones", "A"+fmt.Sprint(contador), "B"+fmt.Sprint(contador))
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "Total")
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), total)
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), ac.FormatMoney(valorTotal))
+	consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontent)
+	consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
+
+	contador++
+	contador++
+
+	if docentes != nil {
+		infoDocentes := totalDocentes(docentes)
+		consolidadoExcelPlanAnual.MergeCell("Identificaciones", "A"+fmt.Sprint(contador), "F"+fmt.Sprint(contador))
+		consolidadoExcelPlanAnual.MergeCell("Identificaciones", "A"+fmt.Sprint(contador), "A"+fmt.Sprint(contador+1))
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "Identificación recurso docente:")
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "F"+fmt.Sprint(contador), stylesubtitles)
+
+		contador++
+		contador++
+
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "Código del rubro")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Nombre del rubro")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), "Valor")
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylehead)
+		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
+
+		contador++
+
+		//Cuerpo Tabla
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Prima de servicios")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), ac.FormatMoney(infoDocentes["primaServicios"]))
+
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent)
+		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
+		contador++
+
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Prima de navidad")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), ac.FormatMoney(infoDocentes["primaNavidad"]))
+
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent)
+		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
+		contador++
+
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Prima de vacaciones")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), ac.FormatMoney(infoDocentes["primaVacaciones"]))
+
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent)
+		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
+		contador++
+
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Pensiones públicas")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), ac.FormatMoney(infoDocentes["pensionesPublicas"]))
+
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent)
+		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
+		contador++
+
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Salud")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), ac.FormatMoney(infoDocentes["salud"]))
+
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent)
+		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
+		contador++
+
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Cesantias públicas")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), ac.FormatMoney(infoDocentes["cesantiasPublicas"]))
+
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent)
+		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
+		contador++
+
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Caja de compensación")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), ac.FormatMoney(infoDocentes["caja"]))
+
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent)
+		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
+		contador++
+
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "ARL")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), ac.FormatMoney(infoDocentes["arl"]))
+
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent)
+		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
+		contador++
+
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "ICBF")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), ac.FormatMoney(infoDocentes["icbf"]))
+
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent)
+		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
+		contador++
+
+	}
+
+	return consolidadoExcelPlanAnual
+
+}
+
+func totalDocentes(docentes map[string]interface{}) map[string]interface{} {
+
+	rhf := docentes["rhf"].([]map[string]interface{})
+	rhvPre := docentes["rhv_pre"].([]map[string]interface{})
+	rhvPos := docentes["rhv_pos"].([]map[string]interface{})
+
+	totalDocentes := make(map[string]interface{})
+
+	primaServicios := 0
+	primaNavidad := 0
+	primaVacaciones := 0
+	pensionesPublicas := 0
+	salud := 0
+	cesantiasPublicas := 0
+	caja := 0
+	arl := 0
+	icbf := 0
+
+	for i := 0; i < len(rhf); i++ {
+		aux := rhf[i]
+		if aux["primaServicios"] != nil {
+			strPrimaServicios := strings.TrimLeft(aux["primaServicios"].(string), "$")
+			strPrimaServicios = strings.ReplaceAll(strPrimaServicios, ",", "")
+			arrPrimaServicios := strings.Split(strPrimaServicios, ".")
+			auxPrimaServicios, err := strconv.Atoi(arrPrimaServicios[0])
+			if err == nil {
+				primaServicios += auxPrimaServicios
+			}
+		}
+
+		if aux["primaNavidad"] != nil {
+			strPrimaNavidad := strings.TrimLeft(aux["primaNavidad"].(string), "$")
+			strPrimaNavidad = strings.ReplaceAll(strPrimaNavidad, ",", "")
+			arrPrimaNavidad := strings.Split(strPrimaNavidad, ".")
+			auxPrimaNavidad, err := strconv.Atoi(arrPrimaNavidad[0])
+			if err == nil {
+				primaNavidad += auxPrimaNavidad
+			}
+		}
+
+		if aux["primaVacaciones"] != nil {
+			strPrimaVacaciones := strings.TrimLeft(aux["primaVacaciones"].(string), "$")
+			strPrimaVacaciones = strings.ReplaceAll(strPrimaVacaciones, ",", "")
+			arrPrimaVacaiones := strings.Split(strPrimaVacaciones, ".")
+			auxPrimaVacaciones, err := strconv.Atoi(arrPrimaVacaiones[0])
+			if err == nil {
+				primaVacaciones += auxPrimaVacaciones
+			}
+		}
+
+		if aux["pensionesPublicas"] != nil {
+			strPensionesPublicas := strings.TrimLeft(aux["pensionesPublicas"].(string), "$")
+			strPensionesPublicas = strings.ReplaceAll(strPensionesPublicas, ",", "")
+			arrPensionesPublicas := strings.Split(strPensionesPublicas, ".")
+			auxPensionesPublicas, err := strconv.Atoi(arrPensionesPublicas[0])
+			if err == nil {
+				pensionesPublicas += auxPensionesPublicas
+			}
+		}
+
+		if aux["totalSalud"] != nil {
+			strSalud := strings.TrimLeft(aux["totalSalud"].(string), "$")
+			strSalud = strings.ReplaceAll(strSalud, ",", "")
+			arrSalud := strings.Split(strSalud, ".")
+			auxSalud, err := strconv.Atoi(arrSalud[0])
+			if err == nil {
+				salud += auxSalud
+			}
+		}
+		if aux["cesantiasPublico"] != nil {
+
+			strCesantiasPublico := strings.TrimLeft(aux["cesantiasPublico"].(string), "$")
+			strCesantiasPublico = strings.ReplaceAll(strCesantiasPublico, ",", "")
+			arrCesantiasPublico := strings.Split(strCesantiasPublico, ".")
+			auxCesantiasPublico, err := strconv.Atoi(arrCesantiasPublico[0])
+			if err == nil {
+				cesantiasPublicas += auxCesantiasPublico
+			}
+		}
+
+		if aux["caja"] != nil {
+			strCaja := strings.TrimLeft(aux["caja"].(string), "$")
+			strCaja = strings.ReplaceAll(strCaja, ",", "")
+			arrCaja := strings.Split(strCaja, ".")
+			auxCaja, err := strconv.Atoi(arrCaja[0])
+			if err == nil {
+				caja += auxCaja
+			}
+
+		}
+
+		if aux["totalArl"] != nil {
+			strArl := strings.TrimLeft(aux["totalArl"].(string), "$")
+			strArl = strings.ReplaceAll(strArl, ",", "")
+			arrArl := strings.Split(strArl, ".")
+			auxArl, err := strconv.Atoi(arrArl[0])
+			if err == nil {
+				arl += auxArl
+			}
+		}
+
+		if aux["icbf"] != nil {
+			strIcbf := strings.TrimLeft(aux["icbf"].(string), "$")
+			strIcbf = strings.ReplaceAll(strIcbf, ",", "")
+			arrIcbf := strings.Split(strIcbf, ".")
+			auxIcbf, err := strconv.Atoi(arrIcbf[0])
+			if err == nil {
+				icbf += auxIcbf
+			}
+		}
+	}
+
+	for i := 0; i < len(rhvPre); i++ {
+		aux := rhvPre[i]
+		if aux["primaServicios"] != nil {
+			strPrimaServicios := strings.TrimLeft(aux["primaServicios"].(string), "$")
+			strPrimaServicios = strings.ReplaceAll(strPrimaServicios, ",", "")
+			arrPrimaServicios := strings.Split(strPrimaServicios, ".")
+			auxPrimaServicios, err := strconv.Atoi(arrPrimaServicios[0])
+			if err == nil {
+				primaServicios += auxPrimaServicios
+			}
+		}
+
+		if aux["primaNavidad"] != nil {
+			strPrimaNavidad := strings.TrimLeft(aux["primaNavidad"].(string), "$")
+			strPrimaNavidad = strings.ReplaceAll(strPrimaNavidad, ",", "")
+			arrPrimaNavidad := strings.Split(strPrimaNavidad, ".")
+			auxPrimaNavidad, err := strconv.Atoi(arrPrimaNavidad[0])
+			if err == nil {
+				primaNavidad += auxPrimaNavidad
+			}
+		}
+
+		if aux["primaVacaciones"] != nil {
+			strPrimaVacaciones := strings.TrimLeft(aux["primaVacaciones"].(string), "$")
+			strPrimaVacaciones = strings.ReplaceAll(strPrimaVacaciones, ",", "")
+			arrPrimaVacaiones := strings.Split(strPrimaVacaciones, ".")
+			auxPrimaVacaciones, err := strconv.Atoi(arrPrimaVacaiones[0])
+			if err == nil {
+				primaVacaciones += auxPrimaVacaciones
+			}
+		}
+
+		if aux["pensionesPublicas"] != nil {
+			strPensionesPublicas := strings.TrimLeft(aux["pensionesPublicas"].(string), "$")
+			strPensionesPublicas = strings.ReplaceAll(strPensionesPublicas, ",", "")
+			arrPensionesPublicas := strings.Split(strPensionesPublicas, ".")
+			auxPensionesPublicas, err := strconv.Atoi(arrPensionesPublicas[0])
+			if err == nil {
+				pensionesPublicas += auxPensionesPublicas
+			}
+		}
+
+		if aux["totalSalud"] != nil {
+			strSalud := strings.TrimLeft(aux["totalSalud"].(string), "$")
+			strSalud = strings.ReplaceAll(strSalud, ",", "")
+			arrSalud := strings.Split(strSalud, ".")
+			auxSalud, err := strconv.Atoi(arrSalud[0])
+			if err == nil {
+				salud += auxSalud
+			}
+		}
+		if aux["cesantiasPublico"] != nil {
+
+			strCesantiasPublico := strings.TrimLeft(aux["cesantiasPublico"].(string), "$")
+			strCesantiasPublico = strings.ReplaceAll(strCesantiasPublico, ",", "")
+			arrCesantiasPublico := strings.Split(strCesantiasPublico, ".")
+			auxCesantiasPublico, err := strconv.Atoi(arrCesantiasPublico[0])
+			if err == nil {
+				cesantiasPublicas += auxCesantiasPublico
+			}
+		}
+
+		if aux["caja"] != nil {
+			strCaja := strings.TrimLeft(aux["caja"].(string), "$")
+			strCaja = strings.ReplaceAll(strCaja, ",", "")
+			arrCaja := strings.Split(strCaja, ".")
+			auxCaja, err := strconv.Atoi(arrCaja[0])
+			if err == nil {
+				caja += auxCaja
+			}
+
+		}
+
+		if aux["totalArl"] != nil {
+			strArl := strings.TrimLeft(aux["totalArl"].(string), "$")
+			strArl = strings.ReplaceAll(strArl, ",", "")
+			arrArl := strings.Split(strArl, ".")
+			auxArl, err := strconv.Atoi(arrArl[0])
+			if err == nil {
+				arl += auxArl
+			}
+		}
+
+		if aux["icbf"] != nil {
+			strIcbf := strings.TrimLeft(aux["icbf"].(string), "$")
+			strIcbf = strings.ReplaceAll(strIcbf, ",", "")
+			arrIcbf := strings.Split(strIcbf, ".")
+			auxIcbf, err := strconv.Atoi(arrIcbf[0])
+			if err == nil {
+				icbf += auxIcbf
+			}
+		}
+	}
+
+	for i := 0; i < len(rhvPos); i++ {
+		aux := rhvPos[i]
+		if aux["primaServicios"] != nil {
+			strPrimaServicios := strings.TrimLeft(aux["primaServicios"].(string), "$")
+			strPrimaServicios = strings.ReplaceAll(strPrimaServicios, ",", "")
+			arrPrimaServicios := strings.Split(strPrimaServicios, ".")
+			auxPrimaServicios, err := strconv.Atoi(arrPrimaServicios[0])
+			if err == nil {
+				primaServicios += auxPrimaServicios
+			}
+		}
+
+		if aux["primaNavidad"] != nil {
+			strPrimaNavidad := strings.TrimLeft(aux["primaNavidad"].(string), "$")
+			strPrimaNavidad = strings.ReplaceAll(strPrimaNavidad, ",", "")
+			arrPrimaNavidad := strings.Split(strPrimaNavidad, ".")
+			auxPrimaNavidad, err := strconv.Atoi(arrPrimaNavidad[0])
+			if err == nil {
+				primaNavidad += auxPrimaNavidad
+			}
+		}
+
+		if aux["primaVacaciones"] != nil {
+			strPrimaVacaciones := strings.TrimLeft(aux["primaVacaciones"].(string), "$")
+			strPrimaVacaciones = strings.ReplaceAll(strPrimaVacaciones, ",", "")
+			arrPrimaVacaiones := strings.Split(strPrimaVacaciones, ".")
+			auxPrimaVacaciones, err := strconv.Atoi(arrPrimaVacaiones[0])
+			if err == nil {
+				primaVacaciones += auxPrimaVacaciones
+			}
+		}
+
+		if aux["pensionesPublico"] != nil {
+			strPensionesPublicas := strings.TrimLeft(aux["pensionesPublico"].(string), "$")
+			strPensionesPublicas = strings.ReplaceAll(strPensionesPublicas, ",", "")
+			arrPensionesPublicas := strings.Split(strPensionesPublicas, ".")
+			auxPensionesPublicas, err := strconv.Atoi(arrPensionesPublicas[0])
+			if err == nil {
+				pensionesPublicas += auxPensionesPublicas
+			}
+		}
+
+		if aux["totalSalud"] != nil {
+			strSalud := strings.TrimLeft(aux["totalSalud"].(string), "$")
+			strSalud = strings.ReplaceAll(strSalud, ",", "")
+			arrSalud := strings.Split(strSalud, ".")
+			auxSalud, err := strconv.Atoi(arrSalud[0])
+			if err == nil {
+				salud += auxSalud
+			}
+		}
+		if aux["cesantiasPublico"] != nil {
+
+			strCesantiasPublico := strings.TrimLeft(aux["cesantiasPublico"].(string), "$")
+			strCesantiasPublico = strings.ReplaceAll(strCesantiasPublico, ",", "")
+			arrCesantiasPublico := strings.Split(strCesantiasPublico, ".")
+			auxCesantiasPublico, err := strconv.Atoi(arrCesantiasPublico[0])
+			if err == nil {
+				cesantiasPublicas += auxCesantiasPublico
+			}
+		}
+
+		if aux["caja"] != nil {
+			strCaja := strings.TrimLeft(aux["caja"].(string), "$")
+			strCaja = strings.ReplaceAll(strCaja, ",", "")
+			arrCaja := strings.Split(strCaja, ".")
+			auxCaja, err := strconv.Atoi(arrCaja[0])
+			if err == nil {
+				caja += auxCaja
+			}
+
+		}
+
+		if aux["totalArl"] != nil {
+			strArl := strings.TrimLeft(aux["totalArl"].(string), "$")
+			strArl = strings.ReplaceAll(strArl, ",", "")
+			arrArl := strings.Split(strArl, ".")
+			auxArl, err := strconv.Atoi(arrArl[0])
+			if err == nil {
+				arl += auxArl
+			}
+		}
+
+		if aux["icbf"] != nil {
+			strIcbf := strings.TrimLeft(aux["icbf"].(string), "$")
+			strIcbf = strings.ReplaceAll(strIcbf, ",", "")
+			arrIcbf := strings.Split(strIcbf, ".")
+			auxIcbf, err := strconv.Atoi(arrIcbf[0])
+			if err == nil {
+				icbf += auxIcbf
+			}
+		}
+	}
+
+	totalDocentes["primaServicios"] = primaServicios
+	totalDocentes["primaNavidad"] = primaNavidad
+	totalDocentes["primaVacaciones"] = primaVacaciones
+	totalDocentes["pensionesPublicas"] = pensionesPublicas
+	totalDocentes["salud"] = salud
+	totalDocentes["cesantiasPublicas"] = cesantiasPublicas
+	totalDocentes["caja"] = caja
+	totalDocentes["arl"] = arl
+	totalDocentes["icbf"] = icbf
+
+	return totalDocentes
 }
