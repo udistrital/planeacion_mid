@@ -466,8 +466,8 @@ func (c *ReportesController) PlanAccionAnual() {
 					var contadorEstrategiaPIIn int
 					var contadorEstrategiaPIOut int
 
-					fmt.Println(contadorLineamientoGeneralIn + contadorFactorGeneralOut + contadorMetaGeneralIn + contadorMetaGeneralOut + contadorEstrategiaPEDIn + contadorFactorGeneralIn + contadorEstrategiaPEDOut + contadorLineamientoPIIn + contadorLineamientoPIOut + contadorEstrategiaPIIn + contadorEstrategiaPIOut)
-
+					_ = contadorEstrategiaPEDIn
+					_ = contadorEstrategiaPIIn
 					for i := 0; i < len(armoPED); i++ {
 						datosArmo := armoPED[i]
 						auxLineamiento := datosArmo["nombreLineamiento"]
@@ -711,6 +711,8 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 	var plan_id string
 	var actividadName string
 	var arregloPlanAnual []map[string]interface{}
+	var arregloInfoReportes []map[string]interface{}
+
 	var nombreUnidad string
 	contadorGeneral := 0
 
@@ -794,8 +796,9 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 							}
 
 							generalData := make(map[string]interface{})
+							infoReporte := make(map[string]interface{})
 
-							if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=DependenciaId:"+body["unidad_id"].(string), &respuestaUnidad); err == nil {
+							if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=DependenciaId:"+planesFilter[planes]["dependencia_id"].(string), &respuestaUnidad); err == nil {
 								aux := respuestaUnidad[0]
 								dependenciaNombre := aux["DependenciaId"].(map[string]interface{})
 								nombreUnidad = dependenciaNombre["Nombre"].(string)
@@ -811,8 +814,10 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 							generalData["datosArmonizacionPI"] = arregloLineamietoPI
 							generalData["datosComplementarios"] = datosArmonizacion
 
+							infoReporte = body
+							infoReporte["unidad"] = nombreUnidad
 							arregloPlanAnual = append(arregloPlanAnual, generalData)
-
+							arregloInfoReportes = append(arregloInfoReportes, infoReporte)
 						}
 						break
 					}
@@ -1118,7 +1123,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 			arregloPlanAnual = nil
 		}
 
-		//consolidadoExcelPlanAnual.SaveAs("plan_anual.xlsx")
+		consolidadoExcelPlanAnual.SaveAs("plan_anual.xlsx")
 
 		buf, _ := consolidadoExcelPlanAnual.WriteToBuffer()
 		strings.NewReader(buf.String())
@@ -1127,7 +1132,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 
 		dataSend := make(map[string]interface{})
 
-		dataSend["generalData"] = arregloPlanAnual
+		dataSend["generalData"] = arregloInfoReportes
 		dataSend["excelB64"] = encoded
 
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": dataSend}
