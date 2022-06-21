@@ -706,6 +706,10 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 	var res map[string]interface{}
 	var resArmo map[string]interface{}
 	var respuestaUnidad []map[string]interface{}
+	var respuestaEstado map[string]interface{}
+	var respuestaTipoPlan map[string]interface{}
+	var estado map[string]interface{}
+	var tipoPlan map[string]interface{}
 	var hijosArmo []map[string]interface{}
 	var subgrupos []map[string]interface{}
 	var plan_id string
@@ -726,6 +730,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 		for planes := 0; planes < len(planesFilter); planes++ {
 			planesFilterData := planesFilter[planes]
 			plan_id = planesFilterData["_id"].(string)
+			infoReporte := make(map[string]interface{})
 
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id, &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
@@ -796,7 +801,6 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 							}
 
 							generalData := make(map[string]interface{})
-							infoReporte := make(map[string]interface{})
 
 							if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=DependenciaId:"+planesFilter[planes]["dependencia_id"].(string), &respuestaUnidad); err == nil {
 								aux := respuestaUnidad[0]
@@ -814,10 +818,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 							generalData["datosArmonizacionPI"] = arregloLineamietoPI
 							generalData["datosComplementarios"] = datosArmonizacion
 
-							infoReporte = body
-							infoReporte["unidad"] = nombreUnidad
 							arregloPlanAnual = append(arregloPlanAnual, generalData)
-							arregloInfoReportes = append(arregloInfoReportes, infoReporte)
 						}
 						break
 					}
@@ -827,6 +828,25 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 				c.Abort("400")
 			}
+
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-plan/"+planesFilter[planes]["estado_plan_id"].(string), &respuestaEstado); err == nil {
+				helpers.LimpiezaRespuestaRefactor(respuestaEstado, &estado)
+			} else {
+				panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+			}
+
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-plan/"+planesFilter[planes]["tipo_plan_id"].(string), &respuestaTipoPlan); err == nil {
+				helpers.LimpiezaRespuestaRefactor(respuestaTipoPlan, &tipoPlan)
+			} else {
+				panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+			}
+
+			infoReporte["tipo_plan"] = tipoPlan["nombre"]
+			infoReporte["vigencia"] = body["vigencia"]
+			infoReporte["estado_plan"] = estado["nombre"]
+			infoReporte["nombre_unidad"] = nombreUnidad
+
+			arregloInfoReportes = append(arregloInfoReportes, infoReporte)
 
 			contadorLineamiento := contadorGeneral + 4
 			contadorFactor := contadorGeneral + 4
@@ -920,7 +940,9 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 				var contadorEstrategiaPIIn int
 				var contadorEstrategiaPIOut int
 
-				fmt.Println(contadorLineamientoGeneralIn + contadorFactorGeneralOut + contadorMetaGeneralIn + contadorMetaGeneralOut + contadorEstrategiaPEDIn + contadorFactorGeneralIn + contadorEstrategiaPEDOut + contadorLineamientoPIIn + contadorLineamientoPIOut + contadorEstrategiaPIIn + contadorEstrategiaPIOut)
+				_ = contadorEstrategiaPEDIn
+				_ = contadorEstrategiaPIIn
+				//fmt.Println(contadorLineamientoGeneralIn + contadorFactorGeneralOut + contadorMetaGeneralIn + contadorMetaGeneralOut + contadorEstrategiaPEDIn + contadorFactorGeneralIn + contadorEstrategiaPEDOut + contadorLineamientoPIIn + contadorLineamientoPIOut + contadorEstrategiaPIIn + contadorEstrategiaPIOut)
 
 				for i := 0; i < len(armoPED); i++ {
 					datosArmo := armoPED[i]
