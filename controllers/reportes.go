@@ -706,6 +706,10 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 	var res map[string]interface{}
 	var resArmo map[string]interface{}
 	var respuestaUnidad []map[string]interface{}
+	var respuestaEstado map[string]interface{}
+	var respuestaTipoPlan map[string]interface{}
+	var estado map[string]interface{}
+	var tipoPlan map[string]interface{}
 	var hijosArmo []map[string]interface{}
 	var subgrupos []map[string]interface{}
 	var plan_id string
@@ -825,11 +829,25 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 				c.Abort("400")
 			}
 
-			infoReporte = body
-			fmt.Println(nombreUnidad)
-			infoReporte["nombreUnidad"] = nombreUnidad
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-plan/"+planesFilter[planes]["estado_plan_id"].(string), &respuestaEstado); err == nil {
+				helpers.LimpiezaRespuestaRefactor(respuestaEstado, &estado)
+			} else {
+				panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+			}
+
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-plan/"+planesFilter[planes]["tipo_plan_id"].(string), &respuestaTipoPlan); err == nil {
+				helpers.LimpiezaRespuestaRefactor(respuestaTipoPlan, &tipoPlan)
+			} else {
+				panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+			}
+
+			infoReporte["tipo_plan"] = tipoPlan["nombre"]
+			infoReporte["vigencia"] = body["vigencia"]
+			infoReporte["estado_plan"] = estado["nombre"]
+			infoReporte["nombre_unidad"] = nombreUnidad
+
 			arregloInfoReportes = append(arregloInfoReportes, infoReporte)
-			fmt.Println(arregloInfoReportes)
+
 			contadorLineamiento := contadorGeneral + 4
 			contadorFactor := contadorGeneral + 4
 			contadorDataGeneral := contadorGeneral + 4
@@ -922,7 +940,9 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 				var contadorEstrategiaPIIn int
 				var contadorEstrategiaPIOut int
 
-				fmt.Println(contadorLineamientoGeneralIn + contadorFactorGeneralOut + contadorMetaGeneralIn + contadorMetaGeneralOut + contadorEstrategiaPEDIn + contadorFactorGeneralIn + contadorEstrategiaPEDOut + contadorLineamientoPIIn + contadorLineamientoPIOut + contadorEstrategiaPIIn + contadorEstrategiaPIOut)
+				_ = contadorEstrategiaPEDIn
+				_ = contadorEstrategiaPIIn
+				//fmt.Println(contadorLineamientoGeneralIn + contadorFactorGeneralOut + contadorMetaGeneralIn + contadorMetaGeneralOut + contadorEstrategiaPEDIn + contadorFactorGeneralIn + contadorEstrategiaPEDOut + contadorLineamientoPIIn + contadorLineamientoPIOut + contadorEstrategiaPIIn + contadorEstrategiaPIOut)
 
 				for i := 0; i < len(armoPED); i++ {
 					datosArmo := armoPED[i]
