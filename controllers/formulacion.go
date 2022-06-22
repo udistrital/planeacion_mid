@@ -1046,13 +1046,36 @@ func (c *FormulacionController) Planes() {
 	var respuesta map[string]interface{}
 	var res map[string]interface{}
 	var planes []map[string]interface{}
+	var planesPED []map[string]interface{}
+	var planesPI []map[string]interface{}
 	var tipoPlanes []map[string]interface{}
 	var plan map[string]interface{}
 	var arregloPlanes []map[string]interface{}
+	var auxArregloPlanes []map[string]interface{}
+
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=formato:true", &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planes)
-		for i := 0; i < len(planes); i++ {
-			plan = planes[i]
+
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=tipo_plan_id:6239117116511e20405d408b", &respuesta); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuesta, &planesPI)
+		} else {
+			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+			c.Abort("400")
+		}
+
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=tipo_plan_id:616513b91634adfaffed52bf", &respuesta); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuesta, &planesPED)
+		} else {
+			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+			c.Abort("400")
+		}
+
+		auxArregloPlanes = append(auxArregloPlanes, planes...)
+		auxArregloPlanes = append(auxArregloPlanes, planesPI...)
+		auxArregloPlanes = append(auxArregloPlanes, planesPED...)
+
+		for i := 0; i < len(auxArregloPlanes); i++ {
+			plan = auxArregloPlanes[i]
 			tipoPlanId := plan["tipo_plan_id"].(string)
 
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-plan?query=_id:"+tipoPlanId, &res); err == nil {
