@@ -3,7 +3,7 @@ package controllers
 import (
 	//"fmt"
 
-	"encoding/json"
+	"fmt"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
@@ -19,21 +19,11 @@ type ArbolController struct {
 
 // URLMapping ...
 func (c *ArbolController) URLMapping() {
-	//c.Mapping("Post", c.Post)
 	c.Mapping("GetArbol", c.GetArbol)
-	//c.Mapping("BuildTree", c.BuildTree)
-	//c.Mapping("Put", c.Put)
-	//c.Mapping("Delete", c.Delete)
-}
-
-// Post ...
-// @Title Create
-// @Description create Arbol
-// @Param	body		body 	models.Arbol	true		"body for Arbol content"
-// @Success 201 {object} models.Arbol
-// @Failure 403 body is empty
-// @router / [post]
-func (c *ArbolController) Post() {
+	c.Mapping("DeletePlan", c.DeletePlan)
+	c.Mapping("DeleteNodo", c.DeleteNodo)
+	c.Mapping("ActivarNodo", c.ActivarNodo)
+	c.Mapping("ActivarPlan", c.ActivarPlan)
 
 }
 
@@ -50,11 +40,16 @@ func (c *ArbolController) GetArbol() {
 	var res map[string]interface{}
 	var hijos []models.Nodo
 	var hijosID []map[string]interface{}
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &hijos)
 		helpers.LimpiezaRespuestaRefactor(res, &hijosID)
 		tree := arbolHelper.BuildTree(hijos, hijosID)
-		c.Data["json"] = tree
+		fmt.Println(tree)
+		if len(tree) != 0 {
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": tree}
+		} else {
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": ""}
+		}
 	} else {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 		c.Abort("400")
@@ -64,73 +59,157 @@ func (c *ArbolController) GetArbol() {
 
 }
 
-// GetAll ...
-// @Title GetAll
-// @Description get Arbol
-// @Param	query	query	string	false	"Filter. e.g. col1:v1,col2:v2 ..."
-// @Param	fields	query	string	false	"Fields returned. e.g. col1,col2 ..."
-// @Param	sortby	query	string	false	"Sorted-by fields. e.g. col1,col2 ..."
-// @Param	order	query	string	false	"Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ..."
-// @Param	limit	query	string	false	"Limit the size of result set. Must be an integer"
-// @Param	offset	query	string	false	"Start position of result set. Must be an integer"
-// @Success 200 {object} models.Arbol
-// @Failure 403
-// @router / [get]
-func (c *ArbolController) GetAll() {
-
-}
-
-// Put ...
-// @Title Put
-// @Description update the Arbol
-// @Param	id		path 	string	true		"The id you want to update"
-// @Param	body		body 	models.Arbol	true		"body for Arbol content"
-// @Success 200 {object} models.Arbol
-// @Failure 403 :id is not int
-// @router /:id [put]
-func (c *ArbolController) Put() {
-
-}
-
-// Delete ...
+// DeletePlan ...
 // @Title DeletePlan
 // @Description delete the Plan Arbol
 // @Param	id		path 	string	true		"The id you want to delete"
 // @Success 200 {string} delete success!
 // @Failure 403 id is empty
-// @router /:id [delete]
+// @router /desactivar_plan/:id [delete]
 func (c *ArbolController) DeletePlan() {
+	fmt.Println("entra melomano")
 	id := c.Ctx.Input.Param(":id")
 	var plan map[string]interface{}
+	var res map[string]interface{}
+	var resPut map[string]interface{}
+	var resHijos map[string]interface{}
+	var hijos []map[string]interface{}
 
-	if err := request.SendJson(beego.AppConfig.String("PlanesService")+"/plan/delete_plan/"+id, "PUT", &plan, plan); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &res); err == nil {
 
-		var res map[string]interface{}
-		var hijos []models.Nodo
-		var hijosId []map[string]interface{}
-		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
-
-			helpers.LimpiezaRespuestaRefactor(res, &hijos)
-			helpers.LimpiezaRespuestaRefactor(res, &hijosId)
-
-			for i := 0; i < len(hijos); i++ {
-				var subgrupo map[string]interface{}
-				var idSubgrupo string
-
-				jsonString, _ := json.Marshal(hijosId[i]["_id"])
-				json.Unmarshal(jsonString, &idSubgrupo)
-				request.SendJson(beego.AppConfig.String("PlanesService")+"/subgrupo/delete_nodo/"+idSubgrupo, "PUT", &res, subgrupo)
-			}
-
-		} else {
-			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": res, "Type": "error subgrupo"}
-			c.Abort("400")
+		helpers.LimpiezaRespuestaRefactor(res, &plan)
+		fmt.Println(plan)
+		plan["activo"] = false
+		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+plan["_id"].(string), "PUT", &resPut, plan); err != nil {
+			panic(map[string]interface{}{"funcion": "DeleteHijos", "err": "Error actualizacion activo \"id\"", "status": "400", "log": err})
 		}
-
-		c.Data["json"] = plan
+		fmt.Println("entra aca primeros hijos")
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan["_id"].(string), &resHijos); err == nil {
+			fmt.Println("consulta hijos")
+			fmt.Println(resHijos)
+			helpers.LimpiezaRespuestaRefactor(resHijos, &hijos)
+			arbolHelper.DeleteHijos(hijos)
+		}
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": plan}
 
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error plan"}
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": res, "Type": "error subgrupo"}
+		c.Abort("400")
+	}
+
+	c.ServeJSON()
+
+}
+
+// DeleteNodo ...
+// @Title DeleteNodo
+// @Description delete the Nodo Arbol
+// @Param	id		path 	string	true		"The id you want to delete"
+// @Success 200 {string} delete success!
+// @Failure 403 id is empty
+// @router /desactivar_nodo/:id [delete]
+func (c *ArbolController) DeleteNodo() {
+	fmt.Println("entra melomano")
+	id := c.Ctx.Input.Param(":id")
+	var subgrupo map[string]interface{}
+	var res map[string]interface{}
+	var resPut map[string]interface{}
+	var resHijos map[string]interface{}
+	var hijos []map[string]interface{}
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+id, &res); err == nil {
+
+		helpers.LimpiezaRespuestaRefactor(res, &subgrupo)
+		subgrupo["activo"] = false
+		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+subgrupo["_id"].(string), "PUT", &resPut, subgrupo); err != nil {
+			panic(map[string]interface{}{"funcion": "DeleteHijos", "err": "Error actualizacion activo \"id\"", "status": "400", "log": err})
+		}
+		fmt.Println("entra aca primeros hijos")
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+subgrupo["_id"].(string), &resHijos); err == nil {
+			fmt.Println("consulta hijos")
+			fmt.Println(resHijos)
+			helpers.LimpiezaRespuestaRefactor(resHijos, &hijos)
+			arbolHelper.DeleteHijos(hijos)
+		}
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": subgrupo}
+
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": res, "Type": "error subgrupo"}
+		c.Abort("400")
+	}
+
+	c.ServeJSON()
+
+}
+
+// ActivarPlan ...
+// @Title ActivarPlan
+// @Description activar the Plan Arbol
+// @Param	id		path 	string	true		"The id you want to delete"
+// @Success 200 {string} delete success!
+// @Failure 403 id is empty
+// @router /activar_plan/:id [put]
+func (c *ArbolController) ActivarPlan() {
+	id := c.Ctx.Input.Param(":id")
+	var plan map[string]interface{}
+	var res map[string]interface{}
+	var resPut map[string]interface{}
+	var resHijos map[string]interface{}
+	var hijos []map[string]interface{}
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &res); err == nil {
+
+		helpers.LimpiezaRespuestaRefactor(res, &plan)
+		plan["activo"] = true
+		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+plan["_id"].(string), "PUT", &resPut, plan); err != nil {
+			panic(map[string]interface{}{"funcion": "DeleteHijos", "err": "Error actualizacion activo \"id\"", "status": "400", "log": err})
+		}
+		fmt.Println("entra aca primeros hijos")
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan["_id"].(string), &resHijos); err == nil {
+			helpers.LimpiezaRespuestaRefactor(resHijos, &hijos)
+			arbolHelper.ActivarHijos(hijos)
+		}
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": plan}
+
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": res, "Type": "error subgrupo"}
+		c.Abort("400")
+	}
+
+	c.ServeJSON()
+
+}
+
+// ActivarNodo ...
+// @Title ActivarNodo
+// @Description put the Nodo Arbol
+// @Param	id		path 	string	true		"The id you want to delete"
+// @Success 200 {string} delete success!
+// @Failure 403 id is empty
+// @router /activar_nodo/:id [put]
+func (c *ArbolController) ActivarNodo() {
+	id := c.Ctx.Input.Param(":id")
+	var subgrupo map[string]interface{}
+	var res map[string]interface{}
+	var resPut map[string]interface{}
+	var resHijos map[string]interface{}
+	var hijos []map[string]interface{}
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+id, &res); err == nil {
+
+		helpers.LimpiezaRespuestaRefactor(res, &subgrupo)
+		subgrupo["activo"] = true
+		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+subgrupo["_id"].(string), "PUT", &resPut, subgrupo); err != nil {
+			panic(map[string]interface{}{"funcion": "DeleteHijos", "err": "Error actualizacion activo \"id\"", "status": "400", "log": err})
+		}
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+subgrupo["_id"].(string), &resHijos); err == nil {
+			helpers.LimpiezaRespuestaRefactor(resHijos, &hijos)
+			arbolHelper.ActivarHijos(hijos)
+		}
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": subgrupo}
+
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": res, "Type": "error subgrupo"}
 		c.Abort("400")
 	}
 

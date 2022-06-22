@@ -11,64 +11,6 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
 basePath: /v1
 paths:
-  /arbol/:
-    get:
-      tags:
-      - arbol
-      description: get Arbol
-      operationId: ArbolController.GetAll
-      parameters:
-      - in: query
-        name: query
-        description: Filter. e.g. col1:v1,col2:v2 ...
-        type: string
-      - in: query
-        name: fields
-        description: Fields returned. e.g. col1,col2 ...
-        type: string
-      - in: query
-        name: sortby
-        description: Sorted-by fields. e.g. col1,col2 ...
-        type: string
-      - in: query
-        name: order
-        description: Order corresponding to each sortby field, if single value, apply
-          to all sortby fields. e.g. desc,asc ...
-        type: string
-      - in: query
-        name: limit
-        description: Limit the size of result set. Must be an integer
-        type: string
-      - in: query
-        name: offset
-        description: Start position of result set. Must be an integer
-        type: string
-      responses:
-        "200":
-          description: ""
-          schema:
-            $ref: '#/definitions/models.Arbol'
-        "403":
-          description: ""
-    post:
-      tags:
-      - arbol
-      description: create Arbol
-      operationId: ArbolController.Create
-      parameters:
-      - in: body
-        name: body
-        description: body for Arbol content
-        required: true
-        schema:
-          $ref: '#/definitions/models.Arbol'
-      responses:
-        "201":
-          description: ""
-          schema:
-            $ref: '#/definitions/models.Arbol'
-        "403":
-          description: body is empty
   /arbol/{id}:
     get:
       tags:
@@ -88,30 +30,58 @@ paths:
             $ref: '#/definitions/models.Arbol'
         "403":
           description: :id is empty
+  /arbol/activar_nodo/{id}:
     put:
       tags:
       - arbol
-      description: update the Arbol
-      operationId: ArbolController.Put
+      description: put the Nodo Arbol
+      operationId: ArbolController.ActivarNodo
       parameters:
       - in: path
         name: id
-        description: The id you want to update
+        description: The id you want to delete
         required: true
         type: string
-      - in: body
-        name: body
-        description: body for Arbol content
-        required: true
-        schema:
-          $ref: '#/definitions/models.Arbol'
       responses:
         "200":
-          description: ""
-          schema:
-            $ref: '#/definitions/models.Arbol'
+          description: '{string} delete success!'
         "403":
-          description: :id is not int
+          description: id is empty
+  /arbol/activar_plan/{id}:
+    put:
+      tags:
+      - arbol
+      description: activar the Plan Arbol
+      operationId: ArbolController.ActivarPlan
+      parameters:
+      - in: path
+        name: id
+        description: The id you want to delete
+        required: true
+        type: string
+      responses:
+        "200":
+          description: '{string} delete success!'
+        "403":
+          description: id is empty
+  /arbol/desactivar_nodo/{id}:
+    delete:
+      tags:
+      - arbol
+      description: delete the Nodo Arbol
+      operationId: ArbolController.DeleteNodo
+      parameters:
+      - in: path
+        name: id
+        description: The id you want to delete
+        required: true
+        type: string
+      responses:
+        "200":
+          description: '{string} delete success!'
+        "403":
+          description: id is empty
+  /arbol/desactivar_plan/{id}:
     delete:
       tags:
       - arbol
@@ -561,6 +531,19 @@ paths:
             $ref: '#/definitions/models.Formulacion'
         "403":
           description: :id is empty
+  /formulacion/planes:
+    get:
+      tags:
+      - formulacion
+      description: get Rubros
+      operationId: FormulacionController.Planes
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
   /formulacion/ponderacion_actividades/{plan}:
     get:
       tags:
@@ -599,6 +582,85 @@ paths:
             $ref: '#/definitions/models.Formulacion'
         "403":
           description: :id is empty
+  /formulacion/vinculacion_tercero/{tercero_id}:
+    get:
+      tags:
+      - formulacion
+      description: get VinculacionTercero
+      operationId: FormulacionController.VinculacionTercero
+      parameters:
+      - in: path
+        name: tercero_id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /reportes/desagregado:
+    post:
+      tags:
+      - reportes
+      description: post Reportes by id
+      operationId: ReportesController.Desagregado
+      parameters:
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "201":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Reportes'
+        "403":
+          description: :plan_id is empty
+  /reportes/plan_anual:
+    post:
+      tags:
+      - reportes
+      description: post Reportes by id
+      operationId: ReportesController.PlanAccionAnual
+      parameters:
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "201":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Reportes'
+        "403":
+          description: :plan_id is empty
+  /reportes/plan_anual_general:
+    post:
+      tags:
+      - reportes
+      description: post Reportes by id
+      operationId: ReportesController.PlanAccionAnualGeneral
+      parameters:
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "201":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Reportes'
+        "403":
+          description: :plan_id is empty
   /seguimiento/crear_reportes/{plan}/{tipo}:
     post:
       tags:
@@ -633,6 +695,26 @@ paths:
           description: ""
         "403":
           description: ""
+  /seguimiento/get_avance:
+    post:
+      tags:
+      - seguimiento
+      description: post Seguimiento by id
+      operationId: SeguimientoController.GetAvanceIndicador
+      parameters:
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "201":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Seguimiento'
+        "403":
+          description: :plan_id is empty
   /seguimiento/get_data/{plan_id}/{index}:
     get:
       tags:
@@ -736,18 +818,19 @@ paths:
             $ref: '#/definitions/models.Seguimiento'
         "403":
           description: :plan_id is empty
-  /seguimiento/habilitar_reportes/{periodo}:
+  /seguimiento/habilitar_reportes:
     put:
       tags:
       - seguimiento
       description: get Seguimiento
       operationId: SeguimientoController.HabilitarReportes
       parameters:
-      - in: path
-        name: periodo
-        description: The key for staticblock
+      - in: body
+        name: body
+        description: body for Plan content
         required: true
-        type: string
+        schema:
+          $ref: '#/definitions/{}'
       responses:
         "200":
           description: ""
@@ -766,6 +849,9 @@ definitions:
   models.Formulacion:
     title: Formulacion
     type: object
+  models.Reportes:
+    title: Reportes
+    type: object
   models.Seguimiento:
     title: Seguimiento
     type: object
@@ -782,3 +868,6 @@ tags:
 - name: seguimiento
   description: |
     SeguimientoController operations for Seguimiento
+- name: reportes
+  description: |
+    ReportesController operations for Reportes

@@ -12,6 +12,7 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
+	"github.com/udistrital/planeacion_mid/models"
 	"github.com/udistrital/utils_oas/request"
 
 	formulacionhelper "github.com/udistrital/planeacion_mid/helpers/formulacionHelper"
@@ -38,6 +39,8 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("PonderacionActividades", c.PonderacionActividades)
 	c.Mapping("GetRubros", c.GetRubros)
 	c.Mapping("GetUnidades", c.GetUnidades)
+	c.Mapping("VinculacionTercero", c.VinculacionTercero)
+	c.Mapping("Planes", c.Planes)
 }
 
 // ClonarFormato ...
@@ -60,9 +63,9 @@ func (c *FormulacionController) ClonarFormato() {
 
 	plan := make(map[string]interface{})
 	clienteHttp := &http.Client{}
-	url := beego.AppConfig.String("PlanesService") + "/plan/"
+	url := "http://" + beego.AppConfig.String("PlanesService") + "/plan/"
 
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/plan/"+id, &respuesta); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &respuesta); err == nil {
 
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planFormato)
 		json.Unmarshal(c.Ctx.Input.RequestBody, &parametros)
@@ -107,7 +110,7 @@ func (c *FormulacionController) ClonarFormato() {
 		padre := resLimpia["_id"].(string)
 		c.Data["json"] = resPost
 
-		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &respuestaHijos); err == nil {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &respuestaHijos); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuestaHijos, &hijos)
 			formulacionhelper.ClonarHijos(hijos, padre)
 		}
@@ -137,15 +140,16 @@ func (c *FormulacionController) GuardarActividad() {
 
 	entrada = body["entrada"].(map[string]interface{})
 	armonizacion := body["armo"]
+	armonizacionPI := body["armoPI"]
 
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/plan/"+id, &resPlan); err != nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &resPlan); err != nil {
 		panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error get Plan \"id\"", "status": "400", "log": err})
 	}
 	helpers.LimpiezaRespuestaRefactor(resPlan, &plan)
 	if plan["estado_plan_id"] != "614d3ad301c7a200482fabfd" {
 		var res map[string]interface{}
 		plan["estado_plan_id"] = "614d3ad301c7a200482fabfd"
-		if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/plan/"+id, "PUT", &res, plan); err != nil {
+		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, "PUT", &res, plan); err != nil {
 			panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizacion estado \"id\"", "status": "400", "log": err})
 		}
 	}
@@ -158,7 +162,7 @@ func (c *FormulacionController) GuardarActividad() {
 		dato_plan := make(map[string]interface{})
 
 		if element != "" {
-			if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+key, &respuesta); err != nil {
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+key, &respuesta); err != nil {
 				panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error get subgrupo-detalle \"key\"", "status": "400", "log": err})
 			}
 			helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
@@ -177,7 +181,10 @@ func (c *FormulacionController) GuardarActividad() {
 				subgrupo_detalle["dato_plan"] = str
 				if !armonizacionExecuted {
 					armonizacion_dato := make(map[string]interface{})
-					armonizacion_dato[i] = armonizacion
+					aux := make(map[string]interface{})
+					aux["armonizacionPED"] = armonizacion
+					aux["armonizacionPI"] = armonizacionPI
+					armonizacion_dato[i] = aux
 					c, _ := json.Marshal(armonizacion_dato)
 					strArmonizacion := string(c)
 					subgrupo_detalle["armonizacion_dato"] = strArmonizacion
@@ -214,8 +221,10 @@ func (c *FormulacionController) GuardarActividad() {
 						armonizacion_dato_str := subgrupo_detalle["armonizacion_dato"].(string)
 						json.Unmarshal([]byte(armonizacion_dato_str), &armonizacion_dato)
 					}
-
-					armonizacion_dato[i] = armonizacion
+					aux := make(map[string]interface{})
+					aux["armonizacionPED"] = armonizacion
+					aux["armonizacionPI"] = armonizacionPI
+					armonizacion_dato[i] = aux
 					c, _ := json.Marshal(armonizacion_dato)
 					strArmonizacion := string(c)
 					subgrupo_detalle["armonizacion_dato"] = strArmonizacion
@@ -223,7 +232,7 @@ func (c *FormulacionController) GuardarActividad() {
 
 				}
 			}
-			if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupo_detalle["_id"].(string), "PUT", &res, subgrupo_detalle); err != nil {
+			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupo_detalle["_id"].(string), "PUT", &res, subgrupo_detalle); err != nil {
 				panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
 			}
 		}
@@ -247,7 +256,7 @@ func (c *FormulacionController) GetPlan() {
 	var res map[string]interface{}
 	var hijos []map[string]interface{}
 
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &hijos)
 		formulacionhelper.Limpia()
 		tree := formulacionhelper.BuildTreeFa(hijos, index)
@@ -281,7 +290,7 @@ func (c *FormulacionController) ActualizarActividad() {
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 	entrada = body["entrada"].(map[string]interface{})
 	armonizacion := body["armo"]
-
+	armonizacionPI := body["armoPI"]
 	for key, element := range entrada {
 		var respuesta map[string]interface{}
 		var respuestaLimpia []map[string]interface{}
@@ -294,7 +303,7 @@ func (c *FormulacionController) ActualizarActividad() {
 		if len(keyStr) > 1 && keyStr[1] == "o" {
 			id_subgrupoDetalle = keyStr[0]
 			if element != "" {
-				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id_subgrupoDetalle, &respuesta); err != nil {
+				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id_subgrupoDetalle, &respuesta); err != nil {
 					panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error get subgrupo-detalle \"key\"", "status": "400", "log": err})
 				}
 				helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
@@ -320,7 +329,7 @@ func (c *FormulacionController) ActualizarActividad() {
 					subgrupo_detalle["dato_plan"] = str
 				}
 
-				if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupo_detalle["_id"].(string), "PUT", &res, subgrupo_detalle); err != nil {
+				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupo_detalle["_id"].(string), "PUT", &res, subgrupo_detalle); err != nil {
 					panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
 				}
 
@@ -328,7 +337,7 @@ func (c *FormulacionController) ActualizarActividad() {
 		} else {
 			id_subgrupoDetalle = key
 			if element != "" {
-				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id_subgrupoDetalle, &respuesta); err != nil {
+				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id_subgrupoDetalle, &respuesta); err != nil {
 					panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error get subgrupo-detalle \"key\"", "status": "400", "log": err})
 				}
 				helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
@@ -338,7 +347,10 @@ func (c *FormulacionController) ActualizarActividad() {
 					dato_armonizacion_str := subgrupo_detalle["armonizacion_dato"].(string)
 					json.Unmarshal([]byte(dato_armonizacion_str), &armonizacion_dato)
 					if armonizacion_dato[index] != nil {
-						armonizacion_dato[index] = armonizacion
+						aux := make(map[string]interface{})
+						aux["armonizacionPED"] = armonizacion
+						aux["armonizacionPI"] = armonizacionPI
+						armonizacion_dato[index] = aux
 					}
 					c, _ := json.Marshal(armonizacion_dato)
 					strArmonizacion := string(c)
@@ -365,7 +377,7 @@ func (c *FormulacionController) ActualizarActividad() {
 					str := string(b)
 					subgrupo_detalle["dato_plan"] = str
 				}
-				if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupo_detalle["_id"].(string), "PUT", &res, subgrupo_detalle); err != nil {
+				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupo_detalle["_id"].(string), "PUT", &res, subgrupo_detalle); err != nil {
 					panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
 				}
 
@@ -393,7 +405,7 @@ func (c *FormulacionController) DeleteActividad() {
 	var res map[string]interface{}
 	var hijos []map[string]interface{}
 
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &hijos)
 		formulacionhelper.RecorrerHijos(hijos, index)
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "Actividades Inactivas"}
@@ -418,14 +430,14 @@ func (c *FormulacionController) GetAllActividades() {
 	var res map[string]interface{}
 	var hijos []map[string]interface{}
 	var tabla map[string]interface{}
+	var auxHijos []interface{}
 	formulacionhelper.LimpiaTabla()
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &hijos)
 		for i := 0; i < len(hijos); i++ {
-			if len(hijos[i]["hijos"].([]interface{})) != 0 {
-				tabla = formulacionhelper.GetTabla(hijos[i]["hijos"].([]interface{}))
-			}
+			auxHijos = append(auxHijos, hijos[i]["_id"])
 		}
+		tabla = formulacionhelper.GetTabla(auxHijos)
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": tabla}
 	} else {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
@@ -477,7 +489,7 @@ func (c *FormulacionController) GuardarIdentificacion() {
 
 	json.Unmarshal(c.Ctx.Input.RequestBody, &entrada)
 
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id+",tipo_identificacion_id:"+tipoIdenti, &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id+",tipo_identificacion_id:"+tipoIdenti, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &respuesta)
 		jsonString, _ := json.Marshal(respuesta[0]["_id"])
 		json.Unmarshal(jsonString, &idStr)
@@ -487,7 +499,7 @@ func (c *FormulacionController) GuardarIdentificacion() {
 		str := string(b)
 
 		identificacion["dato"] = str
-		if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/identificacion/"+idStr, "PUT", &resJ, identificacion); err != nil {
+		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion/"+idStr, "PUT", &resJ, identificacion); err != nil {
 			panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error actualizando identificacion \"idStr\"", "status": "400", "log": err})
 		}
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "Registro de identificación"}
@@ -517,7 +529,7 @@ func (c *FormulacionController) GetAllIdentificacion() {
 	var dato map[string]interface{}
 	var data_identi []map[string]interface{}
 	if tipoIdenti == "61897518f6fc97091727c3c3" {
-		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id+",tipo_identificacion_id:"+tipoIdenti, &res); err == nil {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id+",tipo_identificacion_id:"+tipoIdenti, &res); err == nil {
 			helpers.LimpiezaRespuestaRefactor(res, &respuesta)
 			identificacion = respuesta[0]
 			if identificacion["dato"] != nil && identificacion["dato"] != "{}" {
@@ -526,49 +538,65 @@ func (c *FormulacionController) GetAllIdentificacion() {
 				json.Unmarshal([]byte(dato_str), &dato)
 
 				var identi map[string]interface{}
-				dato_aux := dato["honorarios"].(string)
-				json.Unmarshal([]byte(dato_aux), &identi)
-
-				for key := range identi {
-					element := identi[key].(map[string]interface{})
-					if element["activo"] == true {
-						data_identi = append(data_identi, element)
+				dato_aux := dato["rhf"].(string)
+				if dato_aux == "{}" {
+					result["rhf"] = "{}"
+				} else {
+					json.Unmarshal([]byte(dato_aux), &identi)
+					for key := range identi {
+						element := identi[key].(map[string]interface{})
+						if element["activo"] == true {
+							data_identi = append(data_identi, element)
+						}
 					}
+					result["rhf"] = data_identi
 				}
-				result["honorarios"] = data_identi
+
 				data_identi = nil
 
-				dato_aux = dato["prestacional"].(string)
-				json.Unmarshal([]byte(dato_aux), &identi)
-				for key := range identi {
-					element := identi[key].(map[string]interface{})
-					if element["activo"] == true {
-						data_identi = append(data_identi, element)
+				dato_aux = dato["rhv_pre"].(string)
+				if dato_aux == "{}" {
+					result["rhv_pre"] = "{}"
+				} else {
+					json.Unmarshal([]byte(dato_aux), &identi)
+					for key := range identi {
+						element := identi[key].(map[string]interface{})
+						if element["activo"] == true {
+							data_identi = append(data_identi, element)
+						}
 					}
+					result["rhv_pre"] = data_identi
 				}
-				result["prestacional"] = data_identi
 				data_identi = nil
 
-				dato_aux = dato["tco"].(string)
-				json.Unmarshal([]byte(dato_aux), &identi)
-				for key := range identi {
-					element := identi[key].(map[string]interface{})
-					if element["activo"] == true {
-						data_identi = append(data_identi, element)
+				dato_aux = dato["rhv_pos"].(string)
+				if dato_aux == "{}" {
+					result["rhv_pos"] = "{}"
+				} else {
+					json.Unmarshal([]byte(dato_aux), &identi)
+					for key := range identi {
+						element := identi[key].(map[string]interface{})
+						if element["activo"] == true {
+							data_identi = append(data_identi, element)
+						}
 					}
+					result["rhv_pos"] = data_identi
 				}
-				result["tco"] = data_identi
 				data_identi = nil
 
-				dato_aux = dato["mto"].(string)
-				json.Unmarshal([]byte(dato_aux), &identi)
-				for key := range identi {
-					element := identi[key].(map[string]interface{})
-					if element["activo"] == true {
-						data_identi = append(data_identi, element)
+				dato_aux = dato["rubros"].(string)
+				if dato_aux == "{}" {
+					result["rubros"] = "{}"
+				} else {
+					json.Unmarshal([]byte(dato_aux), &identi)
+					for key := range identi {
+						element := identi[key].(map[string]interface{})
+						if element["activo"] == true {
+							data_identi = append(data_identi, element)
+						}
 					}
+					result["rubros"] = data_identi
 				}
-				result["mto"] = data_identi
 				data_identi = nil
 
 				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": result}
@@ -580,7 +608,7 @@ func (c *FormulacionController) GetAllIdentificacion() {
 		}
 
 	} else {
-		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id+",tipo_identificacion_id:"+tipoIdenti, &res); err == nil {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id+",tipo_identificacion_id:"+tipoIdenti, &res); err == nil {
 			helpers.LimpiezaRespuestaRefactor(res, &respuesta)
 			identificacion = respuesta[0]
 
@@ -598,7 +626,6 @@ func (c *FormulacionController) GetAllIdentificacion() {
 
 			} else {
 				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": ""}
-
 			}
 
 		} else {
@@ -631,7 +658,7 @@ func (c *FormulacionController) DeleteIdentificacion() {
 	var dato map[string]interface{}
 	var resJ map[string]interface{}
 
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id+",tipo_identificacion_id:"+idTipo, &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id+",tipo_identificacion_id:"+idTipo, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &respuesta)
 		identificacion = respuesta[0]
 
@@ -655,7 +682,7 @@ func (c *FormulacionController) DeleteIdentificacion() {
 			str := string(b)
 			identificacion["dato"] = str
 		}
-		if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/identificacion/"+idStr, "PUT", &resJ, identificacion); err != nil {
+		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion/"+idStr, "PUT", &resJ, identificacion); err != nil {
 			panic(map[string]interface{}{"funcion": "DeleteIdentificacion", "err": "Error eliminando identificacion \"idStr\"", "status": "400", "log": err})
 		}
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "Identificación Inactiva"}
@@ -686,7 +713,7 @@ func (c *FormulacionController) VersionarPlan() {
 	var planVersionado map[string]interface{}
 	plan := make(map[string]interface{})
 
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/plan/"+id, &respuesta); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &respuesta); err == nil {
 
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planPadre)
 
@@ -701,20 +728,20 @@ func (c *FormulacionController) VersionarPlan() {
 		plan["estado_plan_id"] = "614d3ad301c7a200482fabfd"
 		plan["padre_plan_id"] = id
 
-		if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/plan", "POST", &respuestaPost, plan); err != nil {
+		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan", "POST", &respuestaPost, plan); err != nil {
 			panic(map[string]interface{}{"funcion": "VersionarPlan", "err": "Error versionando plan \"plan[\"_id\"].(string)\"", "status": "400", "log": err})
 		}
 		planVersionado = respuestaPost["Data"].(map[string]interface{})
 		c.Data["json"] = respuestaPost
 
-		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id, &respuestaIdentificacion); err == nil {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id, &respuestaIdentificacion); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuestaIdentificacion, &identificaciones)
 			if len(identificaciones) != 0 {
 				formulacionhelper.VersionarIdentificaciones(identificaciones, planVersionado["_id"].(string))
 			}
 		}
 
-		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &respuestaHijos); err == nil {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &respuestaHijos); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuestaHijos, &hijos)
 			formulacionhelper.VersionarHijos(hijos, planVersionado["_id"].(string))
 		}
@@ -740,7 +767,7 @@ func (c *FormulacionController) GetPlanVersiones() {
 	var respuesta map[string]interface{}
 	var versiones []map[string]interface{}
 
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/plan?query=dependencia_id:"+unidad+",vigencia:"+vigencia+",formato:false,nombre:"+nombre, &respuesta); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=dependencia_id:"+unidad+",vigencia:"+vigencia+",formato:false,nombre:"+nombre, &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &versiones)
 		versionesOrdenadas := formulacionhelper.OrdenarVersiones(versiones)
 		c.Data["json"] = versionesOrdenadas
@@ -764,12 +791,12 @@ func (c *FormulacionController) PonderacionActividades() {
 	var subgrupoDetalle map[string]interface{}
 	var hijos []map[string]interface{}
 
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan, &respuesta); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan, &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &hijos)
 
 		for i := 0; i < len(hijos); i++ {
 			if strings.Contains(strings.ToUpper(hijos[i]["nombre"].(string)), "PONDERACIÓN") && strings.Contains(strings.ToUpper(hijos[i]["nombre"].(string)), "ACTIVIDAD") || strings.Contains(strings.ToUpper(hijos[i]["nombre"].(string)), "PONDERACIÓN") {
-				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijos[i]["_id"].(string), &respuestaDetalle); err == nil {
+				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijos[i]["_id"].(string), &respuestaDetalle); err == nil {
 
 					helpers.LimpiezaRespuestaRefactor(respuestaDetalle, &respuestaLimpiaDetalle)
 					subgrupoDetalle = respuestaLimpiaDetalle[0]
@@ -952,7 +979,7 @@ func (c *FormulacionController) GetUnidades() {
 											panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
 										}
 									} else {
-										panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+										panic(map[string]interface{}{"fuplann": "GetUnidades", "err": "Error ", "status": "400", "log": err})
 									}
 								} else {
 									panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
@@ -969,6 +996,7 @@ func (c *FormulacionController) GetUnidades() {
 				} else {
 					panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
 				}
+
 			} else {
 				panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
 			}
@@ -977,9 +1005,108 @@ func (c *FormulacionController) GetUnidades() {
 			panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
 		}
 
-	} else {
-		panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+		c.ServeJSON()
 	}
+}
 
+// VinculacionTercero ...
+// @Title VinculacionTercero
+// @Description get VinculacionTercero
+// @Param	tercero_id	path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /vinculacion_tercero/:tercero_id [get]
+func (c *FormulacionController) VinculacionTercero() {
+
+	terceroId := c.Ctx.Input.Param(":tercero_id")
+	var vinculaciones []models.Vinculacion
+	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/vinculacion?query=TerceroPrincipalId:"+terceroId, &vinculaciones); err != nil {
+		panic(map[string]interface{}{"funcion": "VinculacionTercero", "err": "Error get vinculacion", "status": "400", "log": err})
+	} else {
+		for i := 0; i < len(vinculaciones); i++ {
+			if vinculaciones[i].CargoId == 319 || vinculaciones[i].CargoId == 312 {
+				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": vinculaciones[i]}
+				break
+			} else {
+				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": ""}
+			}
+		}
+	}
+	c.ServeJSON()
+}
+
+// Planes ...
+// @Title Planes
+// @Description get Rubros
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /planes [get]
+func (c *FormulacionController) Planes() {
+
+	var respuesta map[string]interface{}
+	var res map[string]interface{}
+	var planes []map[string]interface{}
+	var planesPED []map[string]interface{}
+	var planesPI []map[string]interface{}
+	var tipoPlanes []map[string]interface{}
+	var plan map[string]interface{}
+	var arregloPlanes []map[string]interface{}
+	var auxArregloPlanes []map[string]interface{}
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=formato:true", &respuesta); err == nil {
+		helpers.LimpiezaRespuestaRefactor(respuesta, &planes)
+
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=tipo_plan_id:6239117116511e20405d408b", &respuesta); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuesta, &planesPI)
+		} else {
+			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+			c.Abort("400")
+		}
+
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=tipo_plan_id:616513b91634adfaffed52bf", &respuesta); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuesta, &planesPED)
+		} else {
+			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+			c.Abort("400")
+		}
+
+		auxArregloPlanes = append(auxArregloPlanes, planes...)
+		auxArregloPlanes = append(auxArregloPlanes, planesPI...)
+		auxArregloPlanes = append(auxArregloPlanes, planesPED...)
+
+		for i := 0; i < len(auxArregloPlanes); i++ {
+			plan = auxArregloPlanes[i]
+			tipoPlanId := plan["tipo_plan_id"].(string)
+
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-plan?query=_id:"+tipoPlanId, &res); err == nil {
+				helpers.LimpiezaRespuestaRefactor(res, &tipoPlanes)
+				tipoPlan := tipoPlanes[0]
+				nombreTipoPlan := tipoPlan["nombre"]
+				planesTipo := make(map[string]interface{})
+				planesTipo["_id"] = plan["_id"]
+				planesTipo["nombre"] = plan["nombre"]
+				planesTipo["descripcion"] = plan["descripcion"]
+				planesTipo["tipo_plan_id"] = tipoPlanId
+				planesTipo["formato"] = plan["formato"]
+				planesTipo["vigencia"] = plan["vigencia"]
+				planesTipo["dependencia_id"] = plan["dependencia_id"]
+				planesTipo["aplicativo_id"] = plan["aplicativo_id"]
+				planesTipo["activo"] = plan["activo"]
+				planesTipo["nombre_tipo_plan"] = nombreTipoPlan
+
+				arregloPlanes = append(arregloPlanes, planesTipo)
+
+				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": arregloPlanes}
+
+			} else {
+				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+				c.Abort("400")
+			}
+		}
+
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+		c.Abort("400")
+	}
 	c.ServeJSON()
 }
