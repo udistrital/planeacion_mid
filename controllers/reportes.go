@@ -4,9 +4,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/astaxie/beego"
+	"github.com/leekchan/accounting"
 	"github.com/udistrital/planeacion_mid/helpers"
 	reporteshelper "github.com/udistrital/planeacion_mid/helpers/reportesHelper"
 	"github.com/udistrital/utils_oas/request"
@@ -23,6 +25,7 @@ func (c *ReportesController) URLMapping() {
 	c.Mapping("Desagregado", c.Desagregado)
 	c.Mapping("PlanAccionAnual", c.PlanAccionAnual)
 	c.Mapping("PlanAccionAnualGeneral", c.PlanAccionAnualGeneral)
+	c.Mapping("Necesidades", c.Necesidades)
 }
 
 func CreateExcel(f *excelize.File, dir string) {
@@ -1145,7 +1148,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 			arregloPlanAnual = nil
 		}
 
-		consolidadoExcelPlanAnual.SaveAs("plan_anual.xlsx")
+		//consolidadoExcelPlanAnual.SaveAs("plan_anual.xlsx")
 
 		buf, _ := consolidadoExcelPlanAnual.WriteToBuffer()
 		strings.NewReader(buf.String())
@@ -1158,6 +1161,536 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 		dataSend["excelB64"] = encoded
 
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": dataSend}
+
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+		c.Abort("400")
+	}
+
+	c.ServeJSON()
+}
+
+// Necesidades ...
+// @Title Necesidades
+// @Description post Reportes by id
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Success 201 {object} models.Reportes
+// @Failure 403 :plan_id is empty
+// @router /necesidades [post]
+func (c *ReportesController) Necesidades() {
+	var body map[string]interface{}
+	var respuesta map[string]interface{}
+	var respuestaIdentificaciones map[string]interface{}
+	var identificaciones []map[string]interface{}
+	var planes []map[string]interface{}
+	var recursos []map[string]interface{}
+	var docentes map[string]interface{}
+	var recursosGeneral []map[string]interface{}
+	var docentesGeneral map[string]interface{}
+	docentesPregrado := make(map[string]interface{})
+	docentesPosgrado := make(map[string]interface{})
+	var arrDataDocentes []map[string]interface{}
+
+	docentesPregrado["tco"] = 0
+	docentesPregrado["mto"] = 0
+	docentesPregrado["hch"] = 0
+	docentesPregrado["hcp"] = 0
+	docentesPregrado["valor"] = 0
+
+	docentesPosgrado["hch"] = 0
+	docentesPosgrado["hcp"] = 0
+	docentesPosgrado["valor"] = 0
+
+	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+
+	primaServicios := 0
+	primaNavidad := 0
+	primaVacaciones := 0
+	bonificacion := 0
+	interesesCesantias := 0
+	cesantiasPublicas := 0
+	cesantiasPrivadas := 0
+	salud := 0
+	pensionesPublicas := 0
+	pensionesPrivadas := 0
+	arl := 0
+	caja := 0
+	icbf := 0
+
+	necesidadesExcel := excelize.NewFile()
+	ac := accounting.Accounting{Symbol: "$", Precision: 2}
+	stylecontent, _ := necesidadesExcel.NewStyle(`{
+					"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
+					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+				}`)
+	styletitles, _ := necesidadesExcel.NewStyle(`{
+					"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
+					"font":{"bold":true,"family":"Arial", "size":26,"color":"#000000"},
+					"fill":{"type":"pattern","pattern":1,"color":["#F2F2F2"]},
+					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+				}`)
+
+	stylesubtitles, _ := necesidadesExcel.NewStyle(`{
+					"alignment":{"horizontal":"left","vertical":"center","wrap_text":true},
+					"font":{"bold":true,"family":"Arial", "size":20,"color":"#000000"},
+					"fill":{"type":"pattern","pattern":1,"color":["#F2F2F2"]},
+					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+				}`)
+	stylehead, _ := necesidadesExcel.NewStyle(`{
+					"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
+					"font":{"bold":true,"color":"#FFFFFF"},
+					"fill":{"type":"pattern","pattern":1,"color":["#CC0000"]},
+					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+				}`)
+
+	necesidadesExcel.NewSheet("Necesidades")
+
+	necesidadesExcel.MergeCell("Necesidades", "A1", "F1")
+	necesidadesExcel.MergeCell("Necesidades", "A1", "A2")
+	necesidadesExcel.MergeCell("Necesidades", "A3", "F3")
+	necesidadesExcel.MergeCell("Necesidades", "A3", "A4")
+
+	necesidadesExcel.SetColWidth("Necesidades", "A", "F", 30)
+
+	necesidadesExcel.SetCellValue("Necesidades", "A1", "Necesidades Presupuestales")
+	necesidadesExcel.SetCellStyle("Necesidades", "A1", "F1", styletitles)
+
+	necesidadesExcel.SetCellValue("Necesidades", "A3", "Identificación de recursos:")
+	necesidadesExcel.SetCellStyle("Necesidades", "A3", "F3", stylesubtitles)
+
+	necesidadesExcel.SetCellStyle("Necesidades", "A200", "F200", stylecontent)
+
+	necesidadesExcel.SetCellValue("Necesidades", "A5", "Código del rubro")
+	necesidadesExcel.SetCellValue("Necesidades", "B5", "Nombre del rubro")
+	necesidadesExcel.SetCellValue("Necesidades", "C5", "Valor")
+	necesidadesExcel.SetCellStyle("Necesidades", "A5", "C5", stylehead)
+	necesidadesExcel.SetRowHeight("Necesidades", 5, 35)
+	contador := 6
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string), &respuesta); err == nil {
+		helpers.LimpiezaRespuestaRefactor(respuesta, &planes)
+
+		for i := 0; i < len(planes); i++ {
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+planes[i]["_id"].(string), &respuestaIdentificaciones); err == nil {
+				helpers.LimpiezaRespuestaRefactor(respuestaIdentificaciones, &identificaciones)
+
+				for i := 0; i < len(identificaciones); i++ {
+					identificacion := identificaciones[i]
+					if strings.Contains(strings.ToLower(identificacion["nombre"].(string)), "recurso") {
+						if identificacion["dato"] != nil {
+							var dato map[string]interface{}
+							var data_identi []map[string]interface{}
+							dato_str := identificacion["dato"].(string)
+							json.Unmarshal([]byte(dato_str), &dato)
+							for key := range dato {
+								element := dato[key].(map[string]interface{})
+								if element["activo"] == true {
+									data_identi = append(data_identi, element)
+								}
+							}
+							recursos = data_identi
+
+						}
+					} else if strings.Contains(strings.ToLower(identificacion["nombre"].(string)), "docente") {
+						var dato map[string]interface{}
+						var data_identi []map[string]interface{}
+						if identificacion["dato"] != nil && identificacion["dato"] != "{}" {
+							result := make(map[string]interface{})
+							dato_str := identificacion["dato"].(string)
+							json.Unmarshal([]byte(dato_str), &dato)
+
+							var identi map[string]interface{}
+							dato_aux := dato["rhf"].(string)
+							if dato_aux == "{}" {
+								result["rhf"] = "{}"
+							} else {
+								json.Unmarshal([]byte(dato_aux), &identi)
+								for key := range identi {
+									element := identi[key].(map[string]interface{})
+									if element["activo"] == true {
+										data_identi = append(data_identi, element)
+									}
+								}
+								result["rhf"] = data_identi
+							}
+
+							data_identi = nil
+
+							dato_aux = dato["rhv_pre"].(string)
+							if dato_aux == "{}" {
+								result["rhv_pre"] = "{}"
+							} else {
+								json.Unmarshal([]byte(dato_aux), &identi)
+								for key := range identi {
+									element := identi[key].(map[string]interface{})
+									if element["activo"] == true {
+										data_identi = append(data_identi, element)
+									}
+								}
+								result["rhv_pre"] = data_identi
+							}
+							data_identi = nil
+
+							dato_aux = dato["rhv_pos"].(string)
+							if dato_aux == "{}" {
+								result["rhv_pos"] = "{}"
+							} else {
+								json.Unmarshal([]byte(dato_aux), &identi)
+								for key := range identi {
+									element := identi[key].(map[string]interface{})
+									if element["activo"] == true {
+										data_identi = append(data_identi, element)
+									}
+								}
+								result["rhv_pos"] = data_identi
+							}
+							data_identi = nil
+
+							if dato["rubros"] != nil {
+								dato_aux = dato["rubros"].(string)
+								if dato_aux == "{}" {
+									result["rubros"] = "{}"
+								} else {
+									json.Unmarshal([]byte(dato_aux), &identi)
+									for key := range identi {
+										element := identi[key].(map[string]interface{})
+										if element["activo"] == true {
+											data_identi = append(data_identi, element)
+										}
+									}
+									result["rubros"] = data_identi
+								}
+							}
+
+							data_identi = nil
+
+							docentes = result
+						}
+					}
+				}
+
+				for i := 0; i < len(recursos); i++ {
+					var aux bool
+					if len(recursos) == 0 {
+						recursosGeneral = append(recursosGeneral, recursos[i])
+					} else {
+						for j := 0; j < len(recursosGeneral); j++ {
+							if recursosGeneral[j]["codigo"] == recursos[i]["codigo"] {
+								aux = true
+								break
+							} else {
+								aux = false
+							}
+						}
+
+						if !aux {
+							recursosGeneral = append(recursosGeneral, recursos[i])
+						}
+					}
+				}
+
+				if docentes["rubros"] != nil {
+					rubros := docentes["rubros"].([]map[string]interface{})
+					for i := 0; i < len(rubros); i++ {
+						if rubros[i]["rubro"] != "" {
+							var respuestaRubro map[string]interface{}
+							rubro := make(map[string]interface{})
+							if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro/"+rubros[i]["rubro"].(string), &respuestaRubro); err == nil {
+								aux := respuestaRubro["Body"].(map[string]interface{})
+								rubro["codigo"] = aux["Codigo"]
+								rubro["nombre"] = aux["Nombre"]
+								rubro["categoria"] = rubros[i]["categoria"]
+								recursosGeneral = append(recursosGeneral, rubro)
+							}
+						}
+					}
+				}
+
+				docentesGeneral = reporteshelper.TotalDocentes(docentes)
+				primaServicios = primaServicios + docentesGeneral["primaServicios"].(int)
+				primaNavidad = primaNavidad + docentesGeneral["primaNavidad"].(int)
+				primaVacaciones = primaVacaciones + docentesGeneral["primaVacaciones"].(int)
+				bonificacion = bonificacion + docentesGeneral["bonificacion"].(int)
+				interesesCesantias = interesesCesantias + docentesGeneral["interesesCesantias"].(int)
+				cesantiasPublicas = cesantiasPublicas + docentesGeneral["cesantiasPublicas"].(int)
+				cesantiasPrivadas = cesantiasPrivadas + docentesGeneral["cesantiasPrivadas"].(int)
+				salud = salud + docentesGeneral["salud"].(int)
+				pensionesPublicas = pensionesPublicas + docentesGeneral["pensionesPublicas"].(int)
+				pensionesPrivadas = pensionesPrivadas + docentesGeneral["pensionesPrivadas"].(int)
+				arl = arl + docentesGeneral["arl"].(int)
+				caja = caja + docentesGeneral["caja"].(int)
+				icbf = icbf + docentesGeneral["icbf"].(int)
+
+				arrDataDocentes = append(arrDataDocentes, reporteshelper.GetDataDocentes(docentes, planes[i]["dependencia_id"].(string)))
+			}
+		}
+
+		for i := 0; i < len(recursosGeneral); i++ {
+			if recursosGeneral[i]["categoria"] != nil {
+				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "servicio") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + primaServicios
+						}
+					} else {
+						recursosGeneral[i]["valor"] = primaServicios
+					}
+				}
+
+				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "navidad") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + primaNavidad
+						}
+					} else {
+						recursosGeneral[i]["valor"] = primaNavidad
+					}
+				}
+
+				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "vacaciones") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + primaVacaciones
+						}
+					} else {
+						recursosGeneral[i]["valor"] = primaVacaciones
+					}
+				}
+
+				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "bonificacion") || strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "bonificación") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + bonificacion
+						}
+					} else {
+						recursosGeneral[i]["valor"] = bonificacion
+					}
+				}
+
+				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "interes") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "cesantía") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + interesesCesantias
+						}
+					} else {
+						recursosGeneral[i]["valor"] = interesesCesantias
+					}
+				}
+
+				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "cesantía") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "público") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + cesantiasPublicas
+						}
+					} else {
+						recursosGeneral[i]["valor"] = cesantiasPublicas
+					}
+				}
+
+				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "cesantía") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "privado") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + cesantiasPrivadas
+						}
+					} else {
+						recursosGeneral[i]["valor"] = cesantiasPrivadas
+					}
+				}
+
+				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "salud") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + salud
+						}
+					} else {
+						recursosGeneral[i]["valor"] = salud
+					}
+				}
+
+				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "pension") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "público") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + pensionesPublicas
+						}
+					} else {
+						recursosGeneral[i]["valor"] = pensionesPublicas
+					}
+				}
+
+				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "pension") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "privado") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + pensionesPrivadas
+						}
+					} else {
+						recursosGeneral[i]["valor"] = pensionesPrivadas
+					}
+				}
+
+				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "arl") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + arl
+						}
+					} else {
+						recursosGeneral[i]["valor"] = arl
+					}
+				}
+
+				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "ccf") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + caja
+						}
+					} else {
+						recursosGeneral[i]["valor"] = caja
+					}
+				}
+
+				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "icbf") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + icbf
+						}
+					} else {
+						recursosGeneral[i]["valor"] = icbf
+					}
+				}
+			}
+
+		}
+
+		//Completado de tablas
+		for i := 0; i < len(recursosGeneral); i++ {
+			necesidadesExcel.SetCellValue("Necesidades", "A"+fmt.Sprint(contador), recursosGeneral[i]["codigo"])
+			if recursosGeneral[i]["Nombre"] != nil {
+				necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), recursosGeneral[i]["Nombre"])
+				necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), recursosGeneral[i]["valor"])
+
+			} else {
+				necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), recursosGeneral[i]["nombre"])
+				necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), ac.FormatMoney(recursosGeneral[i]["valor"]))
+
+			}
+			necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent)
+			contador++
+		}
+
+		contador++
+		contador++
+		necesidadesExcel.MergeCell("Necesidades", "A"+fmt.Sprint(contador), "F"+fmt.Sprint(contador))
+		necesidadesExcel.MergeCell("Necesidades", "A"+fmt.Sprint(contador), "A"+fmt.Sprint(contador+1))
+
+		necesidadesExcel.SetColWidth("Necesidades", "A", "A", 30)
+		necesidadesExcel.SetColWidth("Necesidades", "B", "E", 15)
+		necesidadesExcel.SetColWidth("Necesidades", "F", "F", 30)
+		necesidadesExcel.SetColWidth("Necesidades", "G", "H", 15)
+		necesidadesExcel.SetColWidth("Necesidades", "I", "I", 15)
+
+		necesidadesExcel.SetCellValue("Necesidades", "A"+fmt.Sprint(contador), "Docentes por tipo de vinculación:")
+		necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "F"+fmt.Sprint(contador), stylesubtitles)
+
+		necesidadesExcel.SetCellStyle("Necesidades", "A200", "F200", stylecontent)
+		contador++
+		contador++
+		necesidadesExcel.SetCellValue("Necesidades", "A"+fmt.Sprint(contador), "Facultad")
+		necesidadesExcel.MergeCell("Necesidades", "A"+fmt.Sprint(contador), "A"+fmt.Sprint(contador+1))
+		necesidadesExcel.MergeCell("Necesidades", "B"+fmt.Sprint(contador), "F"+fmt.Sprint(contador))
+
+		necesidadesExcel.MergeCell("Necesidades", "G"+fmt.Sprint(contador), "I"+fmt.Sprint(contador))
+
+		necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), "Pregrado")
+		necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador), "Posgrado")
+
+		necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "I"+fmt.Sprint(contador), stylehead)
+
+		contador++
+		necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), "TCO")
+		necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), "MTO")
+		necesidadesExcel.SetCellValue("Necesidades", "D"+fmt.Sprint(contador), "HCH")
+		necesidadesExcel.SetCellValue("Necesidades", "E"+fmt.Sprint(contador), "HCP")
+		necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador), "Valor")
+		necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador), "HCH")
+		necesidadesExcel.SetCellValue("Necesidades", "H"+fmt.Sprint(contador), "HCP")
+		necesidadesExcel.SetCellValue("Necesidades", "I"+fmt.Sprint(contador), "Valor")
+		necesidadesExcel.SetCellStyle("Necesidades", "B"+fmt.Sprint(contador), "I"+fmt.Sprint(contador), stylecontent)
+
+		contador++
+
+		for i := 0; i < len(arrDataDocentes); i++ {
+			necesidadesExcel.SetCellValue("Necesidades", "A"+fmt.Sprint(contador), arrDataDocentes[i]["nombreFacultad"])
+			necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), arrDataDocentes[i]["tco"])
+			necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), arrDataDocentes[i]["mto"])
+			necesidadesExcel.SetCellValue("Necesidades", "D"+fmt.Sprint(contador), arrDataDocentes[i]["hch"])
+			necesidadesExcel.SetCellValue("Necesidades", "E"+fmt.Sprint(contador), arrDataDocentes[i]["hcp"])
+			necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador), ac.FormatMoney(arrDataDocentes[i]["valor"]))
+			necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador), arrDataDocentes[i]["hchPos"])
+			necesidadesExcel.SetCellValue("Necesidades", "H"+fmt.Sprint(contador), arrDataDocentes[i]["hcpPos"])
+			necesidadesExcel.SetCellValue("Necesidades", "I"+fmt.Sprint(contador), ac.FormatMoney(arrDataDocentes[i]["valor"]))
+			necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "I"+fmt.Sprint(contador), stylecontent)
+			contador++
+		}
+
+		buf, _ := necesidadesExcel.WriteToBuffer()
+		strings.NewReader(buf.String())
+
+		encoded := base64.StdEncoding.EncodeToString([]byte(buf.String()))
+
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": encoded}
+
+		necesidadesExcel.SaveAs("necesidades.xlsx")
 
 	} else {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
