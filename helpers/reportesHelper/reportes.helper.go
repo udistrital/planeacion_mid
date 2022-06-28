@@ -836,7 +836,7 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 	contador++
 
 	if docentes != nil {
-		infoDocentes := totalDocentes(docentes)
+		infoDocentes := TotalDocentes(docentes)
 		consolidadoExcelPlanAnual.MergeCell("Identificaciones", "A"+fmt.Sprint(contador), "F"+fmt.Sprint(contador))
 		consolidadoExcelPlanAnual.MergeCell("Identificaciones", "A"+fmt.Sprint(contador), "A"+fmt.Sprint(contador+1))
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "Identificación recurso docente:")
@@ -932,22 +932,36 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 
 }
 
-func totalDocentes(docentes map[string]interface{}) map[string]interface{} {
+func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 
-	rhf := docentes["rhf"].([]map[string]interface{})
-	rhvPre := docentes["rhv_pre"].([]map[string]interface{})
-	rhvPos := docentes["rhv_pos"].([]map[string]interface{})
+	var rhf []map[string]interface{}
+	var rhvPre []map[string]interface{}
+	var rhvPos []map[string]interface{}
+
+	if docentes["rhf"] != "{}" {
+		rhf = docentes["rhf"].([]map[string]interface{})
+	}
+	if docentes["rhv_pre"] != "{}" {
+		rhvPre = docentes["rhv_pre"].([]map[string]interface{})
+	}
+	if docentes["rhv_pos"] != "{}" {
+		rhvPos = docentes["rhv_pos"].([]map[string]interface{})
+	}
 
 	totalDocentes := make(map[string]interface{})
 
 	primaServicios := 0
 	primaNavidad := 0
 	primaVacaciones := 0
-	pensionesPublicas := 0
-	salud := 0
+	bonificacion := 0
+	interesesCesantias := 0
 	cesantiasPublicas := 0
-	caja := 0
+	cesantiasPrivadas := 0
+	salud := 0
+	pensionesPublicas := 0
+	pensionesPrivadas := 0
 	arl := 0
+	caja := 0
 	icbf := 0
 
 	for i := 0; i < len(rhf); i++ {
@@ -982,13 +996,43 @@ func totalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			}
 		}
 
-		if aux["pensionesPublicas"] != nil {
-			strPensionesPublicas := strings.TrimLeft(aux["pensionesPublicas"].(string), "$")
-			strPensionesPublicas = strings.ReplaceAll(strPensionesPublicas, ",", "")
-			arrPensionesPublicas := strings.Split(strPensionesPublicas, ".")
-			auxPensionesPublicas, err := strconv.Atoi(arrPensionesPublicas[0])
+		if aux["bonificacion"] != nil || aux["bonificacion"] != "N/A" {
+			strBonificacion := strings.TrimLeft(aux["bonificacion"].(string), "$")
+			strBonificacion = strings.ReplaceAll(strBonificacion, ",", "")
+			arrBonificacion := strings.Split(strBonificacion, ".")
+			auxBonificacion, err := strconv.Atoi(arrBonificacion[0])
 			if err == nil {
-				pensionesPublicas += auxPensionesPublicas
+				bonificacion += auxBonificacion
+			}
+		}
+
+		if aux["interesesCesantias"] != nil || aux["interesesCesantias"] != "N/A" {
+			strInteresesCesantias := strings.TrimLeft(aux["interesesCesantias"].(string), "$")
+			strInteresesCesantias = strings.ReplaceAll(strInteresesCesantias, ",", "")
+			arrInteresesCesantias := strings.Split(strInteresesCesantias, ".")
+			auxInteresesCesantias, err := strconv.Atoi(arrInteresesCesantias[0])
+			if err == nil {
+				interesesCesantias += auxInteresesCesantias
+			}
+		}
+
+		if aux["cesantiasPublico"] != nil {
+			strCesantiasPublico := strings.TrimLeft(aux["cesantiasPublico"].(string), "$")
+			strCesantiasPublico = strings.ReplaceAll(strCesantiasPublico, ",", "")
+			arrCesantiasPublico := strings.Split(strCesantiasPublico, ".")
+			auxCesantiasPublico, err := strconv.Atoi(arrCesantiasPublico[0])
+			if err == nil {
+				cesantiasPublicas += auxCesantiasPublico
+			}
+		}
+
+		if aux["cesantiasPrivado"] != nil {
+			strCesantiasPrivado := strings.TrimLeft(aux["cesantiasPrivado"].(string), "$")
+			strCesantiasPrivado = strings.ReplaceAll(strCesantiasPrivado, ",", "")
+			arrCesantiasPrivado := strings.Split(strCesantiasPrivado, ".")
+			auxCesantiasPrivado, err := strconv.Atoi(arrCesantiasPrivado[0])
+			if err == nil {
+				cesantiasPrivadas += auxCesantiasPrivado
 			}
 		}
 
@@ -1001,14 +1045,24 @@ func totalDocentes(docentes map[string]interface{}) map[string]interface{} {
 				salud += auxSalud
 			}
 		}
-		if aux["cesantiasPublico"] != nil {
 
-			strCesantiasPublico := strings.TrimLeft(aux["cesantiasPublico"].(string), "$")
-			strCesantiasPublico = strings.ReplaceAll(strCesantiasPublico, ",", "")
-			arrCesantiasPublico := strings.Split(strCesantiasPublico, ".")
-			auxCesantiasPublico, err := strconv.Atoi(arrCesantiasPublico[0])
+		if aux["pensionesPublico"] != nil {
+			strPensionesPublicas := strings.TrimLeft(aux["pensionesPublico"].(string), "$")
+			strPensionesPublicas = strings.ReplaceAll(strPensionesPublicas, ",", "")
+			arrPensionesPublicas := strings.Split(strPensionesPublicas, ".")
+			auxPensionesPublicas, err := strconv.Atoi(arrPensionesPublicas[0])
 			if err == nil {
-				cesantiasPublicas += auxCesantiasPublico
+				pensionesPublicas += auxPensionesPublicas
+			}
+		}
+
+		if aux["pensionesPrivado"] != nil {
+			strPensionesPrivadas := strings.TrimLeft(aux["pensionesPrivado"].(string), "$")
+			strPensionesPrivadas = strings.ReplaceAll(strPensionesPrivadas, ",", "")
+			arrPensionesPrivadas := strings.Split(strPensionesPrivadas, ".")
+			auxPensionesPrivadas, err := strconv.Atoi(arrPensionesPrivadas[0])
+			if err == nil {
+				pensionesPrivadas += auxPensionesPrivadas
 			}
 		}
 
@@ -1235,12 +1289,96 @@ func totalDocentes(docentes map[string]interface{}) map[string]interface{} {
 	totalDocentes["primaServicios"] = primaServicios
 	totalDocentes["primaNavidad"] = primaNavidad
 	totalDocentes["primaVacaciones"] = primaVacaciones
-	totalDocentes["pensionesPublicas"] = pensionesPublicas
-	totalDocentes["salud"] = salud
+	totalDocentes["bonificacion"] = bonificacion
+	totalDocentes["interesesCesantias"] = interesesCesantias
 	totalDocentes["cesantiasPublicas"] = cesantiasPublicas
-	totalDocentes["caja"] = caja
+	totalDocentes["cesantiasPrivadas"] = cesantiasPrivadas
+	totalDocentes["salud"] = salud
+	totalDocentes["pensionesPublicas"] = pensionesPublicas
+	totalDocentes["pensionesPrivadas"] = pensionesPrivadas
 	totalDocentes["arl"] = arl
+	totalDocentes["caja"] = caja
 	totalDocentes["icbf"] = icbf
 
 	return totalDocentes
+}
+
+func GetDataDocentes(docentes map[string]interface{}, dependencia_id string) map[string]interface{} {
+
+	var respuestaDependencia map[string]interface{}
+	dataDocentes := make(map[string]interface{})
+
+	dataDocentes["tco"] = 0
+	dataDocentes["mto"] = 0
+	dataDocentes["hch"] = 0
+	dataDocentes["hcp"] = 0
+	dataDocentes["hchPos"] = 0
+	dataDocentes["hcpPos"] = 0
+	dataDocentes["valor"] = 0
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia/"+dependencia_id, &respuestaDependencia); err == nil {
+		dataDocentes["nombreFacultad"] = respuestaDependencia["Nombre"]
+	}
+
+	if docentes["rhf"] != nil && docentes["rhf"] != "{}" {
+		rhf := docentes["rhf"].([]map[string]interface{})
+		for i := 0; i < len(rhf); i++ {
+			if rhf[i]["tipo"] == "Tiempo Completo" {
+				dataDocentes["tco"] = dataDocentes["tco"].(int) + 1
+			}
+			if rhf[i]["tipo"] == "Medio Tiempo" {
+				dataDocentes["mto"] = dataDocentes["mto"].(int) + 1
+			}
+			strTotal := strings.TrimLeft(rhf[i]["total"].(string), "$")
+			strTotal = strings.ReplaceAll(strTotal, ",", "")
+			arrTotal := strings.Split(strTotal, ".")
+			auxTotal, err := strconv.Atoi(arrTotal[0])
+			if err == nil {
+				dataDocentes["valor"] = dataDocentes["valor"].(int) + auxTotal
+			}
+
+		}
+	}
+
+	if docentes["rhv_pre"] != nil && docentes["rhv_pre"] != "{}" {
+		rhvPre := docentes["rhv_pre"].([]map[string]interface{})
+		for i := 0; i < len(rhvPre); i++ {
+			if rhvPre[i]["tipo"] == "H. Catedra Honorarios" {
+				dataDocentes["hch"] = dataDocentes["hch"].(int) + 1
+			}
+			if rhvPre[i]["tipo"] == "H. Catedra Prestacional" {
+				dataDocentes["hcp"] = dataDocentes["hcp"].(int) + 1
+			}
+			strTotal := strings.TrimLeft(rhvPre[i]["total"].(string), "$")
+			strTotal = strings.ReplaceAll(strTotal, ",", "")
+			arrTotal := strings.Split(strTotal, ".")
+			auxTotal, err := strconv.Atoi(arrTotal[0])
+			if err == nil {
+				dataDocentes["valor"] = dataDocentes["valor"].(int) + auxTotal
+			}
+		}
+	}
+
+	if docentes["rhv_pos"] != nil && docentes["rhv_pos"] != "{}" {
+		rhvPos := docentes["rhv_pos"].([]map[string]interface{})
+		for i := 0; i < len(rhvPos); i++ {
+			if rhvPos[i]["tipo"] == "H. Catedra Honorarios" {
+				dataDocentes["hchPos"] = dataDocentes["hchPos"].(int) + 1
+			}
+			if rhvPos[i]["tipo"] == "H. Catedra Prestacional" {
+				dataDocentes["hcpPos"] = dataDocentes["hcpPos"].(int) + 1
+			}
+			strTotal := strings.TrimLeft(rhvPos[i]["total"].(string), "$")
+			strTotal = strings.ReplaceAll(strTotal, ",", "")
+			arrTotal := strings.Split(strTotal, ".")
+			auxTotal, err := strconv.Atoi(arrTotal[0])
+			if err == nil {
+				dataDocentes["valor"] = dataDocentes["valor"].(int) + auxTotal
+			}
+		}
+
+	}
+
+	return dataDocentes
+
 }
