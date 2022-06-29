@@ -1096,7 +1096,11 @@ func (c *FormulacionController) Planes() {
 
 				arregloPlanes = append(arregloPlanes, planesTipo)
 
-				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": arregloPlanes}
+				if arregloPlanes != nil {
+					c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": arregloPlanes}
+				} else {
+					c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": ""}
+				}
 
 			} else {
 				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
