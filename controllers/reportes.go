@@ -432,7 +432,7 @@ func (c *ReportesController) PlanAccionAnual() {
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "B3", "Meta")
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "C3", "Estrategias")
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "D2", "Armonización Plan Indicativo")
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "D3", "Factores")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "D3", "Ejes transformadores")
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "E3", "Lineaminetos de acción")
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "F3", "Estrategias")
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "G3", "N°.")

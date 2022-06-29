@@ -423,7 +423,7 @@ func ArbolArmonizacionPI(armonizacion interface{}) []map[string]interface{} {
 			var respuestaSubgrupo map[string]interface{}
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+armonizacionPI[i], &respuesta); err == nil {
 				helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaSubgrupo)
-				if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "factores") || strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "nivel 1") {
+				if (strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "eje") && strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "transformador")) || strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "nivel 1") {
 					factores = append(factores, respuestaSubgrupo)
 				}
 				if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "lineamientos") || strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "nivel 2") {
