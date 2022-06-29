@@ -793,6 +793,9 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 	var total float64 = 0
 	var valorTotal int = 0
 	for i := 0; i < len(contratistas); i++ {
+		var respuestaParametro map[string]interface{}
+		var perfil map[string]interface{}
+
 		aux := contratistas[i]
 
 		total = total + aux["cantidad"].(float64)
@@ -806,7 +809,10 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 			valorTotal = valorTotal + auxValorTotal
 		}
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), aux["descripcionNecesidad"])
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), aux["perfil"])
+		if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro/"+fmt.Sprint(aux["perfil"]), &respuestaParametro); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuestaParametro, &perfil)
+			consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), perfil["Nombre"])
+		}
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), aux["cantidad"])
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), aux["valorTotal"])
 		auxStrString := aux["actividades"].([]interface{})
