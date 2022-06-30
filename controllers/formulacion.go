@@ -3,7 +3,6 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -286,7 +285,7 @@ func (c *FormulacionController) ActualizarActividad() {
 	var entrada map[string]interface{}
 	var body map[string]interface{}
 
-	fmt.Println(id)
+	_ = id
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 	entrada = body["entrada"].(map[string]interface{})
 	armonizacion := body["armo"]
@@ -842,16 +841,20 @@ func (c *FormulacionController) GetRubros() {
 
 	var respuesta map[string]interface{}
 	var rubros []interface{}
+
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro", &respuesta); err != nil {
 		panic(map[string]interface{}{"funcion": "GetRubros", "err": "Error arbol_rubros", "status": "400", "log": err})
 	} else {
 		rubros = respuesta["Body"].([]interface{})
 		for i := 0; i < len(rubros); i++ {
-			if rubros[i].(map[string]interface{})["Nombre"] == "GASTOS" {
+			if strings.ToUpper(rubros[i].(map[string]interface{})["Nombre"].(string)) == "GASTOS" {
 				aux := rubros[i].(map[string]interface{})
 				hojas := formulacionhelper.GetHijosRubro(aux["Hijos"].([]interface{}))
-
-				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": hojas}
+				if len(hojas) != 0 {
+					c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": hojas}
+				} else {
+					c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": ""}
+				}
 				break
 			}
 		}
