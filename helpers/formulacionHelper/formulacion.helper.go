@@ -664,8 +664,9 @@ func VerificarDataIdentificaciones(identificaciones []map[string]interface{}) bo
 		if identificacion["dato"] == "{}" {
 			bandera = false
 			break
+		} else {
+			bandera = true
 		}
 	}
-
 	return bandera
 }
