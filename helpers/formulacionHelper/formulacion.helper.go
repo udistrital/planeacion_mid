@@ -656,3 +656,17 @@ func GetHijosRubro(entrada []interface{}) []map[string]interface{} {
 	}
 	return hojas
 }
+
+func VerificarDataIdentificaciones(identificaciones []map[string]interface{}) bool {
+	var bandera bool
+	for i := 0; i < len(identificaciones); i++ {
+		identificacion := identificaciones[i]
+		if identificacion["dato"] == "{}" {
+			bandera = false
+			break
+		} else {
+			bandera = true
+		}
+	}
+	return bandera
+}
