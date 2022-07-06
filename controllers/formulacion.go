@@ -40,6 +40,7 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("GetUnidades", c.GetUnidades)
 	c.Mapping("VinculacionTercero", c.VinculacionTercero)
 	c.Mapping("Planes", c.Planes)
+	c.Mapping("VerificarIdentificaciones", c.VerificarIdentificaciones)
 }
 
 // ClonarFormato ...
@@ -1115,5 +1116,63 @@ func (c *FormulacionController) Planes() {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 		c.Abort("400")
 	}
+	c.ServeJSON()
+}
+
+// VerificarIdentificaciones ...
+// @Title VerificarIdentificaciones
+// @Description put Formulacion by id
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /verificar_identificaciones/:id [get]
+func (c *FormulacionController) VerificarIdentificaciones() {
+	id := c.Ctx.Input.Param(":id")
+	var respuesta map[string]interface{}
+	var respuestaPlan map[string]interface{}
+	var respuestaDependencia []map[string]interface{}
+	var dependencia map[string]interface{}
+	var plan map[string]interface{}
+	var identificaciones []map[string]interface{}
+	var bandera bool
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &respuestaPlan); err == nil {
+		helpers.LimpiezaRespuestaRefactor(respuestaPlan, &plan)
+
+		if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=DependenciaId:"+plan["dependencia_id"].(string), &respuestaDependencia); err == nil {
+			dependencia = respuestaDependencia[0]
+
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id, &respuesta); err == nil {
+				helpers.LimpiezaRespuestaRefactor(respuesta, &identificaciones)
+
+				tipoDependencia := dependencia["TipoDependenciaId"].(map[string]interface{})
+				if tipoDependencia["Id"] == 2.00 || dependencia["Id"] == 67.00 {
+					if len(identificaciones) != 3 {
+						bandera = false
+					} else {
+						bandera = formulacionhelper.VerificarDataIdentificaciones(identificaciones)
+					}
+				} else {
+					if len(identificaciones) != 2 {
+						bandera = false
+					} else {
+						bandera = formulacionhelper.VerificarDataIdentificaciones(identificaciones)
+					}
+				}
+
+			} else {
+				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+				c.Abort("400")
+			}
+		} else {
+			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+			c.Abort("400")
+		}
+	} else {
+		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+		c.Abort("400")
+	}
+
+	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": bandera}
 	c.ServeJSON()
 }
