@@ -657,15 +657,40 @@ func GetHijosRubro(entrada []interface{}) []map[string]interface{} {
 	return hojas
 }
 
-func VerificarDataIdentificaciones(identificaciones []map[string]interface{}) bool {
+func VerificarDataIdentificaciones(identificaciones []map[string]interface{}, tipoUnidad string) bool {
 	var bandera bool
-	for i := 0; i < len(identificaciones); i++ {
-		identificacion := identificaciones[i]
-		if identificacion["dato"] == "{}" {
-			bandera = false
-			break
-		} else {
-			bandera = true
+
+	if tipoUnidad == "facultad" {
+		for i := 0; i < len(identificaciones); i++ {
+			identificacion := identificaciones[i]
+			if identificacion["tipo_identificacion_id"] == "61897518f6fc97091727c3c3" {
+				if identificacion["dato"] == "{}" {
+					bandera = false
+					break
+				} else {
+					bandera = true
+				}
+			}
+			if identificacion["tipo_identificacion_id"] == "6184b3e6f6fc97850127bb68" {
+				if identificacion["dato"] == "{}" {
+					bandera = false
+					break
+				} else {
+					bandera = true
+				}
+			}
+		}
+	} else if tipoUnidad == "unidad" {
+		for i := 0; i < len(identificaciones); i++ {
+			identificacion := identificaciones[i]
+			if identificacion["tipo_identificacion_id"] == "6184b3e6f6fc97850127bb68" {
+				if identificacion["dato"] == "{}" {
+					bandera = false
+					break
+				} else {
+					bandera = true
+				}
+			}
 		}
 	}
 	return bandera
