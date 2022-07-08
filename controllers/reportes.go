@@ -295,8 +295,8 @@ func (c *ReportesController) PlanAccionAnual() {
 									helpers.LimpiezaRespuestaRefactor(resArmo, &hijosArmo)
 									reporteshelper.Limpia()
 									tree := reporteshelper.BuildTreeFa(hijosArmo, index)
-
 									treeDatos := tree[0]
+
 									treeDatas := tree[1]
 									treeArmo := tree[2]
 									armonizacionTercer := treeArmo[0]
@@ -321,7 +321,14 @@ func (c *ReportesController) PlanAccionAnual() {
 											}
 										}
 									}
-									treeIndicador := treeDatos[4]
+									var treeIndicador map[string]interface{}
+									auxTree := tree[0]
+									for i := 0; i < len(auxTree); i++ {
+										subgrupo := auxTree[i]
+										if strings.Contains(strings.ToLower(subgrupo["nombre"].(string)), "indicador") {
+											treeIndicador = auxTree[i]
+										}
+									}
 
 									subIndicador := treeIndicador["sub"].([]map[string]interface{})
 									for ind := 0; ind < len(subIndicador); ind++ {
@@ -672,7 +679,7 @@ func (c *ReportesController) PlanAccionAnual() {
 
 			}
 
-			//consolidadoExcelPlanAnual.SaveAs("plan_anual.xlsx")
+			consolidadoExcelPlanAnual.SaveAs("plan_anual.xlsx")
 
 			buf, _ := consolidadoExcelPlanAnual.WriteToBuffer()
 			strings.NewReader(buf.String())
