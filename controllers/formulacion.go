@@ -1146,18 +1146,11 @@ func (c *FormulacionController) VerificarIdentificaciones() {
 				helpers.LimpiezaRespuestaRefactor(respuesta, &identificaciones)
 
 				tipoDependencia := dependencia["TipoDependenciaId"].(map[string]interface{})
-				if tipoDependencia["Id"] == 2.00 || dependencia["Id"] == 67.00 {
-					if len(identificaciones) != 3 {
-						bandera = false
-					} else {
-						bandera = formulacionhelper.VerificarDataIdentificaciones(identificaciones)
-					}
+				id := dependencia["DependenciaId"].(map[string]interface{})["Id"]
+				if tipoDependencia["Id"] == 2.00 || id == 67.00 {
+					bandera = formulacionhelper.VerificarDataIdentificaciones(identificaciones, "facultad")
 				} else {
-					if len(identificaciones) != 2 {
-						bandera = false
-					} else {
-						bandera = formulacionhelper.VerificarDataIdentificaciones(identificaciones)
-					}
+					bandera = formulacionhelper.VerificarDataIdentificaciones(identificaciones, "unidad")
 				}
 
 			} else {
