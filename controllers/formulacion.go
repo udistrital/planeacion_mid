@@ -1146,7 +1146,8 @@ func (c *FormulacionController) VerificarIdentificaciones() {
 				helpers.LimpiezaRespuestaRefactor(respuesta, &identificaciones)
 
 				tipoDependencia := dependencia["TipoDependenciaId"].(map[string]interface{})
-				if tipoDependencia["Id"] == 2.00 || dependencia["Id"] == 67.00 {
+				id := dependencia["DependenciaId"].(map[string]interface{})["Id"]
+				if tipoDependencia["Id"] == 2.00 || id == 67.00 {
 					if len(identificaciones) != 3 {
 						bandera = false
 					} else {
