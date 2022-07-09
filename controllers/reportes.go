@@ -625,19 +625,19 @@ func (c *ReportesController) PlanAccionAnual() {
 					for id, indicador := range indicadores {
 						_ = id
 						auxIndicador := indicador
-						var nombreIndicador string
-						var formula string
-						var meta string
+						var nombreIndicador interface{}
+						var formula interface{}
+						var meta interface{}
 
 						for key, element := range auxIndicador.(map[string]interface{}) {
 							if strings.Contains(strings.ToLower(key), "nombre") {
-								nombreIndicador = element.(string)
+								nombreIndicador = element
 							}
 							if strings.Contains(strings.ToLower(key), "formula") || strings.Contains(strings.ToLower(key), "fórmula") {
-								formula = element.(string)
+								formula = element
 							}
 							if strings.Contains(strings.ToLower(key), "meta") {
-								meta = element.(string)
+								meta = element
 							}
 
 						}
