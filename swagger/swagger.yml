@@ -640,7 +640,7 @@ paths:
             $ref: '#/definitions/models.Reportes'
         "403":
           description: :plan_id is empty
-  /reportes/necesidades:
+  /reportes/necesidades/{nombre}:
     post:
       tags:
       - reportes
@@ -653,6 +653,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/{}'
+      - in: path
+        name: nombre
+        description: The key for staticblock
+        required: true
+        type: string
       responses:
         "201":
           description: ""
@@ -673,6 +678,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/{}'
+      - in: path
+        name: nombre
+        description: The key for staticblock
+        required: true
+        type: string
       responses:
         "201":
           description: ""
@@ -680,7 +690,7 @@ paths:
             $ref: '#/definitions/models.Reportes'
         "403":
           description: :plan_id is empty
-  /reportes/plan_anual_general:
+  /reportes/plan_anual_general/{nombre}:
     post:
       tags:
       - reportes
@@ -693,6 +703,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/{}'
+      - in: path
+        name: nombre
+        description: The key for staticblock
+        required: true
+        type: string
       responses:
         "201":
           description: ""

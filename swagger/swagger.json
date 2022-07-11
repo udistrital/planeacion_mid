@@ -967,7 +967,7 @@
                 }
             }
         },
-        "/reportes/necesidades": {
+        "/reportes/necesidades/{nombre}": {
             "post": {
                 "tags": [
                     "reportes"
@@ -983,6 +983,13 @@
                         "schema": {
                             "$ref": "#/definitions/{}"
                         }
+                    },
+                    {
+                        "in": "path",
+                        "name": "nombre",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
                     }
                 ],
                 "responses": {
@@ -1014,6 +1021,13 @@
                         "schema": {
                             "$ref": "#/definitions/{}"
                         }
+                    },
+                    {
+                        "in": "path",
+                        "name": "nombre",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
                     }
                 ],
                 "responses": {
@@ -1029,7 +1043,7 @@
                 }
             }
         },
-        "/reportes/plan_anual_general": {
+        "/reportes/plan_anual_general/{nombre}": {
             "post": {
                 "tags": [
                     "reportes"
@@ -1045,6 +1059,13 @@
                         "schema": {
                             "$ref": "#/definitions/{}"
                         }
+                    },
+                    {
+                        "in": "path",
+                        "name": "nombre",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
                     }
                 ],
                 "responses": {
