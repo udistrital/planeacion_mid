@@ -689,6 +689,21 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 				}
 				data_identi = nil
 
+				dato_aux = dato["rubros"].(string)
+				if dato_aux == "{}" {
+					result["rubros"] = "{}"
+				} else {
+					json.Unmarshal([]byte(dato_aux), &identi)
+					for key := range identi {
+						element := identi[key].(map[string]interface{})
+						if element["activo"] == true {
+							data_identi = append(data_identi, element)
+						}
+					}
+					result["rubros"] = data_identi
+				}
+				data_identi = nil
+
 				docentes = result
 			}
 		}
@@ -843,6 +858,7 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 
 	if docentes != nil {
 		infoDocentes := TotalDocentes(docentes)
+		rubros := docentes["rubros"].([]map[string]interface{})
 		consolidadoExcelPlanAnual.MergeCell("Identificaciones", "A"+fmt.Sprint(contador), "F"+fmt.Sprint(contador))
 		consolidadoExcelPlanAnual.MergeCell("Identificaciones", "A"+fmt.Sprint(contador), "A"+fmt.Sprint(contador+1))
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "Identificación recurso docente:")
@@ -860,7 +876,7 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		contador++
 
 		//Cuerpo Tabla
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Prima de Servicios"))
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Prima de servicios")
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), ac.FormatMoney(infoDocentes["primaServicios"]))
 
@@ -868,7 +884,7 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
 		contador++
 
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Prima de navidad"))
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Prima de navidad")
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), ac.FormatMoney(infoDocentes["primaNavidad"]))
 
@@ -876,7 +892,7 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
 		contador++
 
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Prima de vacaciones"))
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Prima de vacaciones")
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), ac.FormatMoney(infoDocentes["primaVacaciones"]))
 
@@ -884,7 +900,7 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
 		contador++
 
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Fondo pensiones público"))
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Pensiones públicas")
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), ac.FormatMoney(infoDocentes["pensionesPublicas"]))
 
@@ -892,7 +908,7 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
 		contador++
 
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Aporte salud"))
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Salud")
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), ac.FormatMoney(infoDocentes["salud"]))
 
@@ -900,7 +916,7 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
 		contador++
 
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Aporte cesantías público"))
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Cesantias públicas")
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), ac.FormatMoney(infoDocentes["cesantiasPublicas"]))
 
@@ -908,7 +924,7 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
 		contador++
 
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Aporte CCF"))
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Caja de compensación")
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), ac.FormatMoney(infoDocentes["caja"]))
 
@@ -916,7 +932,7 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
 		contador++
 
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Aporte ARL"))
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "ARL")
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), ac.FormatMoney(infoDocentes["arl"]))
 
@@ -924,7 +940,7 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
 		contador++
 
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Aporte ICBF"))
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "ICBF")
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), ac.FormatMoney(infoDocentes["icbf"]))
 
@@ -936,6 +952,18 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 
 	return consolidadoExcelPlanAnual
 
+}
+
+func codigoRubrosDocentes(rubros []map[string]interface{}, categoria string) string {
+	var codigo string
+	for i := 0; i < len(rubros); i++ {
+		rubro := rubros[i]
+		if rubro["categoria"] == categoria {
+			codigo = rubro["rubro"].(string)
+			break
+		}
+	}
+	return codigo
 }
 
 func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
