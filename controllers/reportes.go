@@ -224,6 +224,7 @@ func (c *ReportesController) Desagregado() {
 // @Title PlanAccionAnual
 // @Description post Reportes by id
 // @Param	body		body 	{}	true		"body for Plan content"
+// @Param	nombre		path 	string	true		"The key for staticblock"
 // @Success 201 {object} models.Reportes
 // @Failure 403 :plan_id is empty
 // @router /plan_anual/:nombre [post]
@@ -683,6 +684,7 @@ func (c *ReportesController) PlanAccionAnual() {
 // @Title PlanAccionAnualGeneral
 // @Description post Reportes by id
 // @Param	body		body 	{}	true		"body for Plan content"
+// @Param	nombre		path 	string	true		"The key for staticblock"
 // @Success 201 {object} models.Reportes
 // @Failure 403 :plan_id is empty
 // @router /plan_anual_general/:nombre [post]
@@ -1165,6 +1167,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 // @Title Necesidades
 // @Description post Reportes by id
 // @Param	body		body 	{}	true		"body for Plan content"
+// @Param	nombre		path 	string	true		"The key for staticblock"
 // @Success 201 {object} models.Reportes
 // @Failure 403 :plan_id is empty
 // @router /necesidades/:nombre [post]
