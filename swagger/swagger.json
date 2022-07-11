@@ -998,7 +998,7 @@
                 }
             }
         },
-        "/reportes/plan_anual": {
+        "/reportes/plan_anual/{nombre}": {
             "post": {
                 "tags": [
                     "reportes"

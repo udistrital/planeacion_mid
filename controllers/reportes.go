@@ -226,49 +226,26 @@ func (c *ReportesController) Desagregado() {
 // @Param	body		body 	{}	true		"body for Plan content"
 // @Success 201 {object} models.Reportes
 // @Failure 403 :plan_id is empty
-// @router /plan_anual [post]
+// @router /plan_anual/:nombre [post]
 func (c *ReportesController) PlanAccionAnual() {
 	var body map[string]interface{}
-	// var respuestaGeneral map[string]interface{}
-	// var planesFilterGeneral []map[string]interface{}
 	var respuesta map[string]interface{}
 	var planesFilter []map[string]interface{}
 	var res map[string]interface{}
-	// var resPresupuesto map[string]interface{}
 	var resArmo map[string]interface{}
-	// var resEstrategia map[string]interface{}
-	// var resMeta map[string]interface{}
-	// var resLineamiento map[string]interface{}
-	// var resPlan map[string]interface{}
 	var respuestaUnidad []map[string]interface{}
 	var hijosArmo []map[string]interface{}
-	// var estrategiaData []map[string]interface{}
-	// var metaData []map[string]interface{}
-	// var LineamientoData []map[string]interface{}
-	// var planData []map[string]interface{}
 	var subgrupos []map[string]interface{}
 	var plan_id string
 	var actividadName string
 	var arregloPlanAnual []map[string]interface{}
-	// var arregloEstrategia []map[string]interface{}
-	// var arregloMetaEst []map[string]interface{}
-	// var identificacion map[string]interface{}
-	// var datoPresupuesto map[string]interface{}
-	// var identificacionres []map[string]interface{}
-	// var data_identi []map[string]interface{}
-	// var unidadId string
-	// var nombrePlanDesarrollo string
 	var nombreUnidad string
-	// var unidadNombre string
-
+	nombre := c.Ctx.Input.Param(":nombre")
 	consolidadoExcelPlanAnual := excelize.NewFile()
 
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
-
-	if body["unidad_id"].(string) == "" {
-
-	} else if body["unidad_id"].(string) != "" {
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",dependencia_id:"+body["unidad_id"].(string), &respuesta); err == nil {
+	if body["unidad_id"].(string) != "" {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",dependencia_id:"+body["unidad_id"].(string)+",nombre:"+nombre, &respuesta); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
 			for planes := 0; planes < len(planesFilter); planes++ {
 				planesFilterData := planesFilter[planes]
@@ -708,7 +685,7 @@ func (c *ReportesController) PlanAccionAnual() {
 // @Param	body		body 	{}	true		"body for Plan content"
 // @Success 201 {object} models.Reportes
 // @Failure 403 :plan_id is empty
-// @router /plan_anual_general [post]
+// @router /plan_anual_general/:nombre [post]
 func (c *ReportesController) PlanAccionAnualGeneral() {
 	var body map[string]interface{}
 	var respuesta map[string]interface{}
@@ -726,15 +703,15 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 	var actividadName string
 	var arregloPlanAnual []map[string]interface{}
 	var arregloInfoReportes []map[string]interface{}
-
 	var nombreUnidad string
 	contadorGeneral := 0
 
 	consolidadoExcelPlanAnual := excelize.NewFile()
+	nombre := c.Ctx.Input.Param(":nombre")
 
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string), &respuesta); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",nombre:"+nombre, &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
 
 		for planes := 0; planes < len(planesFilter); planes++ {
@@ -788,7 +765,14 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 										}
 									}
 								}
-								treeIndicador := treeDatos[4]
+								var treeIndicador map[string]interface{}
+								auxTree := tree[0]
+								for i := 0; i < len(auxTree); i++ {
+									subgrupo := auxTree[i]
+									if strings.Contains(strings.ToLower(subgrupo["nombre"].(string)), "indicador") {
+										treeIndicador = auxTree[i]
+									}
+								}
 
 								subIndicador := treeIndicador["sub"].([]map[string]interface{})
 								for ind := 0; ind < len(subIndicador); ind++ {
@@ -1101,19 +1085,19 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 				for id, indicador := range indicadores {
 					_ = id
 					auxIndicador := indicador
-					var nombreIndicador string
-					var formula string
-					var meta string
+					var nombreIndicador interface{}
+					var formula interface{}
+					var meta interface{}
 
 					for key, element := range auxIndicador.(map[string]interface{}) {
 						if strings.Contains(strings.ToLower(key), "nombre") {
-							nombreIndicador = element.(string)
+							nombreIndicador = element
 						}
 						if strings.Contains(strings.ToLower(key), "formula") || strings.Contains(strings.ToLower(key), "fórmula") {
-							formula = element.(string)
+							formula = element
 						}
 						if strings.Contains(strings.ToLower(key), "meta") {
-							meta = element.(string)
+							meta = element
 						}
 
 					}
@@ -1183,7 +1167,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 // @Param	body		body 	{}	true		"body for Plan content"
 // @Success 201 {object} models.Reportes
 // @Failure 403 :plan_id is empty
-// @router /necesidades [post]
+// @router /necesidades/:nombre [post]
 func (c *ReportesController) Necesidades() {
 	var body map[string]interface{}
 	var respuesta map[string]interface{}
@@ -1197,6 +1181,7 @@ func (c *ReportesController) Necesidades() {
 	docentesPregrado := make(map[string]interface{})
 	docentesPosgrado := make(map[string]interface{})
 	var arrDataDocentes []map[string]interface{}
+	nombre := c.Ctx.Input.Param(":nombre")
 
 	docentesPregrado["tco"] = 0
 	docentesPregrado["mto"] = 0
@@ -1274,7 +1259,7 @@ func (c *ReportesController) Necesidades() {
 	necesidadesExcel.SetRowHeight("Necesidades", 5, 35)
 	contador := 6
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string), &respuesta); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",nombre:"+nombre, &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planes)
 
 		for i := 0; i < len(planes); i++ {
