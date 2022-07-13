@@ -1622,7 +1622,7 @@ func (c *ReportesController) Necesidades() {
 			necesidadesExcel.SetCellValue("Necesidades", "A"+fmt.Sprint(contador), recursosGeneral[i]["codigo"])
 			if recursosGeneral[i]["Nombre"] != nil {
 				necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), recursosGeneral[i]["Nombre"])
-				necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), recursosGeneral[i]["valor"])
+				necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(ac.FormatMoney(recursosGeneral[i]["valor"]), ".", "_"), ",", "."), "_", ","))
 
 			} else {
 				necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), recursosGeneral[i]["nombre"])
