@@ -689,20 +689,22 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 				}
 				data_identi = nil
 
-				dato_aux = dato["rubros"].(string)
-				if dato_aux == "{}" {
-					result["rubros"] = "{}"
-				} else {
-					json.Unmarshal([]byte(dato_aux), &identi)
-					for key := range identi {
-						element := identi[key].(map[string]interface{})
-						if element["activo"] == true {
-							data_identi = append(data_identi, element)
+				if dato["rubros"] != nil {
+					dato_aux = dato["rubros"].(string)
+					if dato_aux == "{}" {
+						result["rubros"] = "{}"
+					} else {
+						json.Unmarshal([]byte(dato_aux), &identi)
+						for key := range identi {
+							element := identi[key].(map[string]interface{})
+							if element["activo"] == true {
+								data_identi = append(data_identi, element)
+							}
 						}
+						result["rubros"] = data_identi
 					}
-					result["rubros"] = data_identi
+					data_identi = nil
 				}
-				data_identi = nil
 
 				docentes = result
 			}
@@ -770,7 +772,7 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), aux["codigo"])
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), aux["Nombre"])
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(ac.FormatMoney(aux["valor"]), ".", "_"), ",", "."), "_", ","))
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(fmt.Sprint(aux["valor"]), ".", "_"), ",", "."), "_", ","))
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), aux["descripcion"])
 		auxStrString := aux["actividades"].([]interface{})
 		var strActividades string
@@ -829,7 +831,7 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 			consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), perfil["Nombre"])
 		}
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), aux["cantidad"])
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(ac.FormatMoney(aux["valorTotal"]), ".", "_"), ",", "."), "_", ","))
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(fmt.Sprint(aux["valorTotal"]), ".", "_"), ",", "."), "_", ","))
 		auxStrString := aux["actividades"].([]interface{})
 		var strActividades string
 		for j := 0; j < len(auxStrString); j++ {
