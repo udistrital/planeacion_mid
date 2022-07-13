@@ -1366,7 +1366,7 @@ func (c *ReportesController) Necesidades() {
 
 				for i := 0; i < len(recursos); i++ {
 					var aux bool
-					if len(recursos) == 0 {
+					if len(recursosGeneral) == 0 {
 						recursosGeneral = append(recursosGeneral, recursos[i])
 					} else {
 						for j := 0; j < len(recursosGeneral); j++ {
@@ -1377,26 +1377,36 @@ func (c *ReportesController) Necesidades() {
 								aux = false
 							}
 						}
-
 						if !aux {
 							recursosGeneral = append(recursosGeneral, recursos[i])
 						}
 					}
 				}
-
 				if docentes["rubros"] != nil {
+					var aux bool
+					var respuestaRubro map[string]interface{}
 					rubros := docentes["rubros"].([]map[string]interface{})
 					for i := 0; i < len(rubros); i++ {
 						if rubros[i]["rubro"] != "" {
-							var respuestaRubro map[string]interface{}
-							rubro := make(map[string]interface{})
-							if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro/"+rubros[i]["rubro"].(string), &respuestaRubro); err == nil {
-								aux := respuestaRubro["Body"].(map[string]interface{})
-								rubro["codigo"] = aux["Codigo"]
-								rubro["nombre"] = aux["Nombre"]
-								rubro["categoria"] = rubros[i]["categoria"]
-								recursosGeneral = append(recursosGeneral, rubro)
+							for j := 0; j < len(recursosGeneral); j++ {
+								if recursosGeneral[j]["codigo"] == rubros[i]["rubro"] {
+									aux = true
+									break
+								} else {
+									aux = false
+								}
 							}
+							if !aux {
+								rubro := make(map[string]interface{})
+								if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro/"+rubros[i]["rubro"].(string), &respuestaRubro); err == nil {
+									aux := respuestaRubro["Body"].(map[string]interface{})
+									rubro["codigo"] = aux["Codigo"]
+									rubro["nombre"] = aux["Nombre"]
+									rubro["categoria"] = rubros[i]["categoria"]
+									recursosGeneral = append(recursosGeneral, rubro)
+								}
+							}
+
 						}
 					}
 				}
@@ -1670,10 +1680,10 @@ func (c *ReportesController) Necesidades() {
 			necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), arrDataDocentes[i]["mto"])
 			necesidadesExcel.SetCellValue("Necesidades", "D"+fmt.Sprint(contador), arrDataDocentes[i]["hch"])
 			necesidadesExcel.SetCellValue("Necesidades", "E"+fmt.Sprint(contador), arrDataDocentes[i]["hcp"])
-			necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador), ac.FormatMoney(arrDataDocentes[i]["valor"]))
+			necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador), strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(ac.FormatMoney(arrDataDocentes[i]["valorPre"]), ".", "_"), ",", "."), "_", ","))
 			necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador), arrDataDocentes[i]["hchPos"])
 			necesidadesExcel.SetCellValue("Necesidades", "H"+fmt.Sprint(contador), arrDataDocentes[i]["hcpPos"])
-			necesidadesExcel.SetCellValue("Necesidades", "I"+fmt.Sprint(contador), ac.FormatMoney(arrDataDocentes[i]["valor"]))
+			necesidadesExcel.SetCellValue("Necesidades", "I"+fmt.Sprint(contador), strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(ac.FormatMoney(arrDataDocentes[i]["valorPos"]), ".", "_"), ",", "."), "_", ","))
 			necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "I"+fmt.Sprint(contador), stylecontent)
 			contador++
 		}

@@ -1348,7 +1348,8 @@ func GetDataDocentes(docentes map[string]interface{}, dependencia_id string) map
 	dataDocentes["hcp"] = 0
 	dataDocentes["hchPos"] = 0
 	dataDocentes["hcpPos"] = 0
-	dataDocentes["valor"] = 0
+	dataDocentes["valorPre"] = 0
+	dataDocentes["valorPos"] = 0
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia/"+dependencia_id, &respuestaDependencia); err == nil {
 		dataDocentes["nombreFacultad"] = respuestaDependencia["Nombre"]
@@ -1368,7 +1369,7 @@ func GetDataDocentes(docentes map[string]interface{}, dependencia_id string) map
 			arrTotal := strings.Split(strTotal, ".")
 			auxTotal, err := strconv.Atoi(arrTotal[0])
 			if err == nil {
-				dataDocentes["valor"] = dataDocentes["valor"].(int) + auxTotal
+				dataDocentes["valorPre"] = dataDocentes["valorPre"].(int) + auxTotal
 			}
 
 		}
@@ -1388,7 +1389,7 @@ func GetDataDocentes(docentes map[string]interface{}, dependencia_id string) map
 			arrTotal := strings.Split(strTotal, ".")
 			auxTotal, err := strconv.Atoi(arrTotal[0])
 			if err == nil {
-				dataDocentes["valor"] = dataDocentes["valor"].(int) + auxTotal
+				dataDocentes["valorPre"] = dataDocentes["valorPre"].(int) + auxTotal
 			}
 		}
 	}
@@ -1407,7 +1408,7 @@ func GetDataDocentes(docentes map[string]interface{}, dependencia_id string) map
 			arrTotal := strings.Split(strTotal, ".")
 			auxTotal, err := strconv.Atoi(arrTotal[0])
 			if err == nil {
-				dataDocentes["valor"] = dataDocentes["valor"].(int) + auxTotal
+				dataDocentes["valorPos"] = dataDocentes["valorPos"].(int) + auxTotal
 			}
 		}
 
