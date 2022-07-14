@@ -1178,7 +1178,6 @@ func (c *ReportesController) Necesidades() {
 	var identificaciones []map[string]interface{}
 	var planes []map[string]interface{}
 	var recursos []map[string]interface{}
-	var docentes map[string]interface{}
 	var recursosGeneral []map[string]interface{}
 	var docentesGeneral map[string]interface{}
 	docentesPregrado := make(map[string]interface{})
@@ -1266,6 +1265,8 @@ func (c *ReportesController) Necesidades() {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planes)
 
 		for i := 0; i < len(planes); i++ {
+			var docentes map[string]interface{}
+
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+planes[i]["_id"].(string), &respuestaIdentificaciones); err == nil {
 				helpers.LimpiezaRespuestaRefactor(respuestaIdentificaciones, &identificaciones)
 
@@ -1371,6 +1372,22 @@ func (c *ReportesController) Necesidades() {
 					} else {
 						for j := 0; j < len(recursosGeneral); j++ {
 							if recursosGeneral[j]["codigo"] == recursos[i]["codigo"] {
+								if recursosGeneral[j]["valor"] != nil {
+									strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+									strValor = strings.ReplaceAll(strValor, ",", "")
+									arrValor := strings.Split(strValor, ".")
+									auxValor, err := strconv.Atoi(arrValor[0])
+
+									strValor2 := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+									strValor2 = strings.ReplaceAll(strValor2, ",", "")
+									arrValor2 := strings.Split(strValor2, ".")
+									auxValor2, err := strconv.Atoi(arrValor2[0])
+									if err == nil {
+										recursosGeneral[i]["valor"] = ac.FormatMoney(auxValor + auxValor2)
+									}
+								} else {
+									recursosGeneral[j]["valor"] = recursos[i]["valor"]
+								}
 								aux = true
 								break
 							} else {
@@ -1410,26 +1427,27 @@ func (c *ReportesController) Necesidades() {
 						}
 					}
 				}
+				if len(docentes) > 0 {
+					docentesGeneral = reporteshelper.TotalDocentes(docentes)
+					primaServicios = primaServicios + docentesGeneral["primaServicios"].(int)
+					primaNavidad = primaNavidad + docentesGeneral["primaNavidad"].(int)
+					primaVacaciones = primaVacaciones + docentesGeneral["primaVacaciones"].(int)
+					bonificacion = bonificacion + docentesGeneral["bonificacion"].(int)
+					interesesCesantias = interesesCesantias + docentesGeneral["interesesCesantias"].(int)
+					cesantiasPublicas = cesantiasPublicas + docentesGeneral["cesantiasPublicas"].(int)
+					cesantiasPrivadas = cesantiasPrivadas + docentesGeneral["cesantiasPrivadas"].(int)
+					salud = salud + docentesGeneral["salud"].(int)
+					pensionesPublicas = pensionesPublicas + docentesGeneral["pensionesPublicas"].(int)
+					pensionesPrivadas = pensionesPrivadas + docentesGeneral["pensionesPrivadas"].(int)
+					arl = arl + docentesGeneral["arl"].(int)
+					caja = caja + docentesGeneral["caja"].(int)
+					icbf = icbf + docentesGeneral["icbf"].(int)
 
-				docentesGeneral = reporteshelper.TotalDocentes(docentes)
-				primaServicios = primaServicios + docentesGeneral["primaServicios"].(int)
-				primaNavidad = primaNavidad + docentesGeneral["primaNavidad"].(int)
-				primaVacaciones = primaVacaciones + docentesGeneral["primaVacaciones"].(int)
-				bonificacion = bonificacion + docentesGeneral["bonificacion"].(int)
-				interesesCesantias = interesesCesantias + docentesGeneral["interesesCesantias"].(int)
-				cesantiasPublicas = cesantiasPublicas + docentesGeneral["cesantiasPublicas"].(int)
-				cesantiasPrivadas = cesantiasPrivadas + docentesGeneral["cesantiasPrivadas"].(int)
-				salud = salud + docentesGeneral["salud"].(int)
-				pensionesPublicas = pensionesPublicas + docentesGeneral["pensionesPublicas"].(int)
-				pensionesPrivadas = pensionesPrivadas + docentesGeneral["pensionesPrivadas"].(int)
-				arl = arl + docentesGeneral["arl"].(int)
-				caja = caja + docentesGeneral["caja"].(int)
-				icbf = icbf + docentesGeneral["icbf"].(int)
+					arrDataDocentes = append(arrDataDocentes, reporteshelper.GetDataDocentes(docentes, planes[i]["dependencia_id"].(string)))
+				}
 
-				arrDataDocentes = append(arrDataDocentes, reporteshelper.GetDataDocentes(docentes, planes[i]["dependencia_id"].(string)))
 			}
 		}
-
 		for i := 0; i < len(recursosGeneral); i++ {
 			if recursosGeneral[i]["categoria"] != nil {
 				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "servicio") {
@@ -1622,11 +1640,10 @@ func (c *ReportesController) Necesidades() {
 			necesidadesExcel.SetCellValue("Necesidades", "A"+fmt.Sprint(contador), recursosGeneral[i]["codigo"])
 			if recursosGeneral[i]["Nombre"] != nil {
 				necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), recursosGeneral[i]["Nombre"])
-				necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(ac.FormatMoney(recursosGeneral[i]["valor"]), ".", "_"), ",", "."), "_", ","))
-
+				necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(fmt.Sprint(recursosGeneral[i]["valor"]), "$", ""), ".", "_"), ",", "."), "_", ","))
 			} else {
 				necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), recursosGeneral[i]["nombre"])
-				necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(ac.FormatMoney(recursosGeneral[i]["valor"]), ".", "_"), ",", "."), "_", ","))
+				necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(ac.FormatMoney(recursosGeneral[i]["valor"]), "$", ""), ".", "_"), ",", "."), "_", ","))
 
 			}
 			necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent)
@@ -1680,10 +1697,10 @@ func (c *ReportesController) Necesidades() {
 			necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), arrDataDocentes[i]["mto"])
 			necesidadesExcel.SetCellValue("Necesidades", "D"+fmt.Sprint(contador), arrDataDocentes[i]["hch"])
 			necesidadesExcel.SetCellValue("Necesidades", "E"+fmt.Sprint(contador), arrDataDocentes[i]["hcp"])
-			necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador), strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(ac.FormatMoney(arrDataDocentes[i]["valorPre"]), ".", "_"), ",", "."), "_", ","))
+			necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador), strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(ac.FormatMoney(arrDataDocentes[i]["valorPre"]), "$", ""), ".", "_"), ",", "."), "_", ","))
 			necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador), arrDataDocentes[i]["hchPos"])
 			necesidadesExcel.SetCellValue("Necesidades", "H"+fmt.Sprint(contador), arrDataDocentes[i]["hcpPos"])
-			necesidadesExcel.SetCellValue("Necesidades", "I"+fmt.Sprint(contador), strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(ac.FormatMoney(arrDataDocentes[i]["valorPos"]), ".", "_"), ",", "."), "_", ","))
+			necesidadesExcel.SetCellValue("Necesidades", "I"+fmt.Sprint(contador), strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(ac.FormatMoney(arrDataDocentes[i]["valorPos"]), "$", ""), ".", "_"), ",", "."), "_", ","))
 			necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "I"+fmt.Sprint(contador), stylecontent)
 			contador++
 		}
