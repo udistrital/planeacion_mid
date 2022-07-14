@@ -245,8 +245,6 @@ func (c *ReportesController) PlanAccionAnual() {
 	nombre := c.Ctx.Input.Param(":nombre")
 	consolidadoExcelPlanAnual := excelize.NewFile()
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
-	fmt.Println(body)
-	fmt.Println(nombre)
 	if body["unidad_id"].(string) != "" {
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",dependencia_id:"+body["unidad_id"].(string)+",nombre:"+nombre, &respuesta); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
@@ -1403,10 +1401,6 @@ func (c *ReportesController) Necesidades() {
 						recursosGeneral = append(recursosGeneral, recursos[i])
 					} else {
 						for j := 0; j < len(recursosGeneral); j++ {
-							fmt.Println("verificacion")
-							fmt.Println(recursosGeneral[j])
-							fmt.Println(recursos[i])
-
 							if recursosGeneral[j]["codigo"] == recursos[i]["codigo"] {
 								if recursosGeneral[j]["valor"] != nil {
 									strValor := strings.TrimLeft(recursosGeneral[j]["valor"].(string), "$")
@@ -1685,9 +1679,7 @@ func (c *ReportesController) Necesidades() {
 				}
 			} else {
 				necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), recursosGeneral[i]["nombre"])
-				fmt.Println(reflect.TypeOf(recursosGeneral[i]["valor"]))
 				if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" {
-					fmt.Println("entra aca")
 					necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), recursosGeneral[i]["valor"])
 				} else {
 					strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
