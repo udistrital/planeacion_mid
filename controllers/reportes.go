@@ -1452,7 +1452,6 @@ func (c *ReportesController) Necesidades() {
 					arl = arl + docentesGeneral["arl"].(int)
 					caja = caja + docentesGeneral["caja"].(int)
 					icbf = icbf + docentesGeneral["icbf"].(int)
-
 					arrDataDocentes = append(arrDataDocentes, reporteshelper.GetDataDocentes(docentes, planes[i]["dependencia_id"].(string)))
 				}
 
@@ -1482,7 +1481,6 @@ func (c *ReportesController) Necesidades() {
 											recursosGeneral[j]["valor"] = primaServicios
 										}
 									}
-
 									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "navidad") {
 										if recursosGeneral[j]["valor"] != nil {
 											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
@@ -1495,6 +1493,7 @@ func (c *ReportesController) Necesidades() {
 												if err == nil {
 													recursosGeneral[j]["valor"] = auxValor + primaNavidad
 												}
+
 											}
 
 										} else {
@@ -2192,7 +2191,6 @@ func (c *ReportesController) Necesidades() {
 
 		buf, _ := necesidadesExcel.WriteToBuffer()
 		strings.NewReader(buf.String())
-
 		encoded := base64.StdEncoding.EncodeToString([]byte(buf.String()))
 
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": encoded}

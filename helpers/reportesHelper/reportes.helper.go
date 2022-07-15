@@ -1177,13 +1177,43 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			}
 		}
 
-		if aux["pensionesPublicas"] != nil {
-			strPensionesPublicas := strings.TrimLeft(aux["pensionesPublicas"].(string), "$")
-			strPensionesPublicas = strings.ReplaceAll(strPensionesPublicas, ",", "")
-			arrPensionesPublicas := strings.Split(strPensionesPublicas, ".")
-			auxPensionesPublicas, err := strconv.Atoi(arrPensionesPublicas[0])
+		if aux["bonificacion"] != nil || aux["bonificacion"] != "N/A" {
+			strBonificacion := strings.TrimLeft(aux["bonificacion"].(string), "$")
+			strBonificacion = strings.ReplaceAll(strBonificacion, ",", "")
+			arrBonificacion := strings.Split(strBonificacion, ".")
+			auxBonificacion, err := strconv.Atoi(arrBonificacion[0])
 			if err == nil {
-				pensionesPublicas += auxPensionesPublicas
+				bonificacion += auxBonificacion
+			}
+		}
+
+		if aux["interesesCesantias"] != nil || aux["interesesCesantias"] != "N/A" {
+			strInteresesCesantias := strings.TrimLeft(aux["interesesCesantias"].(string), "$")
+			strInteresesCesantias = strings.ReplaceAll(strInteresesCesantias, ",", "")
+			arrInteresesCesantias := strings.Split(strInteresesCesantias, ".")
+			auxInteresesCesantias, err := strconv.Atoi(arrInteresesCesantias[0])
+			if err == nil {
+				interesesCesantias += auxInteresesCesantias
+			}
+		}
+
+		if aux["cesantiasPublico"] != nil {
+			strCesantiasPublico := strings.TrimLeft(aux["cesantiasPublico"].(string), "$")
+			strCesantiasPublico = strings.ReplaceAll(strCesantiasPublico, ",", "")
+			arrCesantiasPublico := strings.Split(strCesantiasPublico, ".")
+			auxCesantiasPublico, err := strconv.Atoi(arrCesantiasPublico[0])
+			if err == nil {
+				cesantiasPublicas += auxCesantiasPublico
+			}
+		}
+
+		if aux["cesantiasPrivado"] != nil {
+			strCesantiasPrivado := strings.TrimLeft(aux["cesantiasPrivado"].(string), "$")
+			strCesantiasPrivado = strings.ReplaceAll(strCesantiasPrivado, ",", "")
+			arrCesantiasPrivado := strings.Split(strCesantiasPrivado, ".")
+			auxCesantiasPrivado, err := strconv.Atoi(arrCesantiasPrivado[0])
+			if err == nil {
+				cesantiasPrivadas += auxCesantiasPrivado
 			}
 		}
 
@@ -1196,14 +1226,24 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 				salud += auxSalud
 			}
 		}
-		if aux["cesantiasPublico"] != nil {
 
-			strCesantiasPublico := strings.TrimLeft(aux["cesantiasPublico"].(string), "$")
-			strCesantiasPublico = strings.ReplaceAll(strCesantiasPublico, ",", "")
-			arrCesantiasPublico := strings.Split(strCesantiasPublico, ".")
-			auxCesantiasPublico, err := strconv.Atoi(arrCesantiasPublico[0])
+		if aux["pensionesPublico"] != nil {
+			strPensionesPublicas := strings.TrimLeft(aux["pensionesPublico"].(string), "$")
+			strPensionesPublicas = strings.ReplaceAll(strPensionesPublicas, ",", "")
+			arrPensionesPublicas := strings.Split(strPensionesPublicas, ".")
+			auxPensionesPublicas, err := strconv.Atoi(arrPensionesPublicas[0])
 			if err == nil {
-				cesantiasPublicas += auxCesantiasPublico
+				pensionesPublicas += auxPensionesPublicas
+			}
+		}
+
+		if aux["pensionesPrivado"] != nil {
+			strPensionesPrivadas := strings.TrimLeft(aux["pensionesPrivado"].(string), "$")
+			strPensionesPrivadas = strings.ReplaceAll(strPensionesPrivadas, ",", "")
+			arrPensionesPrivadas := strings.Split(strPensionesPrivadas, ".")
+			auxPensionesPrivadas, err := strconv.Atoi(arrPensionesPrivadas[0])
+			if err == nil {
+				pensionesPrivadas += auxPensionesPrivadas
 			}
 		}
 
@@ -1271,13 +1311,43 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			}
 		}
 
-		if aux["pensionesPublico"] != nil {
-			strPensionesPublicas := strings.TrimLeft(aux["pensionesPublico"].(string), "$")
-			strPensionesPublicas = strings.ReplaceAll(strPensionesPublicas, ",", "")
-			arrPensionesPublicas := strings.Split(strPensionesPublicas, ".")
-			auxPensionesPublicas, err := strconv.Atoi(arrPensionesPublicas[0])
+		if aux["bonificacion"] != nil || aux["bonificacion"] != "N/A" {
+			strBonificacion := strings.TrimLeft(aux["bonificacion"].(string), "$")
+			strBonificacion = strings.ReplaceAll(strBonificacion, ",", "")
+			arrBonificacion := strings.Split(strBonificacion, ".")
+			auxBonificacion, err := strconv.Atoi(arrBonificacion[0])
 			if err == nil {
-				pensionesPublicas += auxPensionesPublicas
+				bonificacion += auxBonificacion
+			}
+		}
+
+		if aux["interesesCesantias"] != nil || aux["interesesCesantias"] != "N/A" {
+			strInteresesCesantias := strings.TrimLeft(aux["interesesCesantias"].(string), "$")
+			strInteresesCesantias = strings.ReplaceAll(strInteresesCesantias, ",", "")
+			arrInteresesCesantias := strings.Split(strInteresesCesantias, ".")
+			auxInteresesCesantias, err := strconv.Atoi(arrInteresesCesantias[0])
+			if err == nil {
+				interesesCesantias += auxInteresesCesantias
+			}
+		}
+
+		if aux["cesantiasPublico"] != nil {
+			strCesantiasPublico := strings.TrimLeft(aux["cesantiasPublico"].(string), "$")
+			strCesantiasPublico = strings.ReplaceAll(strCesantiasPublico, ",", "")
+			arrCesantiasPublico := strings.Split(strCesantiasPublico, ".")
+			auxCesantiasPublico, err := strconv.Atoi(arrCesantiasPublico[0])
+			if err == nil {
+				cesantiasPublicas += auxCesantiasPublico
+			}
+		}
+
+		if aux["cesantiasPrivado"] != nil {
+			strCesantiasPrivado := strings.TrimLeft(aux["cesantiasPrivado"].(string), "$")
+			strCesantiasPrivado = strings.ReplaceAll(strCesantiasPrivado, ",", "")
+			arrCesantiasPrivado := strings.Split(strCesantiasPrivado, ".")
+			auxCesantiasPrivado, err := strconv.Atoi(arrCesantiasPrivado[0])
+			if err == nil {
+				cesantiasPrivadas += auxCesantiasPrivado
 			}
 		}
 
@@ -1290,14 +1360,24 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 				salud += auxSalud
 			}
 		}
-		if aux["cesantiasPublico"] != nil {
 
-			strCesantiasPublico := strings.TrimLeft(aux["cesantiasPublico"].(string), "$")
-			strCesantiasPublico = strings.ReplaceAll(strCesantiasPublico, ",", "")
-			arrCesantiasPublico := strings.Split(strCesantiasPublico, ".")
-			auxCesantiasPublico, err := strconv.Atoi(arrCesantiasPublico[0])
+		if aux["pensionesPublico"] != nil {
+			strPensionesPublicas := strings.TrimLeft(aux["pensionesPublico"].(string), "$")
+			strPensionesPublicas = strings.ReplaceAll(strPensionesPublicas, ",", "")
+			arrPensionesPublicas := strings.Split(strPensionesPublicas, ".")
+			auxPensionesPublicas, err := strconv.Atoi(arrPensionesPublicas[0])
 			if err == nil {
-				cesantiasPublicas += auxCesantiasPublico
+				pensionesPublicas += auxPensionesPublicas
+			}
+		}
+
+		if aux["pensionesPrivado"] != nil {
+			strPensionesPrivadas := strings.TrimLeft(aux["pensionesPrivado"].(string), "$")
+			strPensionesPrivadas = strings.ReplaceAll(strPensionesPrivadas, ",", "")
+			arrPensionesPrivadas := strings.Split(strPensionesPrivadas, ".")
+			auxPensionesPrivadas, err := strconv.Atoi(arrPensionesPrivadas[0])
+			if err == nil {
+				pensionesPrivadas += auxPensionesPrivadas
 			}
 		}
 
