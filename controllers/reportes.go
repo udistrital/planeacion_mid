@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/astaxie/beego"
-	"github.com/leekchan/accounting"
 	"github.com/udistrital/planeacion_mid/helpers"
 	reporteshelper "github.com/udistrital/planeacion_mid/helpers/reportesHelper"
 	"github.com/udistrital/utils_oas/request"
@@ -673,8 +672,6 @@ func (c *ReportesController) PlanAccionAnual() {
 
 			}
 
-			consolidadoExcelPlanAnual.SaveAs("plan_anual.xlsx")
-
 			buf, _ := consolidadoExcelPlanAnual.WriteToBuffer()
 			strings.NewReader(buf.String())
 
@@ -954,7 +951,6 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 
 				_ = contadorEstrategiaPEDIn
 				_ = contadorEstrategiaPIIn
-				//fmt.Println(contadorLineamientoGeneralIn + contadorFactorGeneralOut + contadorMetaGeneralIn + contadorMetaGeneralOut + contadorEstrategiaPEDIn + contadorFactorGeneralIn + contadorEstrategiaPEDOut + contadorLineamientoPIIn + contadorLineamientoPIOut + contadorEstrategiaPIIn + contadorEstrategiaPIOut)
 
 				for i := 0; i < len(armoPED); i++ {
 					datosArmo := armoPED[i]
@@ -1171,8 +1167,6 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 			arregloPlanAnual = nil
 		}
 
-		//consolidadoExcelPlanAnual.SaveAs("plan_anual.xlsx")
-
 		buf, _ := consolidadoExcelPlanAnual.WriteToBuffer()
 		strings.NewReader(buf.String())
 
@@ -1242,7 +1236,6 @@ func (c *ReportesController) Necesidades() {
 	icbf := 0
 
 	necesidadesExcel := excelize.NewFile()
-	ac := accounting.Accounting{Symbol: "$", Precision: 2}
 	stylecontent, _ := necesidadesExcel.NewStyle(`{
 					"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
 					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
@@ -1403,18 +1396,32 @@ func (c *ReportesController) Necesidades() {
 						for j := 0; j < len(recursosGeneral); j++ {
 							if recursosGeneral[j]["codigo"] == recursos[i]["codigo"] {
 								if recursosGeneral[j]["valor"] != nil {
-									strValor := strings.TrimLeft(recursosGeneral[j]["valor"].(string), "$")
-									strValor = strings.ReplaceAll(strValor, ",", "")
-									arrValor := strings.Split(strValor, ".")
-									auxValor, err := strconv.Atoi(arrValor[0])
-
-									strValor2 := strings.TrimLeft(recursos[i]["valor"].(string), "$")
-									strValor2 = strings.ReplaceAll(strValor2, ",", "")
-									arrValor2 := strings.Split(strValor2, ".")
-									auxValor2, err := strconv.Atoi(arrValor2[0])
-									if err == nil {
-										recursosGeneral[i]["valor"] = ac.FormatMoney(auxValor + auxValor2)
+									var auxValor int
+									var auxValor2 int
+									if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
+										auxValor = recursosGeneral[j]["valor"].(int)
+									} else {
+										strValor := strings.TrimLeft(recursosGeneral[j]["valor"].(string), "$")
+										strValor = strings.ReplaceAll(strValor, ",", "")
+										arrValor := strings.Split(strValor, ".")
+										aux1, err := strconv.Atoi(arrValor[0])
+										if err == nil {
+											auxValor = aux1
+										}
 									}
+
+									if fmt.Sprint(reflect.TypeOf(recursos[i]["valor"])) == "int" {
+										auxValor = recursos[i]["valor"].(int)
+									} else {
+										strValor2 := strings.TrimLeft(recursos[i]["valor"].(string), "$")
+										strValor2 = strings.ReplaceAll(strValor2, ",", "")
+										arrValor2 := strings.Split(strValor2, ".")
+										aux2, err := strconv.Atoi(arrValor2[0])
+										if err == nil {
+											auxValor2 = aux2
+										}
+									}
+									recursosGeneral[j]["valor"] = auxValor + auxValor2
 								} else {
 									recursosGeneral[j]["valor"] = recursos[i]["valor"]
 								}
@@ -1429,34 +1436,7 @@ func (c *ReportesController) Necesidades() {
 						}
 					}
 				}
-				if docentes["rubros"] != nil {
-					var aux bool
-					var respuestaRubro map[string]interface{}
-					rubros := docentes["rubros"].([]map[string]interface{})
-					for i := 0; i < len(rubros); i++ {
-						if rubros[i]["rubro"] != "" {
-							for j := 0; j < len(recursosGeneral); j++ {
-								if recursosGeneral[j]["codigo"] == rubros[i]["rubro"] {
-									aux = true
-									break
-								} else {
-									aux = false
-								}
-							}
-							if !aux {
-								rubro := make(map[string]interface{})
-								if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro/"+rubros[i]["rubro"].(string), &respuestaRubro); err == nil {
-									aux := respuestaRubro["Body"].(map[string]interface{})
-									rubro["codigo"] = aux["Codigo"]
-									rubro["nombre"] = aux["Nombre"]
-									rubro["categoria"] = rubros[i]["categoria"]
-									recursosGeneral = append(recursosGeneral, rubro)
-								}
-							}
 
-						}
-					}
-				}
 				if len(docentes) > 0 {
 					docentesGeneral = reporteshelper.TotalDocentes(docentes)
 					primaServicios = primaServicios + docentesGeneral["primaServicios"].(int)
@@ -1476,207 +1456,667 @@ func (c *ReportesController) Necesidades() {
 					arrDataDocentes = append(arrDataDocentes, reporteshelper.GetDataDocentes(docentes, planes[i]["dependencia_id"].(string)))
 				}
 
+				if docentes["rubros"] != nil {
+					var aux bool
+					var respuestaRubro map[string]interface{}
+					rubros := docentes["rubros"].([]map[string]interface{})
+					for i := 0; i < len(rubros); i++ {
+						if rubros[i]["rubro"] != "" {
+							for j := 0; j < len(recursosGeneral); j++ {
+								if recursosGeneral[j]["codigo"] == rubros[i]["rubro"] {
+									aux = true
+									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "servicio") {
+										if recursosGeneral[j]["valor"] != nil {
+											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
+												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + primaServicios
+											} else {
+												strValor := strings.TrimLeft(recursosGeneral[j]["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													recursosGeneral[j]["valor"] = auxValor + primaServicios
+												}
+											}
+										} else {
+											recursosGeneral[j]["valor"] = primaServicios
+										}
+									}
+
+									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "navidad") {
+										if recursosGeneral[j]["valor"] != nil {
+											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
+												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + primaNavidad
+											} else {
+												strValor := strings.TrimLeft(recursosGeneral[j]["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													recursosGeneral[j]["valor"] = auxValor + primaNavidad
+												}
+											}
+
+										} else {
+											recursosGeneral[j]["valor"] = primaNavidad
+										}
+									}
+
+									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "vacaciones") {
+										if recursosGeneral[j]["valor"] != nil {
+											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
+												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + primaVacaciones
+											} else {
+												strValor := strings.TrimLeft(recursosGeneral[j]["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													recursosGeneral[j]["valor"] = auxValor + primaVacaciones
+												}
+											}
+										} else {
+											recursosGeneral[j]["valor"] = primaVacaciones
+										}
+									}
+
+									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "bonificacion") || strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "bonificación") {
+										if recursosGeneral[j]["valor"] != nil {
+											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
+												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + bonificacion
+											} else {
+												strValor := strings.TrimLeft(recursosGeneral[j]["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													recursosGeneral[j]["valor"] = auxValor + bonificacion
+												}
+											}
+
+										} else {
+											recursosGeneral[j]["valor"] = bonificacion
+										}
+									}
+
+									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "interes") && strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "cesantía") {
+										if recursosGeneral[j]["valor"] != nil {
+											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
+												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + interesesCesantias
+											} else {
+												strValor := strings.TrimLeft(recursosGeneral[j]["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													recursosGeneral[j]["valor"] = auxValor + interesesCesantias
+												}
+											}
+
+										} else {
+											recursosGeneral[j]["valor"] = interesesCesantias
+										}
+									}
+
+									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "cesantía") && strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "público") {
+										if recursosGeneral[j]["valor"] != nil {
+											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
+												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + cesantiasPublicas
+											} else {
+												strValor := strings.TrimLeft(recursosGeneral[j]["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													recursosGeneral[j]["valor"] = auxValor + cesantiasPublicas
+												}
+											}
+										} else {
+											recursosGeneral[j]["valor"] = cesantiasPublicas
+										}
+									}
+
+									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "cesantía") && strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "privado") {
+										if recursosGeneral[j]["valor"] != nil {
+											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
+												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + cesantiasPrivadas
+											} else {
+												strValor := strings.TrimLeft(recursosGeneral[j]["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													recursosGeneral[j]["valor"] = auxValor + cesantiasPrivadas
+												}
+											}
+										} else {
+											recursosGeneral[j]["valor"] = cesantiasPrivadas
+										}
+									}
+
+									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "salud") {
+										if recursosGeneral[j]["valor"] != nil {
+											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
+												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + salud
+											} else {
+												strValor := strings.TrimLeft(recursosGeneral[j]["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													recursosGeneral[j]["valor"] = auxValor + salud
+												}
+											}
+										} else {
+											recursosGeneral[j]["valor"] = salud
+										}
+									}
+
+									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "pension") && strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "público") {
+										if recursosGeneral[j]["valor"] != nil {
+											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
+												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + pensionesPublicas
+											} else {
+												strValor := strings.TrimLeft(recursosGeneral[j]["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													recursosGeneral[j]["valor"] = auxValor + pensionesPublicas
+												}
+											}
+
+										} else {
+											recursosGeneral[j]["valor"] = pensionesPublicas
+										}
+									}
+
+									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "pension") && strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "privado") {
+										if recursosGeneral[j]["valor"] != nil {
+											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
+												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + pensionesPrivadas
+											} else {
+												strValor := strings.TrimLeft(recursosGeneral[j]["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													recursosGeneral[j]["valor"] = auxValor + pensionesPrivadas
+												}
+											}
+
+										} else {
+											recursosGeneral[j]["valor"] = pensionesPrivadas
+										}
+									}
+
+									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "arl") {
+										if recursosGeneral[j]["valor"] != nil {
+											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
+												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + arl
+											} else {
+												strValor := strings.TrimLeft(recursosGeneral[j]["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													recursosGeneral[j]["valor"] = auxValor + arl
+												}
+											}
+
+										} else {
+											recursosGeneral[j]["valor"] = arl
+										}
+									}
+
+									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "ccf") {
+										if recursosGeneral[j]["valor"] != nil {
+											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
+												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + caja
+											} else {
+												strValor := strings.TrimLeft(recursosGeneral[j]["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													recursosGeneral[j]["valor"] = auxValor + caja
+												}
+											}
+
+										} else {
+											recursosGeneral[j]["valor"] = caja
+										}
+									}
+
+									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "icbf") {
+										if recursosGeneral[j]["valor"] != nil {
+											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
+												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + icbf
+											} else {
+												strValor := strings.TrimLeft(recursosGeneral[j]["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													recursosGeneral[j]["valor"] = auxValor + icbf
+												}
+											}
+
+										} else {
+											recursosGeneral[j]["valor"] = icbf
+										}
+									}
+									break
+								} else {
+									aux = false
+								}
+							}
+							if !aux {
+								rubro := make(map[string]interface{})
+								if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro/"+rubros[i]["rubro"].(string), &respuestaRubro); err == nil {
+									aux := respuestaRubro["Body"].(map[string]interface{})
+									rubro["codigo"] = aux["Codigo"]
+									rubro["nombre"] = aux["Nombre"]
+									rubro["categoria"] = rubros[i]["categoria"]
+
+									if rubro["categoria"] != nil {
+										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(rubro["categoria"].(string)), "servicio") {
+											if rubro["valor"] != nil {
+												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													rubro["valor"] = auxValor + primaServicios
+												}
+											} else {
+												rubro["valor"] = primaServicios
+											}
+										}
+
+										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(rubro["categoria"].(string)), "navidad") {
+											if rubro["valor"] != nil {
+												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													rubro["valor"] = auxValor + primaNavidad
+												}
+											} else {
+												rubro["valor"] = primaNavidad
+											}
+										}
+
+										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(rubro["categoria"].(string)), "vacaciones") {
+											if rubro["valor"] != nil {
+												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													rubro["valor"] = auxValor + primaVacaciones
+												}
+											} else {
+												rubro["valor"] = primaVacaciones
+											}
+										}
+
+										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "bonificacion") || strings.Contains(strings.ToLower(rubro["categoria"].(string)), "bonificación") {
+											if rubro["valor"] != nil {
+												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													rubro["valor"] = auxValor + bonificacion
+												}
+											} else {
+												rubro["valor"] = bonificacion
+											}
+										}
+
+										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "interes") && strings.Contains(strings.ToLower(rubro["categoria"].(string)), "cesantía") {
+											if rubro["valor"] != nil {
+												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													rubro["valor"] = auxValor + interesesCesantias
+												}
+											} else {
+												rubro["valor"] = interesesCesantias
+											}
+										}
+
+										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "cesantía") && strings.Contains(strings.ToLower(rubro["categoria"].(string)), "público") {
+											if rubro["valor"] != nil {
+												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													rubro["valor"] = auxValor + cesantiasPublicas
+												}
+											} else {
+												rubro["valor"] = cesantiasPublicas
+											}
+										}
+
+										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "cesantía") && strings.Contains(strings.ToLower(rubro["categoria"].(string)), "privado") {
+											if rubro["valor"] != nil {
+												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													rubro["valor"] = auxValor + cesantiasPrivadas
+												}
+											} else {
+												rubro["valor"] = cesantiasPrivadas
+											}
+										}
+
+										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "salud") {
+											if rubro["valor"] != nil {
+												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													rubro["valor"] = auxValor + salud
+												}
+											} else {
+												rubro["valor"] = salud
+											}
+										}
+
+										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "pension") && strings.Contains(strings.ToLower(rubro["categoria"].(string)), "público") {
+											if rubro["valor"] != nil {
+												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													rubro["valor"] = auxValor + pensionesPublicas
+												}
+											} else {
+												rubro["valor"] = pensionesPublicas
+											}
+										}
+
+										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "pension") && strings.Contains(strings.ToLower(rubro["categoria"].(string)), "privado") {
+											if rubro["valor"] != nil {
+												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													rubro["valor"] = auxValor + pensionesPrivadas
+												}
+											} else {
+												rubro["valor"] = pensionesPrivadas
+											}
+										}
+
+										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "arl") {
+											if rubro["valor"] != nil {
+												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													rubro["valor"] = auxValor + arl
+												}
+											} else {
+												rubro["valor"] = arl
+											}
+										}
+
+										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "ccf") {
+											if rubro["valor"] != nil {
+												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													rubro["valor"] = auxValor + caja
+												}
+											} else {
+												rubro["valor"] = caja
+											}
+										}
+
+										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "icbf") {
+											if rubro["valor"] != nil {
+												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
+												strValor = strings.ReplaceAll(strValor, ",", "")
+												arrValor := strings.Split(strValor, ".")
+												auxValor, err := strconv.Atoi(arrValor[0])
+												if err == nil {
+													rubro["valor"] = auxValor + icbf
+												}
+											} else {
+												rubro["valor"] = icbf
+											}
+										}
+									}
+									recursosGeneral = append(recursosGeneral, rubro)
+								}
+							}
+
+						}
+					}
+				}
+
 			}
 		}
-		for i := 0; i < len(recursosGeneral); i++ {
-			if recursosGeneral[i]["categoria"] != nil {
-				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "servicio") {
-					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + primaServicios
-						}
-					} else {
-						recursosGeneral[i]["valor"] = primaServicios
-					}
-				}
 
-				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "navidad") {
-					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + primaNavidad
-						}
-					} else {
-						recursosGeneral[i]["valor"] = primaNavidad
-					}
-				}
+		// for i := 0; i < len(recursosGeneral); i++ {
+		// 	if recursosGeneral[i]["categoria"] != nil {
+		// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "servicio") {
+		// 			if recursosGeneral[i]["valor"] != nil {
+		// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+		// 				strValor = strings.ReplaceAll(strValor, ",", "")
+		// 				arrValor := strings.Split(strValor, ".")
+		// 				auxValor, err := strconv.Atoi(arrValor[0])
+		// 				if err == nil {
+		// 					recursosGeneral[i]["valor"] = auxValor + primaServicios
+		// 				}
+		// 			} else {
+		// 				recursosGeneral[i]["valor"] = primaServicios
+		// 			}
+		// 		}
 
-				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "vacaciones") {
-					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + primaVacaciones
-						}
-					} else {
-						recursosGeneral[i]["valor"] = primaVacaciones
-					}
-				}
+		// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "navidad") {
+		// 			if recursosGeneral[i]["valor"] != nil {
+		// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+		// 				strValor = strings.ReplaceAll(strValor, ",", "")
+		// 				arrValor := strings.Split(strValor, ".")
+		// 				auxValor, err := strconv.Atoi(arrValor[0])
+		// 				if err == nil {
+		// 					recursosGeneral[i]["valor"] = auxValor + primaNavidad
+		// 				}
+		// 			} else {
+		// 				recursosGeneral[i]["valor"] = primaNavidad
+		// 			}
+		// 		}
 
-				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "bonificacion") || strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "bonificación") {
-					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + bonificacion
-						}
-					} else {
-						recursosGeneral[i]["valor"] = bonificacion
-					}
-				}
+		// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "vacaciones") {
+		// 			if recursosGeneral[i]["valor"] != nil {
+		// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+		// 				strValor = strings.ReplaceAll(strValor, ",", "")
+		// 				arrValor := strings.Split(strValor, ".")
+		// 				auxValor, err := strconv.Atoi(arrValor[0])
+		// 				if err == nil {
+		// 					recursosGeneral[i]["valor"] = auxValor + primaVacaciones
+		// 				}
+		// 			} else {
+		// 				recursosGeneral[i]["valor"] = primaVacaciones
+		// 			}
+		// 		}
 
-				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "interes") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "cesantía") {
-					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + interesesCesantias
-						}
-					} else {
-						recursosGeneral[i]["valor"] = interesesCesantias
-					}
-				}
+		// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "bonificacion") || strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "bonificación") {
+		// 			if recursosGeneral[i]["valor"] != nil {
+		// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+		// 				strValor = strings.ReplaceAll(strValor, ",", "")
+		// 				arrValor := strings.Split(strValor, ".")
+		// 				auxValor, err := strconv.Atoi(arrValor[0])
+		// 				if err == nil {
+		// 					recursosGeneral[i]["valor"] = auxValor + bonificacion
+		// 				}
+		// 			} else {
+		// 				recursosGeneral[i]["valor"] = bonificacion
+		// 			}
+		// 		}
 
-				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "cesantía") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "público") {
-					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + cesantiasPublicas
-						}
-					} else {
-						recursosGeneral[i]["valor"] = cesantiasPublicas
-					}
-				}
+		// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "interes") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "cesantía") {
+		// 			if recursosGeneral[i]["valor"] != nil {
+		// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+		// 				strValor = strings.ReplaceAll(strValor, ",", "")
+		// 				arrValor := strings.Split(strValor, ".")
+		// 				auxValor, err := strconv.Atoi(arrValor[0])
+		// 				if err == nil {
+		// 					recursosGeneral[i]["valor"] = auxValor + interesesCesantias
+		// 				}
+		// 			} else {
+		// 				recursosGeneral[i]["valor"] = interesesCesantias
+		// 			}
+		// 		}
 
-				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "cesantía") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "privado") {
-					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + cesantiasPrivadas
-						}
-					} else {
-						recursosGeneral[i]["valor"] = cesantiasPrivadas
-					}
-				}
+		// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "cesantía") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "público") {
+		// 			if recursosGeneral[i]["valor"] != nil {
+		// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+		// 				strValor = strings.ReplaceAll(strValor, ",", "")
+		// 				arrValor := strings.Split(strValor, ".")
+		// 				auxValor, err := strconv.Atoi(arrValor[0])
+		// 				if err == nil {
+		// 					recursosGeneral[i]["valor"] = auxValor + cesantiasPublicas
+		// 				}
+		// 			} else {
+		// 				recursosGeneral[i]["valor"] = cesantiasPublicas
+		// 			}
+		// 		}
 
-				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "salud") {
-					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + salud
-						}
-					} else {
-						recursosGeneral[i]["valor"] = salud
-					}
-				}
+		// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "cesantía") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "privado") {
+		// 			if recursosGeneral[i]["valor"] != nil {
+		// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+		// 				strValor = strings.ReplaceAll(strValor, ",", "")
+		// 				arrValor := strings.Split(strValor, ".")
+		// 				auxValor, err := strconv.Atoi(arrValor[0])
+		// 				if err == nil {
+		// 					recursosGeneral[i]["valor"] = auxValor + cesantiasPrivadas
+		// 				}
+		// 			} else {
+		// 				recursosGeneral[i]["valor"] = cesantiasPrivadas
+		// 			}
+		// 		}
 
-				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "pension") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "público") {
-					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + pensionesPublicas
-						}
-					} else {
-						recursosGeneral[i]["valor"] = pensionesPublicas
-					}
-				}
+		// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "salud") {
+		// 			if recursosGeneral[i]["valor"] != nil {
+		// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+		// 				strValor = strings.ReplaceAll(strValor, ",", "")
+		// 				arrValor := strings.Split(strValor, ".")
+		// 				auxValor, err := strconv.Atoi(arrValor[0])
+		// 				if err == nil {
+		// 					recursosGeneral[i]["valor"] = auxValor + salud
+		// 				}
+		// 			} else {
+		// 				recursosGeneral[i]["valor"] = salud
+		// 			}
+		// 		}
 
-				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "pension") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "privado") {
-					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + pensionesPrivadas
-						}
-					} else {
-						recursosGeneral[i]["valor"] = pensionesPrivadas
-					}
-				}
+		// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "pension") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "público") {
+		// 			if recursosGeneral[i]["valor"] != nil {
+		// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+		// 				strValor = strings.ReplaceAll(strValor, ",", "")
+		// 				arrValor := strings.Split(strValor, ".")
+		// 				auxValor, err := strconv.Atoi(arrValor[0])
+		// 				if err == nil {
+		// 					recursosGeneral[i]["valor"] = auxValor + pensionesPublicas
+		// 				}
+		// 			} else {
+		// 				recursosGeneral[i]["valor"] = pensionesPublicas
+		// 			}
+		// 		}
 
-				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "arl") {
-					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + arl
-						}
-					} else {
-						recursosGeneral[i]["valor"] = arl
-					}
-				}
+		// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "pension") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "privado") {
+		// 			if recursosGeneral[i]["valor"] != nil {
+		// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+		// 				strValor = strings.ReplaceAll(strValor, ",", "")
+		// 				arrValor := strings.Split(strValor, ".")
+		// 				auxValor, err := strconv.Atoi(arrValor[0])
+		// 				if err == nil {
+		// 					recursosGeneral[i]["valor"] = auxValor + pensionesPrivadas
+		// 				}
+		// 			} else {
+		// 				recursosGeneral[i]["valor"] = pensionesPrivadas
+		// 			}
+		// 		}
 
-				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "ccf") {
-					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + caja
-						}
-					} else {
-						recursosGeneral[i]["valor"] = caja
-					}
-				}
+		// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "arl") {
+		// 			if recursosGeneral[i]["valor"] != nil {
+		// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+		// 				strValor = strings.ReplaceAll(strValor, ",", "")
+		// 				arrValor := strings.Split(strValor, ".")
+		// 				auxValor, err := strconv.Atoi(arrValor[0])
+		// 				if err == nil {
+		// 					recursosGeneral[i]["valor"] = auxValor + arl
+		// 				}
+		// 			} else {
+		// 				recursosGeneral[i]["valor"] = arl
+		// 			}
+		// 		}
 
-				if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "icbf") {
-					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + icbf
-						}
-					} else {
-						recursosGeneral[i]["valor"] = icbf
-					}
-				}
-			}
+		// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "ccf") {
+		// 			if recursosGeneral[i]["valor"] != nil {
+		// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+		// 				strValor = strings.ReplaceAll(strValor, ",", "")
+		// 				arrValor := strings.Split(strValor, ".")
+		// 				auxValor, err := strconv.Atoi(arrValor[0])
+		// 				if err == nil {
+		// 					recursosGeneral[i]["valor"] = auxValor + caja
+		// 				}
+		// 			} else {
+		// 				recursosGeneral[i]["valor"] = caja
+		// 			}
+		// 		}
 
-		}
+		// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "icbf") {
+		// 			if recursosGeneral[i]["valor"] != nil {
+		// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+		// 				strValor = strings.ReplaceAll(strValor, ",", "")
+		// 				arrValor := strings.Split(strValor, ".")
+		// 				auxValor, err := strconv.Atoi(arrValor[0])
+		// 				if err == nil {
+		// 					recursosGeneral[i]["valor"] = auxValor + icbf
+		// 				}
+		// 			} else {
+		// 				recursosGeneral[i]["valor"] = icbf
+		// 			}
+		// 		}
+		// 	}
+
+		// }
 
 		//Completado de tablas
 		for i := 0; i < len(recursosGeneral); i++ {
 			necesidadesExcel.SetCellValue("Necesidades", "A"+fmt.Sprint(contador), recursosGeneral[i]["codigo"])
 			if recursosGeneral[i]["Nombre"] != nil {
 				necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), recursosGeneral[i]["Nombre"])
-				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-				strValor = strings.ReplaceAll(strValor, ",", "")
-				arrValor := strings.Split(strValor, ".")
-				auxValor, err := strconv.Atoi(arrValor[0])
-				if err == nil {
-					necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), auxValor)
+				if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" {
+					necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), recursosGeneral[i]["valor"])
+				} else {
+					strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+					strValor = strings.ReplaceAll(strValor, ",", "")
+					arrValor := strings.Split(strValor, ".")
+					auxValor, err := strconv.Atoi(arrValor[0])
+					if err == nil {
+						necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), auxValor)
+					}
 				}
+
 			} else {
 				necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), recursosGeneral[i]["nombre"])
 				if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" {
@@ -1756,8 +2196,6 @@ func (c *ReportesController) Necesidades() {
 		encoded := base64.StdEncoding.EncodeToString([]byte(buf.String()))
 
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": encoded}
-
-		necesidadesExcel.SaveAs("necesidades.xlsx")
 
 	} else {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
