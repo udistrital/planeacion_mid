@@ -805,14 +805,16 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "Descripción de la necesidad")
 	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Perfil")
 	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), "Cantidad")
-	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), "Valor")
-	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "E"+fmt.Sprint(contador), "Actividades")
-	consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylehead)
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), "Valor Total")
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "E"+fmt.Sprint(contador), "Valor Total Incremeto")
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "F"+fmt.Sprint(contador), "Actividades")
+	consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "F"+fmt.Sprint(contador), stylehead)
 	consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
 
 	contador++
 	var total float64 = 0
 	var valorTotal int = 0
+	var valorTotalInc int = 0
 	for i := 0; i < len(contratistas); i++ {
 		var respuestaParametro map[string]interface{}
 		var perfil map[string]interface{}
@@ -842,6 +844,15 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		if err == nil {
 			consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), auxValor)
 		}
+		strValorInc := strings.TrimLeft(aux["valorTotalInc"].(string), "$")
+		strValorInc = strings.ReplaceAll(strValorInc, ",", "")
+		arrValorInc := strings.Split(strValorInc, ".")
+		auxValorInc, err := strconv.Atoi(arrValorInc[0])
+		if err == nil {
+			valorTotalInc = valorTotalInc + auxValorInc
+			consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "E"+fmt.Sprint(contador), auxValorInc)
+		}
+
 		auxStrString := aux["actividades"].([]interface{})
 		var strActividades string
 		for j := 0; j < len(auxStrString); j++ {
@@ -851,9 +862,9 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 				strActividades = strActividades + " " + fmt.Sprint(auxStrString[j])
 			}
 		}
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "E"+fmt.Sprint(contador), strActividades)
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "F"+fmt.Sprint(contador), strActividades)
 
-		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontent)
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "F"+fmt.Sprint(contador), stylecontent)
 		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
 		contador++
 	}
@@ -862,6 +873,7 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "Total")
 	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), total)
 	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), valorTotal)
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "E"+fmt.Sprint(contador), valorTotalInc)
 
 	consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontent)
 	consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
@@ -872,6 +884,8 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 	if docentes != nil {
 		infoDocentes := TotalDocentes(docentes)
 		rubros := docentes["rubros"].([]map[string]interface{})
+		var respuestaRubro map[string]interface{}
+
 		consolidadoExcelPlanAnual.MergeCell("Identificaciones", "A"+fmt.Sprint(contador), "F"+fmt.Sprint(contador))
 		consolidadoExcelPlanAnual.MergeCell("Identificaciones", "A"+fmt.Sprint(contador), "A"+fmt.Sprint(contador+1))
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "Identificación recurso docente:")
@@ -882,82 +896,137 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "Código del rubro")
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Nombre del rubro")
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), "Valor")
-		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylehead)
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), "Categoria")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), "Valor")
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylehead)
 		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
 
 		contador++
 
 		//Cuerpo Tabla
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Prima de Servicios"))
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Prima de servicios")
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), infoDocentes["primaServicios"])
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro/"+codigoRubrosDocentes(rubros, "Prima de Servicios"), &respuestaRubro); err == nil {
+			if respuestaRubro["Body"] != nil {
+				aux := respuestaRubro["Body"].(map[string]interface{})
+				consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), aux["Nombre"])
+			}
+		}
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), "Prima de servicios")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), infoDocentes["primaServicios"])
 
-		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent)
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent)
 		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
 		contador++
 
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Prima de navidad"))
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Prima de navidad")
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), infoDocentes["primaNavidad"])
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro/"+codigoRubrosDocentes(rubros, "Prima de navidad"), &respuestaRubro); err == nil {
+			if respuestaRubro["Body"] != nil {
+				aux := respuestaRubro["Body"].(map[string]interface{})
+				consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), aux["Nombre"])
+			}
+		}
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), "Prima de navidad")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), infoDocentes["primaNavidad"])
 
-		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent)
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent)
 		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
 		contador++
 
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Prima de vacaciones"))
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Prima de vacaciones")
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), infoDocentes["primaVacaciones"])
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro/"+codigoRubrosDocentes(rubros, "Prima de vacaciones"), &respuestaRubro); err == nil {
+			if respuestaRubro["Body"] != nil {
+				aux := respuestaRubro["Body"].(map[string]interface{})
+				consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), aux["Nombre"])
+			}
+		}
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), "Prima de vacaciones")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), infoDocentes["primaVacaciones"])
 
-		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent)
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent)
 		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
 		contador++
 
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Fondo pensiones público"))
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Pensiones públicas")
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), infoDocentes["pensionesPublicas"])
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro/"+codigoRubrosDocentes(rubros, "Fondo pensiones público"), &respuestaRubro); err == nil {
+			if respuestaRubro["Body"] != nil {
+				aux := respuestaRubro["Body"].(map[string]interface{})
+				consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), aux["Nombre"])
+			}
+		}
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), "Pensiones públicas")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), infoDocentes["pensionesPublicas"])
 
-		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent)
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent)
 		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
 		contador++
 
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Aporte salud"))
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Salud")
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), infoDocentes["salud"])
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro/"+codigoRubrosDocentes(rubros, "Aporte salud"), &respuestaRubro); err == nil {
+			if respuestaRubro["Body"] != nil {
+				aux := respuestaRubro["Body"].(map[string]interface{})
+				consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), aux["Nombre"])
+			}
+		}
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), "Salud")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), infoDocentes["salud"])
 
-		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent)
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent)
 		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
 		contador++
 
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Aporte cesantías público"))
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Cesantias públicas")
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), infoDocentes["cesantiasPublicas"])
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro/"+codigoRubrosDocentes(rubros, "Aporte cesantías público"), &respuestaRubro); err == nil {
+			if respuestaRubro["Body"] != nil {
+				aux := respuestaRubro["Body"].(map[string]interface{})
+				consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), aux["Nombre"])
+			}
+		}
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), "Cesantias públicas")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), infoDocentes["cesantiasPublicas"])
 
-		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent)
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent)
 		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
 		contador++
 
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Aporte CCF"))
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "Caja de compensación")
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), infoDocentes["caja"])
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro/"+codigoRubrosDocentes(rubros, "Aporte CCF"), &respuestaRubro); err == nil {
+			if respuestaRubro["Body"] != nil {
+				aux := respuestaRubro["Body"].(map[string]interface{})
+				consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), aux["Nombre"])
+			}
+		}
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), "Caja de compensación")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), infoDocentes["caja"])
 
-		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent)
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent)
 		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
 		contador++
 
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Aporte ARL"))
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "ARL")
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), infoDocentes["arl"])
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro/"+codigoRubrosDocentes(rubros, "Aporte ARL"), &respuestaRubro); err == nil {
+			if respuestaRubro["Body"] != nil {
+				aux := respuestaRubro["Body"].(map[string]interface{})
+				consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), aux["Nombre"])
+			}
+		}
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), "ARL")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), infoDocentes["arl"])
 
-		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent)
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent)
 		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
 		contador++
 
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Aporte ICBF"))
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), "ICBF")
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), infoDocentes["icbf"])
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro/"+codigoRubrosDocentes(rubros, "Aporte ICBF"), &respuestaRubro); err == nil {
+			if respuestaRubro["Body"] != nil {
+				aux := respuestaRubro["Body"].(map[string]interface{})
+				consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), aux["Nombre"])
+			}
+		}
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), "ICBF")
+		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), infoDocentes["icbf"])
 
-		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent)
+		consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent)
 		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
 		contador++
 
