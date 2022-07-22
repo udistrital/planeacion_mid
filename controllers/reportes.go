@@ -672,8 +672,6 @@ func (c *ReportesController) PlanAccionAnual() {
 
 			}
 
-			consolidadoExcelPlanAnual.SaveAs("plan_anual.xlsx")
-
 			buf, _ := consolidadoExcelPlanAnual.WriteToBuffer()
 			strings.NewReader(buf.String())
 
