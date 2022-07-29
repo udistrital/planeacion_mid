@@ -263,13 +263,14 @@ func add(id string) {
 func convert(valid []string, index string) ([]map[string]interface{}, map[string]interface{}) {
 	var validadores []map[string]interface{}
 	var res map[string]interface{}
-	var subgrupo_detalle []map[string]interface{}
-	var dato_plan map[string]interface{}
-	var actividad map[string]interface{}
 	var dato_armonizacion map[string]interface{}
 	armonizacion := make(map[string]interface{})
 	forkData := make(map[string]interface{})
 	for _, v := range valid {
+		var subgrupo_detalle []map[string]interface{}
+		var actividad map[string]interface{}
+		var dato_plan map[string]interface{}
+
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+v, &res); err == nil {
 			helpers.LimpiezaRespuestaRefactor(res, &subgrupo_detalle)
 
@@ -283,14 +284,11 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 						armonizacion["armoPI"] = aux.(map[string]interface{})["armonizacionPI"]
 
 					}
-
 				}
 				if subgrupo_detalle[0]["dato_plan"] != nil {
 					dato_plan_str := subgrupo_detalle[0]["dato_plan"].(string)
 					json.Unmarshal([]byte(dato_plan_str), &dato_plan)
-
 					if dato_plan[index] == nil {
-
 					} else {
 						actividad = dato_plan[index].(map[string]interface{})
 						if v != "" {
