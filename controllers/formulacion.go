@@ -1024,7 +1024,7 @@ func (c *FormulacionController) VinculacionTercero() {
 
 	terceroId := c.Ctx.Input.Param(":tercero_id")
 	var vinculaciones []models.Vinculacion
-	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/vinculacion?query=TerceroPrincipalId:"+terceroId, &vinculaciones); err != nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/vinculacion?query=Activo:true,TerceroPrincipalId:"+terceroId, &vinculaciones); err != nil {
 		panic(map[string]interface{}{"funcion": "VinculacionTercero", "err": "Error get vinculacion", "status": "400", "log": err})
 	} else {
 		for i := 0; i < len(vinculaciones); i++ {
