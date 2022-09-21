@@ -538,11 +538,11 @@ func (c *FormulacionController) GetAllIdentificacion() {
 				json.Unmarshal([]byte(dato_str), &dato)
 
 				var identi map[string]interface{}
-				dato_aux := dato["rhf"].(string)
-				if dato_aux == "{}" {
+				dato_aux1 := dato["rhf"].(string)
+				if dato_aux1 == "{}" {
 					result["rhf"] = "{}"
 				} else {
-					json.Unmarshal([]byte(dato_aux), &identi)
+					json.Unmarshal([]byte(dato_aux1), &identi)
 					for key := range identi {
 						element := identi[key].(map[string]interface{})
 						if element["activo"] == true {
@@ -554,11 +554,11 @@ func (c *FormulacionController) GetAllIdentificacion() {
 
 				data_identi = nil
 
-				dato_aux = dato["rhv_pre"].(string)
-				if dato_aux == "{}" {
+				dato_aux2 := dato["rhv_pre"].(string)
+				if dato_aux2 == "{}" {
 					result["rhv_pre"] = "{}"
 				} else {
-					json.Unmarshal([]byte(dato_aux), &identi)
+					json.Unmarshal([]byte(dato_aux2), &identi)
 					for key := range identi {
 						element := identi[key].(map[string]interface{})
 						if element["activo"] == true {
@@ -569,11 +569,11 @@ func (c *FormulacionController) GetAllIdentificacion() {
 				}
 				data_identi = nil
 
-				dato_aux = dato["rhv_pos"].(string)
-				if dato_aux == "{}" {
+				dato_aux3 := dato["rhv_pos"].(string)
+				if dato_aux3 == "{}" {
 					result["rhv_pos"] = "{}"
 				} else {
-					json.Unmarshal([]byte(dato_aux), &identi)
+					json.Unmarshal([]byte(dato_aux3), &identi)
 					for key := range identi {
 						element := identi[key].(map[string]interface{})
 						if element["activo"] == true {
@@ -584,11 +584,11 @@ func (c *FormulacionController) GetAllIdentificacion() {
 				}
 				data_identi = nil
 
-				dato_aux = dato["rubros"].(string)
-				if dato_aux == "{}" {
+				dato_aux4 := dato["rubros"].(string)
+				if dato_aux4 == "{}" {
 					result["rubros"] = "{}"
 				} else {
-					json.Unmarshal([]byte(dato_aux), &identi)
+					json.Unmarshal([]byte(dato_aux4), &identi)
 					for key := range identi {
 						element := identi[key].(map[string]interface{})
 						if element["activo"] == true {
