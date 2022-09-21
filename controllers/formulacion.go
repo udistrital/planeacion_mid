@@ -537,8 +537,10 @@ func (c *FormulacionController) GetAllIdentificacion() {
 				dato_str := identificacion["dato"].(string)
 				json.Unmarshal([]byte(dato_str), &dato)
 
-				var identi map[string]interface{}
-				dato_aux := dato["rhf"].(string)
+				var identi map[string]interface{} = nil
+				dato_aux := ""
+
+				dato_aux = dato["rhf"].(string)
 				if dato_aux == "{}" {
 					result["rhf"] = "{}"
 				} else {
@@ -552,6 +554,7 @@ func (c *FormulacionController) GetAllIdentificacion() {
 					result["rhf"] = data_identi
 				}
 
+				identi = nil
 				data_identi = nil
 
 				dato_aux = dato["rhv_pre"].(string)
@@ -567,6 +570,8 @@ func (c *FormulacionController) GetAllIdentificacion() {
 					}
 					result["rhv_pre"] = data_identi
 				}
+
+				identi = nil
 				data_identi = nil
 
 				dato_aux = dato["rhv_pos"].(string)
@@ -582,6 +587,8 @@ func (c *FormulacionController) GetAllIdentificacion() {
 					}
 					result["rhv_pos"] = data_identi
 				}
+
+				identi = nil
 				data_identi = nil
 
 				dato_aux = dato["rubros"].(string)
@@ -597,6 +604,8 @@ func (c *FormulacionController) GetAllIdentificacion() {
 					}
 					result["rubros"] = data_identi
 				}
+
+				identi = nil
 				data_identi = nil
 
 				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": result}
