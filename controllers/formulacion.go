@@ -1001,6 +1001,19 @@ func (c *FormulacionController) GetUnidades() {
 															panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
 														}
 
+														if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=TipoDependenciaId:33,DependenciaId:222&limit=0", &respuesta); err == nil {
+															for i := 0; i < len(respuesta); i++ {
+																aux := respuesta[i]["DependenciaId"].(map[string]interface{})
+																aux["TipoDependencia"] = respuesta[i]["TipoDependenciaId"]
+																unidades = append(unidades, aux)
+															}
+															respuesta = nil
+															c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": unidades}
+
+														} else {
+															panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+														}
+
 													} else {
 														panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
 													}
