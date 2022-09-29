@@ -334,54 +334,51 @@ func (c *FormulacionController) ActualizarActividad() {
 				}
 
 			}
-		} else {
-			id_subgrupoDetalle = key
-			if element != "" {
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id_subgrupoDetalle, &respuesta); err != nil {
-					panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error get subgrupo-detalle \"key\"", "status": "400", "log": err})
-				}
-				helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
+			continue
+		}
+		id_subgrupoDetalle = key
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id_subgrupoDetalle, &respuesta); err != nil {
+			panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error get subgrupo-detalle \"key\"", "status": "400", "log": err})
+		}
+		helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
 
-				subgrupo_detalle = respuestaLimpia[0]
-				if subgrupo_detalle["armonizacion_dato"] != nil {
-					dato_armonizacion_str := subgrupo_detalle["armonizacion_dato"].(string)
-					json.Unmarshal([]byte(dato_armonizacion_str), &armonizacion_dato)
-					if armonizacion_dato[index] != nil {
-						aux := make(map[string]interface{})
-						aux["armonizacionPED"] = armonizacion
-						aux["armonizacionPI"] = armonizacionPI
-						armonizacion_dato[index] = aux
-					}
-					c, _ := json.Marshal(armonizacion_dato)
-					strArmonizacion := string(c)
-					subgrupo_detalle["armonizacion_dato"] = strArmonizacion
-
-				}
-				if subgrupo_detalle["dato_plan"] != nil {
-					actividad := make(map[string]interface{})
-					dato_plan_str := subgrupo_detalle["dato_plan"].(string)
-					json.Unmarshal([]byte(dato_plan_str), &dato_plan)
-					for index_actividad := range dato_plan {
-						if index_actividad == index {
-							aux_actividad := dato_plan[index_actividad].(map[string]interface{})
-							actividad["index"] = index_actividad
-							actividad["dato"] = element
-							actividad["activo"] = aux_actividad["activo"]
-							if aux_actividad["observacion"] != nil {
-								actividad["observacion"] = aux_actividad["observacion"]
-							}
-							dato_plan[index_actividad] = actividad
-						}
-					}
-					b, _ := json.Marshal(dato_plan)
-					str := string(b)
-					subgrupo_detalle["dato_plan"] = str
-				}
-				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupo_detalle["_id"].(string), "PUT", &res, subgrupo_detalle); err != nil {
-					panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
-				}
-
+		subgrupo_detalle = respuestaLimpia[0]
+		if subgrupo_detalle["armonizacion_dato"] != nil {
+			dato_armonizacion_str := subgrupo_detalle["armonizacion_dato"].(string)
+			json.Unmarshal([]byte(dato_armonizacion_str), &armonizacion_dato)
+			if armonizacion_dato[index] != nil {
+				aux := make(map[string]interface{})
+				aux["armonizacionPED"] = armonizacion
+				aux["armonizacionPI"] = armonizacionPI
+				armonizacion_dato[index] = aux
 			}
+			c, _ := json.Marshal(armonizacion_dato)
+			strArmonizacion := string(c)
+			subgrupo_detalle["armonizacion_dato"] = strArmonizacion
+
+		}
+		if subgrupo_detalle["dato_plan"] != nil {
+			actividad := make(map[string]interface{})
+			dato_plan_str := subgrupo_detalle["dato_plan"].(string)
+			json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+			for index_actividad := range dato_plan {
+				if index_actividad == index {
+					aux_actividad := dato_plan[index_actividad].(map[string]interface{})
+					actividad["index"] = index_actividad
+					actividad["dato"] = element
+					actividad["activo"] = aux_actividad["activo"]
+					if aux_actividad["observacion"] != nil {
+						actividad["observacion"] = aux_actividad["observacion"]
+					}
+					dato_plan[index_actividad] = actividad
+				}
+			}
+			b, _ := json.Marshal(dato_plan)
+			str := string(b)
+			subgrupo_detalle["dato_plan"] = str
+		}
+		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupo_detalle["_id"].(string), "PUT", &res, subgrupo_detalle); err != nil {
+			panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
 		}
 
 	}
