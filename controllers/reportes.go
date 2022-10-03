@@ -399,7 +399,7 @@ func (c *ReportesController) PlanAccionAnual() {
 					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
 				}`)
 
-				consolidadoExcelPlanAnual.MergeCell(sheetName, "A1", "N1")
+				consolidadoExcelPlanAnual.MergeCell(sheetName, "A1", "O1")
 				consolidadoExcelPlanAnual.MergeCell(sheetName, "A2", "C2")
 				consolidadoExcelPlanAnual.MergeCell(sheetName, "D2", "F2")
 				consolidadoExcelPlanAnual.MergeCell(sheetName, "G2", "G3")
@@ -407,6 +407,7 @@ func (c *ReportesController) PlanAccionAnual() {
 				consolidadoExcelPlanAnual.MergeCell(sheetName, "I2", "I3")
 				consolidadoExcelPlanAnual.MergeCell(sheetName, "J2", "J3")
 				consolidadoExcelPlanAnual.MergeCell(sheetName, "K2", "K3")
+				consolidadoExcelPlanAnual.MergeCell(sheetName, "O2", "O3")
 				consolidadoExcelPlanAnual.MergeCell(sheetName, "L2", "N2")
 				consolidadoExcelPlanAnual.SetRowHeight(sheetName, 1, 20)
 				consolidadoExcelPlanAnual.SetRowHeight(sheetName, 2, 20)
@@ -416,9 +417,10 @@ func (c *ReportesController) PlanAccionAnual() {
 				consolidadoExcelPlanAnual.SetColWidth(sheetName, "L", "N", 50)
 				consolidadoExcelPlanAnual.SetColWidth(sheetName, "H", "I", 20)
 				consolidadoExcelPlanAnual.SetColWidth(sheetName, "J", "K", 80)
+				consolidadoExcelPlanAnual.SetColWidth(sheetName, "O", "O", 50)
 				consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A1", "K1", stylehead)
-				consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A2", "N2", styletitles)
-				consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A3", "N3", styletitles)
+				consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A2", "O2", styletitles)
+				consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A3", "O3", styletitles)
 				tituloExcel := fmt.Sprint("Plan de acción 2023 ", unidadNombre)
 				// encabezado excel
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "A1", tituloExcel)
@@ -439,6 +441,7 @@ func (c *ReportesController) PlanAccionAnual() {
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "L3", "Nombre")
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "M3", "Fórmula")
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "N3", "Meta")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "O3", "Producto esperado")
 				for excelPlan := 0; excelPlan < len(arregloPlanAnual); excelPlan++ {
 					datosExcelPlan := arregloPlanAnual[excelPlan]
 					armoPED := datosExcelPlan["datosArmonizacion"].([]map[string]interface{})
@@ -472,7 +475,7 @@ func (c *ReportesController) PlanAccionAnual() {
 
 						// cuerpo del excel
 						consolidadoExcelPlanAnual.SetCellValue(sheetName, "A"+fmt.Sprint(contadorLineamiento), auxLineamiento)
-						consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A"+fmt.Sprint(contadorLineamiento), "N"+fmt.Sprint(contadorLineamiento), stylecontent)
+						consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A"+fmt.Sprint(contadorLineamiento), "O"+fmt.Sprint(contadorLineamiento), stylecontent)
 						consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorLineamiento, 70)
 
 						metas := datosArmo["meta"]
@@ -574,6 +577,7 @@ func (c *ReportesController) PlanAccionAnual() {
 					consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(contadorDataGeneral), datosComplementarios["Periodo de ejecución"])
 					consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(contadorDataGeneral), datosComplementarios["Actividad general"])
 					consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(contadorDataGeneral), datosComplementarios["Tareas"])
+					consolidadoExcelPlanAnual.SetCellValue(sheetName, "O"+fmt.Sprint(contadorDataGeneral), datosComplementarios["Producto esperado "])
 
 					if contadorLineamientoGeneralOut > contadorFactorGeneralOut {
 						contadorFactorGeneralOut = contadorLineamientoGeneralOut
@@ -596,6 +600,7 @@ func (c *ReportesController) PlanAccionAnual() {
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "I"+fmt.Sprint(contadorDataGeneral), "I"+fmt.Sprint(contadorLineamientoGeneralOut))
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "J"+fmt.Sprint(contadorDataGeneral), "J"+fmt.Sprint(contadorLineamientoGeneralOut))
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "K"+fmt.Sprint(contadorDataGeneral), "K"+fmt.Sprint(contadorLineamientoGeneralOut))
+					consolidadoExcelPlanAnual.MergeCell(sheetName, "O"+fmt.Sprint(contadorDataGeneral), "O"+fmt.Sprint(contadorLineamientoGeneralOut))
 
 					indicadores := datosComplementarios["indicadores"].(map[string]interface{})
 					contadorIndicadores := contadorDataGeneral
@@ -643,6 +648,7 @@ func (c *ReportesController) PlanAccionAnual() {
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "I"+fmt.Sprint(contadorDataGeneral), "I"+fmt.Sprint(contadorIndicadores))
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "J"+fmt.Sprint(contadorDataGeneral), "J"+fmt.Sprint(contadorIndicadores))
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "K"+fmt.Sprint(contadorDataGeneral), "K"+fmt.Sprint(contadorIndicadores))
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "O"+fmt.Sprint(contadorDataGeneral), "O"+fmt.Sprint(contadorIndicadores))
 					} else {
 						contadorIndicadores = contadorLineamientoGeneralOut
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "A"+fmt.Sprint(contadorLineamientoGeneralOut), "A"+fmt.Sprint(contadorLineamientoGeneralOut))
@@ -656,6 +662,7 @@ func (c *ReportesController) PlanAccionAnual() {
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "I"+fmt.Sprint(contadorDataGeneral), "I"+fmt.Sprint(contadorLineamientoGeneralOut))
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "J"+fmt.Sprint(contadorDataGeneral), "J"+fmt.Sprint(contadorLineamientoGeneralOut))
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "K"+fmt.Sprint(contadorDataGeneral), "K"+fmt.Sprint(contadorLineamientoGeneralOut))
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "O"+fmt.Sprint(contadorDataGeneral), "O"+fmt.Sprint(contadorLineamientoGeneralOut))
 					}
 
 					contadorDataGeneral = contadorIndicadores + 1
