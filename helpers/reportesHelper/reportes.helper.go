@@ -56,21 +56,19 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 	var tree []map[string]interface{}
 	var requeridos []map[string]interface{}
 	armonizacion := make([]map[string]interface{}, 1)
-	var res map[string]interface{}
-	var resLimpia []map[string]interface{}
 	var result [][]map[string]interface{}
 	var nodo map[string]interface{}
 
 	for i := 0; i < len(hijos); i++ {
 		if hijos[i]["activo"] == true {
-
+			var resLimpia []map[string]interface{}
+			var res map[string]interface{}
 			forkData := make(map[string]interface{})
 			var id string
 			forkData["id"] = hijos[i]["_id"]
 			forkData["nombre"] = hijos[i]["nombre"]
 			jsonString, _ := json.Marshal(hijos[i]["_id"])
 			json.Unmarshal(jsonString, &id)
-
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id, &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &resLimpia)
 				nodo = resLimpia[0]
@@ -78,7 +76,6 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 					//forkData["type"] = ""
 					//forkData["required"] = ""
 				} else {
-
 					var deta map[string]interface{}
 					dato_str := nodo["dato"].(string)
 					json.Unmarshal([]byte(dato_str), &deta)
@@ -133,14 +130,14 @@ func contains(s []string, e string) bool {
 
 func convert(valid []string, index string) ([]map[string]interface{}, map[string]interface{}) {
 	var validadores []map[string]interface{}
-	var res map[string]interface{}
-	var subgrupo_detalle []map[string]interface{}
-	var dato_plan map[string]interface{}
 	var actividad map[string]interface{}
 	var dato_armonizacion map[string]interface{}
 	armonizacion := make(map[string]interface{})
 	forkData := make(map[string]interface{})
 	for _, v := range valid {
+		var res map[string]interface{}
+		var subgrupo_detalle []map[string]interface{}
+		var dato_plan map[string]interface{}
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+v, &res); err == nil {
 			helpers.LimpiezaRespuestaRefactor(res, &subgrupo_detalle)
 
@@ -160,9 +157,13 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 						actividad = dato_plan[index].(map[string]interface{})
 						if v != "" {
 							forkData[v] = actividad["dato"]
+							if forkData[v] == nil {
+								forkData[v] = ""
+							}
 							if actividad["observacion"] != nil {
 								keyObservacion := v + "_o"
 								forkData[keyObservacion] = getObservacion(actividad)
+
 							} else {
 								keyObservacion := v + "_o"
 								forkData[keyObservacion] = "Sin observación"
@@ -265,14 +266,16 @@ func ArbolArmonizacion(armonizacion string) []map[string]interface{} {
 		var respuestaSubgrupo map[string]interface{}
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+armonizacionPED[i], &respuesta); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaSubgrupo)
-			if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "lineamiento") {
-				lineamientos = append(lineamientos, respuestaSubgrupo)
-			}
-			if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "meta") {
-				metas = append(metas, respuestaSubgrupo)
-			}
-			if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "estrategia") {
-				estrategias = append(estrategias, respuestaSubgrupo)
+			if len(respuestaSubgrupo) > 0 {
+				if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "lineamiento") {
+					lineamientos = append(lineamientos, respuestaSubgrupo)
+				}
+				if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "meta") {
+					metas = append(metas, respuestaSubgrupo)
+				}
+				if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "estrategia") {
+					estrategias = append(estrategias, respuestaSubgrupo)
+				}
 			}
 		} else {
 			panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
@@ -422,14 +425,16 @@ func ArbolArmonizacionPI(armonizacion interface{}) []map[string]interface{} {
 			var respuestaSubgrupo map[string]interface{}
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+armonizacionPI[i], &respuesta); err == nil {
 				helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaSubgrupo)
-				if (strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "eje") && strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "transformador")) || strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "nivel 1") {
-					factores = append(factores, respuestaSubgrupo)
-				}
-				if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "lineamientos") || strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "nivel 2") {
-					lineamientos = append(lineamientos, respuestaSubgrupo)
-				}
-				if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "estrategia") || strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "nivel 3") {
-					estrategias = append(estrategias, respuestaSubgrupo)
+				if len(respuestaSubgrupo) > 0 {
+					if (strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "eje") && strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "transformador")) || strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "nivel 1") {
+						factores = append(factores, respuestaSubgrupo)
+					}
+					if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "lineamientos") || strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "nivel 2") {
+						lineamientos = append(lineamientos, respuestaSubgrupo)
+					}
+					if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "estrategia") || strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "nivel 3") {
+						estrategias = append(estrategias, respuestaSubgrupo)
+					}
 				}
 			} else {
 				panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
@@ -596,7 +601,7 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 	var recursos []map[string]interface{}
 	var contratistas []map[string]interface{}
 	var docentes map[string]interface{}
-
+	var data_identi []map[string]interface{}
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+planId, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &identificaciones)
 	}
@@ -606,7 +611,6 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 		if strings.Contains(strings.ToLower(identificacion["nombre"].(string)), "recurso") {
 			if identificacion["dato"] != nil {
 				var dato map[string]interface{}
-				var data_identi []map[string]interface{}
 				dato_str := identificacion["dato"].(string)
 				json.Unmarshal([]byte(dato_str), &dato)
 				for key := range dato {
@@ -714,7 +718,7 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 }
 
 func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[string]interface{}, contratistas []map[string]interface{}, docentes map[string]interface{}) *excelize.File {
-
+	fmt.Println("Recursos 2 ", recursos)
 	stylecontent, _ := consolidadoExcelPlanAnual.NewStyle(`{
 					"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
 					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
@@ -881,7 +885,7 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 	contador++
 	contador++
 
-	if docentes != nil {
+	/*if docentes != nil {
 		infoDocentes := TotalDocentes(docentes)
 		rubros := docentes["rubros"].([]map[string]interface{})
 		var respuestaRubro map[string]interface{}
@@ -905,9 +909,12 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 
 		//Cuerpo Tabla
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Prima de Servicios"))
+		fmt.Println("asd ", codigoRubrosDocentes(rubros, "prima de Servicios"))
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro/"+codigoRubrosDocentes(rubros, "Prima de Servicios"), &respuestaRubro); err == nil {
 			if respuestaRubro["Body"] != nil {
+
 				aux := respuestaRubro["Body"].(map[string]interface{})
+				fmt.Println(aux)
 				consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), aux["Nombre"])
 			}
 		}
@@ -919,6 +926,7 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		contador++
 
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Prima de navidad"))
+		fmt.Println("iuy ", codigoRubrosDocentes(rubros, "Prima de navidad"))
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro/"+codigoRubrosDocentes(rubros, "Prima de navidad"), &respuestaRubro); err == nil {
 			if respuestaRubro["Body"] != nil {
 				aux := respuestaRubro["Body"].(map[string]interface{})
@@ -1030,7 +1038,7 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
 		contador++
 
-	}
+	}*/
 
 	return consolidadoExcelPlanAnual
 
