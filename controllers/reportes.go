@@ -379,8 +379,7 @@ func (c *ReportesController) PlanAccionAnual() {
 				//contadorEstrategiaPI := 4
 				contadorDataGeneral := 4
 				unidadNombre := arregloPlanAnual[0]["nombreUnidad"]
-				nombreHoja := fmt.Sprint(nombreUnidad)
-				sheetName := nombreHoja
+				sheetName := "Actividades del plan"
 				indexPlan := consolidadoExcelPlanAnual.NewSheet(sheetName)
 
 				stylehead, _ := consolidadoExcelPlanAnual.NewStyle(`{
@@ -420,9 +419,7 @@ func (c *ReportesController) PlanAccionAnual() {
 				consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A1", "K1", stylehead)
 				consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A2", "N2", styletitles)
 				consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A3", "N3", styletitles)
-
 				tituloExcel := fmt.Sprint("Plan de acción 2022 ", unidadNombre)
-
 				// encabezado excel
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "A1", tituloExcel)
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "A2", "Armonización PED")
@@ -665,9 +662,7 @@ func (c *ReportesController) PlanAccionAnual() {
 					contadorLineamiento = contadorIndicadores + 1
 					contadorFactor = contadorIndicadores + 1
 					consolidadoExcelPlanAnual.SetActiveSheet(indexPlan)
-
 				}
-
 				consolidadoExcelPlanAnual = reporteshelper.TablaIdentificaciones(consolidadoExcelPlanAnual, plan_id)
 
 			}
