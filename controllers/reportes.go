@@ -419,7 +419,7 @@ func (c *ReportesController) PlanAccionAnual() {
 				consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A1", "K1", stylehead)
 				consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A2", "N2", styletitles)
 				consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A3", "N3", styletitles)
-				tituloExcel := fmt.Sprint("Plan de acción 2022 ", unidadNombre)
+				tituloExcel := fmt.Sprint("Plan de acción 2023 ", unidadNombre)
 				// encabezado excel
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "A1", tituloExcel)
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "A2", "Armonización PED")
