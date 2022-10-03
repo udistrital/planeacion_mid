@@ -718,7 +718,6 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 }
 
 func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[string]interface{}, contratistas []map[string]interface{}, docentes map[string]interface{}) *excelize.File {
-	fmt.Println("Recursos 2 ", recursos)
 	stylecontent, _ := consolidadoExcelPlanAnual.NewStyle(`{
 					"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
 					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]

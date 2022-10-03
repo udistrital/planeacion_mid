@@ -443,7 +443,6 @@ func (c *ReportesController) PlanAccionAnual() {
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "M3", "Fórmula")
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "N3", "Meta")
 				for excelPlan := 0; excelPlan < len(arregloPlanAnual); excelPlan++ {
-					fmt.Println("ENTRA AL FOR")
 					datosExcelPlan := arregloPlanAnual[excelPlan]
 					armoPED := datosExcelPlan["datosArmonizacion"].([]map[string]interface{})
 					armoPI := datosExcelPlan["datosArmonizacionPI"].([]map[string]interface{})
@@ -469,14 +468,11 @@ func (c *ReportesController) PlanAccionAnual() {
 
 					_ = contadorEstrategiaPEDIn
 					_ = contadorEstrategiaPIIn
-					fmt.Println(armoPED)
-					fmt.Println("ARMO PED ", len(armoPED))
 					for i := 0; i < len(armoPED); i++ {
 						datosArmo := armoPED[i]
 						auxLineamiento := datosArmo["nombreLineamiento"]
 						contadorLineamientoGeneralIn = contadorLineamiento
-						fmt.Println(auxLineamiento)
-						fmt.Println("CONTADORLINEAMIENTO ", contadorLineamiento)
+
 						// cuerpo del excel
 						consolidadoExcelPlanAnual.SetCellValue(sheetName, "A"+fmt.Sprint(contadorLineamiento), auxLineamiento)
 						consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A"+fmt.Sprint(contadorLineamiento), "N"+fmt.Sprint(contadorLineamiento), stylecontent)
@@ -486,12 +482,9 @@ func (c *ReportesController) PlanAccionAnual() {
 
 						contadorMetas := contadorLineamiento
 
-						fmt.Println(metas)
-						fmt.Println("METAS", len(metas.([]map[string]interface{})))
 						for j := 0; j < len(metas.([]map[string]interface{})); j++ {
 							auxMeta := metas.([]map[string]interface{})[j]
 							contadorMetaGeneralIn = contadorLineamiento
-							fmt.Println("contadorMetas ", contadorMetas)
 							consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contadorMetas), auxMeta["nombreMeta"])
 							consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contadorMetas), "B"+fmt.Sprint(contadorMetas), stylecontent)
 
@@ -503,12 +496,9 @@ func (c *ReportesController) PlanAccionAnual() {
 
 							estrategias := auxMeta["estrategias"].([]map[string]interface{})
 							contadorEstrategias := contadorMetas
-							fmt.Println(estrategias)
-							fmt.Println("ESTRATEGIAS ", len(estrategias))
 							for k := 0; k < len(estrategias); k++ {
 								auxEstrategia := estrategias[k]
 								contadorEstrategiaPEDIn = contadorMetas
-								fmt.Println("contadorEstrategias ", contadorEstrategias)
 								consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contadorEstrategias), auxEstrategia["descripcionEstrategia"])
 								consolidadoExcelPlanAnual.SetCellStyle(sheetName, "C"+fmt.Sprint(contadorEstrategias), "C"+fmt.Sprint(contadorEstrategias), stylecontent)
 
@@ -520,7 +510,6 @@ func (c *ReportesController) PlanAccionAnual() {
 							}
 
 							contadorEstrategias = contadorMetas
-							fmt.Println("contadorMetaGeneralIn ", contadorMetaGeneralIn)
 							consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorMetaGeneralIn), "B"+fmt.Sprint(contadorMetaGeneralOut))
 
 						}
@@ -532,13 +521,10 @@ func (c *ReportesController) PlanAccionAnual() {
 						contadorLineamiento = contadorLineamientoGeneralOut + 1
 
 					}
-					fmt.Println(armoPI)
-					fmt.Println("ARMO PI ", len(armoPI))
 					for i := 0; i < len(armoPI); i++ {
 						datosArmo := armoPI[i]
 						auxFactor := datosArmo["nombreFactor"]
 						contadorFactorGeneralIn = contadorFactor
-						fmt.Println("contadorFactor ", contadorFactor)
 						// cuerpo del excel
 						consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contadorFactor), auxFactor)
 						consolidadoExcelPlanAnual.SetCellStyle(sheetName, "D"+fmt.Sprint(contadorFactor), "N"+fmt.Sprint(contadorFactor), stylecontent)
@@ -547,12 +533,9 @@ func (c *ReportesController) PlanAccionAnual() {
 						lineamientos := datosArmo["lineamientos"]
 						contadorLineamientos := contadorFactor
 
-						fmt.Println(lineamientos)
-						fmt.Println("lineamientos ", len(lineamientos.([]map[string]interface{})))
 						for j := 0; j < len(lineamientos.([]map[string]interface{})); j++ {
 							auxLineamiento := lineamientos.([]map[string]interface{})[j]
 							contadorLineamientoPIIn = contadorFactor
-							fmt.Println("contadorLineamientos ", contadorLineamientos)
 							consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contadorLineamientos), auxLineamiento["nombreLineamiento"])
 							consolidadoExcelPlanAnual.SetCellStyle(sheetName, "E"+fmt.Sprint(contadorLineamientos), "E"+fmt.Sprint(contadorLineamientos), stylecontent)
 
@@ -564,12 +547,9 @@ func (c *ReportesController) PlanAccionAnual() {
 
 							estrategiasPI := auxLineamiento["estrategias"].([]map[string]interface{})
 							contadorEstrategias := contadorLineamientos
-							fmt.Println(estrategiasPI)
-							fmt.Println("estrategiasPI ", len(estrategiasPI))
 							for k := 0; k < len(estrategiasPI); k++ {
 								auxEstrategia := estrategiasPI[k]
 								contadorEstrategiaPEDIn = contadorLineamientos
-								fmt.Println("contadorEstrategias ", contadorEstrategias)
 								consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(contadorEstrategias), auxEstrategia["descripcionEstrategia"])
 								consolidadoExcelPlanAnual.SetCellStyle(sheetName, "F"+fmt.Sprint(contadorEstrategias), "F"+fmt.Sprint(contadorEstrategias), stylecontent)
 
@@ -592,7 +572,6 @@ func (c *ReportesController) PlanAccionAnual() {
 						contadorFactor = contadorFactorGeneralOut + 1
 
 					}
-					fmt.Println("contadorDataGeneral ", contadorDataGeneral)
 					consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(contadorDataGeneral), datosExcelPlan["numeroActividad"])
 					consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(contadorDataGeneral), datosComplementarios["Ponderación de la actividad"])
 					consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(contadorDataGeneral), datosComplementarios["Periodo de ejecución"])
@@ -623,16 +602,12 @@ func (c *ReportesController) PlanAccionAnual() {
 
 					indicadores := datosComplementarios["indicadores"].(map[string]interface{})
 					contadorIndicadores := contadorDataGeneral
-					fmt.Println(indicadores)
-					fmt.Println("indicadores ", len(indicadores))
 					for id, indicador := range indicadores {
 						_ = id
 						auxIndicador := indicador
 						var nombreIndicador interface{}
 						var formula interface{}
 						var meta interface{}
-						fmt.Println(auxIndicador)
-						fmt.Println("auxIndicador ", len(auxIndicador.(map[string]interface{})))
 						for key, element := range auxIndicador.(map[string]interface{}) {
 							if strings.Contains(strings.ToLower(key), "nombre") {
 								nombreIndicador = element
@@ -645,7 +620,6 @@ func (c *ReportesController) PlanAccionAnual() {
 							}
 
 						}
-						fmt.Println("contadorIndicadores ", contadorIndicadores)
 						consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(contadorIndicadores), nombreIndicador)
 						consolidadoExcelPlanAnual.SetCellValue(sheetName, "M"+fmt.Sprint(contadorIndicadores), formula)
 						consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(contadorIndicadores), meta)
