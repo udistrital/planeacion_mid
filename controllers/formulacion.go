@@ -136,11 +136,13 @@ func (c *FormulacionController) GuardarActividad() {
 	var resPlan map[string]interface{}
 	var plan map[string]interface{}
 	var armonizacionExecuted bool = false
-	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
+	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+	
 	entrada = body["entrada"].(map[string]interface{})
 	armonizacion := body["armo"]
 	armonizacionPI := body["armoPI"]
+	maxIndex := formulacionhelper.GetIndexActividad(entrada)
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &resPlan); err != nil {
 		panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error get Plan \"id\"", "status": "400", "log": err})
@@ -169,7 +171,7 @@ func (c *FormulacionController) GuardarActividad() {
 			subgrupo_detalle = respuestaLimpia[0]
 			actividad := make(map[string]interface{})
 
-			if subgrupo_detalle["dato_plan"] == nil {
+			if subgrupo_detalle["dato_plan"] == nil && maxIndex == 0 {
 				actividad["index"] = 1
 				actividad["dato"] = element
 				actividad["activo"] = true
@@ -193,18 +195,6 @@ func (c *FormulacionController) GuardarActividad() {
 			} else {
 				dato_plan_str := subgrupo_detalle["dato_plan"].(string)
 				json.Unmarshal([]byte(dato_plan_str), &dato_plan)
-				maxIndex := 0
-
-				for key2 := range dato_plan {
-					index, err := strconv.Atoi(key2)
-					if err != nil {
-						log.Panic(err)
-					}
-					if index > maxIndex {
-						maxIndex = index
-					}
-
-				}
 
 				actividad["index"] = maxIndex + 1
 				actividad["dato"] = element
@@ -357,12 +347,16 @@ func (c *FormulacionController) ActualizarActividad() {
 			subgrupo_detalle["armonizacion_dato"] = strArmonizacion
 
 		}
+
+		nuevoDato := true
 		if subgrupo_detalle["dato_plan"] != nil {
 			actividad := make(map[string]interface{})
 			dato_plan_str := subgrupo_detalle["dato_plan"].(string)
 			json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+
 			for index_actividad := range dato_plan {
 				if index_actividad == index {
+					nuevoDato = false
 					aux_actividad := dato_plan[index_actividad].(map[string]interface{})
 					actividad["index"] = index_actividad
 					actividad["dato"] = element
@@ -373,6 +367,14 @@ func (c *FormulacionController) ActualizarActividad() {
 					dato_plan[index_actividad] = actividad
 				}
 			}
+
+			if nuevoDato {
+				actividad["index"] = index
+				actividad["dato"] = element
+				actividad["activo"] = true
+				dato_plan[index] = actividad
+			}
+
 			b, _ := json.Marshal(dato_plan)
 			str := string(b)
 			subgrupo_detalle["dato_plan"] = str
