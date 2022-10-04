@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
@@ -692,4 +693,42 @@ func VerificarDataIdentificaciones(identificaciones []map[string]interface{}, ti
 		}
 	}
 	return bandera
+}
+
+func GetIndexActividad(entrada map[string]interface{}) int {
+	var respuesta map[string]interface{}
+
+	var respuestaLimpia []map[string]interface{}
+	var subgrupo_detalle map[string]interface{}
+	dato_plan := make(map[string]interface{})
+	var maxIndex = 0
+
+	for key, element := range entrada {
+		if element != "" {
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+key, &respuesta); err != nil {
+				panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error get subgrupo-detalle \"key\"", "status": "400", "log": err})
+			}
+			helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
+			subgrupo_detalle = respuestaLimpia[0]
+
+			dato_plan_str := subgrupo_detalle["dato_plan"].(string)
+			json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+
+			if subgrupo_detalle["dato_plan"] == nil{
+				maxIndex = 0
+			} else {
+				for key2 := range dato_plan {
+					index, err := strconv.Atoi(key2)
+					if err != nil {
+						log.Panic(err)
+					}
+					if index > maxIndex {
+						maxIndex = index
+					}
+				}
+			}
+		}
+	}
+	
+	return maxIndex
 }
