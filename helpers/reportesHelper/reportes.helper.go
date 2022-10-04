@@ -825,8 +825,8 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		aux := contratistas[i]
 
 		total = total + aux["cantidad"].(float64)
-
-		strValorTotal := strings.TrimLeft(aux["valorTotal"].(string), "$")
+		aux1 := fmt.Sprintf("%v", aux["valorTotal"])
+		strValorTotal := strings.TrimLeft(aux1, "$")
 		strValorTotal = strings.ReplaceAll(strValorTotal, ",", "")
 		arrValorTotal := strings.Split(strValorTotal, ".")
 		auxValorTotal, err := strconv.Atoi(arrValorTotal[0])
@@ -840,14 +840,16 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 			consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "B"+fmt.Sprint(contador), perfil["Nombre"])
 		}
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), aux["cantidad"])
-		strValor := strings.TrimLeft(aux["valorTotal"].(string), "$")
+		aux2 := fmt.Sprintf("%v", aux["valorTotal"])
+		strValor := strings.TrimLeft(aux2, "$")
 		strValor = strings.ReplaceAll(strValor, ",", "")
 		arrValor := strings.Split(strValor, ".")
 		auxValor, err := strconv.Atoi(arrValor[0])
 		if err == nil {
 			consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), auxValor)
 		}
-		strValorInc := strings.TrimLeft(aux["valorTotalInc"].(string), "$")
+		aux3 := fmt.Sprintf("%v", aux["valorTotalInc"])
+		strValorInc := strings.TrimLeft(aux3, "$")
 		strValorInc = strings.ReplaceAll(strValorInc, ",", "")
 		arrValorInc := strings.Split(strValorInc, ".")
 		auxValorInc, err := strconv.Atoi(arrValorInc[0])
