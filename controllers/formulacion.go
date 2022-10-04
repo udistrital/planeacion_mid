@@ -347,12 +347,16 @@ func (c *FormulacionController) ActualizarActividad() {
 			subgrupo_detalle["armonizacion_dato"] = strArmonizacion
 
 		}
+
+		nuevoDato := true
 		if subgrupo_detalle["dato_plan"] != nil {
 			actividad := make(map[string]interface{})
 			dato_plan_str := subgrupo_detalle["dato_plan"].(string)
 			json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+
 			for index_actividad := range dato_plan {
 				if index_actividad == index {
+					nuevoDato = false
 					aux_actividad := dato_plan[index_actividad].(map[string]interface{})
 					actividad["index"] = index_actividad
 					actividad["dato"] = element
@@ -363,6 +367,14 @@ func (c *FormulacionController) ActualizarActividad() {
 					dato_plan[index_actividad] = actividad
 				}
 			}
+
+			if nuevoDato {
+				actividad["index"] = index
+				actividad["dato"] = element
+				actividad["activo"] = true
+				dato_plan[index] = actividad
+			}
+
 			b, _ := json.Marshal(dato_plan)
 			str := string(b)
 			subgrupo_detalle["dato_plan"] = str
