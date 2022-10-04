@@ -290,6 +290,7 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 					dato_plan_str := subgrupo_detalle[0]["dato_plan"].(string)
 					json.Unmarshal([]byte(dato_plan_str), &dato_plan)
 					if dato_plan[index] == nil {
+						forkData[v] = ""
 					} else {
 						actividad = dato_plan[index].(map[string]interface{})
 						if v != "" {
