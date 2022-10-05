@@ -726,11 +726,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 	consolidadoExcelPlanAnual := excelize.NewFile()
 	nombre := c.Ctx.Input.Param(":nombre")
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
-	fmt.Println(body["tipo_plan_id"])
-	fmt.Println(body["vigencia"])
-	fmt.Println(body["estado_plan_id"])
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",nombre:"+nombre, &respuesta); err == nil {
-		fmt.Println("RES ", respuesta)
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
 
 		for planes := 0; planes < len(planesFilter); planes++ {
@@ -1227,10 +1223,10 @@ func (c *ReportesController) Necesidades() {
 	var planes []map[string]interface{}
 	var recursos []map[string]interface{}
 	var recursosGeneral []map[string]interface{}
-	var docentesGeneral map[string]interface{}
+	// var docentesGeneral map[string]interface{}
 	docentesPregrado := make(map[string]interface{})
 	docentesPosgrado := make(map[string]interface{})
-	var arrDataDocentes []map[string]interface{}
+	// var arrDataDocentes []map[string]interface{}
 	nombre := c.Ctx.Input.Param(":nombre")
 
 	docentesPregrado["tco"] = 0
@@ -1245,19 +1241,20 @@ func (c *ReportesController) Necesidades() {
 
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
-	primaServicios := 0
-	primaNavidad := 0
-	primaVacaciones := 0
-	bonificacion := 0
-	interesesCesantias := 0
-	cesantiasPublicas := 0
-	cesantiasPrivadas := 0
-	salud := 0
-	pensionesPublicas := 0
-	pensionesPrivadas := 0
-	arl := 0
-	caja := 0
-	icbf := 0
+	// Comentariado temporalmente por no uso de docentes
+	// primaServicios := 0
+	// primaNavidad := 0
+	// primaVacaciones := 0
+	// bonificacion := 0
+	// interesesCesantias := 0
+	// cesantiasPublicas := 0
+	// cesantiasPrivadas := 0
+	// salud := 0
+	// pensionesPublicas := 0
+	// pensionesPrivadas := 0
+	// arl := 0
+	// caja := 0
+	// icbf := 0
 
 	necesidadesExcel := excelize.NewFile()
 	stylecontent, _ := necesidadesExcel.NewStyle(`{
@@ -1291,7 +1288,9 @@ func (c *ReportesController) Necesidades() {
 	necesidadesExcel.MergeCell("Necesidades", "A3", "F3")
 	necesidadesExcel.MergeCell("Necesidades", "A3", "A4")
 
-	necesidadesExcel.SetColWidth("Necesidades", "A", "F", 30)
+	necesidadesExcel.SetColWidth("Necesidades", "A", "c", 30)
+	necesidadesExcel.SetColWidth("Necesidades", "D", "D", 50)
+	necesidadesExcel.SetColWidth("Necesidades", "E", "F", 20)
 
 	necesidadesExcel.SetCellValue("Necesidades", "A1", "Necesidades Presupuestales")
 	necesidadesExcel.SetCellStyle("Necesidades", "A1", "F1", styletitles)
@@ -1304,14 +1303,21 @@ func (c *ReportesController) Necesidades() {
 	necesidadesExcel.SetCellValue("Necesidades", "A5", "Código del rubro")
 	necesidadesExcel.SetCellValue("Necesidades", "B5", "Nombre del rubro")
 	necesidadesExcel.SetCellValue("Necesidades", "C5", "Valor")
-	necesidadesExcel.SetCellStyle("Necesidades", "A5", "C5", stylehead)
+	necesidadesExcel.SetCellValue("Necesidades", "D5", "Dependencias")
+	necesidadesExcel.SetCellStyle("Necesidades", "A5", "D5", stylehead)
 	necesidadesExcel.SetRowHeight("Necesidades", 5, 35)
 	contador := 6
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",nombre:"+nombre, &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planes)
 		for i := 0; i < len(planes); i++ {
-			var docentes map[string]interface{}
+			// var docentes map[string]interface{}
+			var aux map[string]interface{}
+			var dependencia_nombre string
+			dependencia := planes[i]["dependencia_id"]
+			if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia/"+dependencia.(string), &aux); err == nil {
+				dependencia_nombre = aux["Nombre"].(string)
+			}
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+planes[i]["_id"].(string), &respuestaIdentificaciones); err == nil {
 				helpers.LimpiezaRespuestaRefactor(respuestaIdentificaciones, &identificaciones)
 				for i := 0; i < len(identificaciones); i++ {
@@ -1331,7 +1337,9 @@ func (c *ReportesController) Necesidades() {
 							recursos = data_identi
 
 						}
-					} else if strings.Contains(strings.ToLower(identificacion["nombre"].(string)), "docente") {
+					}
+					// comentariado temporalmente por no uso de docentes
+					/*else if strings.Contains(strings.ToLower(identificacion["nombre"].(string)), "docente") {
 						var dato map[string]interface{}
 						var data_identi []map[string]interface{}
 						if identificacion["dato"] != nil && identificacion["dato"] != "{}" {
@@ -1406,16 +1414,29 @@ func (c *ReportesController) Necesidades() {
 
 							docentes = result
 						}
-					}
+					}*/
 				}
 
 				for i := 0; i < len(recursos); i++ {
 					var aux bool
+					var aux1 []string
 					if len(recursosGeneral) == 0 {
 						recursosGeneral = append(recursosGeneral, recursos[i])
+						aux1 = append(aux1, dependencia_nombre)
+						recursosGeneral[len(recursosGeneral)-1]["unidades"] = aux1
 					} else {
 						for j := 0; j < len(recursosGeneral); j++ {
 							if recursosGeneral[j]["codigo"] == recursos[i]["codigo"] {
+								flag := false
+								for k := 0; k < len(recursosGeneral[j]["unidades"].([]string)); k++ {
+									aux2 := recursosGeneral[j]["unidades"].([]string)
+									if aux2[k] == dependencia_nombre {
+										flag = true
+									}
+								}
+								if !flag {
+									recursosGeneral[j]["unidades"] = append(recursosGeneral[j]["unidades"].([]string), dependencia_nombre)
+								}
 								if recursosGeneral[j]["valor"] != nil {
 									var auxValor int
 									var auxValor2 int
@@ -1454,11 +1475,13 @@ func (c *ReportesController) Necesidades() {
 						}
 						if !aux {
 							recursosGeneral = append(recursosGeneral, recursos[i])
+							aux1 = append(aux1, dependencia_nombre)
+							recursosGeneral[len(recursosGeneral)-1]["unidades"] = aux1
 						}
 					}
 				}
-
-				if len(docentes) > 0 {
+				// comentariado temporalmente por no uso de docentes
+				/*if len(docentes) > 0 {
 					docentesGeneral = reporteshelper.TotalDocentes(docentes)
 					primaServicios = primaServicios + docentesGeneral["primaServicios"].(int)
 					primaNavidad = primaNavidad + docentesGeneral["primaNavidad"].(int)
@@ -1474,9 +1497,10 @@ func (c *ReportesController) Necesidades() {
 					caja = caja + docentesGeneral["caja"].(int)
 					icbf = icbf + docentesGeneral["icbf"].(int)
 					arrDataDocentes = append(arrDataDocentes, reporteshelper.GetDataDocentes(docentes, planes[i]["dependencia_id"].(string)))
-				}
+				}*/
 
-				if docentes["rubros"] != nil {
+				// comentariado temporalmente por no uso de docentes
+				/*if docentes["rubros"] != nil {
 					var aux bool
 					var respuestaRubro map[string]interface{}
 					rubros := docentes["rubros"].([]map[string]interface{})
@@ -1928,8 +1952,7 @@ func (c *ReportesController) Necesidades() {
 
 						}
 					}
-				}
-
+				}*/
 			}
 		}
 		/*
@@ -2121,7 +2144,9 @@ func (c *ReportesController) Necesidades() {
 			// }
 		*/
 		//Completado de tablas
+
 		for i := 0; i < len(recursosGeneral); i++ {
+			unidades := ""
 			necesidadesExcel.SetCellValue("Necesidades", "A"+fmt.Sprint(contador), recursosGeneral[i]["codigo"])
 			if recursosGeneral[i]["Nombre"] != nil {
 				necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), recursosGeneral[i]["Nombre"])
@@ -2135,6 +2160,14 @@ func (c *ReportesController) Necesidades() {
 					if err == nil {
 						necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), auxValor)
 					}
+				}
+				if recursosGeneral[i]["unidades"] != nil {
+					aux2 := recursosGeneral[i]["unidades"].([]string)
+					for j := 0; j < len(aux2); j++ {
+						unidades = unidades + aux2[j] + ", "
+					}
+					unidades = strings.TrimRight(unidades, ", ")
+					necesidadesExcel.SetCellValue("Necesidades", "D"+fmt.Sprint(contador), unidades)
 				}
 
 			} else {
@@ -2151,13 +2184,15 @@ func (c *ReportesController) Necesidades() {
 					}
 				}
 			}
-			necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent)
+			necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent)
 			contador++
 		}
 
 		contador++
 		contador++
-		necesidadesExcel.MergeCell("Necesidades", "A"+fmt.Sprint(contador), "F"+fmt.Sprint(contador))
+
+		// comentariado temporalmente por no uso de docentes
+		/*necesidadesExcel.MergeCell("Necesidades", "A"+fmt.Sprint(contador), "F"+fmt.Sprint(contador))
 		necesidadesExcel.MergeCell("Necesidades", "A"+fmt.Sprint(contador), "A"+fmt.Sprint(contador+1))
 
 		necesidadesExcel.SetColWidth("Necesidades", "A", "A", 30)
@@ -2208,7 +2243,7 @@ func (c *ReportesController) Necesidades() {
 			necesidadesExcel.SetCellValue("Necesidades", "I"+fmt.Sprint(contador), arrDataDocentes[i]["valorPos"])
 			necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "I"+fmt.Sprint(contador), stylecontent)
 			contador++
-		}
+		}*/
 
 		buf, _ := necesidadesExcel.WriteToBuffer()
 		strings.NewReader(buf.String())
