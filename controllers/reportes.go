@@ -2207,28 +2207,35 @@ func (c *ReportesController) Necesidades() {
 			contador++
 		}
 
-		contador++
-		contador++
+		contador = 1
 
-		necesidadesExcel.MergeCell("Necesidades", "A"+fmt.Sprint(contador), "B"+fmt.Sprint(contador))
-		necesidadesExcel.MergeCell("Necesidades", "A"+fmt.Sprint(contador), "A"+fmt.Sprint(contador+1))
-		necesidadesExcel.SetCellValue("Necesidades", "A"+fmt.Sprint(contador), "Total de unidades generadas:")
-		necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "B"+fmt.Sprint(contador), stylesubtitles)
-		necesidadesExcel.SetCellStyle("Necesidades", "A200", "F200", stylecontent)
+		necesidadesExcel.NewSheet("Total Unidades")
+
+		necesidadesExcel.MergeCell("Total Unidades", "A", "B")
+		necesidadesExcel.MergeCell("Total Unidades", "A1", "A2")
+
+		necesidadesExcel.SetColWidth("Total Unidades", "A", "B", 30)
+
+		necesidadesExcel.MergeCell("Total Unidades", "A"+fmt.Sprint(contador), "B"+fmt.Sprint(contador))
+		necesidadesExcel.MergeCell("Total Unidades", "A"+fmt.Sprint(contador), "A"+fmt.Sprint(contador+1))
+		necesidadesExcel.SetCellValue("Total Unidades", "A"+fmt.Sprint(contador), "Total de unidades generadas:")
+		necesidadesExcel.SetCellStyle("Total Unidades", "A"+fmt.Sprint(contador), "B"+fmt.Sprint(contador), stylesubtitles)
+		necesidadesExcel.SetCellStyle("Total Unidades", "A"+fmt.Sprint(contador+1), "B"+fmt.Sprint(contador+1), stylesubtitles)
+		necesidadesExcel.SetCellStyle("Total Unidades", "A200", "F200", stylecontent)
 		contador++
 		contador++
-		necesidadesExcel.SetCellValue("Necesidades", "A"+fmt.Sprint(contador), "Total de Unidades Generadas")
-		necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), "Unidades Generadas")
-		necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "B"+fmt.Sprint(contador), stylehead)
+		necesidadesExcel.SetCellValue("Total Unidades", "A"+fmt.Sprint(contador), "Total de Unidades Generadas")
+		necesidadesExcel.SetCellValue("Total Unidades", "B"+fmt.Sprint(contador), "Unidades Generadas")
+		necesidadesExcel.SetCellStyle("Total Unidades", "A"+fmt.Sprint(contador), "B"+fmt.Sprint(contador), stylehead)
 		contador++
 		unid_total := ""
 		for j := 0; j < len(unidades_total); j++ {
 			unid_total = unid_total + unidades_total[j] + ", "
 		}
 		unid_total = strings.TrimRight(unid_total, ", ")
-		necesidadesExcel.SetCellValue("Necesidades", "A"+fmt.Sprint(contador), len(unidades_total))
-		necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), unid_total)
-		necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "B"+fmt.Sprint(contador), stylecontent)
+		necesidadesExcel.SetCellValue("Total Unidades", "A"+fmt.Sprint(contador), len(unidades_total))
+		necesidadesExcel.SetCellValue("Total Unidades", "B"+fmt.Sprint(contador), unid_total)
+		necesidadesExcel.SetCellStyle("Total Unidades", "A"+fmt.Sprint(contador), "B"+fmt.Sprint(contador), stylecontent)
 		// comentariado temporalmente por no uso de docentes
 		/*necesidadesExcel.MergeCell("Necesidades", "A"+fmt.Sprint(contador), "F"+fmt.Sprint(contador))
 		necesidadesExcel.MergeCell("Necesidades", "A"+fmt.Sprint(contador), "A"+fmt.Sprint(contador+1))
