@@ -711,13 +711,12 @@ func GetIndexActividad(entrada map[string]interface{}) int {
 			}
 			helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
 			subgrupo_detalle = respuestaLimpia[0]
-
-			dato_plan_str := subgrupo_detalle["dato_plan"].(string)
-			json.Unmarshal([]byte(dato_plan_str), &dato_plan)
-
+			
 			if subgrupo_detalle["dato_plan"] == nil{
 				maxIndex = 0
-			} else {
+				} else {
+				dato_plan_str := subgrupo_detalle["dato_plan"].(string)
+				json.Unmarshal([]byte(dato_plan_str), &dato_plan)
 				for key2 := range dato_plan {
 					index, err := strconv.Atoi(key2)
 					if err != nil {
