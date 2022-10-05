@@ -1223,6 +1223,7 @@ func (c *ReportesController) Necesidades() {
 	var planes []map[string]interface{}
 	var recursos []map[string]interface{}
 	var recursosGeneral []map[string]interface{}
+	var unidades_total []string
 	// var docentesGeneral map[string]interface{}
 	docentesPregrado := make(map[string]interface{})
 	docentesPosgrado := make(map[string]interface{})
@@ -1307,7 +1308,6 @@ func (c *ReportesController) Necesidades() {
 	necesidadesExcel.SetCellStyle("Necesidades", "A5", "D5", stylehead)
 	necesidadesExcel.SetRowHeight("Necesidades", 5, 35)
 	contador := 6
-
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",nombre:"+nombre, &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planes)
 		for i := 0; i < len(planes); i++ {
@@ -1424,6 +1424,7 @@ func (c *ReportesController) Necesidades() {
 						recursosGeneral = append(recursosGeneral, recursos[i])
 						aux1 = append(aux1, dependencia_nombre)
 						recursosGeneral[len(recursosGeneral)-1]["unidades"] = aux1
+						unidades_total = append(unidades_total, dependencia_nombre)
 					} else {
 						for j := 0; j < len(recursosGeneral); j++ {
 							if recursosGeneral[j]["codigo"] == recursos[i]["codigo"] {
@@ -1436,6 +1437,15 @@ func (c *ReportesController) Necesidades() {
 								}
 								if !flag {
 									recursosGeneral[j]["unidades"] = append(recursosGeneral[j]["unidades"].([]string), dependencia_nombre)
+								}
+								flag1 := false
+								for k := 0; k < len(unidades_total); k++ {
+									if unidades_total[k] == dependencia_nombre {
+										flag1 = true
+									}
+								}
+								if !flag1 {
+									unidades_total = append(unidades_total, dependencia_nombre)
 								}
 								if recursosGeneral[j]["valor"] != nil {
 									var auxValor int
@@ -1474,9 +1484,18 @@ func (c *ReportesController) Necesidades() {
 							}
 						}
 						if !aux {
+							flag := false
 							recursosGeneral = append(recursosGeneral, recursos[i])
 							aux1 = append(aux1, dependencia_nombre)
 							recursosGeneral[len(recursosGeneral)-1]["unidades"] = aux1
+							for k := 0; k < len(unidades_total); k++ {
+								if unidades_total[k] == dependencia_nombre {
+									flag = true
+								}
+							}
+							if !flag {
+								unidades_total = append(unidades_total, dependencia_nombre)
+							}
 						}
 					}
 				}
@@ -2191,6 +2210,25 @@ func (c *ReportesController) Necesidades() {
 		contador++
 		contador++
 
+		necesidadesExcel.MergeCell("Necesidades", "A"+fmt.Sprint(contador), "B"+fmt.Sprint(contador))
+		necesidadesExcel.MergeCell("Necesidades", "A"+fmt.Sprint(contador), "A"+fmt.Sprint(contador+1))
+		necesidadesExcel.SetCellValue("Necesidades", "A"+fmt.Sprint(contador), "Total de unidades generadas:")
+		necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "B"+fmt.Sprint(contador), stylesubtitles)
+		necesidadesExcel.SetCellStyle("Necesidades", "A200", "F200", stylecontent)
+		contador++
+		contador++
+		necesidadesExcel.SetCellValue("Necesidades", "A"+fmt.Sprint(contador), "Total de Unidades Generadas")
+		necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), "Unidades Generadas")
+		necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "B"+fmt.Sprint(contador), stylehead)
+		contador++
+		unid_total := ""
+		for j := 0; j < len(unidades_total); j++ {
+			unid_total = unid_total + unidades_total[j] + ", "
+		}
+		unid_total = strings.TrimRight(unid_total, ", ")
+		necesidadesExcel.SetCellValue("Necesidades", "A"+fmt.Sprint(contador), len(unidades_total))
+		necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), unid_total)
+		necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "B"+fmt.Sprint(contador), stylecontent)
 		// comentariado temporalmente por no uso de docentes
 		/*necesidadesExcel.MergeCell("Necesidades", "A"+fmt.Sprint(contador), "F"+fmt.Sprint(contador))
 		necesidadesExcel.MergeCell("Necesidades", "A"+fmt.Sprint(contador), "A"+fmt.Sprint(contador+1))
