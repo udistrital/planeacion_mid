@@ -602,6 +602,9 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 	var contratistas []map[string]interface{}
 	var docentes map[string]interface{}
 	var data_identi []map[string]interface{}
+	var rubro string
+	var nombreRubro string
+
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+planId, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &identificaciones)
 	}
@@ -630,6 +633,8 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 				json.Unmarshal([]byte(dato_str), &dato)
 				for key := range dato {
 					element := dato[key].(map[string]interface{})
+					rubro = element["rubro"].(string)
+					nombreRubro = element["rubroNombre"].(string)
 					if element["activo"] == true {
 						data_identi = append(data_identi, element)
 					}
@@ -713,11 +718,10 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 			}
 		}
 	}
-
-	return construirTablas(consolidadoExcelPlanAnual, recursos, contratistas, docentes)
+	return construirTablas(consolidadoExcelPlanAnual, recursos, contratistas, docentes, rubro, nombreRubro)
 }
 
-func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[string]interface{}, contratistas []map[string]interface{}, docentes map[string]interface{}) *excelize.File {
+func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[string]interface{}, contratistas []map[string]interface{}, docentes map[string]interface{}, rubro string, nombreRubro string) *excelize.File {
 	stylecontent, _ := consolidadoExcelPlanAnual.NewStyle(`{
 					"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
 					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
@@ -882,6 +886,13 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 
 	consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontent)
 	consolidadoExcelPlanAnual.SetRowHeight("Identificaciones", contador, 35)
+	contador++
+	consolidadoExcelPlanAnual.MergeCell("Identificaciones", "A"+fmt.Sprint(contador), "B"+fmt.Sprint(contador))
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "A"+fmt.Sprint(contador), "Rubro")
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C"+fmt.Sprint(contador), rubro)
+	consolidadoExcelPlanAnual.MergeCell("Identificaciones", "D"+fmt.Sprint(contador), "E"+fmt.Sprint(contador))
+	consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "D"+fmt.Sprint(contador), nombreRubro)
+	consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "A"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontent)
 
 	contador++
 	contador++
