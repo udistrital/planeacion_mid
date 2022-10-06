@@ -257,7 +257,7 @@ func contains(s []string, e string) bool {
 }
 
 func add(id string) {
-	if !contains(validDataT, id) {
+	if !contains(validDataT, id) && id != ""{
 		validDataT = append(validDataT, id)
 	}
 }
