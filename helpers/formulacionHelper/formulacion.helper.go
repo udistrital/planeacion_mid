@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"sort"
 	"strconv"
 
 	"github.com/astaxie/beego"
@@ -488,6 +489,11 @@ func getActividadTabla(subgrupo map[string]interface{}) {
 		}
 
 	}
+	sort.SliceStable(data_source, func(i, j int) bool {
+		a, _ := strconv.Atoi(data_source[i]["index"].(string))
+		b, _ := strconv.Atoi(data_source[j]["index"].(string))
+		return a < b
+	})
 }
 
 func GetArmonizacion(id string) map[string]interface{} {
@@ -711,10 +717,10 @@ func GetIndexActividad(entrada map[string]interface{}) int {
 			}
 			helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
 			subgrupo_detalle = respuestaLimpia[0]
-			
-			if subgrupo_detalle["dato_plan"] == nil{
+
+			if subgrupo_detalle["dato_plan"] == nil {
 				maxIndex = 0
-				} else {
+			} else {
 				dato_plan_str := subgrupo_detalle["dato_plan"].(string)
 				json.Unmarshal([]byte(dato_plan_str), &dato_plan)
 				for key2 := range dato_plan {
@@ -729,6 +735,6 @@ func GetIndexActividad(entrada map[string]interface{}) int {
 			}
 		}
 	}
-	
+
 	return maxIndex
 }
