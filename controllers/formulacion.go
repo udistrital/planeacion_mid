@@ -138,7 +138,7 @@ func (c *FormulacionController) GuardarActividad() {
 	var armonizacionExecuted bool = false
 
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
-	
+
 	entrada = body["entrada"].(map[string]interface{})
 	armonizacion := body["armo"]
 	armonizacionPI := body["armoPI"]
