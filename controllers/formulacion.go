@@ -171,7 +171,7 @@ func (c *FormulacionController) GuardarActividad() {
 			subgrupo_detalle = respuestaLimpia[0]
 			actividad := make(map[string]interface{})
 
-			if subgrupo_detalle["dato_plan"] == nil && maxIndex == 0 {
+			if subgrupo_detalle["dato_plan"] == nil {
 				actividad["index"] = 1
 				actividad["dato"] = element
 				actividad["activo"] = true
