@@ -2312,16 +2312,19 @@ func (c *ReportesController) Necesidades() {
 				}
 
 			} else {
-				necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), recursosGeneral[i]["nombre"])
-				if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" {
-					necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), recursosGeneral[i]["valor"])
+				necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), rubrosGeneral[i]["rubroNombre"])
+				if fmt.Sprint(reflect.TypeOf(rubrosGeneral[i]["totalInc"])) == "float64" {
+					necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), rubrosGeneral[i]["totalInc"])
 				} else {
-					strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-					strValor = strings.ReplaceAll(strValor, ",", "")
-					arrValor := strings.Split(strValor, ".")
-					auxValor, err := strconv.Atoi(arrValor[0])
-					if err == nil {
-						necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), auxValor)
+					if rubrosGeneral[i]["totalInc"] != nil {
+						strValor := strings.TrimLeft(rubrosGeneral[i]["totalInc"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						auxValor, err := strconv.ParseFloat(strValor, 64)
+						if err == nil {
+							necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), auxValor)
+						}
+					} else {
+						contador--
 					}
 				}
 			}
