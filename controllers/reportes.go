@@ -1223,7 +1223,10 @@ func (c *ReportesController) Necesidades() {
 	var planes []map[string]interface{}
 	var recursos []map[string]interface{}
 	var recursosGeneral []map[string]interface{}
+	var rubros []map[string]interface{}
+	var rubrosGeneral []map[string]interface{}
 	var unidades_total []string
+	var unidades_rubros_total []string
 	// var docentesGeneral map[string]interface{}
 	docentesPregrado := make(map[string]interface{})
 	docentesPosgrado := make(map[string]interface{})
@@ -1311,6 +1314,7 @@ func (c *ReportesController) Necesidades() {
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",nombre:"+nombre, &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planes)
 		for i := 0; i < len(planes); i++ {
+			flag := true
 			// var docentes map[string]interface{}
 			var aux map[string]interface{}
 			var dependencia_nombre string
@@ -1335,6 +1339,21 @@ func (c *ReportesController) Necesidades() {
 								}
 							}
 							recursos = data_identi
+
+						}
+					}
+					if strings.Contains(strings.ToLower(identificacion["nombre"].(string)), "contratista") && flag {
+						if identificacion["dato"] != nil {
+							var dato map[string]interface{}
+							var dato_contratistas []map[string]interface{}
+							dato_str := identificacion["dato"].(string)
+							json.Unmarshal([]byte(dato_str), &dato)
+							element := dato["0"].(map[string]interface{})
+							if element["activo"] == true {
+								dato_contratistas = append(dato_contratistas, element)
+								flag = false
+							}
+							rubros = dato_contratistas
 
 						}
 					}
@@ -1416,7 +1435,6 @@ func (c *ReportesController) Necesidades() {
 						}
 					}*/
 				}
-
 				for i := 0; i < len(recursos); i++ {
 					var aux bool
 					var aux1 []string
@@ -1495,6 +1513,68 @@ func (c *ReportesController) Necesidades() {
 							}
 							if !flag {
 								unidades_total = append(unidades_total, dependencia_nombre)
+							}
+						}
+					}
+				}
+
+				for i := 0; i < len(rubros); i++ {
+					var aux bool
+					var aux1 []string
+					if len(rubrosGeneral) == 0 {
+						rubrosGeneral = append(rubrosGeneral, rubros[i])
+						aux1 = append(aux1, dependencia_nombre)
+						rubrosGeneral[len(rubrosGeneral)-1]["unidades"] = aux1
+						unidades_rubros_total = append(unidades_rubros_total, dependencia_nombre)
+					} else {
+						for j := 0; j < len(rubrosGeneral); j++ {
+							if rubrosGeneral[j]["rubro"] == rubros[i]["rubro"] {
+								flag := false
+								for k := 0; k < len(rubrosGeneral[j]["unidades"].([]string)); k++ {
+									aux2 := rubrosGeneral[j]["unidades"].([]string)
+									if aux2[k] == dependencia_nombre {
+										flag = true
+									}
+								}
+								if !flag {
+									rubrosGeneral[j]["unidades"] = append(rubrosGeneral[j]["unidades"].([]string), dependencia_nombre)
+								}
+								flag1 := false
+								for k := 0; k < len(unidades_rubros_total); k++ {
+									if unidades_rubros_total[k] == dependencia_nombre {
+										flag1 = true
+									}
+								}
+								if !flag1 {
+									unidades_rubros_total = append(unidades_rubros_total, dependencia_nombre)
+								}
+								if rubrosGeneral[j]["totalInc"] != nil {
+									var auxValor float64
+									var auxValor2 float64
+									auxValor, _ = strconv.ParseFloat(rubrosGeneral[j]["totalInc"].(string), 64)
+									auxValor2, _ = strconv.ParseFloat(rubros[i]["totalInc"].(string), 64)
+									rubrosGeneral[j]["totalInc"] = auxValor + auxValor2
+								} else {
+									rubrosGeneral[j]["totalInc"] = rubros[i]["totalInc"]
+								}
+								aux = true
+								break
+							} else {
+								aux = false
+							}
+						}
+						if !aux {
+							flag := false
+							rubrosGeneral = append(rubrosGeneral, rubros[i])
+							aux1 = append(aux1, dependencia_nombre)
+							rubrosGeneral[len(rubrosGeneral)-1]["unidades"] = aux1
+							for k := 0; k < len(unidades_rubros_total); k++ {
+								if unidades_rubros_total[k] == dependencia_nombre {
+									flag = true
+								}
+							}
+							if !flag {
+								unidades_rubros_total = append(unidades_rubros_total, dependencia_nombre)
 							}
 						}
 					}
@@ -2182,6 +2262,48 @@ func (c *ReportesController) Necesidades() {
 				}
 				if recursosGeneral[i]["unidades"] != nil {
 					aux2 := recursosGeneral[i]["unidades"].([]string)
+					for j := 0; j < len(aux2); j++ {
+						unidades = unidades + aux2[j] + ", "
+					}
+					unidades = strings.TrimRight(unidades, ", ")
+					necesidadesExcel.SetCellValue("Necesidades", "D"+fmt.Sprint(contador), unidades)
+				}
+
+			} else {
+				necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), recursosGeneral[i]["nombre"])
+				if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" {
+					necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), recursosGeneral[i]["valor"])
+				} else {
+					strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+					strValor = strings.ReplaceAll(strValor, ",", "")
+					arrValor := strings.Split(strValor, ".")
+					auxValor, err := strconv.Atoi(arrValor[0])
+					if err == nil {
+						necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), auxValor)
+					}
+				}
+			}
+			necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent)
+			contador++
+		}
+
+		for i := 0; i < len(rubrosGeneral); i++ {
+			unidades := ""
+			necesidadesExcel.SetCellValue("Necesidades", "A"+fmt.Sprint(contador), rubrosGeneral[i]["rubro"])
+			if rubrosGeneral[i]["rubroNombre"] != nil {
+				necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), rubrosGeneral[i]["rubroNombre"])
+				if fmt.Sprint(reflect.TypeOf(rubrosGeneral[i]["totalInc"])) == "float64" {
+					necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), rubrosGeneral[i]["totalInc"])
+				} else {
+					strValor := strings.TrimLeft(rubrosGeneral[i]["totalInc"].(string), "$")
+					strValor = strings.ReplaceAll(strValor, ",", "")
+					auxValor, err := strconv.ParseFloat(strValor, 64)
+					if err == nil {
+						necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), auxValor)
+					}
+				}
+				if rubrosGeneral[i]["unidades"] != nil {
+					aux2 := rubrosGeneral[i]["unidades"].([]string)
 					for j := 0; j < len(aux2); j++ {
 						unidades = unidades + aux2[j] + ", "
 					}
