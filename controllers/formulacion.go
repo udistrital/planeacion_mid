@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -348,8 +349,9 @@ func (c *FormulacionController) ActualizarActividad() {
 		}
 
 		nuevoDato := true
+		actividad := make(map[string]interface{})
+
 		if subgrupo_detalle["dato_plan"] != nil {
-			actividad := make(map[string]interface{})
 			dato_plan_str := subgrupo_detalle["dato_plan"].(string)
 			json.Unmarshal([]byte(dato_plan_str), &dato_plan)
 
@@ -366,18 +368,19 @@ func (c *FormulacionController) ActualizarActividad() {
 					dato_plan[index_actividad] = actividad
 				}
 			}
-
-			if nuevoDato {
-				actividad["index"] = index
-				actividad["dato"] = element
-				actividad["activo"] = true
-				dato_plan[index] = actividad
-			}
-
-			b, _ := json.Marshal(dato_plan)
-			str := string(b)
-			subgrupo_detalle["dato_plan"] = str
 		}
+
+		if nuevoDato {
+			actividad["index"] = index
+			actividad["dato"] = element
+			actividad["activo"] = true
+			dato_plan[index] = actividad
+		}
+
+		b, _ := json.Marshal(dato_plan)
+		str := string(b)
+		subgrupo_detalle["dato_plan"] = str
+
 		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupo_detalle["_id"].(string), "PUT", &res, subgrupo_detalle); err != nil {
 			panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
 		}
@@ -628,6 +631,12 @@ func (c *FormulacionController) GetAllIdentificacion() {
 						data_identi = append(data_identi, element)
 					}
 				}
+
+				sort.SliceStable(data_identi, func(i, j int) bool {
+					a, _ := strconv.Atoi(data_identi[i]["index"].(string))
+					b, _ := strconv.Atoi(data_identi[j]["index"].(string))
+					return a < b
+				})
 
 				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": data_identi}
 
