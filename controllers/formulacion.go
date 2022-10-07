@@ -138,7 +138,6 @@ func (c *FormulacionController) GuardarActividad() {
 	var armonizacionExecuted bool = false
 
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
-
 	entrada = body["entrada"].(map[string]interface{})
 	armonizacion := body["armo"]
 	armonizacionPI := body["armoPI"]
@@ -774,7 +773,6 @@ func (c *FormulacionController) GetPlanVersiones() {
 
 	var respuesta map[string]interface{}
 	var versiones []map[string]interface{}
-
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=dependencia_id:"+unidad+",vigencia:"+vigencia+",formato:false,nombre:"+nombre, &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &versiones)
 		versionesOrdenadas := formulacionhelper.OrdenarVersiones(versiones)
