@@ -69,6 +69,7 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 			forkData["nombre"] = hijos[i]["nombre"]
 			jsonString, _ := json.Marshal(hijos[i]["_id"])
 			json.Unmarshal(jsonString, &id)
+			// fmt.Println("ARMA ARBOL ", "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id)
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id, &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &resLimpia)
 				nodo = resLimpia[0]
@@ -95,7 +96,6 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 			}
 
 			if len(hijos[i]["hijos"].([]interface{})) > 0 {
-
 				forkData["sub"] = make([]map[string]interface{}, len(getChildren(hijos[i]["hijos"].([]interface{}))))
 				forkData["sub"] = getChildren(hijos[i]["hijos"].([]interface{}))
 			} else {
@@ -138,6 +138,7 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 		var res map[string]interface{}
 		var subgrupo_detalle []map[string]interface{}
 		var dato_plan map[string]interface{}
+		// fmt.Println("CONVERT ", "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+v)
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+v, &res); err == nil {
 			helpers.LimpiezaRespuestaRefactor(res, &subgrupo_detalle)
 
@@ -204,6 +205,7 @@ func getChildren(children []interface{}) (childrenTree []map[string]interface{})
 		childStr := fmt.Sprintf("%v", child)
 		forkData := make(map[string]interface{})
 		var id string
+		// fmt.Println("GET CHILDREN ", "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+childStr)
 		err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+childStr, &res)
 		if err != nil {
 			return
@@ -240,10 +242,11 @@ func getChildren(children []interface{}) (childrenTree []map[string]interface{})
 				}
 			}
 			if len(nodo["hijos"].([]interface{})) > 0 {
-				if len(getChildren(nodo["hijos"].([]interface{}))) == 0 {
+				aux := getChildren(nodo["hijos"].([]interface{}))
+				if len(aux) == 0 {
 					forkData["sub"] = ""
 				} else {
-					forkData["sub"] = getChildren(nodo["hijos"].([]interface{}))
+					forkData["sub"] = aux
 				}
 			}
 
