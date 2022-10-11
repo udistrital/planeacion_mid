@@ -824,7 +824,7 @@ func (c *FormulacionController) PonderacionActividades() {
 						ponderacionActividades := make(map[string]interface{})
 
 						for j := 1; j <= len(datoPlan); j++ {
-							if datoPlan[strconv.Itoa(j)]["activo"] != false {
+							if datoPlan[strconv.Itoa(j)]["activo"] != false && len(datoPlan[strconv.Itoa(j)]) != 0{
 								ponderacionActividades["Actividad "+strconv.Itoa(j)] = datoPlan[strconv.Itoa(j)]["dato"]
 								suma += datoPlan[strconv.Itoa(j)]["dato"].(float64)
 							}
