@@ -58,6 +58,8 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 	armonizacion := make([]map[string]interface{}, 1)
 	var result [][]map[string]interface{}
 	var nodo map[string]interface{}
+	//var hijos_key []map[string]interface{}
+	//var hijos_data []map[string]interface{}
 
 	for i := 0; i < len(hijos); i++ {
 		if hijos[i]["activo"] == true {
@@ -69,7 +71,7 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 			forkData["nombre"] = hijos[i]["nombre"]
 			jsonString, _ := json.Marshal(hijos[i]["_id"])
 			json.Unmarshal(jsonString, &id)
-			// fmt.Println("ARMA ARBOL ", "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id)
+			fmt.Println("ARMA ARBOL ", "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id)
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id, &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &resLimpia)
 				nodo = resLimpia[0]
@@ -94,9 +96,18 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 
 				}
 			}
-
 			if len(hijos[i]["hijos"].([]interface{})) > 0 {
 				aux := getChildren(hijos[i]["hijos"].([]interface{}))
+				/*if len(hijos_key) == 0 {
+					hijos_key = append(hijos_key, hijos[i]["hijos"].(map[string]interface{}))
+				} else {
+					for j := 0; j < len(hijos_key); j++ {
+						if hijos[i]["hijos"].(map[string]interface{}) == hijos_key[j] {
+
+						}
+					}
+				}*/
+				//fmt.Println("IMPRIME ", aux)
 				forkData["sub"] = make([]map[string]interface{}, len(aux))
 				forkData["sub"] = aux
 			} else {
@@ -206,7 +217,7 @@ func getChildren(children []interface{}) (childrenTree []map[string]interface{})
 		childStr := fmt.Sprintf("%v", child)
 		forkData := make(map[string]interface{})
 		var id string
-		// fmt.Println("GET CHILDREN ", "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+childStr)
+		//fmt.Println("GET CHILDREN ", "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+childStr)
 		err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+childStr, &res)
 		if err != nil {
 			return
@@ -637,8 +648,16 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 				json.Unmarshal([]byte(dato_str), &dato)
 				for key := range dato {
 					element := dato[key].(map[string]interface{})
-					rubro = element["rubro"].(string)
-					nombreRubro = element["rubroNombre"].(string)
+					if element["rubro"] == nil {
+						rubro = "Información no suministrada"
+					} else {
+						rubro = element["rubro"].(string)
+					}
+					if element["rubroNombre"] == nil {
+						nombreRubro = "Información no suministrada"
+					} else {
+						nombreRubro = element["rubroNombre"].(string)
+					}
 					if element["activo"] == true {
 						data_identi = append(data_identi, element)
 					}
