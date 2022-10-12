@@ -2,6 +2,7 @@ package reporteshelper
 
 import (
 	"encoding/json"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -16,9 +17,27 @@ import (
 )
 
 var validDataT = []string{}
+var hijos_key []interface{}
+var hijos_data [][]map[string]interface{}
+var ids [][]string
+var id_arr []string
 
 func Limpia() {
+	//validDataT = []string{}
+	//ids = [][]string{}
+	//hijos_data = nil
+	//hijos_key = nil
+}
+
+func LimpiaIds() {
+	id_arr = []string{}
+}
+
+func Limp() {
 	validDataT = []string{}
+	ids = [][]string{}
+	hijos_data = nil
+	hijos_key = nil
 }
 
 func GetActividades(subgrupo_id string) []map[string]interface{} {
@@ -58,9 +77,6 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 	armonizacion := make([]map[string]interface{}, 1)
 	var result [][]map[string]interface{}
 	var nodo map[string]interface{}
-	//var hijos_key []map[string]interface{}
-	//var hijos_data []map[string]interface{}
-
 	for i := 0; i < len(hijos); i++ {
 		if hijos[i]["activo"] == true {
 			var resLimpia []map[string]interface{}
@@ -71,7 +87,6 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 			forkData["nombre"] = hijos[i]["nombre"]
 			jsonString, _ := json.Marshal(hijos[i]["_id"])
 			json.Unmarshal(jsonString, &id)
-			fmt.Println("ARMA ARBOL ", "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id)
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id, &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &resLimpia)
 				nodo = resLimpia[0]
@@ -97,17 +112,31 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 				}
 			}
 			if len(hijos[i]["hijos"].([]interface{})) > 0 {
-				aux := getChildren(hijos[i]["hijos"].([]interface{}))
-				/*if len(hijos_key) == 0 {
-					hijos_key = append(hijos_key, hijos[i]["hijos"].(map[string]interface{}))
+				var aux []map[string]interface{}
+				if len(hijos_key) == 0 {
+					hijos_key = append(hijos_key, hijos[i]["hijos"])
+					hijos_data = append(hijos_data, getChildren(hijos[i]["hijos"].([]interface{}), true))
+					aux = hijos_data[len(hijos_data)-1]
 				} else {
+					flag := false
+					var posicion int
 					for j := 0; j < len(hijos_key); j++ {
-						if hijos[i]["hijos"].(map[string]interface{}) == hijos_key[j] {
-
+						if reflect.DeepEqual(hijos[i]["hijos"], hijos_key[j]) {
+							flag = true
+							posicion = j
 						}
 					}
-				}*/
-				//fmt.Println("IMPRIME ", aux)
+					if !flag {
+						hijos_key = append(hijos_key, hijos[i]["hijos"])
+						hijos_data = append(hijos_data, getChildren(hijos[i]["hijos"].([]interface{}), true))
+						aux = hijos_data[len(hijos_data)-1]
+					} else {
+						aux = hijos_data[posicion]
+						for k := 0; k < len(ids[posicion]); k++ {
+							add(ids[posicion][k])
+						}
+					}
+				}
 				forkData["sub"] = make([]map[string]interface{}, len(aux))
 				forkData["sub"] = aux
 			} else {
@@ -122,6 +151,7 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 	result = append(result, tree)
 	result = append(result, requeridos)
 	result = append(result, armonizacion)
+	LimpiaIds()
 	return result
 }
 
@@ -150,7 +180,6 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 		var res map[string]interface{}
 		var subgrupo_detalle []map[string]interface{}
 		var dato_plan map[string]interface{}
-		// fmt.Println("CONVERT ", "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+v)
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+v, &res); err == nil {
 			helpers.LimpiezaRespuestaRefactor(res, &subgrupo_detalle)
 
@@ -207,7 +236,7 @@ func getObservacion(actividad map[string]interface{}) string {
 	}
 }
 
-func getChildren(children []interface{}) (childrenTree []map[string]interface{}) {
+func getChildren(children []interface{}, exist bool) (childrenTree []map[string]interface{}) {
 	var res map[string]interface{}
 	var resp map[string]interface{}
 	var nodo map[string]interface{}
@@ -228,7 +257,7 @@ func getChildren(children []interface{}) (childrenTree []map[string]interface{})
 			forkData["nombre"] = nodo["nombre"]
 			jsonString, _ := json.Marshal(nodo["_id"])
 			json.Unmarshal(jsonString, &id)
-			if err_ := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id, &resp); err_ == nil {
+			if err_ := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id, &resp); err_ == nil && exist {
 				helpers.LimpiezaRespuestaRefactor(resp, &detalle)
 				if len(detalle) == 0 {
 					// forkData["type"] = ""
@@ -254,7 +283,7 @@ func getChildren(children []interface{}) (childrenTree []map[string]interface{})
 				}
 			}
 			if len(nodo["hijos"].([]interface{})) > 0 {
-				aux := getChildren(nodo["hijos"].([]interface{}))
+				aux := getChildren(nodo["hijos"].([]interface{}), true)
 				if len(aux) == 0 {
 					forkData["sub"] = ""
 				} else {
@@ -264,8 +293,10 @@ func getChildren(children []interface{}) (childrenTree []map[string]interface{})
 
 			childrenTree = append(childrenTree, forkData)
 		}
+		id_arr = append(id_arr, id)
 		add(id)
 	}
+	ids = append(ids, id_arr)
 	return
 }
 
