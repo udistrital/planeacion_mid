@@ -726,14 +726,14 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 	consolidadoExcelPlanAnual := excelize.NewFile()
 	nombre := c.Ctx.Input.Param(":nombre")
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+	//fmt.Println("http://" + beego.AppConfig.String("PlanesService") + "/plan?query=activo:true,tipo_plan_id:" + body["tipo_plan_id"].(string) + ",vigencia:" + body["vigencia"].(string) + ",estado_plan_id:" + body["estado_plan_id"].(string) + ",nombre:" + nombre)
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",nombre:"+nombre, &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
-
 		for planes := 0; planes < len(planesFilter); planes++ {
+			reporteshelper.Limp()
 			planesFilterData := planesFilter[planes]
 			plan_id = planesFilterData["_id"].(string)
 			infoReporte := make(map[string]interface{})
-
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id, &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
 				for i := 0; i < len(subgrupos); i++ {
@@ -750,12 +750,10 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 							index := fmt.Sprint(actividad["index"])
 							datosArmonizacion := make(map[string]interface{})
 							titulosArmonizacion := make(map[string]interface{})
-
 							if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan_id, &resArmo); err == nil {
 								helpers.LimpiezaRespuestaRefactor(resArmo, &hijosArmo)
-								reporteshelper.Limpia()
+								//reporteshelper.Limpia()
 								tree := reporteshelper.BuildTreeFa(hijosArmo, index)
-
 								treeDatos := tree[0]
 								treeDatas := tree[1]
 								treeArmo := tree[2]
