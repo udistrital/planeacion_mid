@@ -775,7 +775,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 											datosArmonizacion["Periodo de ejecución"] = treeData[fmt.Sprint(treeDato["id"])]
 										} else if strings.Contains(strings.ToLower(treeDato["nombre"].(string)), "actividad") && strings.Contains(strings.ToLower(treeDato["nombre"].(string)), "general") {
 											datosArmonizacion["Actividad general"] = treeData[fmt.Sprint(treeDato["id"])]
-										} else if strings.Contains(strings.ToLower(treeDato["nombre"].(string)), "tarea") || strings.Contains(strings.ToLower(treeDato["nombre"].(string)), "actividades especificas") {
+										} else if strings.Contains(strings.ToLower(treeDato["nombre"].(string)), "tarea") || strings.Contains(strings.ToLower(treeDato["nombre"].(string)), "actividades específicas") {
 											datosArmonizacion["Tareas"] = treeData[fmt.Sprint(treeDato["id"])]
 										} else {
 											datosArmonizacion[treeDato["nombre"].(string)] = treeData[fmt.Sprint(treeDato["id"])]
@@ -1225,6 +1225,11 @@ func (c *ReportesController) Necesidades() {
 	var rubrosGeneral []map[string]interface{}
 	var unidades_total []string
 	var unidades_rubros_total []string
+	var respuestaEstado map[string]interface{}
+	var estado map[string]interface{}
+	var respuestaTipo map[string]interface{}
+	var tipo map[string]interface{}
+	var arregloInfoReportes []map[string]interface{}
 	// var docentesGeneral map[string]interface{}
 	docentesPregrado := make(map[string]interface{})
 	docentesPosgrado := make(map[string]interface{})
@@ -1549,6 +1554,9 @@ func (c *ReportesController) Necesidades() {
 								if rubrosGeneral[j]["totalInc"] != nil {
 									var auxValor float64
 									var auxValor2 float64
+									if _, ok := rubrosGeneral[j]["totalInc"].(float64); ok {
+										rubrosGeneral[j]["totalInc"] = fmt.Sprintf("%f", rubrosGeneral[j]["totalInc"])
+									}
 									auxValor, _ = strconv.ParseFloat(rubrosGeneral[j]["totalInc"].(string), 64)
 									auxValor2, _ = strconv.ParseFloat(rubros[i]["totalInc"].(string), 64)
 									rubrosGeneral[j]["totalInc"] = auxValor + auxValor2
@@ -2329,6 +2337,16 @@ func (c *ReportesController) Necesidades() {
 			necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent)
 			contador++
 		}
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-plan/"+planes[0]["estado_plan_id"].(string), &respuestaEstado); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuestaEstado, &estado)
+		} else {
+			panic(map[string]interface{}{"funcion": "getNecesidades", "err": "Error ", "status": "400", "log": err})
+		}
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-plan/"+planes[0]["tipo_plan_id"].(string), &respuestaTipo); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuestaTipo, &tipo)
+		} else {
+			panic(map[string]interface{}{"funcion": "getNecesidades", "err": "Error ", "status": "400", "log": err})
+		}
 
 		contador = 1
 
@@ -2353,7 +2371,13 @@ func (c *ReportesController) Necesidades() {
 		contador++
 		unid_total := ""
 		for j := 0; j < len(unidades_total); j++ {
+			infoReporte := make(map[string]interface{})
+			infoReporte["vigencia"] = body["vigencia"].(string)
+			infoReporte["estado_plan"] = estado["nombre"]
+			infoReporte["tipo_plan"] = tipo["nombre"]
+			infoReporte["nombre_unidad"] = unidades_total[j]
 			unid_total = unid_total + unidades_total[j] + ", "
+			arregloInfoReportes = append(arregloInfoReportes, infoReporte)
 		}
 		unid_total = strings.TrimRight(unid_total, ", ")
 		necesidadesExcel.SetCellValue("Total Unidades", "A"+fmt.Sprint(contador), len(unidades_total))
@@ -2416,8 +2440,11 @@ func (c *ReportesController) Necesidades() {
 		buf, _ := necesidadesExcel.WriteToBuffer()
 		strings.NewReader(buf.String())
 		encoded := base64.StdEncoding.EncodeToString([]byte(buf.String()))
+		dataSend := make(map[string]interface{})
+		dataSend["generalData"] = arregloInfoReportes
+		dataSend["excelB64"] = encoded
 
-		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": encoded}
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": dataSend}
 
 	} else {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
