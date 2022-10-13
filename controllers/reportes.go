@@ -775,7 +775,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 											datosArmonizacion["Periodo de ejecución"] = treeData[fmt.Sprint(treeDato["id"])]
 										} else if strings.Contains(strings.ToLower(treeDato["nombre"].(string)), "actividad") && strings.Contains(strings.ToLower(treeDato["nombre"].(string)), "general") {
 											datosArmonizacion["Actividad general"] = treeData[fmt.Sprint(treeDato["id"])]
-										} else if strings.Contains(strings.ToLower(treeDato["nombre"].(string)), "tarea") || strings.Contains(strings.ToLower(treeDato["nombre"].(string)), "actividades especificas") {
+										} else if strings.Contains(strings.ToLower(treeDato["nombre"].(string)), "tarea") || strings.Contains(strings.ToLower(treeDato["nombre"].(string)), "actividades específicas") {
 											datosArmonizacion["Tareas"] = treeData[fmt.Sprint(treeDato["id"])]
 										} else {
 											datosArmonizacion[treeDato["nombre"].(string)] = treeData[fmt.Sprint(treeDato["id"])]
