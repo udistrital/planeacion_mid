@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -258,7 +259,17 @@ func (c *ReportesController) PlanAccionAnual() {
 							actividades := reporteshelper.GetActividades(subgrupos[i]["_id"].(string))
 							var arregloLineamieto []map[string]interface{}
 							var arregloLineamietoPI []map[string]interface{}
-
+							sort.SliceStable(actividades, func(i int, j int) bool {
+								if _, ok := actividades[i]["index"].(float64); ok {
+									actividades[i]["index"] = fmt.Sprintf("%v", int(actividades[i]["index"].(float64)))
+								}
+								if _, ok := actividades[j]["index"].(float64); ok {
+									actividades[j]["index"] = fmt.Sprintf("%v", int(actividades[j]["index"].(float64)))
+								}
+								aux, _ := strconv.Atoi((actividades[i]["index"]).(string))
+								aux1, _ := strconv.Atoi((actividades[j]["index"]).(string))
+								return aux < aux1
+							})
 							for j := 0; j < len(actividades); j++ {
 								arregloLineamieto = nil
 								arregloLineamietoPI = nil
@@ -741,7 +752,17 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 						actividades := reporteshelper.GetActividades(subgrupos[i]["_id"].(string))
 						var arregloLineamieto []map[string]interface{}
 						var arregloLineamietoPI []map[string]interface{}
-
+						sort.SliceStable(actividades, func(i int, j int) bool {
+							if _, ok := actividades[i]["index"].(float64); ok {
+								actividades[i]["index"] = fmt.Sprintf("%v", int(actividades[i]["index"].(float64)))
+							}
+							if _, ok := actividades[j]["index"].(float64); ok {
+								actividades[j]["index"] = fmt.Sprintf("%v", int(actividades[j]["index"].(float64)))
+							}
+							aux, _ := strconv.Atoi((actividades[i]["index"]).(string))
+							aux1, _ := strconv.Atoi((actividades[j]["index"]).(string))
+							return aux < aux1
+						})
 						for j := 0; j < len(actividades); j++ {
 							arregloLineamieto = nil
 							arregloLineamietoPI = nil
