@@ -1346,7 +1346,7 @@ func (c *ReportesController) Necesidades() {
 			if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia/"+dependencia.(string), &aux); err == nil {
 				dependencia_nombre = aux["Nombre"].(string)
 			}
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+planes[i]["_id"].(string), &respuestaIdentificaciones); err == nil {
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+planes[i]["_id"].(string)+",activo:true", &respuestaIdentificaciones); err == nil {
 				helpers.LimpiezaRespuestaRefactor(respuestaIdentificaciones, &identificaciones)
 				for i := 0; i < len(identificaciones); i++ {
 					identificacion := identificaciones[i]
@@ -1563,6 +1563,15 @@ func (c *ReportesController) Necesidades() {
 								if !flag {
 									rubrosGeneral[j]["unidades"] = append(rubrosGeneral[j]["unidades"].([]string), dependencia_nombre)
 								}
+								flag2 := false
+								for k := 0; k < len(unidades_total); k++ {
+									if unidades_total[k] == dependencia_nombre {
+										flag2 = true
+									}
+								}
+								if !flag2 {
+									unidades_total = append(unidades_total, dependencia_nombre)
+								}
 								flag1 := false
 								for k := 0; k < len(unidades_rubros_total); k++ {
 									if unidades_rubros_total[k] == dependencia_nombre {
@@ -1588,6 +1597,20 @@ func (c *ReportesController) Necesidades() {
 								break
 							} else {
 								aux = false
+							}
+						}
+						if !aux {
+							flag := false
+							recursosGeneral = append(recursosGeneral, recursos[i])
+							aux1 = append(aux1, dependencia_nombre)
+							recursosGeneral[len(recursosGeneral)-1]["unidades"] = aux1
+							for k := 0; k < len(unidades_total); k++ {
+								if unidades_total[k] == dependencia_nombre {
+									flag = true
+								}
+							}
+							if !flag {
+								unidades_total = append(unidades_total, dependencia_nombre)
 							}
 						}
 						if !aux {
