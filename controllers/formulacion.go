@@ -824,7 +824,7 @@ func (c *FormulacionController) PonderacionActividades() {
 						ponderacionActividades := make(map[string]interface{})
 
 						for j, dato := range datoPlan {
-							if dato["activo"] != false && len(dato) != 0{
+							if dato["activo"] != false && len(dato) != 0 {
 								ponderacionActividades["Actividad "+(j)] = dato["dato"]
 								suma += dato["dato"].(float64)
 							}
@@ -1249,7 +1249,7 @@ func (c *FormulacionController) VerificarIdentificaciones() {
 
 				tipoDependencia := dependencia["TipoDependenciaId"].(map[string]interface{})
 				id := dependencia["DependenciaId"].(map[string]interface{})["Id"]
-				if tipoDependencia["Id"] == 2.00 || id == 67.00 {
+				if (tipoDependencia["Id"] == 2.00 || id == 67.00) && id != 8.0 {
 					bandera = formulacionhelper.VerificarDataIdentificaciones(identificaciones, "facultad")
 				} else {
 					bandera = formulacionhelper.VerificarDataIdentificaciones(identificaciones, "unidad")
