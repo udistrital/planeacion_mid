@@ -45,18 +45,33 @@ func (c *SeguimientoController) HabilitarReportes() {
 	var entrada map[string]interface{}
 	json.Unmarshal(c.Ctx.Input.RequestBody, &entrada)
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=periodo_id:"+entrada["periodo_id"].(string), &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento?query=periodo_id:"+entrada["periodo_id"].(string), &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &reportes)
-		for key, element := range reportes {
-			_ = key
+		if len(reportes) > 0 {
+			var element = reportes[0]
 			element["activo"] = true
 			element["fecha_inicio"] = entrada["fecha_inicio"]
 			element["fecha_fin"] = entrada["fecha_fin"]
 
-			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+element["_id"].(string), "PUT", &resPut, element); err != nil {
+			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/"+element["_id"].(string), "PUT", &resPut, element); err != nil {
 				panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
 			}
 
+		} else {
+			element := map[string]interface{}{
+				"activo":       true,
+				"fecha_inicio": entrada["fecha_inicio"],
+				"fecha_fin":    entrada["fecha_fin"],
+				"periodo_id":   entrada["periodo_id"],
+			}
+
+			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento", "POST", &resPut, element); err != nil {
+				panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle", "status": "400", "log": err})
+			}
+
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento?query=periodo_id:"+entrada["periodo_id"].(string), &res); err == nil {
+				helpers.LimpiezaRespuestaRefactor(res, &reportes)
+			}
 		}
 		c.Data["json"] = reportes
 	} else {
@@ -78,32 +93,39 @@ func (c *SeguimientoController) CrearReportes() {
 	plan_id := c.Ctx.Input.Param(":plan")
 	tipo := c.Ctx.Input.Param(":tipo")
 	var res map[string]interface{}
+	var resTrimestres map[string]interface{}
 	var plan map[string]interface{}
 	var respuestaPost map[string]interface{}
 	var arrReportes []map[string]interface{}
 	reporte := make(map[string]interface{})
-	
+
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+plan_id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &plan)
 		trimestres := seguimientohelper.GetTrimestres(plan["vigencia"].(string))
 
 		for i := 0; i < len(trimestres); i++ {
-			reporte["nombre"] = "Seguimiento para el " + plan["nombre"].(string)
-			reporte["descripcion"] = "Seguimiento para el " + plan["nombre"].(string) + " UNIVERSIDAD DISTRITAL FRANCISCO JOSE DE CALDAS"
-			reporte["activo"] = false
-			reporte["plan_id"] = plan_id
-			reporte["estado_seguimiento_id"] = "61f237df25e40c57a60840d5"
-			reporte["periodo_id"] = trimestres[i]["Id"]
-			reporte["tipo_seguimiento_id"] = tipo
-			reporte["dato"] = "{}"
-	
-			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &respuestaPost, reporte); err != nil {
-				panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error creando reporte", "status": "400", "log": err})
+			periodo := int(trimestres[i]["Id"].(float64))
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento?query=periodo_id:"+strconv.Itoa(periodo), &resTrimestres); err == nil {
+				reporte["nombre"] = "Seguimiento para el " + plan["nombre"].(string)
+				reporte["descripcion"] = "Seguimiento para el " + plan["nombre"].(string) + " UNIVERSIDAD DISTRITAL FRANCISCO JOSE DE CALDAS"
+				reporte["activo"] = false
+				reporte["plan_id"] = plan_id
+				reporte["estado_seguimiento_id"] = "61f237df25e40c57a60840d5"
+				reporte["periodo_seguimiento_id"] = resTrimestres["Data"].([]interface{})[0].(map[string]interface{})["_id"]
+				reporte["tipo_seguimiento_id"] = tipo
+				reporte["dato"] = "{}"
+				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &respuestaPost, reporte); err != nil {
+					panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error creando reporte", "status": "400", "log": err})
+				}
+
+				arrReportes = append(arrReportes, respuestaPost["Data"].(map[string]interface{}))
+				respuestaPost = nil
+			} else {
+				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+				c.Abort("400")
 			}
-	
-			arrReportes = append(arrReportes, respuestaPost["Data"].(map[string]interface{}))
-			respuestaPost = nil
 		}
+
 	} else {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 		c.Abort("400")
@@ -209,7 +231,7 @@ func (c *SeguimientoController) GuardarSeguimiento() {
 
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_id:"+trimestre, &respuesta); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
 		aux := make([]map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
 		seguimiento = aux[0]
@@ -255,7 +277,7 @@ func (c *SeguimientoController) GetSeguimiento() {
 	var seguimientoActividad map[string]interface{}
 	dato := make(map[string]interface{})
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_id:"+trimestre, &respuesta); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
 		aux := make([]map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
 		seguimiento = aux[0]
@@ -349,21 +371,21 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 	var nombrePeriodo string
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_id:"+body["periodo_id"].(string), &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_seguimiento_id:"+body["periodo_seguimiento_id"].(string), &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &avancedata)
 		fmt.Println(res)
-		if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+body["periodo_id"].(string), &res); err == nil {
+		if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+body["periodo_seguimiento_id"].(string), &res); err == nil {
 			helpers.LimpiezaRespuestaRefactor(res, &parametro_periodo)
 			paramIdlen := parametro_periodo[0]
 			fmt.Println()
 			paramId := paramIdlen["ParametroId"].(map[string]interface{})
 			if paramId["CodigoAbreviacion"] != "T1" {
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_id:"+body["periodo_id"].(string), &res1); err == nil {
+				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_seguimiento_id:"+body["periodo_seguimiento_id"].(string), &res1); err == nil {
 					helpers.LimpiezaRespuestaRefactor(res1, &avancedata1)
 					seguimiento1 = avancedata1[0]
 					datoStrUltimoTrimestre := seguimiento1["dato"].(string)
 					if datoStrUltimoTrimestre == "{}" {
-						test1 = body["periodo_id"].(string)
+						test1 = body["periodo_seguimiento_id"].(string)
 						priodoId_rest, err := strconv.ParseFloat(test1, 8)
 						if err != nil {
 							fmt.Println(err)
@@ -371,7 +393,7 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 						fmt.Println(test1)
 						periodId = priodoId_rest - 1
 					} else {
-						test1 = body["periodo_id"].(string)
+						test1 = body["periodo_seguimiento_id"].(string)
 						priodoId_rest, err := strconv.ParseFloat(test1, 8)
 						if err != nil {
 							fmt.Println(err)
@@ -385,7 +407,7 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 					c.Abort("400")
 				}
 				periodIdString = fmt.Sprint(periodId)
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_id:"+periodIdString, &res2); err == nil {
+				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_seguimiento_id:"+periodIdString, &res2); err == nil {
 					helpers.LimpiezaRespuestaRefactor(res2, &avancedata2)
 					seguimiento = avancedata2[0]
 					datoStr := seguimiento["dato"].(string)
@@ -399,7 +421,7 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 					c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 					c.Abort("400")
 				}
-				if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+body["periodo_id"].(string), &resName); err == nil {
+				if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+body["periodo_seguimiento_id"].(string), &resName); err == nil {
 					helpers.LimpiezaRespuestaRefactor(resName, &parametro_periodo_name)
 					paramIdlenName := parametro_periodo_name[0]
 					fmt.Println()
