@@ -202,6 +202,11 @@ func (c *ReportesController) Desagregado() {
 			}
 
 		}
+
+		if len(consolidadoExcel.GetSheetList()) > 1 {
+			consolidadoExcel.DeleteSheet("Sheet1")
+		}
+
 		dataSend := make(map[string]interface{})
 
 		buf, _ := consolidadoExcel.WriteToBuffer()
@@ -683,6 +688,10 @@ func (c *ReportesController) PlanAccionAnual() {
 				}
 				consolidadoExcelPlanAnual = reporteshelper.TablaIdentificaciones(consolidadoExcelPlanAnual, plan_id)
 
+			}
+
+			if len(consolidadoExcelPlanAnual.GetSheetList()) > 1 {
+				consolidadoExcelPlanAnual.DeleteSheet("Sheet1")
 			}
 
 			buf, _ := consolidadoExcelPlanAnual.WriteToBuffer()
@@ -1206,6 +1215,10 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 			arregloPlanAnual = nil
 		}
 
+		if len(consolidadoExcelPlanAnual.GetSheetList()) > 1 {
+			consolidadoExcelPlanAnual.DeleteSheet("Sheet1")
+		}
+
 		buf, _ := consolidadoExcelPlanAnual.WriteToBuffer()
 		strings.NewReader(buf.String())
 
@@ -1310,6 +1323,7 @@ func (c *ReportesController) Necesidades() {
 				}`)
 
 	necesidadesExcel.NewSheet("Necesidades")
+	necesidadesExcel.DeleteSheet("Sheet1")
 
 	necesidadesExcel.MergeCell("Necesidades", "A1", "F1")
 	necesidadesExcel.MergeCell("Necesidades", "A1", "A2")
