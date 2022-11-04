@@ -2,6 +2,8 @@ package seguimientohelper
 
 import (
 	"encoding/json"
+	"sort"
+	"strconv"
 
 	"log"
 	"strings"
@@ -63,7 +65,6 @@ func GetActividades(subgrupo_id string) []map[string]interface{} {
 		if subgrupoDetalle["dato_plan"] != nil {
 			dato_plan_str := subgrupoDetalle["dato_plan"].(string)
 			json.Unmarshal([]byte(dato_plan_str), &datoPlan)
-
 			for indexActividad, element := range datoPlan {
 				_ = indexActividad
 				if err != nil {
@@ -73,13 +74,105 @@ func GetActividades(subgrupo_id string) []map[string]interface{} {
 					actividades = append(actividades, element.(map[string]interface{}))
 				}
 			}
-
+			sort.SliceStable(actividades, func(i, j int) bool {
+				a, _ := strconv.Atoi(actividades[i]["index"].(string))
+				b, _ := strconv.Atoi(actividades[j]["index"].(string))
+				return a < b
+			})
 		}
 	} else {
 		panic(map[string]interface{}{"Code": "400", "Body": err, "Type": "error"})
 
 	}
 	return actividades
+}
+
+func GetActividad(seguimiento map[string]interface{}, index string) map[string]interface{} {
+	var data map[string]interface{}
+	var resEstado map[string]interface{}
+
+	var informacion map[string]interface{}
+	cualitativo := map[string]interface{}{}
+	cuantitativo := map[string]interface{}{}
+	estado := map[string]interface{}{}
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento/"+seguimiento["estado_seguimiento_id"].(string), &resEstado); err == nil {
+		estado = map[string]interface{}{
+			"nombre": resEstado["Data"].(map[string]interface{})["nombre"],
+			"id":     resEstado["Data"].(map[string]interface{})["_id"],
+		}
+	}
+
+	informacion =  GetInformacionPlan(seguimiento, index)
+
+	// TO DO: cualitativo
+	// TO DO: cuantitativo
+	data = map[string]interface{}{
+		"informacion":  informacion,
+		"cualitativo":  cualitativo,
+		"cuantitativo": cuantitativo,
+		"estado":       estado,
+	}
+
+	return data
+}
+
+func GetInformacionPlan(seguimiento map[string]interface{}, index string) map[string]interface{} {
+	var resPlan map[string]interface{}
+	var resInformacion map[string]interface{}
+
+	informacion := map[string]interface{}{
+		"ponderacion": "",
+		"periodo":     "",
+		"tarea":       "",
+		"indicador":   "",
+		"producto":    "",
+		"nombre":      "",
+		"descripcion": "",
+		"index": index,
+	}
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+seguimiento["plan_id"].(string), &resPlan); err == nil {
+		informacion["nombre"] = resPlan["Data"].(map[string]interface{})["nombre"]
+		informacion["descripcion"] = resPlan["Data"].(map[string]interface{})["descripcion"]
+	}
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+seguimiento["plan_id"].(string), &resInformacion); err == nil {
+		for _, hijo := range resInformacion["Data"].([]interface{}) {
+			if hijo.(map[string]interface{})["activo"] == true {
+				var res map[string]interface{}
+
+				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijo.(map[string]interface{})["_id"].(string), &res); err == nil {
+					dato := make(map[string]interface{})
+					json.Unmarshal([]byte(res["Data"].([]interface{})[0].(map[string]interface{})["dato_plan"].(string)), &dato)
+					nombreDetalle := strings.ToLower(res["Data"].([]interface{})[0].(map[string]interface{})["nombre"].(string))
+
+					if dato[index] == nil {
+						break
+					}
+
+					switch {
+					case strings.Contains(nombreDetalle, "ponderación"):
+						informacion["ponderacion"] = dato[index].(map[string]interface{})["dato"]
+						continue
+					case strings.Contains(nombreDetalle, "periodo"):
+						informacion["periodo"] = dato[index].(map[string]interface{})["dato"]
+						continue
+					case strings.Contains(nombreDetalle, "tareas"):
+						informacion["tarea"] = dato[index].(map[string]interface{})["dato"]
+						continue
+					case strings.Contains(nombreDetalle, "indicadores"):
+						informacion["indicador"] = dato[index].(map[string]interface{})["dato"]
+						continue
+					case strings.Contains(nombreDetalle, "producto"):
+						informacion["producto"] = dato[index].(map[string]interface{})["dato"]
+						continue
+					}
+				}
+			}
+		}
+	}
+
+	return informacion
 }
 
 func GetDataSubgrupos(subgrupos []map[string]interface{}, index string) map[string]interface{} {

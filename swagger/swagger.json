@@ -1107,7 +1107,7 @@
                 }
             }
         },
-        "/seguimiento/get_actividades/{plan_id}": {
+        "/seguimiento/get_actividades/{seguimiento_id}": {
             "get": {
                 "tags": [
                     "seguimiento"
@@ -1186,6 +1186,35 @@
                     },
                     "403": {
                         "description": ""
+                    }
+                }
+            }
+        },
+        "/seguimiento/get_estado_trimestre/{plan_id}/{trimestre}": {
+            "get": {
+                "tags": [
+                    "seguimiento"
+                ],
+                "description": "get Seguimiento del trimestre correspondiente",
+                "operationId": "SeguimientoController.GetEstadoTrimestre",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "periodo",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "403": {
+                        "description": ""
+                    },
+                    "404": {
+                        "description": "not found resource"
                     }
                 }
             }
