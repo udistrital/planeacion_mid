@@ -184,7 +184,7 @@ func (c *SeguimientoController) GetActividadesGenerales() {
 
 						if seguimiento[0]["dato"] == "{}" {
 							for _, actividad := range actividades {
-								actividad["estado"] = "Sin reporte"
+								actividad["estado"] = map[string]interface{}{"nombre": "Sin reporte"}
 							}
 						} else {
 							dato_plan_str := seguimiento[0]["dato"].(string)
@@ -254,32 +254,69 @@ func (c *SeguimientoController) GuardarSeguimiento() {
 	var body map[string]interface{}
 	var respuesta map[string]interface{}
 	var seguimiento map[string]interface{}
+	var evidencias []map[string]interface{}
 	dato := make(map[string]interface{})
 
-	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &body); err == nil {
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
-		aux := make([]map[string]interface{}, 1)
-		helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
-		seguimiento = aux[0]
-		if seguimiento["dato"] == "{}" {
-			dato[indexActividad] = body
-			b, _ := json.Marshal(dato)
-			str := string(b)
-			seguimiento["dato"] = str
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
+
+			for _, evidencia := range body["evidencia"].([]interface{}) {
+				if evidencia.(map[string]interface{})["Enlace"] != nil {
+					evidencias = append(evidencias, evidencia.(map[string]interface{}))
+				}
+			}
+
+			if body["documento"] != nil {
+				resDocs := helpers.GuardarDocumento(body["documento"].([]interface{}))
+				delete(body, "documento")
+
+				for _, doc := range resDocs {
+
+					evidencias = append(evidencias, map[string]interface{}{
+						"Id":     doc.(map[string]interface{})["Id"],
+						"Enlace": doc.(map[string]interface{})["Enlace"],
+						"nombre": doc.(map[string]interface{})["Nombre"],
+						"TipoDocumento": map[string]interface{}{
+							"id":                doc.(map[string]interface{})["TipoDocumento"].(map[string]interface{})["Id"],
+							"codigoAbreviacion": doc.(map[string]interface{})["TipoDocumento"].(map[string]interface{})["CodigoAbreviacion"],
+						},
+						"Observacion": "",
+						"Activo":      true,
+					})
+				}
+
+				body["evidencia"] = evidencias
+			}
+
+			aux := make([]map[string]interface{}, 1)
+			helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
+			seguimiento = aux[0]
+
+			if seguimiento["dato"] == "{}" {
+				dato[indexActividad] = body
+				b, _ := json.Marshal(dato)
+				str := string(b)
+				seguimiento["dato"] = str
+			} else {
+				datoStr := seguimiento["dato"].(string)
+				json.Unmarshal([]byte(datoStr), &dato)
+
+				dato[indexActividad] = body
+				b, _ := json.Marshal(dato)
+				str := string(b)
+				seguimiento["dato"] = str
+			}
+
+			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+				panic(map[string]interface{}{"funcion": "GuardarSeguimiento", "err": "Error actualizando seguimiento \"seguimiento[\"_id\"].(string)\"", "status": "400", "log": err})
+			}
+
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": respuesta["Data"]}
 		} else {
-			datoStr := seguimiento["dato"].(string)
-			json.Unmarshal([]byte(datoStr), &dato)
-
-			dato[indexActividad] = body
-			b, _ := json.Marshal(dato)
-			str := string(b)
-			seguimiento["dato"] = str
+			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+			c.Abort("400")
 		}
-		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
-			panic(map[string]interface{}{"funcion": "GuardarSeguimiento", "err": "Error actualizando seguimiento \"seguimiento[\"_id\"].(string)\"", "status": "400", "log": err})
-		}
-		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": respuesta["Data"]}
 	} else {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 		c.Abort("400")

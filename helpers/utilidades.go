@@ -15,6 +15,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/administrativa_mid_api/models"
+	seguimientomodels "github.com/udistrital/planeacion_mid/models"
 )
 
 func SendJson(url string, trequest string, target interface{}, datajson interface{}) error {
@@ -324,4 +325,38 @@ func LimpiezaRespuestaRefactor(respuesta map[string]interface{}, v interface{}) 
 		panic(err)
 	}
 	json.Unmarshal(b, &v)
+}
+
+func GuardarDocumento(documentos []interface{}) []interface{} {
+	var resDocs []interface{}
+	for _, documento := range documentos {
+
+		if documento.(map[string]interface{})["file"] != nil {
+			documento := map[string]interface{}{
+				"IdTipoDocumento": documento.(map[string]interface{})["IdTipoDocumento"],
+				"nombre":          documento.(map[string]interface{})["nombre"],
+				"metadatos":       documento.(map[string]interface{})["metadatos"],
+				"descripcion":     documento.(map[string]interface{})["descripcion"],
+				"file":            documento.(map[string]interface{})["file"],
+			}
+
+			var docAux []map[string]interface{}
+			docAux = append(docAux, documento)
+			documentoSubido, errDoc := seguimientomodels.RegistrarDoc(docAux)
+
+			if errDoc == nil {
+				docTem := map[string]interface{}{
+					"Nombre":        documentoSubido.(map[string]interface{})["Nombre"].(string),
+					"Enlace":        documentoSubido.(map[string]interface{})["Enlace"],
+					"Id":            documentoSubido.(map[string]interface{})["Id"],
+					"TipoDocumento": documentoSubido.(map[string]interface{})["TipoDocumento"],
+					"Activo":        documentoSubido.(map[string]interface{})["Activo"],
+				}
+
+				resDocs = append(resDocs, docTem)
+			}
+		}
+	}
+
+	return resDocs
 }
