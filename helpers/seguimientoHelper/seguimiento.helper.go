@@ -93,6 +93,7 @@ func GetActividad(seguimiento map[string]interface{}, index string) map[string]i
 
 	var informacion map[string]interface{}
 	cualitativo := map[string]interface{}{}
+	evidencia := []map[string]interface{}{}
 	cuantitativo := map[string]interface{}{}
 	estado := map[string]interface{}{}
 
@@ -103,7 +104,7 @@ func GetActividad(seguimiento map[string]interface{}, index string) map[string]i
 		}
 	}
 
-	informacion =  GetInformacionPlan(seguimiento, index)
+	informacion = GetInformacionPlan(seguimiento, index)
 
 	// TO DO: cualitativo
 	// TO DO: cuantitativo
@@ -112,6 +113,7 @@ func GetActividad(seguimiento map[string]interface{}, index string) map[string]i
 		"cualitativo":  cualitativo,
 		"cuantitativo": cuantitativo,
 		"estado":       estado,
+		"evidencia":    evidencia,
 	}
 
 	return data
@@ -120,6 +122,7 @@ func GetActividad(seguimiento map[string]interface{}, index string) map[string]i
 func GetInformacionPlan(seguimiento map[string]interface{}, index string) map[string]interface{} {
 	var resPlan map[string]interface{}
 	var resInformacion map[string]interface{}
+	var respuestaDependencia []map[string]interface{}
 
 	informacion := map[string]interface{}{
 		"ponderacion": "",
@@ -129,12 +132,14 @@ func GetInformacionPlan(seguimiento map[string]interface{}, index string) map[st
 		"producto":    "",
 		"nombre":      "",
 		"descripcion": "",
-		"index": index,
+		"index":       index,
+		"unidad":      "",
 	}
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+seguimiento["plan_id"].(string), &resPlan); err == nil {
 		informacion["nombre"] = resPlan["Data"].(map[string]interface{})["nombre"]
 		informacion["descripcion"] = resPlan["Data"].(map[string]interface{})["descripcion"]
+		informacion["unidad"] = resPlan["Data"].(map[string]interface{})["dependencia_id"]
 	}
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+seguimiento["plan_id"].(string), &resInformacion); err == nil {
 		for _, hijo := range resInformacion["Data"].([]interface{}) {
@@ -170,6 +175,12 @@ func GetInformacionPlan(seguimiento map[string]interface{}, index string) map[st
 				}
 			}
 		}
+	}
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=DependenciaId:"+informacion["unidad"].(string), &respuestaDependencia); err == nil {
+		informacion["unidad"] = respuestaDependencia[0]["DependenciaId"].(map[string]interface{})["Nombre"]
+	} else {
+		informacion["unidad"] = nil
 	}
 
 	return informacion
