@@ -323,10 +323,13 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 							respuestas = append(respuestas, respuesta)
 						}
 
+						if response["denominador"] == nil {
+							response["denominador"] = ""
+						}
+
 						respuestas = GetRespuestaAcumulado(seguimiento, len(indicadores)-1, respuestas, index, trimestre, response["denominador"].(string))
 					}
 				}
-
 				break
 			}
 		}
@@ -516,11 +519,17 @@ func GetRespuestaAcumulado(dataSeg map[string]interface{}, index int, respuestas
 								continue
 							}
 
-							indicadorAcumulado += seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["indicadorAcumulado"].(float64)
+							if seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["indicadorAcumulado"] == nil {
+								indicadorAcumulado += seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["indicadorAcumulado"].(float64)
+							}
 
-							avanceAcumulado += seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["avanceAcumulado"].(float64)
+							if seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["avanceAcumulado"] == nil {
+								avanceAcumulado += seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["avanceAcumulado"].(float64)
+							}
 
-							brechaExistente += seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["brechaExistente"].(float64)
+							if seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["brechaExistente"] == nil {
+								brechaExistente += seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["brechaExistente"].(float64)
+							}
 
 							if denominador == "Denominador fijo" {
 								acumuladoDenominador = seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(float64)
@@ -528,7 +537,9 @@ func GetRespuestaAcumulado(dataSeg map[string]interface{}, index int, respuestas
 								acumuladoDenominador += seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(float64)
 							}
 
-							acumuladoNumerador += seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"].(float64)
+							if seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"] == nil {
+								acumuladoNumerador += seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"].(float64)
+							}
 						}
 						respuestas[index]["indicadorAcumulado"] = indicadorAcumulado
 						respuestas[index]["avanceAcumulado"] = avanceAcumulado
