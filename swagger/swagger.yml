@@ -1066,6 +1066,76 @@ paths:
             $ref: '#/definitions/models.Seguimiento'
         "403":
           description: ""
+  /seguimiento/revision_actividad/{plan_id}/{index}/{trimestre}:
+    post:
+      tags:
+      - seguimiento
+      description: post Seguimiento by id
+      operationId: SeguimientoController.RevisarActividad
+      parameters:
+      - in: path
+        name: plan_id
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: index
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: trimestre
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Seguimiento'
+        "403":
+          description: :plan_id is empty
+  /seguimiento/revision_seguimiento/{plan_id}/{trimestre}:
+    post:
+      tags:
+      - seguimiento
+      description: post Seguimiento by id
+      operationId: SeguimientoController.RevisarSeguimiento
+      parameters:
+      - in: path
+        name: plan_id
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: index
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: trimestre
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Seguimiento'
+        "403":
+          description: :plan_id is empty
 definitions:
   '{}':
     title: '{}'
