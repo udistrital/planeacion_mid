@@ -28,8 +28,8 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/models.Arbol'
-        "403":
-          description: :id is empty
+        "404":
+          description: not found resource
   /arbol/activar_nodo/{id}:
     put:
       tags:
@@ -837,7 +837,7 @@ paths:
       responses:
         "200":
           description: ""
-        "403":
+        "404":
           description: ""
   /seguimiento/get_seguimiento/{plan_id}/{index}/{trimestre}:
     get:
