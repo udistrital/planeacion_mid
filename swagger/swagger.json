@@ -142,8 +142,8 @@
                             "$ref": "#/definitions/models.Arbol"
                         }
                     },
-                    "403": {
-                        "description": ":id is empty"
+                    "404": {
+                        "description": "not found resource"
                     }
                 }
             }
@@ -1265,7 +1265,7 @@
                     "200": {
                         "description": ""
                     },
-                    "403": {
+                    "404": {
                         "description": ""
                     }
                 }
@@ -1298,11 +1298,11 @@
             }
         },
         "/seguimiento/guardar_cualitativo/{plan_id}/{index}/{trimestre}": {
-            "post": {
+            "put": {
                 "tags": [
                     "seguimiento"
                 ],
-                "description": "post Seguimiento by id",
+                "description": "put Seguimiento by id",
                 "operationId": "SeguimientoController.GuardarCualitativo",
                 "parameters": [
                     {
@@ -1347,11 +1347,11 @@
             }
         },
         "/seguimiento/guardar_cuantitativo/{plan_id}/{index}/{trimestre}": {
-            "post": {
+            "put": {
                 "tags": [
                     "seguimiento"
                 ],
-                "description": "post Seguimiento by id",
+                "description": "put Seguimiento by id",
                 "operationId": "SeguimientoController.GuardarCuantitativo",
                 "parameters": [
                     {
@@ -1396,11 +1396,11 @@
             }
         },
         "/seguimiento/guardar_documentos/{plan_id}/{index}/{trimestre}": {
-            "post": {
+            "put": {
                 "tags": [
                     "seguimiento"
                 ],
-                "description": "post Seguimiento by id",
+                "description": "put Seguimiento by id",
                 "operationId": "SeguimientoController.GuardarDocumentos",
                 "parameters": [
                     {
@@ -1445,11 +1445,11 @@
             }
         },
         "/seguimiento/guardar_seguimiento/{plan_id}/{index}/{trimestre}": {
-            "post": {
+            "put": {
                 "tags": [
                     "seguimiento"
                 ],
-                "description": "post Seguimiento by id",
+                "description": "put Seguimiento by id",
                 "operationId": "SeguimientoController.GuardarSeguimiento",
                 "parameters": [
                     {
@@ -1529,16 +1529,9 @@
                 "tags": [
                     "seguimiento"
                 ],
-                "description": "post Seguimiento by id",
+                "description": "put Seguimiento by id",
                 "operationId": "SeguimientoController.ReportarActividad",
                 "parameters": [
-                    {
-                        "in": "path",
-                        "name": "plan_id",
-                        "description": "The key for staticblock",
-                        "required": true,
-                        "type": "string"
-                    },
                     {
                         "in": "path",
                         "name": "index",
@@ -1547,11 +1540,13 @@
                         "type": "string"
                     },
                     {
-                        "in": "path",
-                        "name": "trimestre",
-                        "description": "The key for staticblock",
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
                         "required": true,
-                        "type": "string"
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
                     }
                 ],
                 "responses": {
@@ -1567,34 +1562,29 @@
                 }
             }
         },
-        "/seguimiento/reportar_seguimiento": {
+        "/seguimiento/reportar_seguimiento/{id}": {
             "put": {
                 "tags": [
                     "seguimiento"
                 ],
-                "description": "post Seguimiento by id",
+                "description": "put Seguimiento by id",
                 "operationId": "SeguimientoController.ReportarSeguimiento",
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "plan_id",
+                        "name": "id",
                         "description": "The key for staticblock",
                         "required": true,
                         "type": "string"
                     },
                     {
-                        "in": "path",
-                        "name": "index",
-                        "description": "The key for staticblock",
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
                         "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "in": "path",
-                        "name": "trimestre",
-                        "description": "The key for staticblock",
-                        "required": true,
-                        "type": "string"
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
                     }
                 ],
                 "responses": {
@@ -1611,11 +1601,11 @@
             }
         },
         "/seguimiento/revision_actividad/{plan_id}/{index}/{trimestre}": {
-            "post": {
+            "put": {
                 "tags": [
                     "seguimiento"
                 ],
-                "description": "post Seguimiento by id",
+                "description": "put Seguimiento by id",
                 "operationId": "SeguimientoController.RevisarActividad",
                 "parameters": [
                     {
@@ -1662,43 +1652,20 @@
                 }
             }
         },
-        "/seguimiento/revision_seguimiento/{plan_id}/{trimestre}": {
-            "post": {
+        "/seguimiento/revision_seguimiento/{id}": {
+            "put": {
                 "tags": [
                     "seguimiento"
                 ],
-                "description": "post Seguimiento by id",
+                "description": "put Seguimiento by id",
                 "operationId": "SeguimientoController.RevisarSeguimiento",
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "plan_id",
+                        "name": "id",
                         "description": "The key for staticblock",
                         "required": true,
                         "type": "string"
-                    },
-                    {
-                        "in": "path",
-                        "name": "index",
-                        "description": "The key for staticblock",
-                        "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "in": "path",
-                        "name": "trimestre",
-                        "description": "The key for staticblock",
-                        "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "body for Plan content",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/{}"
-                        }
                     }
                 ],
                 "responses": {
@@ -1709,7 +1676,7 @@
                         }
                     },
                     "403": {
-                        "description": ":plan_id is empty"
+                        "description": ":id is empty"
                     }
                 }
             }
