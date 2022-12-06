@@ -857,10 +857,10 @@ paths:
         "403":
           description: ""
   /seguimiento/guardar_cualitativo/{plan_id}/{index}/{trimestre}:
-    post:
+    put:
       tags:
       - seguimiento
-      description: post Seguimiento by id
+      description: put Seguimiento by id
       operationId: SeguimientoController.GuardarCualitativo
       parameters:
       - in: path
@@ -890,10 +890,10 @@ paths:
           schema:
             $ref: '#/definitions/models.Seguimiento'
   /seguimiento/guardar_cuantitativo/{plan_id}/{index}/{trimestre}:
-    post:
+    put:
       tags:
       - seguimiento
-      description: post Seguimiento by id
+      description: put Seguimiento by id
       operationId: SeguimientoController.GuardarCuantitativo
       parameters:
       - in: path
@@ -923,10 +923,10 @@ paths:
           schema:
             $ref: '#/definitions/models.Seguimiento'
   /seguimiento/guardar_documentos/{plan_id}/{index}/{trimestre}:
-    post:
+    put:
       tags:
       - seguimiento
-      description: post Seguimiento by id
+      description: put Seguimiento by id
       operationId: SeguimientoController.GuardarDocumentos
       parameters:
       - in: path
@@ -956,10 +956,10 @@ paths:
           schema:
             $ref: '#/definitions/models.Seguimiento'
   /seguimiento/guardar_seguimiento/{plan_id}/{index}/{trimestre}:
-    post:
+    put:
       tags:
       - seguimiento
-      description: post Seguimiento by id
+      description: put Seguimiento by id
       operationId: SeguimientoController.GuardarSeguimiento
       parameters:
       - in: path
@@ -1012,24 +1012,20 @@ paths:
     put:
       tags:
       - seguimiento
-      description: post Seguimiento by id
+      description: put Seguimiento by id
       operationId: SeguimientoController.ReportarActividad
       parameters:
-      - in: path
-        name: plan_id
-        description: The key for staticblock
-        required: true
-        type: string
       - in: path
         name: index
         description: The key for staticblock
         required: true
         type: string
-      - in: path
-        name: trimestre
-        description: The key for staticblock
+      - in: body
+        name: body
+        description: body for Plan content
         required: true
-        type: string
+        schema:
+          $ref: '#/definitions/{}'
       responses:
         "200":
           description: ""
@@ -1037,28 +1033,24 @@ paths:
             $ref: '#/definitions/models.Seguimiento'
         "403":
           description: ""
-  /seguimiento/reportar_seguimiento:
+  /seguimiento/reportar_seguimiento/{id}:
     put:
       tags:
       - seguimiento
-      description: post Seguimiento by id
+      description: put Seguimiento by id
       operationId: SeguimientoController.ReportarSeguimiento
       parameters:
       - in: path
-        name: plan_id
+        name: id
         description: The key for staticblock
         required: true
         type: string
-      - in: path
-        name: index
-        description: The key for staticblock
+      - in: body
+        name: body
+        description: body for Plan content
         required: true
-        type: string
-      - in: path
-        name: trimestre
-        description: The key for staticblock
-        required: true
-        type: string
+        schema:
+          $ref: '#/definitions/{}'
       responses:
         "200":
           description: ""
@@ -1067,10 +1059,10 @@ paths:
         "403":
           description: ""
   /seguimiento/revision_actividad/{plan_id}/{index}/{trimestre}:
-    post:
+    put:
       tags:
       - seguimiento
-      description: post Seguimiento by id
+      description: put Seguimiento by id
       operationId: SeguimientoController.RevisarActividad
       parameters:
       - in: path
@@ -1101,41 +1093,25 @@ paths:
             $ref: '#/definitions/models.Seguimiento'
         "403":
           description: :plan_id is empty
-  /seguimiento/revision_seguimiento/{plan_id}/{trimestre}:
-    post:
+  /seguimiento/revision_seguimiento/{id}:
+    put:
       tags:
       - seguimiento
-      description: post Seguimiento by id
+      description: put Seguimiento by id
       operationId: SeguimientoController.RevisarSeguimiento
       parameters:
       - in: path
-        name: plan_id
+        name: id
         description: The key for staticblock
         required: true
         type: string
-      - in: path
-        name: index
-        description: The key for staticblock
-        required: true
-        type: string
-      - in: path
-        name: trimestre
-        description: The key for staticblock
-        required: true
-        type: string
-      - in: body
-        name: body
-        description: body for Plan content
-        required: true
-        schema:
-          $ref: '#/definitions/{}'
       responses:
         "200":
           description: ""
           schema:
             $ref: '#/definitions/models.Seguimiento'
         "403":
-          description: :plan_id is empty
+          description: :id is empty
 definitions:
   '{}':
     title: '{}'
