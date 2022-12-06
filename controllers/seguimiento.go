@@ -47,6 +47,20 @@ func (c *SeguimientoController) URLMapping() {
 // @Failure 403
 // @router /habilitar_reportes [put]
 func (c *SeguimientoController) HabilitarReportes() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SeguimientoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	var res map[string]interface{}
 	var resPut map[string]interface{}
 	var reportes []map[string]interface{}
@@ -83,8 +97,7 @@ func (c *SeguimientoController) HabilitarReportes() {
 		}
 		c.Data["json"] = reportes
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-		c.Abort("400")
+		panic(err)
 	}
 
 	c.ServeJSON()
@@ -98,6 +111,18 @@ func (c *SeguimientoController) HabilitarReportes() {
 // @Failure 403
 // @router /crear_reportes/:plan/:tipo [post]
 func (c *SeguimientoController) CrearReportes() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SeguimientoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
 	plan_id := c.Ctx.Input.Param(":plan")
 	tipo := c.Ctx.Input.Param(":tipo")
 	var res map[string]interface{}
@@ -129,14 +154,12 @@ func (c *SeguimientoController) CrearReportes() {
 				arrReportes = append(arrReportes, respuestaPost["Data"].(map[string]interface{}))
 				respuestaPost = nil
 			} else {
-				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-				c.Abort("400")
+				panic(err)
 			}
 		}
 
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-		c.Abort("400")
+		panic(err)
 	}
 
 	c.Data["json"] = arrReportes
@@ -148,13 +171,30 @@ func (c *SeguimientoController) CrearReportes() {
 // @Description get Seguimiento
 // @Param	periodo 	path 	string	true		"The key for staticblock"
 // @Success 200
-// @Failure 403
+// @Failure 404
 // @router /get_periodos/:vigencia [get]
 func (c *SeguimientoController) GetPeriodos() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SeguimientoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	vigencia := c.Ctx.Input.Param(":vigencia")
+	if len(vigencia) == 0 {
+		c.Data["json"] = map[string]interface{}{"Success": false, "Status": "404", "Message": "Request containt incorrect params", "Data": nil}
+	}
 	trimestres := seguimientohelper.GetTrimestres(vigencia)
-	if trimestres[0]["Id"] == nil {
-		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": ""}
+	fmt.Println(trimestres)
+	if len(trimestres) == 0 || trimestres[0]["Id"] == nil {
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": nil}
 
 	} else {
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": trimestres}
@@ -170,6 +210,18 @@ func (c *SeguimientoController) GetPeriodos() {
 // @Failure 403
 // @router /get_actividades/:seguimiento_id [get]
 func (c *SeguimientoController) GetActividadesGenerales() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SeguimientoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
 	seguimiento_id := c.Ctx.Input.Param(":seguimiento_id")
 	var resSeguimiento map[string]interface{}
 	var res map[string]interface{}
@@ -216,8 +268,7 @@ func (c *SeguimientoController) GetActividadesGenerales() {
 				}
 			}
 		} else {
-			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-			c.Abort("400")
+			panic(err)
 		}
 	}
 	c.ServeJSON()
@@ -231,6 +282,19 @@ func (c *SeguimientoController) GetActividadesGenerales() {
 // @Failure 403
 // @router /get_data/:plan_id/:index [get]
 func (c *SeguimientoController) GetDataActividad() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SeguimientoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	plan_id := c.Ctx.Input.Param(":plan_id")
 	index := c.Ctx.Input.Param(":index")
 	var res map[string]interface{}
@@ -241,8 +305,7 @@ func (c *SeguimientoController) GetDataActividad() {
 		data := seguimientohelper.GetDataSubgrupos(hijos, index)
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": data}
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-		c.Abort("400")
+		panic(err)
 	}
 
 	c.ServeJSON()
@@ -259,6 +322,18 @@ func (c *SeguimientoController) GetDataActividad() {
 // @Failure 403 :plan_id is empty
 // @router /guardar_seguimiento/:plan_id/:index/:trimestre [post]
 func (c *SeguimientoController) GuardarSeguimiento() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SeguimientoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
 	planId := c.Ctx.Input.Param(":plan_id")
 	indexActividad := c.Ctx.Input.Param(":index")
 	trimestre := c.Ctx.Input.Param(":trimestre")
@@ -327,12 +402,10 @@ func (c *SeguimientoController) GuardarSeguimiento() {
 
 			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": respuesta["Data"]}
 		} else {
-			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-			c.Abort("400")
+			panic(err)
 		}
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-		c.Abort("400")
+		panic(err)
 	}
 	c.ServeJSON()
 
@@ -346,6 +419,19 @@ func (c *SeguimientoController) GuardarSeguimiento() {
 // @Failure 403
 // @router /get_seguimiento/:plan_id/:index/:trimestre [get]
 func (c *SeguimientoController) GetSeguimiento() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SeguimientoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	planId := c.Ctx.Input.Param(":plan_id")
 	indexActividad := c.Ctx.Input.Param(":index")
 	trimestreId := c.Ctx.Input.Param(":trimestre")
@@ -385,8 +471,7 @@ func (c *SeguimientoController) GetSeguimiento() {
 		}
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": seguimientoActividad}
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-		c.Abort("400")
+		panic(err)
 	}
 
 	c.ServeJSON()
@@ -400,6 +485,18 @@ func (c *SeguimientoController) GetSeguimiento() {
 // @Failure 403
 // @router /get_indicadores/:plan_id [get]
 func (c *SeguimientoController) GetIndicadores() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SeguimientoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
 	plan_id := c.Ctx.Input.Param(":plan_id")
 	var res map[string]interface{}
 	var subgrupos []map[string]interface{}
@@ -422,15 +519,13 @@ func (c *SeguimientoController) GetIndicadores() {
 					}
 					c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": indicadores}
 				} else {
-					c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-					c.Abort("400")
+					panic(err)
 				}
 				break
 			}
 		}
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-		c.Abort("400")
+		panic(err)
 	}
 	c.ServeJSON()
 }
@@ -443,6 +538,19 @@ func (c *SeguimientoController) GetIndicadores() {
 // @Failure 403 :plan_id is empty
 // @router /get_avance [post]
 func (c *SeguimientoController) GetAvanceIndicador() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SeguimientoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	var body map[string]interface{}
 	var res map[string]interface{}
 	var avancedata []map[string]interface{}
@@ -496,8 +604,7 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 					}
 
 				} else {
-					c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-					c.Abort("400")
+					panic(err)
 				}
 				periodIdString = fmt.Sprint(periodId)
 				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_seguimiento_id:"+periodIdString, &res2); err == nil {
@@ -510,8 +617,7 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 					avanceAcumulado = avanceIndicador1["avanceAcumulado"].(string)
 					testavancePeriodo = avanceIndicador1["avancePeriodo"].(string)
 				} else {
-					c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-					c.Abort("400")
+					panic(err)
 				}
 				if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+body["periodo_seguimiento_id"].(string), &resName); err == nil {
 					helpers.LimpiezaRespuestaRefactor(resName, &parametro_periodo_name)
@@ -520,15 +626,13 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 					paramIdName := paramIdlenName["ParametroId"].(map[string]interface{})
 					nombrePeriodo = paramIdName["CodigoAbreviacion"].(string)
 				} else {
-					c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-					c.Abort("400")
+					panic(err)
 				}
 			} else {
 				fmt.Println("")
 			}
 		} else {
-			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-			c.Abort("400")
+			panic(err)
 		}
 		avancePeriodo := body["avancePeriodo"].(string)
 		aPe, err := strconv.ParseFloat(avancePeriodo, 8)
@@ -554,8 +658,7 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": generalData}
 		fmt.Println(dato)
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-		c.Abort("400")
+		panic(err)
 	}
 
 	c.ServeJSON()
@@ -570,6 +673,18 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 // @Failure 404 not found resource
 // @router /get_estado_trimestre/:plan_id/:trimestre [get]
 func (c *SeguimientoController) GetEstadoTrimestre() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SeguimientoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
 	var resSeguimiento map[string]interface{}
 	var resPeriodoSeguimiento map[string]interface{}
 	var resPeriodo map[string]interface{}
@@ -614,8 +729,7 @@ func (c *SeguimientoController) GetEstadoTrimestre() {
 		}
 
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "404", "Body": err, "Type": "error"}
-		c.Abort("404")
+		panic(err)
 	}
 	c.ServeJSON()
 }

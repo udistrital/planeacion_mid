@@ -44,6 +44,19 @@ func CreateExcel(f *excelize.File, dir string) {
 // @Failure 403 :plan_id is empty
 // @router /desagregado [post]
 func (c *ReportesController) Desagregado() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ReportesController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	var body map[string]interface{}
 	var respuesta map[string]interface{}
 	var planesFilter []map[string]interface{}
@@ -98,8 +111,7 @@ func (c *ReportesController) Desagregado() {
 				}
 
 			} else {
-				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-				c.Abort("400")
+				panic(err)
 			}
 		}
 		contadorDesagregado := 3
@@ -220,8 +232,7 @@ func (c *ReportesController) Desagregado() {
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": dataSend}
 
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-		c.Abort("400")
+		panic(err)
 	}
 	c.ServeJSON()
 }
@@ -235,6 +246,19 @@ func (c *ReportesController) Desagregado() {
 // @Failure 403 :plan_id is empty
 // @router /plan_anual/:nombre [post]
 func (c *ReportesController) PlanAccionAnual() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ReportesController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	var body map[string]interface{}
 	var respuesta map[string]interface{}
 	var planesFilter []map[string]interface{}
@@ -354,8 +378,7 @@ func (c *ReportesController) PlanAccionAnual() {
 									}
 
 								} else {
-									c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-									c.Abort("400")
+									panic(err)
 								}
 
 								generalData := make(map[string]interface{})
@@ -382,8 +405,7 @@ func (c *ReportesController) PlanAccionAnual() {
 						}
 					}
 				} else {
-					c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-					c.Abort("400")
+					panic(err)
 				}
 
 				contadorLineamiento := 4
@@ -707,8 +729,7 @@ func (c *ReportesController) PlanAccionAnual() {
 			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": dataSend}
 
 		} else {
-			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-			c.Abort("400")
+			panic(err)
 		}
 	}
 
@@ -724,6 +745,20 @@ func (c *ReportesController) PlanAccionAnual() {
 // @Failure 403 :plan_id is empty
 // @router /plan_anual_general/:nombre [post]
 func (c *ReportesController) PlanAccionAnualGeneral() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ReportesController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	var body map[string]interface{}
 	var respuesta map[string]interface{}
 	var planesFilter []map[string]interface{}
@@ -845,8 +880,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 									arregloLineamietoPI = []map[string]interface{}{}
 								}
 							} else {
-								c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-								c.Abort("400")
+								panic(err)
 							}
 
 							generalData := make(map[string]interface{})
@@ -874,8 +908,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 
 				}
 			} else {
-				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-				c.Abort("400")
+				panic(err)
 			}
 
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-plan/"+planesFilter[planes]["estado_plan_id"].(string), &respuestaEstado); err == nil {
@@ -1232,8 +1265,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": dataSend}
 
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-		c.Abort("400")
+		panic(err)
 	}
 
 	c.ServeJSON()
@@ -1248,6 +1280,20 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 // @Failure 403 :plan_id is empty
 // @router /necesidades/:nombre [post]
 func (c *ReportesController) Necesidades() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ReportesController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	var body map[string]interface{}
 	var respuesta map[string]interface{}
 	var respuestaIdentificaciones map[string]interface{}
@@ -2505,8 +2551,7 @@ func (c *ReportesController) Necesidades() {
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": dataSend}
 
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-		c.Abort("400")
+		panic(err)
 	}
 
 	c.ServeJSON()

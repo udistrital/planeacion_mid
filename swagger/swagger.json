@@ -142,8 +142,8 @@
                             "$ref": "#/definitions/models.Arbol"
                         }
                     },
-                    "403": {
-                        "description": ":id is empty"
+                    "404": {
+                        "description": "not found resource"
                     }
                 }
             }
@@ -1265,7 +1265,7 @@
                     "200": {
                         "description": ""
                     },
-                    "403": {
+                    "404": {
                         "description": ""
                     }
                 }

@@ -54,6 +54,19 @@ func (c *FormulacionController) URLMapping() {
 // @router /clonar_formato/:id [post]
 func (c *FormulacionController) ClonarFormato() {
 
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	id := c.Ctx.Input.Param(":id")
 
 	var respuesta map[string]interface{}
@@ -241,6 +254,19 @@ func (c *FormulacionController) GuardarActividad() {
 // @Failure 403 :id is empty
 // @router /get_plan/:id/:index [get]
 func (c *FormulacionController) GetPlan() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	id := c.Ctx.Input.Param(":id")
 	index := c.Ctx.Input.Param(":index")
 	var res map[string]interface{}
@@ -252,8 +278,8 @@ func (c *FormulacionController) GetPlan() {
 		tree := formulacionhelper.BuildTreeFa(hijos, index)
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": tree}
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-		c.Abort("400")
+		panic(err)
+
 	}
 
 	c.ServeJSON()
@@ -269,6 +295,18 @@ func (c *FormulacionController) GetPlan() {
 // @Failure 403 :id is empty
 // @router /actualizar_actividad/:id/:index [put]
 func (c *FormulacionController) ActualizarActividad() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
 	id := c.Ctx.Input.Param(":id")
 	index := c.Ctx.Input.Param(":index")
 
@@ -400,6 +438,18 @@ func (c *FormulacionController) ActualizarActividad() {
 // @Failure 403 :id is empty
 // @router /delete_actividad/:id/:index [put]
 func (c *FormulacionController) DeleteActividad() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
 	id := c.Ctx.Input.Param(":id")
 	index := c.Ctx.Input.Param(":index")
 
@@ -411,8 +461,7 @@ func (c *FormulacionController) DeleteActividad() {
 		formulacionhelper.RecorrerHijos(hijos, index)
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "Actividades Inactivas"}
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-		c.Abort("400")
+		panic(err)
 	}
 
 	c.ServeJSON()
@@ -427,6 +476,18 @@ func (c *FormulacionController) DeleteActividad() {
 // @Failure 403 :id is empty
 // @router /get_all_actividades/:id/ [get]
 func (c *FormulacionController) GetAllActividades() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
 	id := c.Ctx.Input.Param(":id")
 	var res map[string]interface{}
 	var hijos []map[string]interface{}
@@ -441,8 +502,7 @@ func (c *FormulacionController) GetAllActividades() {
 		tabla = formulacionhelper.GetTabla(auxHijos)
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": tabla}
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-		c.Abort("400")
+		panic(err)
 	}
 	c.ServeJSON()
 }
@@ -479,6 +539,19 @@ func (c *FormulacionController) GetArbolArmonizacion() {
 // @Failure 403 :id is empty
 // @router /guardar_identificacion/:id/:idTipo [put]
 func (c *FormulacionController) GuardarIdentificacion() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	id := c.Ctx.Input.Param(":id")
 	tipoIdenti := c.Ctx.Input.Param(":idTipo")
 	var entrada map[string]interface{}
@@ -505,8 +578,7 @@ func (c *FormulacionController) GuardarIdentificacion() {
 		}
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "Registro de identificación"}
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-		c.Abort("400")
+		panic(err)
 	}
 
 	c.ServeJSON()
@@ -522,6 +594,18 @@ func (c *FormulacionController) GuardarIdentificacion() {
 // @Failure 403 :id is empty
 // @router /get_all_identificacion/:id/:idTipo [get]
 func (c *FormulacionController) GetAllIdentificacion() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
 	id := c.Ctx.Input.Param(":id")
 	tipoIdenti := c.Ctx.Input.Param(":idTipo")
 	var respuesta []map[string]interface{}
@@ -645,8 +729,7 @@ func (c *FormulacionController) GetAllIdentificacion() {
 			}
 
 		} else {
-			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-			c.Abort("400")
+			panic(err)
 		}
 
 	}
@@ -664,6 +747,18 @@ func (c *FormulacionController) GetAllIdentificacion() {
 // @Failure 403 :id is empty
 // @router /delete_identificacion/:id/:idTipo/:index [put]
 func (c *FormulacionController) DeleteIdentificacion() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
 	id := c.Ctx.Input.Param(":id")
 	index := c.Ctx.Input.Param(":index")
 	idTipo := c.Ctx.Input.Param(":idTipo")
@@ -703,8 +798,7 @@ func (c *FormulacionController) DeleteIdentificacion() {
 		}
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "Identificación Inactiva"}
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-		c.Abort("400")
+		panic(err)
 	}
 }
 
@@ -716,6 +810,18 @@ func (c *FormulacionController) DeleteIdentificacion() {
 // @Failure 403 :id is empty
 // @router /versionar_plan/:id [post]
 func (c *FormulacionController) VersionarPlan() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
 
 	id := c.Ctx.Input.Param(":id")
 
@@ -776,6 +882,18 @@ func (c *FormulacionController) VersionarPlan() {
 // @Failure 403 :id is empty
 // @router /get_plan_versiones/:unidad/:vigencia/:nombre [get]
 func (c *FormulacionController) GetPlanVersiones() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
 	unidad := c.Ctx.Input.Param(":unidad")
 	vigencia := c.Ctx.Input.Param(":vigencia")
 	nombre := c.Ctx.Input.Param(":nombre")
@@ -799,6 +917,18 @@ func (c *FormulacionController) GetPlanVersiones() {
 // @Failure 403 :id is empty
 // @router /ponderacion_actividades/:plan [get]
 func (c *FormulacionController) PonderacionActividades() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
 	plan := c.Ctx.Input.Param(":plan")
 	var respuesta map[string]interface{}
 	var respuestaDetalle map[string]interface{}
@@ -854,6 +984,19 @@ func (c *FormulacionController) PonderacionActividades() {
 // @router /get_rubros [get]
 func (c *FormulacionController) GetRubros() {
 
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	var respuesta map[string]interface{}
 	var rubros []interface{}
 
@@ -884,6 +1027,18 @@ func (c *FormulacionController) GetRubros() {
 // @Failure 403 :id is empty
 // @router /get_unidades [get]
 func (c *FormulacionController) GetUnidades() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
 
 	var respuesta []map[string]interface{}
 	var unidades []map[string]interface{}
@@ -1124,6 +1279,19 @@ func (c *FormulacionController) GetUnidades() {
 // @router /vinculacion_tercero/:tercero_id [get]
 func (c *FormulacionController) VinculacionTercero() {
 
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	terceroId := c.Ctx.Input.Param(":tercero_id")
 	var vinculaciones []models.Vinculacion
 	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/vinculacion?query=Activo:true,TerceroPrincipalId:"+terceroId, &vinculaciones); err != nil {
@@ -1149,6 +1317,19 @@ func (c *FormulacionController) VinculacionTercero() {
 // @router /planes [get]
 func (c *FormulacionController) Planes() {
 
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	var respuesta map[string]interface{}
 	var res map[string]interface{}
 	var planes []map[string]interface{}
@@ -1165,15 +1346,13 @@ func (c *FormulacionController) Planes() {
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=tipo_plan_id:6239117116511e20405d408b", &respuesta); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &planesPI)
 		} else {
-			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-			c.Abort("400")
+			panic(err)
 		}
 
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=tipo_plan_id:616513b91634adfaffed52bf", &respuesta); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &planesPED)
 		} else {
-			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-			c.Abort("400")
+			panic(err)
 		}
 
 		auxArregloPlanes = append(auxArregloPlanes, planes...)
@@ -1209,14 +1388,12 @@ func (c *FormulacionController) Planes() {
 				}
 
 			} else {
-				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-				c.Abort("400")
+				panic(err)
 			}
 		}
 
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-		c.Abort("400")
+		panic(err)
 	}
 	c.ServeJSON()
 }
@@ -1229,6 +1406,20 @@ func (c *FormulacionController) Planes() {
 // @Failure 403 :id is empty
 // @router /verificar_identificaciones/:id [get]
 func (c *FormulacionController) VerificarIdentificaciones() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	id := c.Ctx.Input.Param(":id")
 	var respuesta map[string]interface{}
 	var respuestaPlan map[string]interface{}
@@ -1256,16 +1447,13 @@ func (c *FormulacionController) VerificarIdentificaciones() {
 				}
 
 			} else {
-				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-				c.Abort("400")
+				panic(err)
 			}
 		} else {
-			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-			c.Abort("400")
+			panic(err)
 		}
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-		c.Abort("400")
+		panic(err)
 	}
 
 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": bandera}
