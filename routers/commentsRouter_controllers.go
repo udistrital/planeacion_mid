@@ -371,7 +371,7 @@ func init() {
         beego.ControllerComments{
             Method: "GuardarCualitativo",
             Router: "/guardar_cualitativo/:plan_id/:index/:trimestre",
-            AllowHTTPMethods: []string{"post"},
+            AllowHTTPMethods: []string{"put"},
             MethodParams: param.Make(),
             Filters: nil,
             Params: nil})
@@ -380,7 +380,7 @@ func init() {
         beego.ControllerComments{
             Method: "GuardarCuantitativo",
             Router: "/guardar_cuantitativo/:plan_id/:index/:trimestre",
-            AllowHTTPMethods: []string{"post"},
+            AllowHTTPMethods: []string{"put"},
             MethodParams: param.Make(),
             Filters: nil,
             Params: nil})
@@ -389,7 +389,7 @@ func init() {
         beego.ControllerComments{
             Method: "GuardarDocumentos",
             Router: "/guardar_documentos/:plan_id/:index/:trimestre",
-            AllowHTTPMethods: []string{"post"},
+            AllowHTTPMethods: []string{"put"},
             MethodParams: param.Make(),
             Filters: nil,
             Params: nil})
@@ -398,7 +398,7 @@ func init() {
         beego.ControllerComments{
             Method: "GuardarSeguimiento",
             Router: "/guardar_seguimiento/:plan_id/:index/:trimestre",
-            AllowHTTPMethods: []string{"post"},
+            AllowHTTPMethods: []string{"put"},
             MethodParams: param.Make(),
             Filters: nil,
             Params: nil})
@@ -424,7 +424,7 @@ func init() {
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"],
         beego.ControllerComments{
             Method: "ReportarSeguimiento",
-            Router: "/reportar_seguimiento",
+            Router: "/reportar_seguimiento/:id",
             AllowHTTPMethods: []string{"put"},
             MethodParams: param.Make(),
             Filters: nil,
@@ -434,7 +434,7 @@ func init() {
         beego.ControllerComments{
             Method: "RevisarActividad",
             Router: "/revision_actividad/:plan_id/:index/:trimestre",
-            AllowHTTPMethods: []string{"post"},
+            AllowHTTPMethods: []string{"put"},
             MethodParams: param.Make(),
             Filters: nil,
             Params: nil})
@@ -442,8 +442,8 @@ func init() {
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"],
         beego.ControllerComments{
             Method: "RevisarSeguimiento",
-            Router: "/revision_seguimiento/:plan_id/:trimestre",
-            AllowHTTPMethods: []string{"post"},
+            Router: "/revision_seguimiento/:id",
+            AllowHTTPMethods: []string{"put"},
             MethodParams: param.Make(),
             Filters: nil,
             Params: nil})

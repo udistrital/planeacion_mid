@@ -250,14 +250,14 @@ func (c *SeguimientoController) GetDataActividad() {
 
 // GuardarSeguimiento ...
 // @Title GuardarSeguimiento
-// @Description post Seguimiento by id
+// @Description put Seguimiento by id
 // @Param	plan_id		path 	string	true		"The key for staticblock"
 // @Param	index		path 	string	true		"The key for staticblock"
 // @Param	trimestre	path 	string	true		"The key for staticblock"
 // @Param	body		body 	{}	true		"body for Plan content"
 // @Success 200 {object} models.Seguimiento
 // @Failure 403 :plan_id is empty
-// @router /guardar_seguimiento/:plan_id/:index/:trimestre [post]
+// @router /guardar_seguimiento/:plan_id/:index/:trimestre [put]
 func (c *SeguimientoController) GuardarSeguimiento() {
 	planId := c.Ctx.Input.Param(":plan_id")
 	indexActividad := c.Ctx.Input.Param(":index")
@@ -549,10 +549,7 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 		generalData["avanceAcumuladoPrev"] = avanceAcumulado
 		generalData["nombrePeriodo"] = nombrePeriodo
 
-		fmt.Println(avanceAcumulado, reflect.TypeOf(avanceAcumulado))
-		fmt.Println(avancePeriodo, reflect.TypeOf(avancePeriodo))
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": generalData}
-		fmt.Println(dato)
 	} else {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 		c.Abort("400")
@@ -622,13 +619,13 @@ func (c *SeguimientoController) GetEstadoTrimestre() {
 
 // GuardarDocumentos ...
 // @Title GuardarDocumentos
-// @Description post Seguimiento by id
+// @Description put Seguimiento by id
 // @Param	plan_id		path 	string	true		"The key for staticblock"
 // @Param	index		path 	string	true		"The key for staticblock"
 // @Param	trimestre	path 	string	true		"The key for staticblock"
 // @Param	body		body 	{}	true		"body for Plan content"
 // @Success 200 {object} models.Seguimiento
-// @router /guardar_documentos/:plan_id/:index/:trimestre [post]
+// @router /guardar_documentos/:plan_id/:index/:trimestre [put]
 func (c *SeguimientoController) GuardarDocumentos() {
 	planId := c.Ctx.Input.Param(":plan_id")
 	indexActividad := c.Ctx.Input.Param(":index")
@@ -651,7 +648,7 @@ func (c *SeguimientoController) GuardarDocumentos() {
 			for _, evidencia := range body["evidencia"].([]interface{}) {
 				if evidencia.(map[string]interface{})["Enlace"] != nil {
 					evidencias = append(evidencias, evidencia.(map[string]interface{}))
-					if evidencia.(map[string]interface{})["Observacion"] != nil && evidencia.(map[string]interface{})["Observacion"] != "Sin observación" {
+					if evidencia.(map[string]interface{})["Observacion"] != nil && evidencia.(map[string]interface{})["Observacion"] != "Sin observación" && evidencia.(map[string]interface{})["Observacion"] != "" {
 						comentario = true
 					}
 				}
@@ -738,13 +735,13 @@ func (c *SeguimientoController) GuardarDocumentos() {
 
 // GuardarCualitativo ...
 // @Title GuardarCualitativo
-// @Description post Seguimiento by id
+// @Description put Seguimiento by id
 // @Param	plan_id		path 	string	true		"The key for staticblock"
 // @Param	index		path 	string	true		"The key for staticblock"
 // @Param	trimestre	path 	string	true		"The key for staticblock"
 // @Param	body		body 	{}	true		"body for Plan content"
 // @Success 200 {object} models.Seguimiento
-// @router /guardar_cualitativo/:plan_id/:index/:trimestre [post]
+// @router /guardar_cualitativo/:plan_id/:index/:trimestre [put]
 func (c *SeguimientoController) GuardarCualitativo() {
 	planId := c.Ctx.Input.Param(":plan_id")
 	indexActividad := c.Ctx.Input.Param(":index")
@@ -769,10 +766,6 @@ func (c *SeguimientoController) GuardarCualitativo() {
 
 			cualitativo = body["cualitativo"].(map[string]interface{})
 
-			if cualitativo["observaciones"] != "" && cualitativo["observaciones"] != "Sin observación" {
-				observacion = true
-			}
-
 			datoStr := seguimiento["dato"].(string)
 			json.Unmarshal([]byte(datoStr), &dato)
 
@@ -787,9 +780,10 @@ func (c *SeguimientoController) GuardarCualitativo() {
 			} else {
 				estado = dato[indexActividad].(map[string]interface{})["estado"].(map[string]interface{})
 
-				if estado["nombre"] == "Actividad reportada" {
+				if estado["nombre"] == "Actividad reportada" || estado["nombre"] == "Con observaciones"{
 					var codigo_abreviacion string
 
+					observacion = seguimientohelper.ActividadConObservaciones(body)
 					if observacion {
 						codigo_abreviacion = "CO"
 					} else {
@@ -797,6 +791,13 @@ func (c *SeguimientoController) GuardarCualitativo() {
 					}
 
 					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:"+codigo_abreviacion, &resEstado); err == nil {
+						estado = map[string]interface{}{
+							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
+							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
+						}
+					}
+				} else if estado["nombre"] == "Con observaciones" && body["dependencia"].(bool) {
+					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
 						estado = map[string]interface{}{
 							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -837,13 +838,13 @@ func (c *SeguimientoController) GuardarCualitativo() {
 
 // GuardarCuantitativo ...
 // @Title GuardarCuantitativo
-// @Description post Seguimiento by id
+// @Description put Seguimiento by id
 // @Param	plan_id		path 	string	true		"The key for staticblock"
 // @Param	index		path 	string	true		"The key for staticblock"
 // @Param	trimestre	path 	string	true		"The key for staticblock"
 // @Param	body		body 	{}	true		"body for Plan content"
 // @Success 200 {object} models.Seguimiento
-// @router /guardar_cuantitativo/:plan_id/:index/:trimestre [post]
+// @router /guardar_cuantitativo/:plan_id/:index/:trimestre [put]
 func (c *SeguimientoController) GuardarCuantitativo() {
 	planId := c.Ctx.Input.Param(":plan_id")
 	indexActividad := c.Ctx.Input.Param(":index")
@@ -867,11 +868,6 @@ func (c *SeguimientoController) GuardarCuantitativo() {
 			seguimiento = aux[0]
 
 			cuantitativo = body["cuantitativo"].(map[string]interface{})
-			for _, indicador := range cuantitativo["indicadores"].([]interface{}) {
-				if indicador.(map[string]interface{})["observaciones"] != "" && indicador.(map[string]interface{})["observaciones"] != "Sin observación" {
-					observacion = true
-				}
-			}
 
 			datoStr := seguimiento["dato"].(string)
 			json.Unmarshal([]byte(datoStr), &dato)
@@ -886,18 +882,24 @@ func (c *SeguimientoController) GuardarCuantitativo() {
 				dato[indexActividad] = map[string]interface{}{"estado": estado, "cuantitativo": cuantitativo}
 			} else {
 				estado = dato[indexActividad].(map[string]interface{})["estado"].(map[string]interface{})
-
-				if estado["nombre"] == "Actividad reportada" {
+				if estado["nombre"] == "Actividad reportada" || estado["nombre"] == "Con observaciones" {
 					var codigo_abreviacion string
 
+					observacion = seguimientohelper.ActividadConObservaciones(body)
 					if observacion {
 						codigo_abreviacion = "CO"
 					} else {
 						codigo_abreviacion = "AAV"
 					}
 
-					fmt.Println(codigo_abreviacion)
 					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:"+codigo_abreviacion, &resEstado); err == nil {
+						estado = map[string]interface{}{
+							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
+							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
+						}
+					}
+				} else if estado["nombre"] == "Con observaciones" && body["dependencia"].(bool) {
+					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
 						estado = map[string]interface{}{
 							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -935,10 +937,9 @@ func (c *SeguimientoController) GuardarCuantitativo() {
 
 // ReportarActividad ...
 // @Title ReportarActividad
-// @Description post Seguimiento by id
-// @Param	plan_id		path 	string	true		"The key for staticblock"
+// @Description put Seguimiento by id
 // @Param	index		path 	string	true		"The key for staticblock"
-// @Param	trimestre	path 	string	true		"The key for staticblock"
+// @Param	body		body 	{}	true		"body for Plan content"
 // @Success 200 {object} models.Seguimiento
 // @Failure 403
 // @router /reportar_actividad/:index [put]
@@ -994,59 +995,56 @@ func (c *SeguimientoController) ReportarActividad() {
 
 // ReportarSeguimiento ...
 // @Title ReportarSeguimiento
-// @Description post Seguimiento by id
-// @Param	plan_id		path 	string	true		"The key for staticblock"
-// @Param	index		path 	string	true		"The key for staticblock"
-// @Param	trimestre	path 	string	true		"The key for staticblock"
+// @Description put Seguimiento by id
+// @Param	id			path 	string	true	"The key for staticblock"
+// @Param	body		body 	{}	true		"body for Plan content"
 // @Success 200 {object} models.Seguimiento
 // @Failure 403
-// @router /reportar_seguimiento [put]
+// @router /reportar_seguimiento/:id [put]
 func (c *SeguimientoController) ReportarSeguimiento() {
+	idSeguimiento := c.Ctx.Input.Param(":id")
+
 	var respuesta map[string]interface{}
 	var seguimiento map[string]interface{}
 	var resEstado map[string]interface{}
-	var body map[string]interface{}
 
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &body); err == nil {
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+body["SeguimientoId"].(string), &respuesta); err == nil {
-			aux := make(map[string]interface{}, 1)
-			helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
-			seguimiento = aux
-			reportable, mensaje := seguimientohelper.ActividadSeguimiento(seguimiento)
-			if reportable {
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:EAR", &resEstado); err == nil {
-					seguimiento["estado_seguimiento_id"] = resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"]
-				}
-
-				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
-					panic(map[string]interface{}{"funcion": "GuardarCuantitativo", "err": "Error actualizando componente cuantitativo de seguimiento \"seguimiento[\"_id\"].(string)\"", "status": "400", "log": err})
-				}
-
-				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": seguimiento}
-			} else {
-				c.Data["json"] = map[string]interface{}{"Success": false, "Status": "400", "Message": "Error", "Data": mensaje}
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+idSeguimiento, &respuesta); err == nil {
+		aux := make(map[string]interface{}, 1)
+		helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
+		seguimiento = aux
+		reportable, mensaje := seguimientohelper.SeguimientoReportable(seguimiento)
+		if reportable {
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:EAR", &resEstado); err == nil {
+				seguimiento["estado_seguimiento_id"] = resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"]
 			}
 
+			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+				panic(map[string]interface{}{"funcion": "GuardarCuantitativo", "err": "Error actualizando componente cuantitativo de seguimiento \"seguimiento[\"_id\"].(string)\"", "status": "400", "log": err})
+			}
+
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": seguimiento}
 		} else {
-			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+			c.Data["json"] = map[string]interface{}{"Success": false, "Status": "400", "Message": "Error", "Data": mensaje}
 		}
+
 	} else {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 	}
+
 	c.ServeJSON()
 
 }
 
 // RevisarActividad ...
 // @Title RevisarActividad
-// @Description post Seguimiento by id
+// @Description put Seguimiento by id
 // @Param	plan_id		path 	string	true		"The key for staticblock"
 // @Param	index		path 	string	true		"The key for staticblock"
 // @Param	trimestre	path 	string	true		"The key for staticblock"
 // @Param	body		body 	{}	true		"body for Plan content"
 // @Success 200 {object} models.Seguimiento
 // @Failure 403 :plan_id is empty
-// @router /revision_actividad/:plan_id/:index/:trimestre [post]
+// @router /revision_actividad/:plan_id/:index/:trimestre [put]
 func (c *SeguimientoController) RevisarActividad() {
 	planId := c.Ctx.Input.Param(":plan_id")
 	indexActividad := c.Ctx.Input.Param(":index")
@@ -1073,13 +1071,13 @@ func (c *SeguimientoController) RevisarActividad() {
 			dato[indexActividad] = body
 
 			// Cualitativo
-			if body["cualitativo"].(map[string]interface{})["observaciones"] != "" && body["cualitativo"].(map[string]interface{})["observaciones"] != "Sin observación" {
+			if body["cualitativo"].(map[string]interface{})["observaciones"] != "" && body["cualitativo"].(map[string]interface{})["observaciones"] != "Sin observación" && body["cualitativo"].(map[string]interface{})["observaciones"] != nil {
 				comentario = true
 			}
 
 			// Cuantitativo
 			for _, indicador := range body["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{}) {
-				if indicador.(map[string]interface{})["observaciones"] != "" && indicador.(map[string]interface{})["observaciones"] != "Sin observación" {
+				if indicador.(map[string]interface{})["observaciones"] != "" && indicador.(map[string]interface{})["observaciones"] != "Sin observación" && indicador.(map[string]interface{})["observaciones"] != nil {
 					comentario = true
 					break
 				}
@@ -1099,7 +1097,6 @@ func (c *SeguimientoController) RevisarActividad() {
 						"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 						"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
 					}
-					seguimiento["estado_seguimiento_id"] = estado["id"]
 				}
 			} else {
 				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AAV", &resEstado); err == nil {
@@ -1134,62 +1131,56 @@ func (c *SeguimientoController) RevisarActividad() {
 
 // RevisarSeguimiento ...
 // @Title RevisarSeguimiento
-// @Description post Seguimiento by id
-// @Param	plan_id		path 	string	true		"The key for staticblock"
-// @Param	index		path 	string	true		"The key for staticblock"
-// @Param	trimestre	path 	string	true		"The key for staticblock"
-// @Param	body		body 	{}	true		"body for Plan content"
+// @Description put Seguimiento by id
+// @Param	id		path 	string	true		"The key for staticblock"
 // @Success 200 {object} models.Seguimiento
-// @Failure 403 :plan_id is empty
-// @router /revision_seguimiento/:plan_id/:trimestre [post]
+// @Failure 403 :id is empty
+// @router /revision_seguimiento/:id [put]
 func (c *SeguimientoController) RevisarSeguimiento() {
-	planId := c.Ctx.Input.Param(":plan_id")
-	trimestre := c.Ctx.Input.Param(":trimestre")
+	seguimientoId := c.Ctx.Input.Param(":id")
 
-	var body map[string]interface{}
 	var respuesta map[string]interface{}
 	var seguimiento map[string]interface{}
 	var resEstado map[string]interface{}
 	dato := make(map[string]interface{})
 	estado := map[string]interface{}{}
-	avalado := true
 
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &body); err == nil {
 
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
-			aux := make([]map[string]interface{}, 1)
-			helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,_id:"+seguimientoId, &respuesta); err == nil {
+		aux := make([]map[string]interface{}, 1)
+		helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
 
-			seguimiento = aux[0]
-			datoStr := seguimiento["dato"].(string)
-			json.Unmarshal([]byte(datoStr), &dato)
+		seguimiento = aux[0]
+		datoStr := seguimiento["dato"].(string)
+		json.Unmarshal([]byte(datoStr), &dato)
 
-			for _, actividad := range dato {
-				if actividad.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad valada" {
-					avalado = false
-					break
-				}
-			}
+		avalado, observacion, mensaje := seguimientohelper.SeguimientoAvalable(dato)
 
-			if avalado {
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AV", &resEstado); err == nil {
-					estado = map[string]interface{}{
-						"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
-						"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
-					}
-					seguimiento["estado_seguimiento_id"] = estado["id"]
-				}
-				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
-					c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-				}
-				data := respuesta["Data"].(map[string]interface{})
-				// data["Observación"] = comentario
-				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": data}
+		if avalado || observacion {
+			var codigo_abreviacion string
+
+			if observacion {
+				codigo_abreviacion = "CO"
 			} else {
+				codigo_abreviacion = "AV"
 			}
 
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:"+codigo_abreviacion, &resEstado); err == nil {
+				estado = map[string]interface{}{
+					"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
+					"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
+				}
+				seguimiento["estado_seguimiento_id"] = estado["id"]
+			}
+
+			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+			}
+
+			data := respuesta["Data"].(map[string]interface{})
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": data}
 		} else {
-			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+			c.Data["json"] = map[string]interface{}{"Success": false, "Status": "400", "Message": "Error", "Data": mensaje}
 		}
 	} else {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
