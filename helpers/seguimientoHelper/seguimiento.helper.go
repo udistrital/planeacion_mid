@@ -3,6 +3,7 @@ package seguimientohelper
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"sort"
 	"strconv"
 
@@ -76,8 +77,19 @@ func GetActividades(subgrupo_id string) []map[string]interface{} {
 				}
 			}
 			sort.SliceStable(actividades, func(i, j int) bool {
-				a, _ := strconv.Atoi(actividades[i]["index"].(string))
-				b, _ := strconv.Atoi(actividades[j]["index"].(string))
+				var a int
+				var b int
+				if reflect.TypeOf(actividades[j]["index"]).String() == "string" {
+					b, _ = strconv.Atoi(actividades[j]["index"].(string))
+				} else {
+					b = int(actividades[j]["index"].(float64))
+				}
+
+				if reflect.TypeOf(actividades[i]["index"]).String() == "string" {
+					a, _ = strconv.Atoi(actividades[i]["index"].(string))
+				} else {
+					a = int(actividades[i]["index"].(float64))
+				}
 				return a < b
 			})
 		}
@@ -129,7 +141,7 @@ func GetActividad(seguimiento map[string]interface{}, index string, trimestre st
 		}
 
 		if dato[index].(map[string]interface{})["cualitativo"] == nil {
-			cualitativo = map[string]interface{}{"reporte": "", "productos": "", "dificultades": "", "observaciones": ""}
+			cualitativo = map[string]interface{}{"reporte": "", "productos": "", "dificultades": ""}
 		} else {
 			cualitativo = dato[index].(map[string]interface{})["cualitativo"].(map[string]interface{})
 		}
@@ -142,7 +154,7 @@ func GetActividad(seguimiento map[string]interface{}, index string, trimestre st
 		}
 		informacion = GetInformacionPlan(seguimiento, index)
 		cuantitativo = GetCuantitativoPlan(seguimiento, index, trimestre)
-		cualitativo = map[string]interface{}{"reporte": "", "productos": "", "dificultades": "", "observaciones": ""}
+		cualitativo = map[string]interface{}{"reporte": "", "productos": "", "dificultades": ""}
 	}
 
 	data = map[string]interface{}{
@@ -267,7 +279,6 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 							"reporteNumerador":   0,
 							"reporteDenominador": 1,
 							"detalleReporte":     "",
-							"observaciones":      "",
 						}
 
 						respuesta := map[string]interface{}{
@@ -304,13 +315,13 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 											informacion["formula"] = dato_plan[index].(map[string]interface{})["dato"]
 											continue
 										case strings.Contains(nombreDetalle, "criterio"):
-											response["denominador"] = dato_plan[index].(map[string]interface{})["dato"]
-											if response["denominador"] == "Denominador fijo" {
+											informacion["denominador"] = dato_plan[index].(map[string]interface{})["dato"]
+											if informacion["denominador"] == "Denominador fijo" {
 												informacion["reporteDenominador"] = GetDenominadorFijo(seguimiento, len(indicadores), index)
 											}
 											continue
 										case strings.Contains(nombreDetalle, "tendencia"):
-											response["tendencia"] = dato_plan[index].(map[string]interface{})["dato"]
+											informacion["tendencia"] = dato_plan[index].(map[string]interface{})["dato"]
 											continue
 										}
 									}
@@ -323,11 +334,11 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 							respuestas = append(respuestas, respuesta)
 						}
 
-						if response["denominador"] == nil {
-							response["denominador"] = ""
+						if informacion["denominador"] == nil {
+							informacion["denominador"] = ""
 						}
 
-						respuestas = GetRespuestaAcumulado(seguimiento, len(indicadores)-1, respuestas, index, trimestre, response["denominador"].(string))
+						respuestas = GetRespuestaAcumulado(seguimiento, len(indicadores)-1, respuestas, index, trimestre, informacion["denominador"].(string))
 					}
 				}
 				break
@@ -671,17 +682,31 @@ func SeguimientoReportable(seguimiento map[string]interface{}) (bool, map[string
 
 					for indexActividad, element := range datoPlan {
 						for _, actividad := range actividades {
-							if indexActividad == actividad["index"] {
-								actividad["estado"] = element.(map[string]interface{})["estado"]
+							if reflect.TypeOf(actividad["index"]).String() == "string" {
+								if indexActividad == actividad["index"] {
+									actividad["estado"] = element.(map[string]interface{})["estado"]
+								}
+							} else {
+								if indexActividad == strconv.FormatFloat(actividad["index"].(float64), 'g', 5, 64) {
+									actividad["estado"] = element.(map[string]interface{})["estado"]
+								}
 							}
 						}
 					}
 
 					for _, actividad := range actividades {
 						if actividad["estado"] == nil {
-							dato[actividad["index"].(string)] = actividad["dato"]
+							if reflect.TypeOf(actividad["index"]).String() == "string" {
+								dato[actividad["index"].(string)] = actividad["dato"]
+							} else {
+								dato[strconv.FormatFloat(actividad["index"].(float64), 'g', 5, 64)] = actividad["dato"]
+							}
 						} else if actividad["estado"].(map[string]interface{})["nombre"] != "Actividad reportada" && actividad["estado"].(map[string]interface{})["nombre"] != "Actividad avalada" {
-							dato[actividad["index"].(string)] = actividad["dato"]
+							if reflect.TypeOf(actividad["index"]).String() == "string" {
+								dato[actividad["index"].(string)] = actividad["dato"]
+							} else {
+								dato[strconv.FormatFloat(actividad["index"].(float64), 'g', 5, 64)] = actividad["dato"]
+							}
 						}
 					}
 
@@ -700,7 +725,6 @@ func SeguimientoReportable(seguimiento map[string]interface{}) (bool, map[string
 func ActividadConObservaciones(seguimiento map[string]interface{}) bool {
 	var cuantitativo map[string]interface{}
 	var cualitativo map[string]interface{}
-	var evidencias map[string]interface{}
 
 	if seguimiento["cuantitativo"] != nil {
 		cuantitativo = seguimiento["cuantitativo"].(map[string]interface{})
@@ -719,9 +743,8 @@ func ActividadConObservaciones(seguimiento map[string]interface{}) bool {
 	}
 
 	if seguimiento["evidencias"] != nil {
-		evidencias = seguimiento["evidencias"].(map[string]interface{})
-		for _, evidencia := range evidencias["indicadores"].([]interface{}) {
-			if evidencia.(map[string]interface{})["observaciones"] != "" && evidencia.(map[string]interface{})["observaciones"] != "Sin observación" && evidencia.(map[string]interface{})["observaciones"] != nil {
+		for _, evidencia := range seguimiento["evidencias"].([]interface{}) {
+			if evidencia.(map[string]interface{})["Observacion"] != "" && evidencia.(map[string]interface{})["Observacion"] != "Sin observación" && evidencia.(map[string]interface{})["Observacion"] != nil {
 				return true
 			}
 		}
@@ -730,27 +753,58 @@ func ActividadConObservaciones(seguimiento map[string]interface{}) bool {
 	return false
 }
 
-func SeguimientoAvalable(actividades map[string]interface{}) (bool, bool, map[string]interface{}) {
+func SeguimientoAvalable(seguimiento map[string]interface{}) (bool, bool, map[string]interface{}) {
+	var res map[string]interface{}
+	var subgrupos []map[string]interface{}
+	var datoPlan map[string]interface{}
 	dato := make(map[string]interface{})
 	observaciones := false
 	avaladas := false
 
-	for _, actividad := range actividades {
-		if actividad.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad avalada" && actividad.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Con observaciones" {
-			dato[actividad.(map[string]interface{})["index"].(string)] = actividad.(map[string]interface{})["dato"]
-		}
+	planId := seguimiento["plan_id"].(string)
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+planId, &res); err == nil {
+		helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
 
-		if actividad.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] == "Con observaciones" {
-			observaciones = true
-		}
+		for i := 0; i < len(subgrupos); i++ {
+			if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") && strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "general") {
 
-		if actividad.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] == "Actividad avalada" {
-			avaladas = true
+				actividades := GetActividades(subgrupos[i]["_id"].(string))
+
+				dato_plan_str := seguimiento["dato"].(string)
+				json.Unmarshal([]byte(dato_plan_str), &datoPlan)
+
+				for indexActividad, element := range datoPlan {
+					for _, actividad := range actividades {
+
+						if reflect.TypeOf(actividad["index"]).String() == "string" {
+							if indexActividad == actividad["index"] {
+								if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad avalada" && element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Con observaciones" {
+									dato[indexActividad] = actividad["dato"]
+								}
+							}
+						} else {
+							if indexActividad == strconv.FormatFloat(actividad["index"].(float64), 'g', 5, 64) {
+								if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad avalada" && element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Con observaciones" {
+									dato[indexActividad] = actividad["dato"]
+								}
+							}
+						}
+					}
+
+					if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] == "Con observaciones" {
+						observaciones = true
+					}
+
+					if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] == "Actividad avalada" {
+						avaladas = true
+					}
+				}
+			}
 		}
 	}
 
 	if fmt.Sprintf("%v", dato) != "map[]" {
-		return avaladas, observaciones, map[string]interface{}{"error": 1, "motivo": "Hay actividades sin revisar", "actividades": dato}
+		return false, false, map[string]interface{}{"error": 1, "motivo": "Hay actividades sin revisar", "actividades": dato}
 	}
 
 	return avaladas, observaciones, nil
