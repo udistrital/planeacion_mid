@@ -67,31 +67,32 @@ func (c *SeguimientoController) HabilitarReportes() {
 	var entrada map[string]interface{}
 	json.Unmarshal(c.Ctx.Input.RequestBody, &entrada)
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento?query=periodo_id:"+entrada["periodo_id"].(string), &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?query=tipo_seguimiento_id:61f236f525e40c582a0840d0,periodo_id:`+entrada["periodo_id"].(string), &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &reportes)
 		if len(reportes) > 0 {
 			var element = reportes[0]
 			element["activo"] = true
 			element["fecha_inicio"] = entrada["fecha_inicio"]
 			element["fecha_fin"] = entrada["fecha_fin"]
-
+			element["unidades_interes"] = "[]"
 			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/"+element["_id"].(string), "PUT", &resPut, element); err != nil {
 				panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
 			}
-
 		} else {
 			element := map[string]interface{}{
-				"activo":       true,
-				"fecha_inicio": entrada["fecha_inicio"],
-				"fecha_fin":    entrada["fecha_fin"],
-				"periodo_id":   entrada["periodo_id"],
+				"tipo_seguimiento_id": "61f236f525e40c582a0840d0",
+				"activo":              true,
+				"fecha_inicio":        entrada["fecha_inicio"],
+				"fecha_fin":           entrada["fecha_fin"],
+				"periodo_id":          entrada["periodo_id"],
+				"unidades_interes":    "[]",
 			}
 
 			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento", "POST", &resPut, element); err != nil {
 				panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle", "status": "400", "log": err})
 			}
 
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento?query=periodo_id:"+entrada["periodo_id"].(string), &res); err == nil {
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?query=tipo_seguimiento_id:61f236f525e40c582a0840d0,periodo_id:`+entrada["periodo_id"].(string), &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &reportes)
 			}
 		}
@@ -138,13 +139,14 @@ func (c *SeguimientoController) CrearReportes() {
 
 		for i := 0; i < len(trimestres); i++ {
 			periodo := int(trimestres[i]["Id"].(float64))
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento?query=periodo_id:"+strconv.Itoa(periodo), &resTrimestres); err == nil {
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?query=tipo_seguimiento_id:61f236f525e40c582a0840d0,periodo_id:`+strconv.Itoa(periodo), &resTrimestres); err == nil {
 				reporte["nombre"] = "Seguimiento para el " + plan["nombre"].(string)
 				reporte["descripcion"] = "Seguimiento para el " + plan["nombre"].(string) + " UNIVERSIDAD DISTRITAL FRANCISCO JOSE DE CALDAS"
 				reporte["activo"] = false
 				reporte["plan_id"] = plan_id
 				reporte["estado_seguimiento_id"] = "61f237df25e40c57a60840d5"
 				reporte["periodo_seguimiento_id"] = resTrimestres["Data"].([]interface{})[0].(map[string]interface{})["_id"]
+				reporte["fecha_inicio"] = resTrimestres["Data"].([]interface{})[0].(map[string]interface{})["fecha_fin"]
 				reporte["tipo_seguimiento_id"] = tipo
 				reporte["dato"] = "{}"
 				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &respuestaPost, reporte); err != nil {
@@ -192,7 +194,6 @@ func (c *SeguimientoController) GetPeriodos() {
 		c.Data["json"] = map[string]interface{}{"Success": false, "Status": "404", "Message": "Request containt incorrect params", "Data": nil}
 	}
 	trimestres := seguimientohelper.GetTrimestres(vigencia)
-	fmt.Println(trimestres)
 	if len(trimestres) == 0 || trimestres[0]["Id"] == nil {
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": nil}
 
@@ -248,10 +249,9 @@ func (c *SeguimientoController) GetActividadesGenerales() {
 						} else {
 							dato_plan_str := seguimiento[0]["dato"].(string)
 							json.Unmarshal([]byte(dato_plan_str), &datoPlan)
-
 							for indexActividad, element := range datoPlan {
 								for _, actividad := range actividades {
-									if indexActividad == actividad["index"] {
+									if indexActividad == strconv.FormatFloat(actividad["index"].(float64), 'g', 5, 64) {
 										actividad["estado"] = element.(map[string]interface{})["estado"]
 									}
 								}
@@ -811,6 +811,9 @@ func (c *SeguimientoController) GuardarDocumentos() {
 						}
 					}
 				}
+
+				comentario = seguimientohelper.ActividadConObservaciones(dato[indexActividad].(map[string]interface{}))
+
 				if comentario {
 					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:CO", &resEstado); err == nil {
 						estado = map[string]interface{}{
@@ -894,7 +897,7 @@ func (c *SeguimientoController) GuardarCualitativo() {
 			} else {
 				estado = dato[indexActividad].(map[string]interface{})["estado"].(map[string]interface{})
 
-				if estado["nombre"] == "Actividad reportada" || estado["nombre"] == "Con observaciones"{
+				if estado["nombre"] == "Actividad reportada" || estado["nombre"] == "Con observaciones" {
 					var codigo_abreviacion string
 
 					observacion = seguimientohelper.ActividadConObservaciones(body)
@@ -1259,7 +1262,6 @@ func (c *SeguimientoController) RevisarSeguimiento() {
 	dato := make(map[string]interface{})
 	estado := map[string]interface{}{}
 
-
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,_id:"+seguimientoId, &respuesta); err == nil {
 		aux := make([]map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
@@ -1268,7 +1270,7 @@ func (c *SeguimientoController) RevisarSeguimiento() {
 		datoStr := seguimiento["dato"].(string)
 		json.Unmarshal([]byte(datoStr), &dato)
 
-		avalado, observacion, mensaje := seguimientohelper.SeguimientoAvalable(dato)
+		avalado, observacion, mensaje := seguimientohelper.SeguimientoAvalable(seguimiento)
 
 		if avalado || observacion {
 			var codigo_abreviacion string
