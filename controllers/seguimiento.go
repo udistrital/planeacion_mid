@@ -251,8 +251,14 @@ func (c *SeguimientoController) GetActividadesGenerales() {
 							json.Unmarshal([]byte(dato_plan_str), &datoPlan)
 							for indexActividad, element := range datoPlan {
 								for _, actividad := range actividades {
-									if indexActividad == strconv.FormatFloat(actividad["index"].(float64), 'g', 5, 64) {
-										actividad["estado"] = element.(map[string]interface{})["estado"]
+									if reflect.TypeOf(actividades[i]["index"]).String() == "string" {
+										if indexActividad == actividad["index"] {
+											actividad["estado"] = element.(map[string]interface{})["estado"]
+										}
+									} else {
+										if indexActividad == strconv.FormatFloat(actividad["index"].(float64), 'g', 5, 64) {
+											actividad["estado"] = element.(map[string]interface{})["estado"]
+										}
 									}
 								}
 							}
