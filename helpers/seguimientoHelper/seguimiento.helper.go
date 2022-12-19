@@ -192,7 +192,6 @@ func GetInformacionPlan(seguimiento map[string]interface{}, index string) map[st
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+seguimiento["plan_id"].(string), &resPlan); err == nil {
 		informacion["nombre"] = resPlan["Data"].(map[string]interface{})["nombre"]
-		informacion["descripcion"] = resPlan["Data"].(map[string]interface{})["descripcion"]
 		informacion["unidad"] = resPlan["Data"].(map[string]interface{})["dependencia_id"]
 	}
 
@@ -216,24 +215,27 @@ func GetInformacionPlan(seguimiento map[string]interface{}, index string) map[st
 					nombreDetalle := strings.ToLower(res["Data"].([]interface{})[0].(map[string]interface{})["nombre"].(string))
 
 					if dato[index] == nil {
-						break
+						continue
 					}
 
 					switch {
 					case strings.Contains(nombreDetalle, "ponderación"):
 						informacion["ponderacion"] = dato[index].(map[string]interface{})["dato"]
 						continue
-					case strings.Contains(nombreDetalle, "periodo"):
+					case strings.Contains(nombreDetalle, "periodo") || strings.Contains(nombreDetalle, "período"):
 						informacion["periodo"] = dato[index].(map[string]interface{})["dato"]
 						continue
-					case strings.Contains(nombreDetalle, "tareas"):
+					case strings.Contains(nombreDetalle, "tareas") || strings.Contains(nombreDetalle, "actividades específicas"):
 						informacion["tarea"] = dato[index].(map[string]interface{})["dato"]
 						continue
-					case strings.Contains(nombreDetalle, "indicadores"):
+					case strings.Contains(nombreDetalle, "indicadores") || strings.Contains(nombreDetalle, "indicador"):
 						informacion["indicador"] = dato[index].(map[string]interface{})["dato"]
 						continue
 					case strings.Contains(nombreDetalle, "producto"):
 						informacion["producto"] = dato[index].(map[string]interface{})["dato"]
+						continue
+					case strings.Contains(nombreDetalle, "actividad general"):
+						informacion["descripcion"] = dato[index].(map[string]interface{})["dato"]
 						continue
 					}
 				}
