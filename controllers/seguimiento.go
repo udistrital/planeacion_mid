@@ -820,8 +820,8 @@ func (c *SeguimientoController) GuardarDocumentos() {
 					}
 				}
 
+				dato[indexActividad].(map[string]interface{})["evidencia"] = evidencias
 				comentario = seguimientohelper.ActividadConObservaciones(dato[indexActividad].(map[string]interface{}))
-
 				if comentario {
 					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:CO", &resEstado); err == nil {
 						estado = map[string]interface{}{
@@ -830,7 +830,6 @@ func (c *SeguimientoController) GuardarDocumentos() {
 						}
 					}
 				}
-				dato[indexActividad].(map[string]interface{})["evidencia"] = evidencias
 				dato[indexActividad].(map[string]interface{})["estado"] = estado
 			}
 
@@ -845,7 +844,7 @@ func (c *SeguimientoController) GuardarDocumentos() {
 				panic(map[string]interface{}{"funcion": "GuardarDocumentos", "err": "Error guardado documentos del seguimiento \"seguimiento[\"_id\"].(string)\"", "status": "400", "log": err})
 			}
 
-			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": respuesta["Data"]}
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": map[string]interface{}{"seguimiento": respuesta["Data"], "estadoActividad": dato[indexActividad].(map[string]interface{})["estado"]}}
 		} else {
 			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 			c.Abort("400")
