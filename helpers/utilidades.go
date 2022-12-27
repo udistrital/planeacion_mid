@@ -9,6 +9,8 @@ import (
 	"math/big"
 	"net/http"
 	"reflect"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -359,4 +361,23 @@ func GuardarDocumento(documentos []interface{}) []interface{} {
 	}
 
 	return resDocs
+}
+
+func SortSlice(slice *[]map[string]interface{}, parameter string)  {
+	sort.SliceStable(*slice, func(i, j int) bool {
+		var a int
+		var b int
+		if reflect.TypeOf((*slice)[j][parameter]).String() == "string" {
+			b, _ = strconv.Atoi((*slice)[j][parameter].(string))
+		} else {
+			b = int((*slice)[j][parameter].(float64))
+		}
+
+		if reflect.TypeOf((*slice)[i][parameter]).String() == "string" {
+			a, _ = strconv.Atoi((*slice)[i][parameter].(string))
+		} else {
+			a = int((*slice)[i][parameter].(float64))
+		}
+		return a < b
+	})
 }

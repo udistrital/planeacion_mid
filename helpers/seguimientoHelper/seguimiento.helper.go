@@ -744,9 +744,10 @@ func ActividadConObservaciones(seguimiento map[string]interface{}) bool {
 		}
 	}
 
-	if seguimiento["evidencias"] != nil {
-		for _, evidencia := range seguimiento["evidencias"].([]interface{}) {
-			if evidencia.(map[string]interface{})["Observacion"] != "" && evidencia.(map[string]interface{})["Observacion"] != "Sin observación" && evidencia.(map[string]interface{})["Observacion"] != nil {
+
+	if seguimiento["evidencia"] != nil {
+		for _, evidencia := range seguimiento["evidencia"].([]map[string]interface{}) {
+			if evidencia["Observacion"] != "" && evidencia["Observacion"] != "Sin observación" && evidencia["Observacion"] != nil {
 				return true
 			}
 		}
