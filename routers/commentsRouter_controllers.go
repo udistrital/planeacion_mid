@@ -52,6 +52,24 @@ func init() {
             Filters: nil,
             Params: nil})
 
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:EvaluacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:EvaluacionController"],
+        beego.ControllerComments{
+            Method: "GetEvaluacion",
+            Router: "/:vigencia/:plan:/:periodo",
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:EvaluacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:EvaluacionController"],
+        beego.ControllerComments{
+            Method: "GetPlanesPeriodo",
+            Router: "/planes_periodo/:vigencia/:unidad",
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormatoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormatoController"],
         beego.ControllerComments{
             Method: "Post",

@@ -98,6 +98,55 @@ paths:
           description: '{string} delete success!'
         "403":
           description: id is empty
+  /evaluacion/{vigencia}/{plan}/{periodo}:
+    get:
+      tags:
+      - evaluacion
+      description: get Evaluacion
+      operationId: EvaluacionController.GetEvaluacion
+      parameters:
+      - in: path
+        name: vigencia
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: plan
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: periodo
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+        "404":
+          description: ""
+  /evaluacion/planes_periodo/{vigencia}/{unidad}:
+    get:
+      tags:
+      - evaluacion
+      description: get Planes y vigencias para la unidad y vigencia dado
+      operationId: EvaluacionController.GetPlanesPeriodo
+      parameters:
+      - in: path
+        name: vigencia
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: unidad
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+        "404":
+          description: ""
   /formato/:
     get:
       tags:
@@ -119,8 +168,7 @@ paths:
         type: string
       - in: query
         name: order
-        description: Order corresponding to each sortby field, if single value, apply
-          to all sortby fields. e.g. desc,asc ...
+        description: Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ...
         type: string
       - in: query
         name: limit
@@ -1147,3 +1195,6 @@ tags:
 - name: reportes
   description: |
     ReportesController operations for Reportes
+- name: evaluacion
+  description: |
+    EvaluacionController operations for Evaluacion
