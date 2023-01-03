@@ -1673,6 +1673,58 @@
                 }
             }
         },
+        "/seguimiento/retornar_actividad/{plan_id}/{index}/{trimestre}": {
+            "put": {
+                "tags": [
+                    "seguimiento"
+                ],
+                "description": "Retorna la actividad de Avalado a en Revision",
+                "operationId": "SeguimientoController.RetornarActividad",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "plan_id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "index",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "trimestre",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Seguimiento"
+                        }
+                    },
+                    "403": {
+                        "description": ":plan_id is empty"
+                    }
+                }
+            }
+        },
         "/seguimiento/revision_actividad/{plan_id}/{index}/{trimestre}": {
             "put": {
                 "tags": [

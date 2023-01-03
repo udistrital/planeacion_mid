@@ -19,7 +19,7 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 	var seguimiento map[string]interface{}
 	var evaluacion []map[string]interface{}
 	actividades := make(map[string]interface{})
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/seguimiento?query=estado_seguimiento_id:622ba49216511e93a95c326d,plan_id:`+planId+`,periodo_seguimiento_id:`+periodos[0]["_id"].(string), &resSeguimiento); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/seguimiento?query=estado_seguimiento_id:622ba49216511e93a95c326d,plan_id:`+planId+`,periodo_seguimiento_id:`+periodos[trimestre]["_id"].(string), &resSeguimiento); err == nil {
 		aux := make([]map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(resSeguimiento, &aux)
 		if fmt.Sprintf("%v", aux) == "[]" {
@@ -39,19 +39,14 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 				}
 				resIndicadores := GetEvaluacionTrimestre(planId, periodo["_id"].(string), actividadId)
 				for _, resIndicador := range resIndicadores {
-					evaluacionAct := map[string]interface{}{
-						"numero":     actividad["informacion"].(map[string]interface{})["index"],
-						"ponderado":  actividad["informacion"].(map[string]interface{})["ponderacion"],
-						"periodo":    actividad["informacion"].(map[string]interface{})["periodo"],
-						"actividad":  actividad["informacion"].(map[string]interface{})["descripcion"],
-						"trimestre1": make(map[string]interface{}),
-						"trimestre2": make(map[string]interface{}),
-						"trimestre3": make(map[string]interface{}),
-						"trimestre4": make(map[string]interface{}),
+					
+					indice := -1
+					for index, eval := range evaluacion {
+						if eval["numero"] == actividad["informacion"].(map[string]interface{})["index"] && eval["indicador"] == resIndicador["indicador"] {
+							indice = index
+							break
+						}
 					}
-					evaluacionAct["indicador"] = resIndicador["indicador"]
-					evaluacionAct["formula"] = resIndicador["formula"]
-					evaluacionAct["meta"] = resIndicador["metaA"]
 
 					var trimestreNom string
 					if indexPeriodo == 0 {
@@ -63,15 +58,39 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 					} else if indexPeriodo == 3 {
 						trimestreNom = "trimestre4"
 					}
-					evaluacionAct[trimestreNom] = map[string]interface{}{
-						"numerador":   resIndicador["numerador"],
-						"denominador": resIndicador["denominador"],
-						"periodo":     resIndicador["periodo"],
-						"acumulado":   resIndicador["acumulado"],
-						"meta":        resIndicador["meta"],
-					}
 
-					evaluacion = append(evaluacion, evaluacionAct)
+					if indice == -1 {
+						evaluacionAct := map[string]interface{}{
+							"numero":     actividad["informacion"].(map[string]interface{})["index"],
+							"ponderado":  actividad["informacion"].(map[string]interface{})["ponderacion"],
+							"periodo":    actividad["informacion"].(map[string]interface{})["periodo"],
+							"actividad":  actividad["informacion"].(map[string]interface{})["descripcion"],
+							"trimestre1": make(map[string]interface{}),
+							"trimestre2": make(map[string]interface{}),
+							"trimestre3": make(map[string]interface{}),
+							"trimestre4": make(map[string]interface{}),
+						}
+						evaluacionAct["indicador"] = resIndicador["indicador"]
+						evaluacionAct["formula"] = resIndicador["formula"]
+						evaluacionAct["meta"] = resIndicador["metaA"]
+						evaluacionAct[trimestreNom] = map[string]interface{}{
+							"numerador":   resIndicador["numerador"],
+							"denominador": resIndicador["denominador"],
+							"periodo":     resIndicador["periodo"],
+							"acumulado":   resIndicador["acumulado"],
+							"meta":        resIndicador["meta"],
+						}
+
+						evaluacion = append(evaluacion, evaluacionAct)
+					} else {
+						evaluacion[indice][trimestreNom] = map[string]interface{}{
+							"numerador":   resIndicador["numerador"],
+							"denominador": resIndicador["denominador"],
+							"periodo":     resIndicador["periodo"],
+							"acumulado":   resIndicador["acumulado"],
+							"meta":        resIndicador["meta"],
+						}
+					}
 				}
 			}
 		}
@@ -98,7 +117,9 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 				sum4 := 0.0
 
 				for i := ant; i < cont+ant; i++ {
-					sum1 = sum1 + evaluacion[i]["trimestre1"].(map[string]interface{})["meta"].(float64)
+					if fmt.Sprintf("%v", evaluacion[i]["trimestre1"]) != "map[]" {
+						sum1 = sum1 + evaluacion[i]["trimestre1"].(map[string]interface{})["meta"].(float64)
+					}
 					if fmt.Sprintf("%v", evaluacion[i]["trimestre2"]) != "map[]" {
 						sum2 = sum2 + evaluacion[i]["trimestre2"].(map[string]interface{})["meta"].(float64)
 					}
@@ -132,7 +153,9 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 				}
 
 				for i := ant; i < cont+ant; i++ {
-					evaluacion[i]["trimestre1"].(map[string]interface{})["actividad"] = cumplActividad1
+					if fmt.Sprintf("%v", evaluacion[i]["trimestre1"]) != "map[]" {
+						evaluacion[i]["trimestre1"].(map[string]interface{})["actividad"] = cumplActividad1
+					}
 					if fmt.Sprintf("%v", evaluacion[i]["trimestre2"]) != "map[]" {
 						evaluacion[i]["trimestre2"].(map[string]interface{})["actividad"] = cumplActividad2
 					}
