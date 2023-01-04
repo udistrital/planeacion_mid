@@ -38,7 +38,7 @@ func init() {
 		),
 		beego.NSNamespace("/reportes",
 			beego.NSInclude(
-				&controllers.ReportesController{},
+				&controllers.InversionController{},
 			),
 		),
 	)
