@@ -148,6 +148,79 @@
                 }
             }
         },
+        "/evaluacion/planes_periodo/{vigencia}/{unidad}": {
+            "get": {
+                "tags": [
+                    "evaluacion"
+                ],
+                "description": "get Planes y vigencias para la unidad y vigencia dado",
+                "operationId": "EvaluacionController.GetPlanesPeriodo",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "vigencia",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "unidad",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "404": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/evaluacion/{vigencia}/{plan}/{periodo}": {
+            "get": {
+                "tags": [
+                    "evaluacion"
+                ],
+                "description": "get Evaluacion",
+                "operationId": "EvaluacionController.GetEvaluacion",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "vigencia",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "plan",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "periodo",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "404": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/formato/": {
             "get": {
                 "tags": [
@@ -1600,6 +1673,58 @@
                 }
             }
         },
+        "/seguimiento/retornar_actividad/{plan_id}/{index}/{trimestre}": {
+            "put": {
+                "tags": [
+                    "seguimiento"
+                ],
+                "description": "Retorna la actividad de Avalado a en Revision",
+                "operationId": "SeguimientoController.RetornarActividad",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "plan_id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "index",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "trimestre",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Seguimiento"
+                        }
+                    },
+                    "403": {
+                        "description": ":plan_id is empty"
+                    }
+                }
+            }
+        },
         "/seguimiento/revision_actividad/{plan_id}/{index}/{trimestre}": {
             "put": {
                 "tags": [
@@ -1728,6 +1853,10 @@
         {
             "name": "reportes",
             "description": "ReportesController operations for Reportes\n"
+        },
+        {
+            "name": "evaluacion",
+            "description": "EvaluacionController operations for Evaluacion\n"
         }
     ]
 }
