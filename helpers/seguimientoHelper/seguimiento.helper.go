@@ -182,7 +182,6 @@ func GetInformacionPlan(seguimiento map[string]interface{}, index string) map[st
 		"ponderacion": "",
 		"periodo":     "",
 		"tarea":       "",
-		"indicador":   "",
 		"producto":    "",
 		"nombre":      "",
 		"descripcion": "",
@@ -209,10 +208,15 @@ func GetInformacionPlan(seguimiento map[string]interface{}, index string) map[st
 		for _, hijo := range hijos {
 			if hijo["activo"] == true {
 				var res map[string]interface{}
+
 				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijo["_id"].(string), &res); err == nil {
 					dato := make(map[string]interface{})
-					json.Unmarshal([]byte(res["Data"].([]interface{})[0].(map[string]interface{})["dato_plan"].(string)), &dato)
 					nombreDetalle := strings.ToLower(res["Data"].([]interface{})[0].(map[string]interface{})["nombre"].(string))
+					if strings.Contains(nombreDetalle, "indicadores") || strings.Contains(nombreDetalle, "indicador") {
+						continue
+					}
+
+					json.Unmarshal([]byte(res["Data"].([]interface{})[0].(map[string]interface{})["dato_plan"].(string)), &dato)
 
 					if dato[index] == nil {
 						continue
@@ -227,9 +231,6 @@ func GetInformacionPlan(seguimiento map[string]interface{}, index string) map[st
 						continue
 					case strings.Contains(nombreDetalle, "tareas") || strings.Contains(nombreDetalle, "actividades específicas"):
 						informacion["tarea"] = dato[index].(map[string]interface{})["dato"]
-						continue
-					case strings.Contains(nombreDetalle, "indicadores") || strings.Contains(nombreDetalle, "indicador"):
-						informacion["indicador"] = dato[index].(map[string]interface{})["dato"]
 						continue
 					case strings.Contains(nombreDetalle, "producto"):
 						informacion["producto"] = dato[index].(map[string]interface{})["dato"]
@@ -743,7 +744,6 @@ func ActividadConObservaciones(seguimiento map[string]interface{}) bool {
 			return true
 		}
 	}
-
 
 	if seguimiento["evidencia"] != nil {
 		for _, evidencia := range seguimiento["evidencia"].([]map[string]interface{}) {
