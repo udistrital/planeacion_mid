@@ -118,22 +118,53 @@ func (c *ReportesController) Desagregado() {
 			}
 		}
 		contadorDesagregado := 3
-		stylehead, _ := consolidadoExcel.NewStyle(`{
-			"alignment":{"horizontal":"center","vertical":"center","wrap_text":true}, 
-			"font":{"bold":true,"color":"#FFFFFF"},
-			"fill":{"type":"pattern","pattern":1,"color":["#CC0000"]},
-			"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-		}`)
-		styletitles, _ := consolidadoExcel.NewStyle(`{
-			"alignment":{"horizontal":"center","vertical":"center","wrap_text":true}, 
-			"font":{"bold":true},
-			"fill":{"type":"pattern","pattern":1,"color":["#F2F2F2"]},
-			"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-		}`)
-		stylecontent, _ := consolidadoExcel.NewStyle(`{
-			"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
-			"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-		}`)
+		stylehead, _ := consolidadoExcel.NewStyle(&excelize.Style{
+			Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+			Font:      &excelize.Font{Bold: true, Color: "FFFFFF"},
+			Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"CC0000"}},
+			Border: []excelize.Border{
+				{Type: "right", Color: "000000", Style: 1},
+				{Type: "left", Color: "000000", Style: 1},
+				{Type: "top", Color: "000000", Style: 1},
+				{Type: "bottom", Color: "000000", Style: 1},
+			},
+		})
+		styletitles, _ := consolidadoExcel.NewStyle(&excelize.Style{
+			Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+			Font:      &excelize.Font{Bold: true},
+			Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+			Border: []excelize.Border{
+				{Type: "right", Color: "000000", Style: 1},
+				{Type: "left", Color: "000000", Style: 1},
+				{Type: "top", Color: "000000", Style: 1},
+				{Type: "bottom", Color: "000000", Style: 1},
+			},
+		})
+		stylecontent, _ := consolidadoExcel.NewStyle(&excelize.Style{
+			Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+			Border: []excelize.Border{
+				{Type: "right", Color: "000000", Style: 1},
+				{Type: "left", Color: "000000", Style: 1},
+				{Type: "top", Color: "000000", Style: 1},
+				{Type: "bottom", Color: "000000", Style: 1},
+			},
+		})
+		// stylehead, _ := consolidadoExcel.NewStyle(`{
+		// 	"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
+		// 	"font":{"bold":true,"color":"#FFFFFF"},
+		// 	"fill":{"type":"pattern","pattern":1,"color":["#CC0000"]},
+		// 	"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+		// }`)
+		// styletitles, _ := consolidadoExcel.NewStyle(`{
+		// 	"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
+		// 	"font":{"bold":true},
+		// 	"fill":{"type":"pattern","pattern":1,"color":["#F2F2F2"]},
+		// 	"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+		// }`)
+		// stylecontent, _ := consolidadoExcel.NewStyle(`{
+		// 	"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
+		// 	"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+		// }`)
 		for h := 0; h < len(data_identi); h++ {
 
 			datosArreglo := data_identi[h]
@@ -1061,15 +1092,32 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 			indexPlan := consolidadoExcelPlanAnual.NewSheet(sheetName)
 
 			if planes == 0 {
-				styledefault, _ := consolidadoExcelPlanAnual.NewStyle(`{
-						"border":[{"type":"right","color":"#ffffff","style":1},{"type":"left","color":"#ffffff","style":1},{"type":"top","color":"#ffffff","style":1},{"type":"bottom","color":"#ffffff","style":1}]
-					}`)
+				styledefault, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+					Border: []excelize.Border{
+						{Type: "right", Color: "ffffff", Style: 1},
+						{Type: "left", Color: "ffffff", Style: 1},
+						{Type: "top", Color: "ffffff", Style: 1},
+						{Type: "bottom", Color: "ffffff", Style: 1},
+					},
+				})
+				// styledefault, _ := consolidadoExcelPlanAnual.NewStyle(`{
+				// 	"border":[{"type":"right","color":"#ffffff","style":1},{"type":"left","color":"#ffffff","style":1},{"type":"top","color":"#ffffff","style":1},{"type":"bottom","color":"#ffffff","style":1}]
+				// 	}`)
 				consolidadoExcelPlanAnual.SetColStyle(sheetName, "A:Q", styledefault)
 
-				styletitle, _ := consolidadoExcelPlanAnual.NewStyle(`{
-					"font":{"bold":true, "size":18, "color":"#000000"},
-					"border":[{"type":"right","color":"#ffffff","style":1},{"type":"left","color":"#ffffff","style":1},{"type":"top","color":"#ffffff","style":1},{"type":"bottom","color":"#ffffff","style":1}]
-				}`)
+				styletitle, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+					Font: &excelize.Font{Bold: true, Size: 18, Color: "000000"},
+					Border: []excelize.Border{
+						{Type: "right", Color: "ffffff", Style: 1},
+						{Type: "left", Color: "ffffff", Style: 1},
+						{Type: "top", Color: "ffffff", Style: 1},
+						{Type: "bottom", Color: "ffffff", Style: 1},
+					},
+				})
+				// styletitle, _ := consolidadoExcelPlanAnual.NewStyle(`{
+				// 	"font":{"bold":true, "size":18, "color":"#000000"},
+				// 	"border":[{"type":"right","color":"#ffffff","style":1},{"type":"left","color":"#ffffff","style":1},{"type":"top","color":"#ffffff","style":1},{"type":"bottom","color":"#ffffff","style":1}]
+				// }`)
 
 				if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+`/periodo?query=Id:`+body["vigencia"].(string), &resPeriodo); err == nil {
 					helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
@@ -1085,23 +1133,54 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "B2", "Universidad Distrital Franciso José de Caldas")
 			}
 
-			stylehead, _ := consolidadoExcelPlanAnual.NewStyle(`{
-				"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
-				"font":{"bold":true,"color":"#FFFFFF"},
-				"fill":{"type":"pattern","pattern":1,"color":["#CC0000"]},
-				"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-	
-				}`)
-			styletitles, _ := consolidadoExcelPlanAnual.NewStyle(`{
-					"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
-					"font":{"bold":true},
-					"fill":{"type":"pattern","pattern":1,"color":["#F2F2F2"]},
-					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-				}`)
-			stylecontent, _ := consolidadoExcelPlanAnual.NewStyle(`{
-					"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
-					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-				}`)
+			stylehead, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+				Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+				Font:      &excelize.Font{Bold: true, Color: "FFFFFF"},
+				Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"CC0000"}},
+				Border: []excelize.Border{
+					{Type: "right", Color: "000000", Style: 1},
+					{Type: "left", Color: "000000", Style: 1},
+					{Type: "top", Color: "000000", Style: 1},
+					{Type: "bottom", Color: "000000", Style: 1},
+				},
+			})
+			styletitles, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+				Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+				Font:      &excelize.Font{Bold: true},
+				Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+				Border: []excelize.Border{
+					{Type: "right", Color: "000000", Style: 1},
+					{Type: "left", Color: "000000", Style: 1},
+					{Type: "top", Color: "000000", Style: 1},
+					{Type: "bottom", Color: "000000", Style: 1},
+				},
+			})
+			stylecontent, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+				Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+				Border: []excelize.Border{
+					{Type: "right", Color: "000000", Style: 1},
+					{Type: "left", Color: "000000", Style: 1},
+					{Type: "top", Color: "000000", Style: 1},
+					{Type: "bottom", Color: "000000", Style: 1},
+				},
+			})
+			// stylehead, _ := consolidadoExcelPlanAnual.NewStyle(`{
+			// 	"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
+			// 	"font":{"bold":true,"color":"#FFFFFF"},
+			// 	"fill":{"type":"pattern","pattern":1,"color":["#CC0000"]},
+			// 	"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+			// 
+			// 	}`)
+			// styletitles, _ := consolidadoExcelPlanAnual.NewStyle(`{
+			// 		"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
+			// 		"font":{"bold":true},
+			// 		"fill":{"type":"pattern","pattern":1,"color":["#F2F2F2"]},
+			// 		"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+			// 	}`)
+			// stylecontent, _ := consolidadoExcelPlanAnual.NewStyle(`{
+			// 		"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
+			// 		"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+			// 	}`)
 			styleLineamiento, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
 				Alignment: &excelize.Alignment{
 					Horizontal:   "center",
@@ -1539,29 +1618,70 @@ func (c *ReportesController) Necesidades() {
 	// icbf := 0
 
 	necesidadesExcel := excelize.NewFile()
-	stylecontent, _ := necesidadesExcel.NewStyle(`{
-					"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
-					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-				}`)
-	styletitles, _ := necesidadesExcel.NewStyle(`{
-					"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
-					"font":{"bold":true,"family":"Arial", "size":26,"color":"#000000"},
-					"fill":{"type":"pattern","pattern":1,"color":["#F2F2F2"]},
-					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-				}`)
-
-	stylesubtitles, _ := necesidadesExcel.NewStyle(`{
-					"alignment":{"horizontal":"left","vertical":"center","wrap_text":true},
-					"font":{"bold":true,"family":"Arial", "size":20,"color":"#000000"},
-					"fill":{"type":"pattern","pattern":1,"color":["#F2F2F2"]},
-					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-				}`)
-	stylehead, _ := necesidadesExcel.NewStyle(`{
-					"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
-					"font":{"bold":true,"color":"#FFFFFF"},
-					"fill":{"type":"pattern","pattern":1,"color":["#CC0000"]},
-					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-				}`)
+	stylecontent, _ := necesidadesExcel.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+		Border: []excelize.Border{
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+	})
+	styletitles, _ := necesidadesExcel.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+		Font:      &excelize.Font{Bold: true, Family: "Arial", Size: 26, Color: "000000"},
+		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+		Border: []excelize.Border{
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+	})
+	stylesubtitles, _ := necesidadesExcel.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "left", Vertical: "center", WrapText: true},
+		Font:      &excelize.Font{Bold: true, Family: "Arial", Size: 20, Color: "000000"},
+		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+		Border: []excelize.Border{
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+	})
+	stylehead, _ := necesidadesExcel.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+		Font:      &excelize.Font{Bold: true, Color: "FFFFFF"},
+		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"CC0000"}},
+		Border: []excelize.Border{
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+	})
+	// stylecontent, _ := necesidadesExcel.NewStyle(`{
+	// 				"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
+	// 				"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+	// 			}`)
+	// styletitles, _ := necesidadesExcel.NewStyle(`{
+	// 				"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
+	// 				"font":{"bold":true,"family":"Arial", "size":26,"color":"#000000"},
+	// 				"fill":{"type":"pattern","pattern":1,"color":["#F2F2F2"]},
+	// 				"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+	// 			}`)
+	// stylesubtitles, _ := necesidadesExcel.NewStyle(`{
+	// 				"alignment":{"horizontal":"left","vertical":"center","wrap_text":true},
+	// 				"font":{"bold":true,"family":"Arial", "size":20,"color":"#000000"},
+	// 				"fill":{"type":"pattern","pattern":1,"color":["#F2F2F2"]},
+	// 				"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+	// 			}`)
+	// stylehead, _ := necesidadesExcel.NewStyle(`{
+	// 				"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
+	// 				"font":{"bold":true,"color":"#FFFFFF"},
+	// 				"fill":{"type":"pattern","pattern":1,"color":["#CC0000"]},
+	// 				"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+	// 			}`)
 
 	necesidadesExcel.NewSheet("Necesidades")
 	necesidadesExcel.DeleteSheet("Sheet1")
