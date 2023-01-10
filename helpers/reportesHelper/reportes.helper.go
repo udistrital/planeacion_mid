@@ -693,13 +693,15 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 }
 
 func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[string]interface{}, contratistas []map[string]interface{}, docentes map[string]interface{}, rubro string, nombreRubro string) *excelize.File {
-	stylecontent, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+	stylecontent, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
 		Border: []excelize.Border{{Type: "right", Color: "000000", Style: 1},
 			{Type: "left", Color: "000000", Style: 1},
 			{Type: "top", Color: "000000", Style: 1},
 			{Type: "bottom", Color: "000000", Style: 1}}})
 
-	styletitles, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+	styletitles, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
 		Font: &excelize.Font{Bold: true, Family: "Arial", Size: 26, Color: "000000"},
 		Fill: excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
 		Border: []excelize.Border{{Type: "right", Color: "000000", Style: 1},
@@ -707,7 +709,8 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 			{Type: "top", Color: "000000", Style: 1},
 			{Type: "bottom", Color: "000000", Style: 1}}})
 
-	stylesubtitles, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{Alignment: &excelize.Alignment{Horizontal: "left", Vertical: "center", WrapText: true},
+	stylesubtitles, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "left", Vertical: "center", WrapText: true},
 		Font: &excelize.Font{Bold: true, Family: "Arial", Size: 20, Color: "000000"},
 		Fill: excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
 		Border: []excelize.Border{{Type: "right", Color: "000000", Style: 1},
@@ -715,7 +718,8 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 			{Type: "top", Color: "000000", Style: 1},
 			{Type: "bottom", Color: "000000", Style: 1}}})
 
-	stylehead, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+	stylehead, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
 		Font: &excelize.Font{Bold: true, Color: "000000"},
 		Fill: excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"CC0000"}},
 		Border: []excelize.Border{{Type: "right", Color: "000000", Style: 1},
