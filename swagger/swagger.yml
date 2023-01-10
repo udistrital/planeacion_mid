@@ -668,6 +668,39 @@ paths:
             $ref: '#/definitions/models.Formulacion'
         "403":
           description: :id is empty
+  /inversion/addProyecto:
+    post:
+      tags:
+      - inversion
+      description: post AddProyecto
+      operationId: InversionController.AddProyecto
+      parameters:
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "200":
+          description: ""
+  /inversion/getproyectoid/{id}:
+    get:
+      tags:
+      - inversion
+      description: get GetProyectoId
+      operationId: InversionController.GetProyectoId
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+        "403":
+          description: :id is empty
   /reportes/desagregado:
     post:
       tags:
