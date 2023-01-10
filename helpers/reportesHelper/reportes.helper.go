@@ -45,7 +45,7 @@ func GetActividades(subgrupo_id string) []map[string]interface{} {
 	var subgrupoDetalle map[string]interface{}
 	var datoPlan map[string]interface{}
 	var actividades []map[string]interface{}
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=subgrupo_id:"+subgrupo_id, &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=subgrupo_id:"+subgrupo_id+"&fields=dato_plan", &res); err == nil {
 		aux := make([]map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(res, &aux)
 		subgrupoDetalle = aux[0]
@@ -76,41 +76,14 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 	var requeridos []map[string]interface{}
 	armonizacion := make([]map[string]interface{}, 1)
 	var result [][]map[string]interface{}
-	var nodo map[string]interface{}
 	for i := 0; i < len(hijos); i++ {
 		if hijos[i]["activo"] == true {
-			var resLimpia []map[string]interface{}
-			var res map[string]interface{}
 			forkData := make(map[string]interface{})
 			var id string
 			forkData["id"] = hijos[i]["_id"]
 			forkData["nombre"] = hijos[i]["nombre"]
-			jsonString, _ := json.Marshal(hijos[i]["_id"])
-			json.Unmarshal(jsonString, &id)
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id, &res); err == nil {
-				helpers.LimpiezaRespuestaRefactor(res, &resLimpia)
-				nodo = resLimpia[0]
-				if len(nodo) == 0 {
-					//forkData["type"] = ""
-					//forkData["required"] = ""
-				} else {
-					var deta map[string]interface{}
-					dato_str := nodo["dato"].(string)
-					json.Unmarshal([]byte(dato_str), &deta)
-					if (deta["type"] != nil) && (deta["required"] != nil) && (deta["options"] == nil) {
-						forkData["type"] = deta["type"]
-						forkData["required"] = deta["required"]
-					} else if (deta["type"] != nil) && (deta["required"] != nil) && (deta["options"] != nil) {
-						forkData["type"] = deta["type"]
-						forkData["required"] = deta["required"]
-						forkData["options"] = deta["options"]
-					} else {
-						forkData["type"] = " "
-						forkData["required"] = " "
-					}
+			id = hijos[i]["_id"].(string)
 
-				}
-			}
 			if len(hijos[i]["hijos"].([]interface{})) > 0 {
 				var aux []map[string]interface{}
 				if len(hijos_key) == 0 {
@@ -180,7 +153,7 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 		var res map[string]interface{}
 		var subgrupo_detalle []map[string]interface{}
 		var dato_plan map[string]interface{}
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+v, &res); err == nil {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=subgrupo_id:"+v+"&fields=dato_plan,armonizacion_dato", &res); err == nil {
 			helpers.LimpiezaRespuestaRefactor(res, &subgrupo_detalle)
 
 			if len(subgrupo_detalle) > 0 {
@@ -193,32 +166,13 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 					dato_plan_str := subgrupo_detalle[0]["dato_plan"].(string)
 					json.Unmarshal([]byte(dato_plan_str), &dato_plan)
 
-					if dato_plan[index] == nil {
-
-					} else {
+					if dato_plan[index] != nil {
 						actividad = dato_plan[index].(map[string]interface{})
 						if v != "" {
 							forkData[v] = actividad["dato"]
-							if forkData[v] == nil {
-								forkData[v] = ""
-							}
-							if actividad["observacion"] != nil {
-								keyObservacion := v + "_o"
-								forkData[keyObservacion] = getObservacion(actividad)
-
-							} else {
-								keyObservacion := v + "_o"
-								forkData[keyObservacion] = "Sin observación"
-							}
 						}
 					}
-
-				} else {
-					forkData[v] = ""
 				}
-			} else {
-				forkData[v] = ""
-
 			}
 		}
 
@@ -227,63 +181,26 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 	return validadores, armonizacion
 }
 
-func getObservacion(actividad map[string]interface{}) string {
-	if actividad["observacion"] == nil {
-		return ""
-	} else {
-		str := fmt.Sprintf("%v", actividad["observacion"])
-		return str
-	}
-}
-
 func getChildren(children []interface{}, exist bool) (childrenTree []map[string]interface{}) {
 	var res map[string]interface{}
-	var resp map[string]interface{}
-	var nodo map[string]interface{}
-	var detalle []map[string]interface{}
+	var nodo []map[string]interface{}
 
 	for _, child := range children {
-		childStr := fmt.Sprintf("%v", child)
+		childStr := child.(string)
 		forkData := make(map[string]interface{})
 		var id string
-		//fmt.Println("GET CHILDREN ", "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+childStr)
-		err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+childStr, &res)
+		err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=_id:"+childStr+"&fields=nombre,_id,hijos,activo", &res)
 		if err != nil {
 			return
 		}
 		helpers.LimpiezaRespuestaRefactor(res, &nodo)
-		if nodo["activo"] == true {
-			forkData["id"] = nodo["_id"]
-			forkData["nombre"] = nodo["nombre"]
-			jsonString, _ := json.Marshal(nodo["_id"])
-			json.Unmarshal(jsonString, &id)
-			if err_ := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id, &resp); err_ == nil && exist {
-				helpers.LimpiezaRespuestaRefactor(resp, &detalle)
-				if len(detalle) == 0 {
-					// forkData["type"] = ""
-					// forkData["required"] = ""
-				} else {
+		if nodo[0]["activo"] == true {
+			forkData["id"] = nodo[0]["_id"]
+			forkData["nombre"] = nodo[0]["nombre"]
+			id = nodo[0]["_id"].(string)
 
-					var deta map[string]interface{}
-					dato_str := fmt.Sprintf("%v", detalle[0]["dato"])
-					json.Unmarshal([]byte(dato_str), &deta)
-					// forkData["type"] = deta["type"]
-					// forkData["required"] = deta["required"]
-					if (deta["type"] != nil) && (deta["required"] != nil) && (deta["options"] == nil) {
-						forkData["type"] = deta["type"]
-						forkData["required"] = deta["required"]
-					} else if (deta["type"] != nil) && (deta["required"] != nil) && (deta["options"] != nil) {
-						forkData["type"] = deta["type"]
-						forkData["required"] = deta["required"]
-						forkData["options"] = deta["options"]
-					} else {
-						forkData["type"] = " "
-						forkData["required"] = " "
-					}
-				}
-			}
-			if len(nodo["hijos"].([]interface{})) > 0 {
-				aux := getChildren(nodo["hijos"].([]interface{}), true)
+			if len(nodo[0]["hijos"].([]interface{})) > 0 {
+				aux := getChildren(nodo[0]["hijos"].([]interface{}), true)
 				if len(aux) == 0 {
 					forkData["sub"] = ""
 				} else {
@@ -776,29 +693,62 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 }
 
 func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[string]interface{}, contratistas []map[string]interface{}, docentes map[string]interface{}, rubro string, nombreRubro string) *excelize.File {
-	stylecontent, _ := consolidadoExcelPlanAnual.NewStyle(`{
-					"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
-					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-				}`)
-	styletitles, _ := consolidadoExcelPlanAnual.NewStyle(`{
-					"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
-					"font":{"bold":true,"family":"Arial", "size":26,"color":"#000000"},
-					"fill":{"type":"pattern","pattern":1,"color":["#F2F2F2"]},
-					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-				}`)
+	stylecontent, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+		Border: []excelize.Border{{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1}}})
 
-	stylesubtitles, _ := consolidadoExcelPlanAnual.NewStyle(`{
-					"alignment":{"horizontal":"left","vertical":"center","wrap_text":true},
-					"font":{"bold":true,"family":"Arial", "size":20,"color":"#000000"},
-					"fill":{"type":"pattern","pattern":1,"color":["#F2F2F2"]},
-					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-				}`)
-	stylehead, _ := consolidadoExcelPlanAnual.NewStyle(`{
-					"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
-					"font":{"bold":true,"color":"#FFFFFF"},
-					"fill":{"type":"pattern","pattern":1,"color":["#CC0000"]},
-					"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-				}`)
+	styletitles, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+		Font: &excelize.Font{Bold: true, Family: "Arial", Size: 26, Color: "000000"},
+		Fill: excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+		Border: []excelize.Border{{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1}}})
+
+	stylesubtitles, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "left", Vertical: "center", WrapText: true},
+		Font: &excelize.Font{Bold: true, Family: "Arial", Size: 20, Color: "000000"},
+		Fill: excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+		Border: []excelize.Border{{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1}}})
+
+	stylehead, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+		Font: &excelize.Font{Bold: true, Color: "000000"},
+		Fill: excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"CC0000"}},
+		Border: []excelize.Border{{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1}}})
+	// stylecontent, _ := consolidadoExcelPlanAnual.NewStyle(`{
+	// 				"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
+	// 				"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+	// 			}`)
+	// styletitles, _ := consolidadoExcelPlanAnual.NewStyle(`{
+	// 				"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
+	// 				"font":{"bold":true,"family":"Arial", "size":26,"color":"#000000"},
+	// 				"fill":{"type":"pattern","pattern":1,"color":["#F2F2F2"]},
+	// 				"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+	// 			}`)
+	//
+	// stylesubtitles, _ := consolidadoExcelPlanAnual.NewStyle(`{
+	// 				"alignment":{"horizontal":"left","vertical":"center","wrap_text":true},
+	// 				"font":{"bold":true,"family":"Arial", "size":20,"color":"#000000"},
+	// 				"fill":{"type":"pattern","pattern":1,"color":["#F2F2F2"]},
+	// 				"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+	// 			}`)
+	// stylehead, _ := consolidadoExcelPlanAnual.NewStyle(`{
+	// 				"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
+	// 				"font":{"bold":true,"color":"#FFFFFF"},
+	// 				"fill":{"type":"pattern","pattern":1,"color":["#CC0000"]},
+	// 				"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
+	// 			}`)
 
 	consolidadoExcelPlanAnual.NewSheet("Identificaciones")
 
