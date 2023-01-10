@@ -41,11 +41,19 @@ func init() {
 				&controllers.ReportesController{},
 			),
 		),
+
 		beego.NSNamespace("/inversion",
 			beego.NSInclude(
 				&controllers.InversionController{},
 			),
 		),
+
+		beego.NSNamespace("/evaluacion",
+		beego.NSInclude(
+			&controllers.EvaluacionController{},
+		),
+	),
+
 	)
 	beego.AddNamespace(ns)
 }
