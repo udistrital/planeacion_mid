@@ -119,8 +119,7 @@ paths:
         type: string
       - in: query
         name: order
-        description: Order corresponding to each sortby field, if single value, apply
-          to all sortby fields. e.g. desc,asc ...
+        description: Order corresponding to each sortby field, if single value, apply to all sortby fields. e.g. desc,asc ...
         type: string
       - in: query
         name: limit
@@ -618,6 +617,39 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /inversion/addProyecto:
+    post:
+      tags:
+      - inversion
+      description: post AddProyecto
+      operationId: InversionController.AddProyecto
+      parameters:
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "200":
+          description: ""
+  /inversion/getproyectoid/{id}:
+    get:
+      tags:
+      - inversion
+      description: get GetProyectoId
+      operationId: InversionController.GetProyectoId
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
         "403":
           description: :id is empty
   /reportes/desagregado:
