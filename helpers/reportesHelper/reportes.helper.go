@@ -19,8 +19,17 @@ import (
 var validDataT = []string{}
 var hijos_key []interface{}
 var hijos_data [][]map[string]interface{}
+var detalles []map[string]interface{}
+var detalles_armonizacion map[string]interface{}
 var ids [][]string
 var id_arr []string
+var detallesLlenados bool
+
+func LimpiarDetalles() {
+	detalles = []map[string]interface{}{}
+	detalles_armonizacion = map[string]interface{}{}
+	detallesLlenados = false
+}
 
 func Limpia() {
 	//validDataT = []string{}
@@ -71,7 +80,6 @@ func GetActividades(subgrupo_id string) []map[string]interface{} {
 }
 
 func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]interface{} {
-
 	var tree []map[string]interface{}
 	var requeridos []map[string]interface{}
 	armonizacion := make([]map[string]interface{}, 1)
@@ -149,34 +157,52 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 	var dato_armonizacion map[string]interface{}
 	armonizacion := make(map[string]interface{})
 	forkData := make(map[string]interface{})
-	for _, v := range valid {
+	for i, v := range valid {
 		var res map[string]interface{}
 		var subgrupo_detalle []map[string]interface{}
 		var dato_plan map[string]interface{}
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=subgrupo_id:"+v+"&fields=dato_plan,armonizacion_dato", &res); err == nil {
-			helpers.LimpiezaRespuestaRefactor(res, &subgrupo_detalle)
 
-			if len(subgrupo_detalle) > 0 {
-				if subgrupo_detalle[0]["armonizacion_dato"] != nil {
-					dato_armonizacion_str := subgrupo_detalle[0]["armonizacion_dato"].(string)
-					json.Unmarshal([]byte(dato_armonizacion_str), &dato_armonizacion)
-					armonizacion["armo"] = dato_armonizacion[index]
-				}
-				if subgrupo_detalle[0]["dato_plan"] != nil {
-					dato_plan_str := subgrupo_detalle[0]["dato_plan"].(string)
-					json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+		if !detallesLlenados {
+			detalles = append(detalles, map[string]interface{}{})
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=subgrupo_id:"+v+"&fields=dato_plan,armonizacion_dato", &res); err == nil {
+				helpers.LimpiezaRespuestaRefactor(res, &subgrupo_detalle)
 
-					if dato_plan[index] != nil {
-						actividad = dato_plan[index].(map[string]interface{})
-						if v != "" {
-							forkData[v] = actividad["dato"]
+				if len(subgrupo_detalle) > 0 {
+					if subgrupo_detalle[0]["armonizacion_dato"] != nil {
+						dato_armonizacion_str := subgrupo_detalle[0]["armonizacion_dato"].(string)
+						json.Unmarshal([]byte(dato_armonizacion_str), &dato_armonizacion)
+						detalles_armonizacion = dato_armonizacion
+						armonizacion["armo"] = dato_armonizacion[index]
+					}
+					if subgrupo_detalle[0]["dato_plan"] != nil {
+						dato_plan_str := subgrupo_detalle[0]["dato_plan"].(string)
+						json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+
+						if dato_plan[index] != nil {
+							actividad = dato_plan[index].(map[string]interface{})
+							detalles[i] = dato_plan
+							if v != "" {
+								forkData[v] = actividad["dato"]
+							}
+						} else {
+							detalles = append(detalles, map[string]interface{}{})
 						}
 					}
 				}
 			}
+		} else {
+			if detalles[i][index] != nil {
+				forkData[v] = detalles[i][index].(map[string]interface{})["dato"]
+			}
+			if detalles_armonizacion[index] != nil {
+				armonizacion["armo"] = detalles_armonizacion[index]
+			}
 		}
-
 	}
+	if !detallesLlenados {
+		detallesLlenados = true
+	}
+
 	validadores = append(validadores, forkData)
 	return validadores, armonizacion
 }
@@ -230,13 +256,14 @@ func ArbolArmonizacion(armonizacion string) []map[string]interface{} {
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+armonizacionPED[i], &respuesta); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaSubgrupo)
 			if len(respuestaSubgrupo) > 0 {
-				if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "lineamiento") {
+				nombre := strings.ToLower(respuestaSubgrupo["nombre"].(string))
+				if strings.Contains(nombre, "lineamiento") {
 					lineamientos = append(lineamientos, respuestaSubgrupo)
 				}
-				if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "meta") {
+				if strings.Contains(nombre, "meta") {
 					metas = append(metas, respuestaSubgrupo)
 				}
-				if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "estrategia") {
+				if strings.Contains(nombre, "estrategia") {
 					estrategias = append(estrategias, respuestaSubgrupo)
 				}
 			}
@@ -389,13 +416,14 @@ func ArbolArmonizacionPI(armonizacion interface{}) []map[string]interface{} {
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+armonizacionPI[i], &respuesta); err == nil {
 				helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaSubgrupo)
 				if len(respuestaSubgrupo) > 0 {
-					if (strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "eje") && strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "transformador")) || strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "nivel 1") {
+					nombre := strings.ToLower(respuestaSubgrupo["nombre"].(string))
+					if (strings.Contains(nombre, "eje") && strings.Contains(nombre, "transformador")) || strings.Contains(nombre, "nivel 1") {
 						factores = append(factores, respuestaSubgrupo)
 					}
-					if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "lineamientos") || strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "nivel 2") {
+					if strings.Contains(nombre, "lineamientos") || strings.Contains(nombre, "lineamiento") || strings.Contains(nombre, "nivel 2") {
 						lineamientos = append(lineamientos, respuestaSubgrupo)
 					}
-					if strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "estrategia") || strings.Contains(strings.ToLower(respuestaSubgrupo["nombre"].(string)), "nivel 3") {
+					if strings.Contains(nombre, "estrategia") || strings.Contains(nombre, "proyecto") || strings.Contains(nombre, "nivel 3") {
 						estrategias = append(estrategias, respuestaSubgrupo)
 					}
 				}
@@ -702,8 +730,8 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 
 	styletitles, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
 		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
-		Font: &excelize.Font{Bold: true, Family: "Arial", Size: 26, Color: "000000"},
-		Fill: excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+		Font:      &excelize.Font{Bold: true, Family: "Arial", Size: 26, Color: "000000"},
+		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
 		Border: []excelize.Border{{Type: "right", Color: "000000", Style: 1},
 			{Type: "left", Color: "000000", Style: 1},
 			{Type: "top", Color: "000000", Style: 1},
@@ -711,8 +739,8 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 
 	stylesubtitles, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
 		Alignment: &excelize.Alignment{Horizontal: "left", Vertical: "center", WrapText: true},
-		Font: &excelize.Font{Bold: true, Family: "Arial", Size: 20, Color: "000000"},
-		Fill: excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+		Font:      &excelize.Font{Bold: true, Family: "Arial", Size: 20, Color: "000000"},
+		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
 		Border: []excelize.Border{{Type: "right", Color: "000000", Style: 1},
 			{Type: "left", Color: "000000", Style: 1},
 			{Type: "top", Color: "000000", Style: 1},
@@ -720,8 +748,8 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 
 	stylehead, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
 		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
-		Font: &excelize.Font{Bold: true, Color: "000000"},
-		Fill: excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"CC0000"}},
+		Font:      &excelize.Font{Bold: true, Color: "000000"},
+		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"CC0000"}},
 		Border: []excelize.Border{{Type: "right", Color: "000000", Style: 1},
 			{Type: "left", Color: "000000", Style: 1},
 			{Type: "top", Color: "000000", Style: 1},
