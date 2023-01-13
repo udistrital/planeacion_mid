@@ -297,9 +297,7 @@ func (c *ReportesController) PlanAccionAnual() {
 	var respuesta map[string]interface{}
 	var planesFilter []map[string]interface{}
 	var res map[string]interface{}
-	// var resArmo map[string]interface{}
 	var respuestaUnidad []map[string]interface{}
-	// var hijosArmo []map[string]interface{}
 	var subgrupos []map[string]interface{}
 	var plan_id string
 	var actividadName string
@@ -307,12 +305,18 @@ func (c *ReportesController) PlanAccionAnual() {
 	var nombreUnidad string
 	var resPeriodo map[string]interface{}
 	var periodo []map[string]interface{}
+	var unidadNombre string
 	nombre := c.Ctx.Input.Param(":nombre")
 	consolidadoExcelPlanAnual := excelize.NewFile()
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 	if body["unidad_id"].(string) != "" {
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",dependencia_id:"+body["unidad_id"].(string)+",nombre:"+nombre, &respuesta); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
+
+			if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+`/periodo?query=Id:`+body["vigencia"].(string), &resPeriodo); err == nil {
+				helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
+			}
+
 			for planes := 0; planes < len(planesFilter); planes++ {
 				planesFilterData := planesFilter[planes]
 				plan_id = planesFilterData["_id"].(string)
@@ -335,6 +339,7 @@ func (c *ReportesController) PlanAccionAnual() {
 								aux1, _ := strconv.Atoi((actividades[j]["index"]).(string))
 								return aux < aux1
 							})
+							reporteshelper.LimpiarDetalles()
 							for j := 0; j < len(actividades); j++ {
 								arregloLineamieto = nil
 								arregloLineamietoPI = nil
@@ -445,19 +450,20 @@ func (c *ReportesController) PlanAccionAnual() {
 					panic(err)
 				}
 
-				contadorLineamiento := 4 + 5
+				contadorLineamiento := 4
 				// contadorMeta := 4
 				// contadorEstrategia := 4
 
-				contadorFactor := 4 + 5
+				contadorFactor := 4
 				//contadorLineamientoPI := 4
 				//contadorEstrategiaPI := 4
-				contadorDataGeneral := 4 + 5
-				unidadNombre := arregloPlanAnual[0]["nombreUnidad"]
+				contadorDataGeneral := 4
+				unidadNombre = arregloPlanAnual[0]["nombreUnidad"].(string)
 				sheetName := "Actividades del plan"
 				indexPlan, _ := consolidadoExcelPlanAnual.NewSheet(sheetName)
 
 				if planes == 0 {
+
 					styledefault, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
 						Border: []excelize.Border{
 							{Type: "right", Color: "ffffff", Style: 1},
@@ -466,33 +472,9 @@ func (c *ReportesController) PlanAccionAnual() {
 							{Type: "bottom", Color: "ffffff", Style: 1},
 						},
 					})
-
+					consolidadoExcelPlanAnual.InsertCols("Actividades del plan", "A", 1)
 					consolidadoExcelPlanAnual.SetColStyle(sheetName, "A:Q", styledefault)
-
-					styletitle, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
-						Font: &excelize.Font{Bold: true, Size: 18, Color: "000000"},
-						Border: []excelize.Border{
-							{Type: "right", Color: "ffffff", Style: 1},
-							{Type: "left", Color: "ffffff", Style: 1},
-							{Type: "top", Color: "ffffff", Style: 1},
-							{Type: "bottom", Color: "ffffff", Style: 1},
-						},
-					})
-
-					if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+`/periodo?query=Id:`+body["vigencia"].(string), &resPeriodo); err == nil {
-						helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
-					}
-
-					consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B1", "B1", styletitle)
-					consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B2", "B2", styletitle)
-					if periodo[0] != nil {
-						consolidadoExcelPlanAnual.SetCellValue(sheetName, "B1", "Plan de Acción "+periodo[0]["Nombre"].(string))
-					} else {
-						consolidadoExcelPlanAnual.SetCellValue(sheetName, "B1", "Plan de Acción")
-					}
-					consolidadoExcelPlanAnual.SetCellValue(sheetName, "B2", unidadNombre) // Cambiar por la unidad
 				}
-
 				stylehead, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
 					Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
 					Font:      &excelize.Font{Bold: true, Color: "FFFFFF"},
@@ -524,7 +506,7 @@ func (c *ReportesController) PlanAccionAnual() {
 						{Type: "bottom", Color: "000000", Style: 1},
 					},
 				})
-			
+
 				styleLineamiento, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
 					Alignment: &excelize.Alignment{
 						Horizontal:   "center",
@@ -540,55 +522,55 @@ func (c *ReportesController) PlanAccionAnual() {
 					},
 				})
 
-				consolidadoExcelPlanAnual.MergeCell(sheetName, "A1", "O1")
-				consolidadoExcelPlanAnual.MergeCell(sheetName, "A2", "C2")
-				consolidadoExcelPlanAnual.MergeCell(sheetName, "D2", "F2")
-				consolidadoExcelPlanAnual.MergeCell(sheetName, "G2", "G3")
+				consolidadoExcelPlanAnual.MergeCell(sheetName, "B1", "P1")
+				consolidadoExcelPlanAnual.MergeCell(sheetName, "B2", "D2")
+				consolidadoExcelPlanAnual.MergeCell(sheetName, "E2", "G2")
 				consolidadoExcelPlanAnual.MergeCell(sheetName, "H2", "H3")
 				consolidadoExcelPlanAnual.MergeCell(sheetName, "I2", "I3")
 				consolidadoExcelPlanAnual.MergeCell(sheetName, "J2", "J3")
 				consolidadoExcelPlanAnual.MergeCell(sheetName, "K2", "K3")
-				consolidadoExcelPlanAnual.MergeCell(sheetName, "O2", "O3")
-				consolidadoExcelPlanAnual.MergeCell(sheetName, "L2", "N2")
+				consolidadoExcelPlanAnual.MergeCell(sheetName, "L2", "L3")
+				consolidadoExcelPlanAnual.MergeCell(sheetName, "P2", "P3")
+				consolidadoExcelPlanAnual.MergeCell(sheetName, "M2", "O2")
 				consolidadoExcelPlanAnual.SetRowHeight(sheetName, 1, 20)
 				consolidadoExcelPlanAnual.SetRowHeight(sheetName, 2, 20)
 				consolidadoExcelPlanAnual.SetRowHeight(sheetName, 3, 20)
-				consolidadoExcelPlanAnual.SetColWidth(sheetName, "A", "C", 70)
-				consolidadoExcelPlanAnual.SetColWidth(sheetName, "D", "F", 70)
-				consolidadoExcelPlanAnual.SetColWidth(sheetName, "L", "N", 50)
-				consolidadoExcelPlanAnual.SetColWidth(sheetName, "H", "I", 20)
-				consolidadoExcelPlanAnual.SetColWidth(sheetName, "J", "K", 80)
-				consolidadoExcelPlanAnual.SetColWidth(sheetName, "O", "O", 50)
-				consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A1", "K1", stylehead)
-				consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A2", "O2", styletitles)
-				consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A3", "O3", styletitles)
+				consolidadoExcelPlanAnual.SetColWidth(sheetName, "B", "D", 70)
+				consolidadoExcelPlanAnual.SetColWidth(sheetName, "E", "G", 70)
+				consolidadoExcelPlanAnual.SetColWidth(sheetName, "M", "O", 50)
+				consolidadoExcelPlanAnual.SetColWidth(sheetName, "I", "J", 20)
+				consolidadoExcelPlanAnual.SetColWidth(sheetName, "K", "L", 80)
+				consolidadoExcelPlanAnual.SetColWidth(sheetName, "P", "P", 50)
+				consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B1", "L1", stylehead)
+				consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B2", "P2", styletitles)
+				consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B3", "P3", styletitles)
 				var tituloExcel string
 				if periodo[0] != nil {
-					tituloExcel = "Plan de acción " + periodo[0]["Nombre"].(string) + " - " + unidadNombre.(string)
+					tituloExcel = "Plan de acción " + periodo[0]["Nombre"].(string) + " - " + unidadNombre
 				} else {
-					tituloExcel = "Plan de acción - " + unidadNombre.(string)
+					tituloExcel = "Plan de acción - " + unidadNombre
 				}
 
 				// encabezado excel
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "A1", tituloExcel)
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "A2", "Armonización PED")
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "A3", "Lineamiento")
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "B3", "Meta")
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "C3", "Estrategias")
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "D2", "Armonización Plan Indicativo")
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "D3", "Ejes transformadores")
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "E3", "Lineaminetos de acción")
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "F3", "Estrategias")
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "G3", "N°.")
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "H3", "Ponderación de la actividad")
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "I3", "Periodo de ejecución")
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "J3", "Actividad")
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "K3", "Tareas")
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "L2", "Indicador")
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "L3", "Nombre")
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "M3", "Fórmula")
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "N3", "Meta")
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "O3", "Producto esperado")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "B1", tituloExcel)
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "B2", "Armonización PED")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "B3", "Lineamiento")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "C3", "Meta")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "D3", "Estrategias")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "E2", "Armonización Plan Indicativo")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "E3", "Ejes transformadores")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "F3", "Lineaminetos de acción")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "G3", "Estrategias")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "H3", "N°.")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "I3", "Ponderación de la actividad")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "J3", "Periodo de ejecución")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "K3", "Actividad")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "L3", "Tareas")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "M2", "Indicador")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "M3", "Nombre")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "N3", "Fórmula")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "O3", "Meta")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "P3", "Producto esperado")
 
 				for excelPlan := 0; excelPlan < len(arregloPlanAnual); excelPlan++ {
 					datosExcelPlan := arregloPlanAnual[excelPlan]
@@ -622,7 +604,7 @@ func (c *ReportesController) PlanAccionAnual() {
 						contadorLineamientoGeneralIn = contadorLineamiento
 
 						// cuerpo del excel
-						consolidadoExcelPlanAnual.SetCellValue(sheetName, "A"+fmt.Sprint(contadorLineamiento), auxLineamiento)
+						consolidadoExcelPlanAnual.SetCellValue(sheetName, "A"+fmt.Sprint(contadorLineamiento), auxLineamiento) //// CAMBIAR
 						consolidadoExcelPlanAnual.SetCellStyle(sheetName, "A"+fmt.Sprint(contadorLineamiento), "A"+fmt.Sprint(contadorLineamiento), styleLineamiento)
 						consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contadorLineamiento), "O"+fmt.Sprint(contadorLineamiento), stylecontent)
 						consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorLineamiento, 70)
@@ -838,6 +820,27 @@ func (c *ReportesController) PlanAccionAnual() {
 			if len(planesFilter) <= 0 {
 				c.Abort("404")
 			}
+
+			styletitle, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+				Font: &excelize.Font{Bold: true, Size: 18, Color: "000000"},
+				Border: []excelize.Border{
+					{Type: "right", Color: "ffffff", Style: 1},
+					{Type: "left", Color: "ffffff", Style: 1},
+					{Type: "top", Color: "ffffff", Style: 1},
+					{Type: "bottom", Color: "ffffff", Style: 1},
+				},
+			})
+			
+			consolidadoExcelPlanAnual.InsertRows("Actividades del plan", 1, 7)
+			consolidadoExcelPlanAnual.SetCellStyle("Actividades del plan", "C3", "C3", styletitle)
+			consolidadoExcelPlanAnual.SetCellStyle("Actividades del plan", "C4", "C4", styletitle)
+			if periodo[0] != nil {
+				consolidadoExcelPlanAnual.SetCellValue("Actividades del plan", "C3", "Plan de Acción "+periodo[0]["Nombre"].(string))
+			} else {
+				consolidadoExcelPlanAnual.SetCellValue("Actividades del plan", "C3", "Plan de Acción")
+			}
+			consolidadoExcelPlanAnual.SetCellValue("Actividades del plan", "C4", unidadNombre) // Cambiar por la unidad
+
 			if err := consolidadoExcelPlanAnual.AddPicture("Actividades del plan", "B1", "static/img/UDEscudo2.png",
 				&excelize.GraphicOptions{ScaleX: 0.1, ScaleY: 0.1, Positioning: "oneCell", OffsetX: 60}); err != nil {
 				fmt.Println(err)
@@ -847,7 +850,6 @@ func (c *ReportesController) PlanAccionAnual() {
 				consolidadoExcelPlanAnual.DeleteSheet("Sheet1")
 			}
 
-			consolidadoExcelPlanAnual.InsertCols("Actividades del plan", "A", 1)
 			consolidadoExcelPlanAnual.SetColWidth("Actividades del plan", "A", "A", 2)
 			buf, _ := consolidadoExcelPlanAnual.WriteToBuffer()
 			strings.NewReader(buf.String())
@@ -940,6 +942,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 							aux1, _ := strconv.Atoi((actividades[j]["index"]).(string))
 							return aux < aux1
 						})
+						reporteshelper.LimpiarDetalles()
 						for j := 0; j < len(actividades); j++ {
 							arregloLineamieto = nil
 							arregloLineamietoPI = nil
@@ -975,6 +978,8 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 										datosArmonizacion["Actividad general"] = treeData[treeDato["id"].(string)]
 									} else if strings.Contains(nombreMinuscula, "tarea") || strings.Contains(nombreMinuscula, "actividades específicas") {
 										datosArmonizacion["Tareas"] = treeData[treeDato["id"].(string)]
+									} else if strings.Contains(nombreMinuscula, "producto") {
+										datosArmonizacion["Producto esperado"] = treeData[treeDato["id"].(string)]
 									} else {
 										datosArmonizacion[treeDato["nombre"].(string)] = treeData[treeDato["id"].(string)]
 									}
@@ -1169,8 +1174,8 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 			consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+3, 20)
 			consolidadoExcelPlanAnual.SetColWidth(sheetName, "B", "B", 33)
 			consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "P", 35)
-			consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "C", 10)
-			consolidadoExcelPlanAnual.SetColWidth(sheetName, "E", "E", 15)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "C", 11)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "E", "E", 16)
 			consolidadoExcelPlanAnual.SetColWidth(sheetName, "H", "H", 6)
 			consolidadoExcelPlanAnual.SetColWidth(sheetName, "I", "J", 12)
 			consolidadoExcelPlanAnual.SetColWidth(sheetName, "K", "K", 30)
@@ -1359,7 +1364,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(contadorDataGeneral), datosComplementarios["Periodo de ejecución"])
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(contadorDataGeneral), datosComplementarios["Actividad general"])
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(contadorDataGeneral), datosComplementarios["Tareas"])
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "P"+fmt.Sprint(contadorDataGeneral), datosComplementarios["Producto esperado "])
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "P"+fmt.Sprint(contadorDataGeneral), datosComplementarios["Producto esperado"])
 
 				if contadorLineamientoGeneralOut > contadorFactorGeneralOut {
 					contadorFactorGeneralOut = contadorLineamientoGeneralOut
@@ -1467,12 +1472,14 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 
 			contadorGeneral = contadorDataGeneral - 1
 			arregloPlanAnual = nil
+			consolidadoExcelPlanAnual.RemoveRow(sheetName, 1)
+			// consolidadoExcelPlanAnual.InsertRows(, 1)
 		}
 
 		if len(planesFilter) <= 0 {
 			c.Abort("404")
 		}
-
+		consolidadoExcelPlanAnual.InsertRows("REPORTE GENERAL", 1, 3)
 		if err := consolidadoExcelPlanAnual.AddPicture("REPORTE GENERAL", "B1", "static/img/UDEscudo2.png",
 			&excelize.GraphicOptions{ScaleX: 0.1, ScaleY: 0.1, Positioning: "oneCell", OffsetX: 60}); err != nil {
 			fmt.Println(err)
