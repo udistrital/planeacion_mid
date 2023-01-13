@@ -47,6 +47,19 @@ func (c *FormatoController) Post() {
 // @router /:id [get]
 func (c *FormatoController) GetFormato() {
 
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormatoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	id := c.Ctx.Input.Param(":id")
 	var res map[string]interface{}
 	var hijos []models.Nodo
@@ -65,8 +78,7 @@ func (c *FormatoController) GetFormato() {
 		tree := formatoHelper.BuildTreeFa(hijos, hijosID)
 		c.Data["json"] = tree
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-		c.Abort("400")
+		panic(err)
 	}
 
 	c.ServeJSON()

@@ -3,8 +3,6 @@ package controllers
 import (
 	//"fmt"
 
-	"fmt"
-
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
 	"github.com/udistrital/planeacion_mid/helpers/arbolHelper"
@@ -32,9 +30,22 @@ func (c *ArbolController) URLMapping() {
 // @Description get Arbol by id
 // @Param	id		path 	string	true		"The key for staticblock"
 // @Success 200 {object} models.Arbol
-// @Failure 403 :id is empty
+// @Failure 404 not found resource
 // @router /:id [get]
 func (c *ArbolController) GetArbol() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ArbolController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
 
 	id := c.Ctx.Input.Param(":id")
 	var res map[string]interface{}
@@ -44,15 +55,13 @@ func (c *ArbolController) GetArbol() {
 		helpers.LimpiezaRespuestaRefactor(res, &hijos)
 		helpers.LimpiezaRespuestaRefactor(res, &hijosID)
 		tree := arbolHelper.BuildTree(hijos, hijosID)
-		fmt.Println(tree)
 		if len(tree) != 0 {
 			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": tree}
 		} else {
-			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": ""}
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": nil}
 		}
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
-		c.Abort("400")
+		panic(err)
 	}
 
 	c.ServeJSON()
@@ -67,7 +76,19 @@ func (c *ArbolController) GetArbol() {
 // @Failure 403 id is empty
 // @router /desactivar_plan/:id [delete]
 func (c *ArbolController) DeletePlan() {
-	fmt.Println("entra melomano")
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ArbolController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	id := c.Ctx.Input.Param(":id")
 	var plan map[string]interface{}
 	var res map[string]interface{}
@@ -78,23 +99,22 @@ func (c *ArbolController) DeletePlan() {
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &res); err == nil {
 
 		helpers.LimpiezaRespuestaRefactor(res, &plan)
-		fmt.Println(plan)
+		// fmt.Println(plan)
 		plan["activo"] = false
 		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+plan["_id"].(string), "PUT", &resPut, plan); err != nil {
 			panic(map[string]interface{}{"funcion": "DeleteHijos", "err": "Error actualizacion activo \"id\"", "status": "400", "log": err})
 		}
-		fmt.Println("entra aca primeros hijos")
+		// fmt.Println("entra aca primeros hijos")
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan["_id"].(string), &resHijos); err == nil {
-			fmt.Println("consulta hijos")
-			fmt.Println(resHijos)
+			// fmt.Println("consulta hijos")
+			// fmt.Println(resHijos)
 			helpers.LimpiezaRespuestaRefactor(resHijos, &hijos)
 			arbolHelper.DeleteHijos(hijos)
 		}
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": plan}
 
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": res, "Type": "error subgrupo"}
-		c.Abort("400")
+		panic(err)
 	}
 
 	c.ServeJSON()
@@ -109,7 +129,19 @@ func (c *ArbolController) DeletePlan() {
 // @Failure 403 id is empty
 // @router /desactivar_nodo/:id [delete]
 func (c *ArbolController) DeleteNodo() {
-	fmt.Println("entra melomano")
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ArbolController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	id := c.Ctx.Input.Param(":id")
 	var subgrupo map[string]interface{}
 	var res map[string]interface{}
@@ -124,18 +156,17 @@ func (c *ArbolController) DeleteNodo() {
 		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+subgrupo["_id"].(string), "PUT", &resPut, subgrupo); err != nil {
 			panic(map[string]interface{}{"funcion": "DeleteHijos", "err": "Error actualizacion activo \"id\"", "status": "400", "log": err})
 		}
-		fmt.Println("entra aca primeros hijos")
+		// fmt.Println("entra aca primeros hijos")
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+subgrupo["_id"].(string), &resHijos); err == nil {
-			fmt.Println("consulta hijos")
-			fmt.Println(resHijos)
+			// fmt.Println("consulta hijos")
+			// fmt.Println(resHijos)
 			helpers.LimpiezaRespuestaRefactor(resHijos, &hijos)
 			arbolHelper.DeleteHijos(hijos)
 		}
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": subgrupo}
 
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": res, "Type": "error subgrupo"}
-		c.Abort("400")
+		panic(err)
 	}
 
 	c.ServeJSON()
@@ -150,6 +181,20 @@ func (c *ArbolController) DeleteNodo() {
 // @Failure 403 id is empty
 // @router /activar_plan/:id [put]
 func (c *ArbolController) ActivarPlan() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ArbolController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	id := c.Ctx.Input.Param(":id")
 	var plan map[string]interface{}
 	var res map[string]interface{}
@@ -164,7 +209,6 @@ func (c *ArbolController) ActivarPlan() {
 		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+plan["_id"].(string), "PUT", &resPut, plan); err != nil {
 			panic(map[string]interface{}{"funcion": "DeleteHijos", "err": "Error actualizacion activo \"id\"", "status": "400", "log": err})
 		}
-		fmt.Println("entra aca primeros hijos")
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan["_id"].(string), &resHijos); err == nil {
 			helpers.LimpiezaRespuestaRefactor(resHijos, &hijos)
 			arbolHelper.ActivarHijos(hijos)
@@ -172,8 +216,7 @@ func (c *ArbolController) ActivarPlan() {
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": plan}
 
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": res, "Type": "error subgrupo"}
-		c.Abort("400")
+		panic(err)
 	}
 
 	c.ServeJSON()
@@ -188,6 +231,20 @@ func (c *ArbolController) ActivarPlan() {
 // @Failure 403 id is empty
 // @router /activar_nodo/:id [put]
 func (c *ArbolController) ActivarNodo() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ArbolController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
 	id := c.Ctx.Input.Param(":id")
 	var subgrupo map[string]interface{}
 	var res map[string]interface{}
@@ -209,8 +266,7 @@ func (c *ArbolController) ActivarNodo() {
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": subgrupo}
 
 	} else {
-		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": res, "Type": "error subgrupo"}
-		c.Abort("400")
+		panic(err)
 	}
 
 	c.ServeJSON()

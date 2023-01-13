@@ -9,12 +9,15 @@ import (
 	"math/big"
 	"net/http"
 	"reflect"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/administrativa_mid_api/models"
+	seguimientomodels "github.com/udistrital/planeacion_mid/models"
 )
 
 func SendJson(url string, trequest string, target interface{}, datajson interface{}) error {
@@ -201,7 +204,7 @@ func diff(a, b time.Time) (year, month, day int) {
 	return
 }
 
-//CargarReglasBase general
+// CargarReglasBase general
 func CargarReglasBase(dominio string) (reglas string, err error) {
 	//carga de reglas desde el ruler
 	var reglasbase string = ``
@@ -324,4 +327,57 @@ func LimpiezaRespuestaRefactor(respuesta map[string]interface{}, v interface{}) 
 		panic(err)
 	}
 	json.Unmarshal(b, &v)
+}
+
+func GuardarDocumento(documentos []interface{}) []interface{} {
+	var resDocs []interface{}
+	for _, documento := range documentos {
+
+		if documento.(map[string]interface{})["file"] != nil {
+			documento := map[string]interface{}{
+				"IdTipoDocumento": documento.(map[string]interface{})["IdTipoDocumento"],
+				"nombre":          documento.(map[string]interface{})["nombre"],
+				"metadatos":       documento.(map[string]interface{})["metadatos"],
+				"descripcion":     documento.(map[string]interface{})["descripcion"],
+				"file":            documento.(map[string]interface{})["file"],
+			}
+
+			var docAux []map[string]interface{}
+			docAux = append(docAux, documento)
+			documentoSubido, errDoc := seguimientomodels.RegistrarDoc(docAux)
+
+			if errDoc == nil {
+				docTem := map[string]interface{}{
+					"Nombre":        documentoSubido.(map[string]interface{})["Nombre"].(string),
+					"Enlace":        documentoSubido.(map[string]interface{})["Enlace"],
+					"Id":            documentoSubido.(map[string]interface{})["Id"],
+					"TipoDocumento": documentoSubido.(map[string]interface{})["TipoDocumento"],
+					"Activo":        documentoSubido.(map[string]interface{})["Activo"],
+				}
+
+				resDocs = append(resDocs, docTem)
+			}
+		}
+	}
+
+	return resDocs
+}
+
+func SortSlice(slice *[]map[string]interface{}, parameter string)  {
+	sort.SliceStable(*slice, func(i, j int) bool {
+		var a int
+		var b int
+		if reflect.TypeOf((*slice)[j][parameter]).String() == "string" {
+			b, _ = strconv.Atoi((*slice)[j][parameter].(string))
+		} else {
+			b = int((*slice)[j][parameter].(float64))
+		}
+
+		if reflect.TypeOf((*slice)[i][parameter]).String() == "string" {
+			a, _ = strconv.Atoi((*slice)[i][parameter].(string))
+		} else {
+			a = int((*slice)[i][parameter].(float64))
+		}
+		return a < b
+	})
 }
