@@ -602,7 +602,8 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 
 	for i := 0; i < len(identificaciones); i++ {
 		identificacion := identificaciones[i]
-		if strings.Contains(strings.ToLower(identificacion["nombre"].(string)), "recurso") {
+		nombre := strings.ToLower(identificacion["nombre"].(string))
+		if strings.Contains(nombre, "recurso") {
 			if identificacion["dato"] != nil {
 				var dato map[string]interface{}
 				dato_str := identificacion["dato"].(string)
@@ -616,7 +617,7 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 				recursos = data_identi
 
 			}
-		} else if strings.Contains(strings.ToLower(identificacion["nombre"].(string)), "contratista") {
+		} else if strings.Contains(nombre, "contratista") {
 			if identificacion["dato"] != nil {
 				var dato map[string]interface{}
 				var data_identi []map[string]interface{}
@@ -641,7 +642,7 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 				contratistas = data_identi
 
 			}
-		} else if strings.Contains(strings.ToLower(identificacion["nombre"].(string)), "docente") {
+		} else if strings.Contains(nombre, "docente") {
 			var dato map[string]interface{}
 			var data_identi []map[string]interface{}
 			if identificacion["dato"] != nil && identificacion["dato"] != "{}" {
@@ -754,29 +755,6 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 			{Type: "left", Color: "000000", Style: 1},
 			{Type: "top", Color: "000000", Style: 1},
 			{Type: "bottom", Color: "000000", Style: 1}}})
-	// stylecontent, _ := consolidadoExcelPlanAnual.NewStyle(`{
-	// 				"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
-	// 				"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-	// 			}`)
-	// styletitles, _ := consolidadoExcelPlanAnual.NewStyle(`{
-	// 				"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
-	// 				"font":{"bold":true,"family":"Arial", "size":26,"color":"#000000"},
-	// 				"fill":{"type":"pattern","pattern":1,"color":["#F2F2F2"]},
-	// 				"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-	// 			}`)
-	//
-	// stylesubtitles, _ := consolidadoExcelPlanAnual.NewStyle(`{
-	// 				"alignment":{"horizontal":"left","vertical":"center","wrap_text":true},
-	// 				"font":{"bold":true,"family":"Arial", "size":20,"color":"#000000"},
-	// 				"fill":{"type":"pattern","pattern":1,"color":["#F2F2F2"]},
-	// 				"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-	// 			}`)
-	// stylehead, _ := consolidadoExcelPlanAnual.NewStyle(`{
-	// 				"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
-	// 				"font":{"bold":true,"color":"#FFFFFF"},
-	// 				"fill":{"type":"pattern","pattern":1,"color":["#CC0000"]},
-	// 				"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-	// 			}`)
 
 	consolidadoExcelPlanAnual.NewSheet("Identificaciones")
 
@@ -821,9 +799,9 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		var strActividades string
 		for j := 0; j < len(auxStrString); j++ {
 			if j != len(auxStrString)-1 {
-				strActividades = strActividades + " " + fmt.Sprint(auxStrString[j]) + ","
+				strActividades = strActividades + " " + auxStrString[j].(string) + ","
 			} else {
-				strActividades = strActividades + " " + fmt.Sprint(auxStrString[j])
+				strActividades = strActividades + " " + auxStrString[j].(string)
 			}
 		}
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "E"+fmt.Sprint(contador), strActividades)
@@ -898,9 +876,9 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		var strActividades string
 		for j := 0; j < len(auxStrString); j++ {
 			if j != len(auxStrString)-1 {
-				strActividades = strActividades + " " + fmt.Sprint(auxStrString[j]) + ","
+				strActividades = strActividades + " " + auxStrString[j].(string) + ","
 			} else {
-				strActividades = strActividades + " " + fmt.Sprint(auxStrString[j])
+				strActividades = strActividades + " " + auxStrString[j].(string)
 			}
 		}
 		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "F"+fmt.Sprint(contador), strActividades)
@@ -1630,4 +1608,12 @@ func GetDataDocentes(docentes map[string]interface{}, dependencia_id string) map
 
 	return dataDocentes
 
+}
+
+func SombrearCeldas(excel *excelize.File, idActividad int, sheetName string, hCell string, vCell string, style int, styleSombreado int) {
+	if idActividad%2 == 0 {
+		excel.SetCellStyle(sheetName, hCell, vCell, style)
+	} else {
+		excel.SetCellStyle(sheetName, hCell, vCell, styleSombreado)
+	}
 }
