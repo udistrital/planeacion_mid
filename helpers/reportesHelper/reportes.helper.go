@@ -789,11 +789,11 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 	consolidadoExcelPlanAnual.MergeCell(sheetName, "B1", "F1")
 
 	consolidadoExcelPlanAnual.SetColWidth(sheetName, "A", "A", 2)
-	consolidadoExcelPlanAnual.SetColWidth(sheetName, "B", "D", 25)
+	consolidadoExcelPlanAnual.SetColWidth(sheetName, "B", "D", 26)
 	consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "C", 30)
 	consolidadoExcelPlanAnual.SetColWidth(sheetName, "E", "E", 35)
 	consolidadoExcelPlanAnual.SetColWidth(sheetName, "F", "G", 20)
-	consolidadoExcelPlanAnual.SetColWidth(sheetName, "H", "I", 12)
+	consolidadoExcelPlanAnual.SetColWidth(sheetName, "H", "I", 20)
 
 	consolidadoExcelPlanAnual.SetCellValue(sheetName, "B1", "Identificación de recursos")
 	consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B1", "F1", styletitles)
@@ -831,7 +831,6 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(contador), strActividades)
 		SombrearCeldas(consolidadoExcelPlanAnual, i, sheetName, "B"+fmt.Sprint(contador), "F"+fmt.Sprint(contador), stylecontent, stylecontentS)
 		SombrearCeldas(consolidadoExcelPlanAnual, i, sheetName, "D"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
-		consolidadoExcelPlanAnual.SetRowHeight(sheetName, contador, 35)
 		contador++
 	}
 	contador++
@@ -851,7 +850,6 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 	consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(contador), "Valor Total Incremeto")
 	consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(contador), "Actividades")
 	consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "H"+fmt.Sprint(contador), stylehead)
-	consolidadoExcelPlanAnual.SetRowHeight(sheetName, contador, 30)
 
 	contador++
 	var total float64 = 0
@@ -910,7 +908,6 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		SombrearCeldas(consolidadoExcelPlanAnual, i, sheetName, "B"+fmt.Sprint(contador), "H"+fmt.Sprint(contador), stylecontent, stylecontentS)
 		SombrearCeldas(consolidadoExcelPlanAnual, i, sheetName, "F"+fmt.Sprint(contador), "G"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
 		SombrearCeldas(consolidadoExcelPlanAnual, i, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentC, stylecontentCS)
-		consolidadoExcelPlanAnual.SetRowHeight(sheetName, contador, 35)
 		contador++
 	}
 	consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador))
@@ -953,7 +950,7 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 	consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), rubro)
 	consolidadoExcelPlanAnual.MergeCell(sheetName, "E"+fmt.Sprint(contador), "G"+fmt.Sprint(contador))
 	consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), nombreRubro)
-	
+
 	stylecontentRubro, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
 		Alignment: &excelize.Alignment{Horizontal: "right", Vertical: "center"},
 		Font:      &excelize.Font{Bold: true},
@@ -974,41 +971,37 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Identificación docente")
 		consolidadoExcelPlanAnual.SetRowHeight(sheetName, contador+1, 7)
 		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), styletitles)
-
+		
 		contador++
 		contador++
-
+		
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Código del rubro")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), "Nombre del rubro")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), "Valor")
 		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylehead)
-		consolidadoExcelPlanAnual.SetRowHeight(sheetName, contador, 35)
-
+		
 		contador++
-
+		
 		//Cuerpo Tabla
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Prima de Servicios"))
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), "Prima de servicios - pregrado")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), infoDocentes["primaServicios"])
-
-		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent)
-		consolidadoExcelPlanAnual.SetRowHeight(sheetName, contador, 35)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "D"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
 		contador++
 
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Prima de navidad"))
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), "Prima de navidad - posgrado")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), infoDocentes["primaNavidad"])
-
-		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent)
-		consolidadoExcelPlanAnual.SetRowHeight(sheetName, contador, 35)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "D"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
 		contador++
 
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Prima de vacaciones"))
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), "Prima de vacaciones")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), infoDocentes["primaVacaciones"])
-
-		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent)
-		consolidadoExcelPlanAnual.SetRowHeight(sheetName, contador, 35)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "D"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
 	}
 
 	consolidadoExcelPlanAnual.InsertRows(sheetName, 1, 7)
