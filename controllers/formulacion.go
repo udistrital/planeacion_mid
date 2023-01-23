@@ -692,7 +692,20 @@ func (c *FormulacionController) GetAllIdentificacion() {
 
 				identi = nil
 				data_identi = nil
-
+				
+				dato_aux = dato["rubros_pos"].(string)
+				if dato_aux == "{}" {
+					result["rubros_pos"] = "{}"
+				} else {
+					json.Unmarshal([]byte(dato_aux), &identi)
+					for key := range identi {
+						element := identi[key].(map[string]interface{})
+						if element["activo"] == true {
+							data_identi = append(data_identi, element)
+						}
+					}
+					result["rubros_pos"] = data_identi
+				}
 				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": result}
 
 			} else {
