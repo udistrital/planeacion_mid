@@ -280,7 +280,7 @@ func init() {
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"],
         beego.ControllerComments{
             Method: "ActualizarSubgrupoDetalle",
-            Router: "/actualiza-sub-detalle/:id",
+            Router: "/actualiza_sub_detalle/:id",
             AllowHTTPMethods: []string{"put"},
             MethodParams: param.Make(),
             Filters: nil,
@@ -289,7 +289,7 @@ func init() {
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"],
         beego.ControllerComments{
             Method: "ActualizarProyectoGeneral",
-            Router: "/actualizar-proyecto/:id",
+            Router: "/actualizar_proyecto/:id",
             AllowHTTPMethods: []string{"put"},
             MethodParams: param.Make(),
             Filters: nil,
@@ -309,6 +309,24 @@ func init() {
             Method: "GetProyectoId",
             Router: "/getproyectoid/:id",
             AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"],
+        beego.ControllerComments{
+            Method: "GetAllProyectos",
+            Router: "/getproyectos/:tipo_plan_id",
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"],
+        beego.ControllerComments{
+            Method: "GuardarDocumentos",
+            Router: "/guardar_documentos",
+            AllowHTTPMethods: []string{"post"},
             MethodParams: param.Make(),
             Filters: nil,
             Params: nil})
