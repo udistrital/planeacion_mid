@@ -1009,14 +1009,21 @@
                 }
             }
         },
-        "/inversion/addProyecto": {
-            "post": {
+        "/inversion/actualiza_sub_detalle/{id}": {
+            "put": {
                 "tags": [
                     "inversion"
                 ],
-                "description": "post AddProyecto",
-                "operationId": "InversionController.AddProyecto",
+                "description": "put Inversion by id",
+                "operationId": "InversionController.ActualizarSubgrupoDetalle",
                 "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
                     {
                         "in": "body",
                         "name": "body",
@@ -1037,13 +1044,48 @@
                 }
             }
         },
-        "/inversion/guardar_documentos": {
+        "/inversion/actualizar_proyecto/{id}": {
+            "put": {
+                "tags": [
+                    "inversion"
+                ],
+                "description": "put Inversion by id",
+                "operationId": "InversionController.ActualizarProyectoGeneral",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
+        "/inversion/addProyecto": {
             "post": {
                 "tags": [
                     "inversion"
                 ],
-                "description": "post GuardarDocumentos",
-                "operationId": "InversionController.GuardarDocumentos",
+                "description": "post AddProyecto",
+                "operationId": "InversionController.AddProyecto",
                 "parameters": [
                     {
                         "in": "body",
@@ -1101,7 +1143,7 @@
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "id",
+                        "name": "tipo_plan_id",
                         "description": "The key for staticblock",
                         "required": true,
                         "type": "string"
@@ -1117,56 +1159,14 @@
                 }
             }
         },
-        "/inversion/actualiza_sub_detalle/{id}": {
-            "put": {
+        "/inversion/guardar_documentos": {
+            "post": {
                 "tags": [
                     "inversion"
                 ],
-                "description": "put Inversion by id",
-                "operationId": "InversionController.ActualizarSubgrupoDetalle",
+                "description": "post AddProyecto",
+                "operationId": "InversionController.GuardarDocumentos",
                 "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "description": "The key for staticblock",
-                        "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "body for Plan content",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/{}"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
-                    },
-                    "403": {
-                        "description": ":id is empty"
-                    }
-                }
-            }
-        },
-        "/inversion/actualizar_proyecto/{id}": {
-            "put": {
-                "tags": [
-                    "inversion"
-                ],
-                "description": "put Inversion by id",
-                "operationId": "InversionController.ActualizarProyectoGeneral",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "description": "The key for staticblock",
-                        "required": true,
-                        "type": "string"
-                    },
                     {
                         "in": "body",
                         "name": "body",
@@ -2031,6 +2031,10 @@
         {
             "name": "reportes",
             "description": "ReportesController operations for Reportes\n"
+        },
+        {
+            "name": "inversion",
+            "description": "InversionController operations for Inversion\n"
         },
         {
             "name": "evaluacion",

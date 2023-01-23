@@ -34,7 +34,7 @@ func (c *InversionController) URLMapping() {
 // @Title AddProyecto
 // @Description post AddProyecto
 // @Param	body		body 	{}	true		"body for Plan content"
-// @Success 200 {object}
+// @Success 200
 // @Failure 403 :id is empty
 // @router /addProyecto [post]
 func (c *InversionController) AddProyecto() {
@@ -117,7 +117,7 @@ func (c *InversionController) AddProyecto() {
 // @Title GuardarDocumentos
 // @Description post AddProyecto
 // @Param	body		body 	{}	true		"body for Plan content"
-// @Success 200 {object}
+// @Success 200
 // @Failure 403 :id is empty
 // @router /guardar_documentos [post]
 func (c *InversionController) GuardarDocumentos() {
@@ -155,7 +155,7 @@ func (c *InversionController) GuardarDocumentos() {
 // @Title GetProyectoId
 // @Description get GetProyectoId
 // @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200 {object}
+// @Success 200
 // @Failure 403 :id is empty
 // @router /getproyectoid/:id [get]
 func (c *InversionController) GetProyectoId() {
@@ -228,7 +228,7 @@ func (c *InversionController) GetProyectoId() {
 // @Title GetAllProyectos
 // @Description get GetAllProyectos
 // @Param	tipo_plan_id		path 	string	true		"The key for staticblock"
-// @Success 200 {object}
+// @Success 200
 // @Failure 403 :id is empty
 // @router /getproyectos/:tipo_plan_id [get]
 func (c *InversionController) GetAllProyectos() {
@@ -281,7 +281,7 @@ func (c *InversionController) GetAllProyectos() {
 // @Description put Inversion by id
 // @Param	id		path 	string	true		"The key for staticblock"
 // @Param	body		body 	{}	true		"body for Plan content"
-// @Success 200 {object}
+// @Success 200
 // @Failure 403 :id is empty
 // @router /actualiza_sub_detalle/:id [put]
 func (c *InversionController) ActualizarSubgrupoDetalle() {
@@ -303,7 +303,7 @@ func (c *InversionController) ActualizarSubgrupoDetalle() {
 // @Description put Inversion by id
 // @Param	id		path 	string	true		"The key for staticblock"
 // @Param	body		body 	{}	true		"body for Plan content"
-// @Success 200 {object}
+// @Success 200
 // @Failure 403 :id is empty
 // @router /actualizar_proyecto/:id [put]
 func (c *InversionController) ActualizarProyectoGeneral() {
