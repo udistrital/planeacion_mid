@@ -316,7 +316,7 @@ func init() {
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"],
         beego.ControllerComments{
             Method: "GetAllProyectos",
-            Router: "/getproyectos/:aplicativo_id",
+            Router: "/getproyectos/:tipo_plan_id",
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
             Filters: nil,
