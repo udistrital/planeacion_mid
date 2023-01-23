@@ -15,6 +15,7 @@ import (
 	"github.com/udistrital/utils_oas/request"
 )
 
+// InversionController operations for Inversion
 type InversionController struct {
 	beego.Controller
 }
@@ -27,19 +28,14 @@ func (c *InversionController) URLMapping() {
 	c.Mapping("GetAllProyectos", c.GetAllProyectos)
 	c.Mapping("ActualizarSubgrupoDetalle", c.ActualizarSubgrupoDetalle)
 	c.Mapping("ActualizarProyectoGeneral", c.ActualizarProyectoGeneral)
-	// c.Mapping("GetActividadesGenerales", c.GetActividadesGenerales)
-	// c.Mapping("GetDataActividad", c.GetDataActividad)
-	// c.Mapping("GuardarSeguimiento", c.GuardarSeguimiento)
-	// c.Mapping("GetSeguimiento", c.GetSeguimiento)
-	// c.Mapping("GetIndicadores", c.GetIndicadores)
-	// c.Mapping("GetAvanceIndicador", c.GetAvanceIndicador)
 }
 
 // AddProyecto ...
 // @Title AddProyecto
 // @Description post AddProyecto
 // @Param	body		body 	{}	true		"body for Plan content"
-// @Success 200
+// @Success 200 {object}
+// @Failure 403 :id is empty
 // @router /addProyecto [post]
 func (c *InversionController) AddProyecto() {
 	var registroProyecto map[string]interface{}
@@ -54,8 +50,9 @@ func (c *InversionController) AddProyecto() {
 		plan["activo"] = true
 		plan["nombre"] = registroProyecto["nombre_proyecto"]
 		plan["descripcion"] = registroProyecto["codigo_proyecto"]
-		plan["tipo_plan_id"] = " "
-		plan["aplicativo_id"] = "idPlaneacion"
+		plan["tipo_plan_id"] = "63ca86f1b6c0e5725a977dae"
+		plan["aplicativo_id"] = " "
+
 		//fmt.Println(plan)
 		aux, err := json.Marshal(plan)
 		if err != nil {
@@ -120,8 +117,9 @@ func (c *InversionController) AddProyecto() {
 // @Title GuardarDocumentos
 // @Description post AddProyecto
 // @Param	body		body 	{}	true		"body for Plan content"
-// @Success 200
-// @router /guardar-documentos [post]
+// @Success 200 {object}
+// @Failure 403 :id is empty
+// @router /guardar_documentos [post]
 func (c *InversionController) GuardarDocumentos() {
 	var body map[string]interface{}
 	var evidencias []map[string]interface{}
@@ -157,7 +155,7 @@ func (c *InversionController) GuardarDocumentos() {
 // @Title GetProyectoId
 // @Description get GetProyectoId
 // @Param	id		path 	string	true		"The key for staticblock"
-// @Success 200
+// @Success 200 {object}
 // @Failure 403 :id is empty
 // @router /getproyectoid/:id [get]
 func (c *InversionController) GetProyectoId() {
@@ -228,10 +226,11 @@ func (c *InversionController) GetProyectoId() {
 
 // GetAllProyectos ...
 // @Title GetAllProyectos
-// @Description get GetProyectoId
-// @Param	aplicativo_id		path 	string	true		"The key for staticblock"
-// @Success 200
-// @router /getproyectos/:aplicativo_id [get]
+// @Description get GetAllProyectos
+// @Param	tipo_plan_id		path 	string	true		"The key for staticblock"
+// @Success 200 {object}
+// @Failure 403 :id is empty
+// @router /getproyectos/:tipo_plan_id [get]
 func (c *InversionController) GetAllProyectos() {
 	//fmt.Println("entró a la función")
 	// defer func() {
@@ -258,7 +257,7 @@ func (c *InversionController) GetAllProyectos() {
 
 	proyect := make(map[string]interface{})
 	//var subgruposData map[string]interface{}
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/?query=activo:true,aplicativo_id:"+aplicativo_id, &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/?query=activo:true,tipo_plan_id:"+aplicativo_id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &dataProyects)
 		//fmt.Println(res, "consulta realizada")
 		for i := range dataProyects {
@@ -284,7 +283,7 @@ func (c *InversionController) GetAllProyectos() {
 // @Param	body		body 	{}	true		"body for Plan content"
 // @Success 200 {object}
 // @Failure 403 :id is empty
-// @router /actualiza-sub-detalle/:id [put]
+// @router /actualiza_sub_detalle/:id [put]
 func (c *InversionController) ActualizarSubgrupoDetalle() {
 	var subDetalle map[string]interface{}
 	id := c.Ctx.Input.Param(":id")
@@ -306,7 +305,7 @@ func (c *InversionController) ActualizarSubgrupoDetalle() {
 // @Param	body		body 	{}	true		"body for Plan content"
 // @Success 200 {object}
 // @Failure 403 :id is empty
-// @router /actualizar-proyecto/:id [put]
+// @router /actualizar_proyecto/:id [put]
 func (c *InversionController) ActualizarProyectoGeneral() {
 	var infoProyecto map[string]interface{}
 	id := c.Ctx.Input.Param(":id")

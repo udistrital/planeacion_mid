@@ -471,6 +471,25 @@ func (c *ReportesController) PlanAccionAnual() {
 					},
 				})
 				stylecontent, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+					Alignment: &excelize.Alignment{Horizontal: "justify", Vertical: "center", WrapText: true},
+					Border: []excelize.Border{
+						{Type: "right", Color: "000000", Style: 1},
+						{Type: "left", Color: "000000", Style: 1},
+						{Type: "top", Color: "000000", Style: 1},
+						{Type: "bottom", Color: "000000", Style: 1},
+					},
+				})
+				stylecontentS, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+					Alignment: &excelize.Alignment{Horizontal: "justify", Vertical: "center", WrapText: true},
+					Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+					Border: []excelize.Border{
+						{Type: "right", Color: "000000", Style: 1},
+						{Type: "left", Color: "000000", Style: 1},
+						{Type: "top", Color: "000000", Style: 1},
+						{Type: "bottom", Color: "000000", Style: 1},
+					},
+				})
+				stylecontentC, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
 					Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
 					Border: []excelize.Border{
 						{Type: "right", Color: "000000", Style: 1},
@@ -479,13 +498,47 @@ func (c *ReportesController) PlanAccionAnual() {
 						{Type: "bottom", Color: "000000", Style: 1},
 					},
 				})
-				stylecontentSombra, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+				stylecontentCL, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+					Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+					Border: []excelize.Border{
+						{Type: "right", Color: "000000", Style: 1},
+						{Type: "left", Color: "000000", Style: 1},
+						{Type: "bottom", Color: "000000", Style: 4},
+					},
+				})
+				stylecontentCLD, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+					Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+					Border: []excelize.Border{
+						{Type: "right", Color: "000000", Style: 1},
+						{Type: "left", Color: "000000", Style: 1},
+						{Type: "bottom", Color: "000000", Style: 1},
+					},
+				})
+				stylecontentCS, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
 					Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
 					Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
 					Border: []excelize.Border{
 						{Type: "right", Color: "000000", Style: 1},
 						{Type: "left", Color: "000000", Style: 1},
 						{Type: "top", Color: "000000", Style: 1},
+						{Type: "bottom", Color: "000000", Style: 1},
+					},
+				})
+				stylecontentCLS, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+					Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+					Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+					Border: []excelize.Border{
+						{Type: "right", Color: "000000", Style: 1},
+						{Type: "left", Color: "000000", Style: 1},
+						{Type: "bottom", Color: "000000", Style: 4},
+					},
+				})
+				stylecontentCLDS, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+					Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+					Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+					Border: []excelize.Border{
+						{Type: "right", Color: "000000", Style: 1},
+						{Type: "left", Color: "000000", Style: 1},
 						{Type: "bottom", Color: "000000", Style: 1},
 					},
 				})
@@ -596,8 +649,6 @@ func (c *ReportesController) PlanAccionAnual() {
 						// cuerpo del excel
 						consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contadorLineamiento), auxLineamiento)
 
-						consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorLineamiento, 70)
-
 						metas := datosArmo["meta"]
 
 						contadorMetas := contadorLineamiento
@@ -606,7 +657,7 @@ func (c *ReportesController) PlanAccionAnual() {
 							auxMeta := metas.([]map[string]interface{})[j]
 							contadorMetaGeneralIn = contadorLineamiento
 							consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contadorMetas), auxMeta["nombreMeta"])
-							reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "C"+fmt.Sprint(contadorMetas), "C"+fmt.Sprint(contadorMetas), stylecontent, stylecontentSombra)
+							reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "C"+fmt.Sprint(contadorMetas), "C"+fmt.Sprint(contadorMetas), stylecontentC, stylecontentCS)
 
 							if j == len(metas.([]map[string]interface{}))-1 {
 								contadorMetaGeneralOut = contadorMetas
@@ -620,7 +671,7 @@ func (c *ReportesController) PlanAccionAnual() {
 								auxEstrategia := estrategias[k]
 								contadorEstrategiaPEDIn = contadorMetas
 								consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contadorEstrategias), auxEstrategia["descripcionEstrategia"])
-								reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(contadorEstrategias), "D"+fmt.Sprint(contadorEstrategias), stylecontent, stylecontentSombra)
+								reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(contadorEstrategias), "D"+fmt.Sprint(contadorEstrategias), stylecontent, stylecontentS)
 
 								if k == len(estrategias)-1 {
 									contadorEstrategiaPEDOut = contadorMetas
@@ -631,7 +682,6 @@ func (c *ReportesController) PlanAccionAnual() {
 
 							contadorEstrategias = contadorMetas
 							consolidadoExcelPlanAnual.MergeCell(sheetName, "C"+fmt.Sprint(contadorMetaGeneralIn), "C"+fmt.Sprint(contadorMetaGeneralOut))
-
 						}
 						contadorMetas = contadorLineamiento
 						contadorLineamientoGeneralOut = contadorMetaGeneralOut
@@ -639,10 +689,7 @@ func (c *ReportesController) PlanAccionAnual() {
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorLineamientoGeneralIn), "B"+fmt.Sprint(contadorLineamientoGeneralOut))
 						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "B"+fmt.Sprint(contadorLineamientoGeneralIn), "B"+fmt.Sprint(contadorLineamientoGeneralOut), styleLineamiento, styleLineamientoSombra)
 
-						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "C"+fmt.Sprint(contadorLineamiento), "P"+fmt.Sprint(contadorLineamiento), stylecontent, stylecontentSombra)
-
 						contadorLineamiento = contadorLineamientoGeneralOut + 1
-
 					}
 					for i := 0; i < len(armoPI); i++ {
 						datosArmo := armoPI[i]
@@ -650,7 +697,6 @@ func (c *ReportesController) PlanAccionAnual() {
 						contadorFactorGeneralIn = contadorFactor
 						// cuerpo del excel
 						consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contadorFactor), auxFactor)
-						consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorFactor, 70)
 
 						lineamientos := datosArmo["lineamientos"]
 						contadorLineamientos := contadorFactor
@@ -672,6 +718,7 @@ func (c *ReportesController) PlanAccionAnual() {
 								auxEstrategia := estrategiasPI[k]
 								contadorEstrategiaPEDIn = contadorLineamientos
 								consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(contadorEstrategias), auxEstrategia["descripcionEstrategia"])
+								reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(contadorEstrategias), "G"+fmt.Sprint(contadorEstrategias), stylecontent, stylecontentS)
 
 								if k == len(estrategiasPI)-1 {
 									contadorEstrategiaPIOut = contadorLineamientos
@@ -682,12 +729,14 @@ func (c *ReportesController) PlanAccionAnual() {
 
 							contadorEstrategias = contadorLineamientos
 							consolidadoExcelPlanAnual.MergeCell(sheetName, "F"+fmt.Sprint(contadorLineamientoPIIn), "F"+fmt.Sprint(contadorLineamientoPIOut))
+							reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "F"+fmt.Sprint(contadorLineamientoPIIn), "F"+fmt.Sprint(contadorLineamientoPIOut), stylecontent, stylecontentS)
 
 						}
 						contadorLineamientos = contadorFactor
 						contadorFactorGeneralOut = contadorLineamientoPIOut
 
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "E"+fmt.Sprint(contadorFactorGeneralIn), "E"+fmt.Sprint(contadorFactorGeneralOut))
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "E"+fmt.Sprint(contadorFactorGeneralIn), "E"+fmt.Sprint(contadorFactorGeneralOut), stylecontent, stylecontentS)
 
 						contadorFactor = contadorFactorGeneralOut + 1
 
@@ -707,8 +756,6 @@ func (c *ReportesController) PlanAccionAnual() {
 						contadorLineamiento = contadorLineamientoGeneralOut + 1
 					}
 
-					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(contadorLineamiento), "P"+fmt.Sprint(contadorLineamiento), stylecontent, stylecontentSombra)
-
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorLineamientoGeneralIn), "B"+fmt.Sprint(contadorLineamientoGeneralOut))
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "C"+fmt.Sprint(contadorMetaGeneralIn), "C"+fmt.Sprint(contadorLineamientoGeneralOut))
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "D"+fmt.Sprint(contadorEstrategiaPEDOut), "D"+fmt.Sprint(contadorLineamientoGeneralOut))
@@ -723,13 +770,8 @@ func (c *ReportesController) PlanAccionAnual() {
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "P"+fmt.Sprint(contadorDataGeneral), "P"+fmt.Sprint(contadorLineamientoGeneralOut))
 
 					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "B"+fmt.Sprint(contadorLineamientoGeneralIn), "B"+fmt.Sprint(contadorLineamientoGeneralOut), styleLineamiento, styleLineamientoSombra)
-					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "C"+fmt.Sprint(contadorMetaGeneralIn), "C"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentSombra)
-					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(contadorEstrategiaPEDOut), "D"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentSombra)
-					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "E"+fmt.Sprint(contadorFactorGeneralIn), "E"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentSombra)
-					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "F"+fmt.Sprint(contadorLineamientoPIOut), "F"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentSombra)
-					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(contadorEstrategiaPIOut), "G"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentSombra)
-					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(contadorDataGeneral), "L"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentSombra)
-					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "P"+fmt.Sprint(contadorDataGeneral), "P"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentSombra)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(contadorEstrategiaPIOut), "G"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentS)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(contadorDataGeneral), "L"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
 
 					indicadores := datosComplementarios["indicadores"].(map[string]interface{})
 					contadorIndicadores := contadorDataGeneral
@@ -754,11 +796,13 @@ func (c *ReportesController) PlanAccionAnual() {
 						consolidadoExcelPlanAnual.SetCellValue(sheetName, "M"+fmt.Sprint(contadorIndicadores), nombreIndicador)
 						consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(contadorIndicadores), formula)
 						consolidadoExcelPlanAnual.SetCellValue(sheetName, "O"+fmt.Sprint(contadorIndicadores), meta)
-
-						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "M"+fmt.Sprint(contadorIndicadores), "O"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentSombra)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "M"+fmt.Sprint(contadorIndicadores), "O"+fmt.Sprint(contadorIndicadores), stylecontentCL, stylecontentCLS)
 						contadorIndicadores = contadorIndicadores + 1
 					}
 
+					if excelPlan+1 != len(arregloPlanAnual) {
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "M"+fmt.Sprint(contadorIndicadores), "O"+fmt.Sprint(contadorIndicadores), stylecontentCL, stylecontentCLS)
+					}
 					contadorIndicadores--
 					if contadorLineamientoGeneralOut < contadorIndicadores {
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorLineamientoGeneralOut), "B"+fmt.Sprint(contadorIndicadores))
@@ -775,13 +819,15 @@ func (c *ReportesController) PlanAccionAnual() {
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "P"+fmt.Sprint(contadorDataGeneral), "P"+fmt.Sprint(contadorIndicadores))
 
 						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "B"+fmt.Sprint(contadorLineamientoGeneralOut), "B"+fmt.Sprint(contadorIndicadores), styleLineamiento, styleLineamientoSombra)
-						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "C"+fmt.Sprint(contadorMetaGeneralOut), "C"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentSombra)
-						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(contadorEstrategiaPEDOut), "D"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentSombra)
-						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "E"+fmt.Sprint(contadorFactorGeneralOut), "E"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentSombra)
-						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "F"+fmt.Sprint(contadorLineamientoPIOut), "F"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentSombra)
-						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(contadorEstrategiaPIOut), "G"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentSombra)
-						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(contadorDataGeneral), "L"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentSombra)
-						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "P"+fmt.Sprint(contadorDataGeneral), "P"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentSombra)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "C"+fmt.Sprint(contadorMetaGeneralOut), "C"+fmt.Sprint(contadorIndicadores), stylecontentC, stylecontentCS)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(contadorEstrategiaPEDOut), "D"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentS)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "E"+fmt.Sprint(contadorFactorGeneralOut), "E"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentS)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "F"+fmt.Sprint(contadorLineamientoPIOut), "F"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentS)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(contadorEstrategiaPIOut), "G"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentS)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(contadorEstrategiaPIOut), "L"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentS)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(contadorDataGeneral), "J"+fmt.Sprint(contadorIndicadores), stylecontentC, stylecontentCS)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "M"+fmt.Sprint(contadorIndicadores), "O"+fmt.Sprint(contadorIndicadores), stylecontentCLD, stylecontentCLDS)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "P"+fmt.Sprint(contadorDataGeneral), "P"+fmt.Sprint(contadorIndicadores), stylecontentC, stylecontentCS)
 					} else {
 						contadorIndicadores = contadorLineamientoGeneralOut
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorLineamientoGeneralOut), "B"+fmt.Sprint(contadorLineamientoGeneralOut))
@@ -796,7 +842,19 @@ func (c *ReportesController) PlanAccionAnual() {
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "K"+fmt.Sprint(contadorDataGeneral), "K"+fmt.Sprint(contadorLineamientoGeneralOut))
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(contadorDataGeneral), "L"+fmt.Sprint(contadorLineamientoGeneralOut))
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "P"+fmt.Sprint(contadorDataGeneral), "P"+fmt.Sprint(contadorLineamientoGeneralOut))
+
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "B"+fmt.Sprint(contadorLineamientoGeneralOut), "B"+fmt.Sprint(contadorLineamientoGeneralOut), styleLineamiento, styleLineamientoSombra)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "C"+fmt.Sprint(contadorMetaGeneralOut), "C"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(contadorEstrategiaPEDOut), "D"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentS)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "E"+fmt.Sprint(contadorFactorGeneralOut), "E"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentS)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "F"+fmt.Sprint(contadorLineamientoPIOut), "F"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentS)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(contadorEstrategiaPIOut), "G"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentS)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(contadorEstrategiaPIOut), "L"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentS)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(contadorDataGeneral), "J"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "M"+fmt.Sprint(contadorIndicadores), "O"+fmt.Sprint(contadorIndicadores), stylecontentCLD, stylecontentCLDS)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "P"+fmt.Sprint(contadorDataGeneral), "P"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
 					}
+
 					contadorDataGeneral = contadorIndicadores + 1
 					contadorLineamiento = contadorIndicadores + 1
 					contadorFactor = contadorIndicadores + 1
@@ -824,14 +882,22 @@ func (c *ReportesController) PlanAccionAnual() {
 			consolidadoExcelPlanAnual.InsertRows("Actividades del plan", 1, 7)
 			consolidadoExcelPlanAnual.MergeCell("Actividades del plan", "C2", "P6")
 			consolidadoExcelPlanAnual.SetCellStyle("Actividades del plan", "C2", "P6", styletitle)
+			consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "C2", "G6", styletitle)
+
 			if periodo[0] != nil {
 				consolidadoExcelPlanAnual.SetCellValue("Actividades del plan", "C2", "Plan de Acción "+periodo[0]["Nombre"].(string)+"\n"+unidadNombre)
+				consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C2", "Proyección de necesidades "+periodo[0]["Nombre"].(string)+"\n"+unidadNombre)
 			} else {
 				consolidadoExcelPlanAnual.SetCellValue("Actividades del plan", "C2", "Plan de Acción")
+				consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C2", "Proyección de necesidades")
 			}
 
 			if err := consolidadoExcelPlanAnual.AddPicture("Actividades del plan", "B1", "static/img/UDEscudo2.png",
 				&excelize.GraphicOptions{ScaleX: 0.1, ScaleY: 0.1, Positioning: "oneCell", OffsetX: 50}); err != nil {
+				fmt.Println(err)
+			}
+			if err := consolidadoExcelPlanAnual.AddPicture("Identificaciones", "B1", "static/img/UDEscudo2.png",
+				&excelize.GraphicOptions{ScaleX: 0.1, ScaleY: 0.1, Positioning: "absolute", OffsetX: 10}); err != nil {
 				fmt.Println(err)
 			}
 
@@ -866,7 +932,6 @@ func (c *ReportesController) PlanAccionAnual() {
 // @Failure 403 :plan_id is empty
 // @router /plan_anual_general/:nombre [post]
 func (c *ReportesController) PlanAccionAnualGeneral() {
-
 	defer func() {
 		if err := recover(); err != nil {
 			localError := err.(map[string]interface{})
@@ -1290,7 +1355,6 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorLineamientoGeneralIn), "B"+fmt.Sprint(contadorLineamientoGeneralOut))
 
 					contadorLineamiento = contadorLineamientoGeneralOut + 1
-
 				}
 
 				for i := 0; i < len(armoPI); i++ {
@@ -1347,7 +1411,6 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "E"+fmt.Sprint(contadorFactorGeneralIn), "E"+fmt.Sprint(contadorFactorGeneralOut))
 
 					contadorFactor = contadorFactorGeneralOut + 1
-
 				}
 
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(contadorDataGeneral), datosExcelPlan["numeroActividad"])
@@ -1556,12 +1619,25 @@ func (c *ReportesController) Necesidades() {
 	var respuestaTipo map[string]interface{}
 	var tipo map[string]interface{}
 	var arregloInfoReportes []map[string]interface{}
-	// var docentesGeneral map[string]interface{}
 	docentesPregrado := make(map[string]interface{})
 	docentesPosgrado := make(map[string]interface{})
-	// var arrDataDocentes []map[string]interface{}
+	var docentesGeneral map[string]interface{}
+	var arrDataDocentes []map[string]interface{}
 	nombre := c.Ctx.Input.Param(":nombre")
 
+	primaServicios := 0
+	primaNavidad := 0
+	primaVacaciones := 0
+	bonificacion := 0
+	interesesCesantias := 0
+	cesantiasPublicas := 0
+	cesantiasPrivadas := 0
+	salud := 0
+	pensionesPublicas := 0
+	pensionesPrivadas := 0
+	arl := 0
+	caja := 0
+	icbf := 0
 	docentesPregrado["tco"] = 0
 	docentesPregrado["mto"] = 0
 	docentesPregrado["hch"] = 0
@@ -1574,24 +1650,40 @@ func (c *ReportesController) Necesidades() {
 
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
-	// Comentariado temporalmente por no uso de docentes
-	// primaServicios := 0
-	// primaNavidad := 0
-	// primaVacaciones := 0
-	// bonificacion := 0
-	// interesesCesantias := 0
-	// cesantiasPublicas := 0
-	// cesantiasPrivadas := 0
-	// salud := 0
-	// pensionesPublicas := 0
-	// pensionesPrivadas := 0
-	// arl := 0
-	// caja := 0
-	// icbf := 0
-
 	necesidadesExcel := excelize.NewFile()
 	stylecontent, _ := necesidadesExcel.NewStyle(&excelize.Style{
-		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+		Alignment: &excelize.Alignment{Horizontal: "justify", Vertical: "center", WrapText: true},
+		Border: []excelize.Border{
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+	})
+	stylecontentS, _ := necesidadesExcel.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "justify", Vertical: "center", WrapText: true},
+		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+		Border: []excelize.Border{
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+	})
+	stylecontentM, _ := necesidadesExcel.NewStyle(&excelize.Style{
+		NumFmt:    183,
+		Alignment: &excelize.Alignment{Horizontal: "right", Vertical: "center", WrapText: true},
+		Border: []excelize.Border{
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+	})
+	stylecontentMS, _ := necesidadesExcel.NewStyle(&excelize.Style{
+		NumFmt:    183,
+		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+		Alignment: &excelize.Alignment{Horizontal: "right", Vertical: "center", WrapText: true},
 		Border: []excelize.Border{
 			{Type: "right", Color: "000000", Style: 1},
 			{Type: "left", Color: "000000", Style: 1},
@@ -1601,18 +1693,7 @@ func (c *ReportesController) Necesidades() {
 	})
 	styletitles, _ := necesidadesExcel.NewStyle(&excelize.Style{
 		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
-		Font:      &excelize.Font{Bold: true, Family: "Arial", Size: 26, Color: "000000"},
-		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
-		Border: []excelize.Border{
-			{Type: "right", Color: "000000", Style: 1},
-			{Type: "left", Color: "000000", Style: 1},
-			{Type: "top", Color: "000000", Style: 1},
-			{Type: "bottom", Color: "000000", Style: 1},
-		},
-	})
-	stylesubtitles, _ := necesidadesExcel.NewStyle(&excelize.Style{
-		Alignment: &excelize.Alignment{Horizontal: "left", Vertical: "center", WrapText: true},
-		Font:      &excelize.Font{Bold: true, Family: "Arial", Size: 20, Color: "000000"},
+		Font:      &excelize.Font{Bold: true},
 		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
 		Border: []excelize.Border{
 			{Type: "right", Color: "000000", Style: 1},
@@ -1632,61 +1713,121 @@ func (c *ReportesController) Necesidades() {
 			{Type: "bottom", Color: "000000", Style: 1},
 		},
 	})
-	// stylecontent, _ := necesidadesExcel.NewStyle(`{
-	// 				"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
-	// 				"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-	// 			}`)
-	// styletitles, _ := necesidadesExcel.NewStyle(`{
-	// 				"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
-	// 				"font":{"bold":true,"family":"Arial", "size":26,"color":"#000000"},
-	// 				"fill":{"type":"pattern","pattern":1,"color":["#F2F2F2"]},
-	// 				"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-	// 			}`)
-	// stylesubtitles, _ := necesidadesExcel.NewStyle(`{
-	// 				"alignment":{"horizontal":"left","vertical":"center","wrap_text":true},
-	// 				"font":{"bold":true,"family":"Arial", "size":20,"color":"#000000"},
-	// 				"fill":{"type":"pattern","pattern":1,"color":["#F2F2F2"]},
-	// 				"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-	// 			}`)
-	// stylehead, _ := necesidadesExcel.NewStyle(`{
-	// 				"alignment":{"horizontal":"center","vertical":"center","wrap_text":true},
-	// 				"font":{"bold":true,"color":"#FFFFFF"},
-	// 				"fill":{"type":"pattern","pattern":1,"color":["#CC0000"]},
-	// 				"border":[{"type":"right","color":"#000000","style":1},{"type":"left","color":"#000000","style":1},{"type":"top","color":"#000000","style":1},{"type":"bottom","color":"#000000","style":1}]
-	// 			}`)
+	styledefault, _ := necesidadesExcel.NewStyle(&excelize.Style{
+		Border: []excelize.Border{
+			{Type: "right", Color: "ffffff", Style: 1},
+			{Type: "left", Color: "ffffff", Style: 1},
+			{Type: "top", Color: "ffffff", Style: 1},
+			{Type: "bottom", Color: "ffffff", Style: 1},
+		},
+	})
+	stylecontentCL, _ := necesidadesExcel.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "justify", Vertical: "center", WrapText: true},
+		Border: []excelize.Border{
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 4},
+		},
+	})
+	stylecontentCML, _ := necesidadesExcel.NewStyle(&excelize.Style{
+		NumFmt:    183,
+		Alignment: &excelize.Alignment{Horizontal: "right", Vertical: "center", WrapText: true},
+		Border: []excelize.Border{
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 4},
+		},
+	})
+	stylecontentCMD, _ := necesidadesExcel.NewStyle(&excelize.Style{
+		NumFmt:    183,
+		Alignment: &excelize.Alignment{Horizontal: "right", Vertical: "center", WrapText: true},
+		Font:      &excelize.Font{Bold: true},
+		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"C2C2C2"}},
+		Border: []excelize.Border{
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+	})
+	stylecontentCM, _ := necesidadesExcel.NewStyle(&excelize.Style{
+		NumFmt:    183,
+		Alignment: &excelize.Alignment{Horizontal: "right", Vertical: "center", WrapText: true},
+		Font:      &excelize.Font{Bold: true},
+		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"C2C2C2"}},
+		Border: []excelize.Border{
+			{Type: "top", Color: "ffffff", Style: 1},
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+	})
+	stylecontentC, _ := necesidadesExcel.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "justify", Vertical: "center", WrapText: true},
+		Font:      &excelize.Font{Bold: true},
+		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"C2C2C2"}},
+		Border: []excelize.Border{
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "top", Color: "ffffff", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+	})
+	stylecontentCD, _ := necesidadesExcel.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "justify", Vertical: "center", WrapText: true},
+		Font:      &excelize.Font{Bold: true},
+		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"C2C2C2"}},
+		Border: []excelize.Border{
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+	})
+	stylecontentCLS, _ := necesidadesExcel.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "justify", Vertical: "center", WrapText: true},
+		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+		Border: []excelize.Border{
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 4},
+		},
+	})
+	stylecontentCMLS, _ := necesidadesExcel.NewStyle(&excelize.Style{
+		NumFmt:    183,
+		Alignment: &excelize.Alignment{Horizontal: "right", Vertical: "center", WrapText: true},
+		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+		Border: []excelize.Border{
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 4},
+		},
+	})
 
 	necesidadesExcel.NewSheet("Necesidades")
+	necesidadesExcel.SetColStyle("Necesidades", "A:k", styledefault)
 	necesidadesExcel.DeleteSheet("Sheet1")
 
-	necesidadesExcel.MergeCell("Necesidades", "A1", "F1")
-	necesidadesExcel.MergeCell("Necesidades", "A1", "A2")
-	necesidadesExcel.MergeCell("Necesidades", "A3", "F3")
-	necesidadesExcel.MergeCell("Necesidades", "A3", "A4")
+	necesidadesExcel.MergeCell("Necesidades", "C1", "E1")
 
-	necesidadesExcel.SetColWidth("Necesidades", "A", "c", 30)
-	necesidadesExcel.SetColWidth("Necesidades", "D", "D", 50)
-	necesidadesExcel.SetColWidth("Necesidades", "E", "F", 20)
+	necesidadesExcel.SetColWidth("Necesidades", "A", "A", 4)
+	necesidadesExcel.SetColWidth("Necesidades", "B", "B", 26)
+	necesidadesExcel.SetColWidth("Necesidades", "C", "E", 15)
+	necesidadesExcel.SetColWidth("Necesidades", "F", "F", 20)
+	necesidadesExcel.SetColWidth("Necesidades", "G", "G", 35)
+	necesidadesExcel.SetColWidth("Necesidades", "H", "I", 12)
+	necesidadesExcel.SetColWidth("Necesidades", "J", "J", 35)
 
-	necesidadesExcel.SetCellValue("Necesidades", "A1", "Necesidades Presupuestales")
-	necesidadesExcel.SetCellStyle("Necesidades", "A1", "F1", styletitles)
+	necesidadesExcel.SetCellValue("Necesidades", "B1", "Código del rubro")
+	necesidadesExcel.SetCellValue("Necesidades", "C1", "Nombre del rubro")
+	necesidadesExcel.SetCellValue("Necesidades", "F1", "Valor")
+	necesidadesExcel.SetCellValue("Necesidades", "G1", "Dependencias")
+	necesidadesExcel.SetCellStyle("Necesidades", "B1", "G1", stylehead)
 
-	necesidadesExcel.SetCellValue("Necesidades", "A3", "Identificación de recursos:")
-	necesidadesExcel.SetCellStyle("Necesidades", "A3", "F3", stylesubtitles)
-
-	necesidadesExcel.SetCellStyle("Necesidades", "A200", "F200", stylecontent)
-
-	necesidadesExcel.SetCellValue("Necesidades", "A5", "Código del rubro")
-	necesidadesExcel.SetCellValue("Necesidades", "B5", "Nombre del rubro")
-	necesidadesExcel.SetCellValue("Necesidades", "C5", "Valor")
-	necesidadesExcel.SetCellValue("Necesidades", "D5", "Dependencias")
-	necesidadesExcel.SetCellStyle("Necesidades", "A5", "D5", stylehead)
-	necesidadesExcel.SetRowHeight("Necesidades", 5, 35)
-	contador := 6
+	contador := 2
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",nombre:"+nombre, &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planes)
 		for i := 0; i < len(planes); i++ {
 			flag := true
-			// var docentes map[string]interface{}
+			var docentes map[string]interface{}
 			var aux map[string]interface{}
 			var dependencia_nombre string
 			dependencia := planes[i]["dependencia_id"]
@@ -1697,7 +1838,8 @@ func (c *ReportesController) Necesidades() {
 				helpers.LimpiezaRespuestaRefactor(respuestaIdentificaciones, &identificaciones)
 				for i := 0; i < len(identificaciones); i++ {
 					identificacion := identificaciones[i]
-					if strings.Contains(strings.ToLower(identificacion["nombre"].(string)), "recurso") {
+					nombre := strings.ToLower(identificacion["nombre"].(string))
+					if strings.Contains(nombre, "recurso") {
 						if identificacion["dato"] != nil {
 							var dato map[string]interface{}
 							var data_identi []map[string]interface{}
@@ -1713,7 +1855,7 @@ func (c *ReportesController) Necesidades() {
 
 						}
 					}
-					if strings.Contains(strings.ToLower(identificacion["nombre"].(string)), "contratista") && flag {
+					if strings.Contains(nombre, "contratista") && flag {
 						if identificacion["dato"] != nil {
 							var dato map[string]interface{}
 							var dato_contratistas []map[string]interface{}
@@ -1727,9 +1869,7 @@ func (c *ReportesController) Necesidades() {
 							rubros = dato_contratistas
 
 						}
-					}
-					// comentariado temporalmente por no uso de docentes
-					/*else if strings.Contains(strings.ToLower(identificacion["nombre"].(string)), "docente") {
+					} else if strings.Contains(nombre, "docente") {
 						var dato map[string]interface{}
 						var data_identi []map[string]interface{}
 						if identificacion["dato"] != nil && identificacion["dato"] != "{}" {
@@ -1804,27 +1944,37 @@ func (c *ReportesController) Necesidades() {
 
 							docentes = result
 						}
-					}*/
+					}
 				}
 				for i := 0; i < len(recursos); i++ {
 					var aux bool
 					var aux1 []string
 					if len(recursosGeneral) == 0 {
 						recursosGeneral = append(recursosGeneral, recursos[i])
+
+						var valorU []float64
+						var auxValor float64
+						if fmt.Sprint(reflect.TypeOf(recursos[i]["valor"])) == "int" {
+							auxValor = recursos[i]["valor"].(float64)
+						} else {
+							strValor2 := strings.TrimLeft(recursos[i]["valor"].(string), "$")
+							strValor2 = strings.ReplaceAll(strValor2, ",", "")
+							arrValor2 := strings.Split(strValor2, ".")
+							aux2, err := strconv.ParseFloat(arrValor2[0], 64)
+							if err == nil {
+								auxValor = aux2
+							}
+						}
+						index := len(recursosGeneral) - 1
+						valorU = append(valorU, auxValor)
+						recursosGeneral[index]["valorU"] = valorU
 						aux1 = append(aux1, dependencia_nombre)
-						recursosGeneral[len(recursosGeneral)-1]["unidades"] = aux1
+						recursosGeneral[index]["unidades"] = aux1
 						unidades_total = append(unidades_total, dependencia_nombre)
 					} else {
 						for j := 0; j < len(recursosGeneral); j++ {
 							if recursosGeneral[j]["codigo"] == recursos[i]["codigo"] {
-								flag := false
-								for k := 0; k < len(recursosGeneral[j]["unidades"].([]string)); k++ {
-									aux2 := recursosGeneral[j]["unidades"].([]string)
-									if aux2[k] == dependencia_nombre {
-										flag = true
-									}
-								}
-								if !flag {
+								if recursosGeneral[j]["unidades"] != nil {
 									recursosGeneral[j]["unidades"] = append(recursosGeneral[j]["unidades"].([]string), dependencia_nombre)
 								}
 								flag1 := false
@@ -1836,35 +1986,61 @@ func (c *ReportesController) Necesidades() {
 								if !flag1 {
 									unidades_total = append(unidades_total, dependencia_nombre)
 								}
+
 								if recursosGeneral[j]["valor"] != nil {
-									var auxValor int
-									var auxValor2 int
-									if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
-										auxValor = recursosGeneral[j]["valor"].(int)
+									var auxValor float64
+									var auxValor2 float64
+									if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" || fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "float64" {
+										auxValor = recursosGeneral[j]["valor"].(float64)
 									} else {
 										strValor := strings.TrimLeft(recursosGeneral[j]["valor"].(string), "$")
 										strValor = strings.ReplaceAll(strValor, ",", "")
 										arrValor := strings.Split(strValor, ".")
-										aux1, err := strconv.Atoi(arrValor[0])
+										aux1, err := strconv.ParseFloat(arrValor[0], 64)
 										if err == nil {
 											auxValor = aux1
 										}
 									}
 
-									if fmt.Sprint(reflect.TypeOf(recursos[i]["valor"])) == "int" {
-										auxValor = recursos[i]["valor"].(int)
+									if fmt.Sprint(reflect.TypeOf(recursos[i]["valor"])) == "int" || fmt.Sprint(reflect.TypeOf(recursos[i]["valor"])) == "float64" {
+										auxValor2 = recursos[i]["valor"].(float64)
 									} else {
 										strValor2 := strings.TrimLeft(recursos[i]["valor"].(string), "$")
 										strValor2 = strings.ReplaceAll(strValor2, ",", "")
 										arrValor2 := strings.Split(strValor2, ".")
-										aux2, err := strconv.Atoi(arrValor2[0])
+										aux2, err := strconv.ParseFloat(arrValor2[0], 64)
 										if err == nil {
 											auxValor2 = aux2
 										}
 									}
+
 									recursosGeneral[j]["valor"] = auxValor + auxValor2
+									if recursosGeneral[j]["valorU"] == nil {
+										var valorU []float64
+										valorU = append(valorU, auxValor2)
+										recursosGeneral[j]["valorU"] = valorU
+									} else {
+										var valorU []float64
+										valorU = recursosGeneral[j]["valorU"].([]float64)
+										recursosGeneral[j]["valorU"] = append(valorU, auxValor2)
+									}
 								} else {
-									recursosGeneral[j]["valor"] = recursos[i]["valor"]
+									var valorU []float64
+									var auxValor float64
+									if fmt.Sprint(reflect.TypeOf(recursos[i]["valor"])) == "int" || fmt.Sprint(reflect.TypeOf(recursos[i]["valor"])) == "float64" {
+										auxValor := recursos[i]["valor"].(float64)
+										valorU = append(valorU, auxValor)
+									} else {
+										strValor2 := strings.TrimLeft(recursos[i]["valor"].(string), "$")
+										strValor2 = strings.ReplaceAll(strValor2, ",", "")
+										arrValor2 := strings.Split(strValor2, ".")
+										auxValor, err := strconv.ParseFloat(arrValor2[0], 64)
+										if err == nil {
+											valorU = append(valorU, auxValor)
+										}
+									}
+									recursosGeneral[j]["valor"] = auxValor
+									recursosGeneral[j]["valorU"] = valorU
 								}
 								aux = true
 								break
@@ -1874,9 +2050,25 @@ func (c *ReportesController) Necesidades() {
 						}
 						if !aux {
 							flag := false
+							var valorU []float64
+							var auxValor float64
+							if fmt.Sprint(reflect.TypeOf(recursos[i]["valor"])) == "int" || fmt.Sprint(reflect.TypeOf(recursos[i]["valor"])) == "flaot64" {
+								auxValor = recursos[i]["valor"].(float64)
+							} else {
+								strValor2 := strings.TrimLeft(recursos[i]["valor"].(string), "$")
+								strValor2 = strings.ReplaceAll(strValor2, ",", "")
+								arrValor2 := strings.Split(strValor2, ".")
+								aux2, err := strconv.ParseFloat(arrValor2[0], 64)
+								if err == nil {
+									auxValor = aux2
+								}
+							}
 							recursosGeneral = append(recursosGeneral, recursos[i])
+							index := len(recursosGeneral) - 1
+							valorU = append(valorU, auxValor)
+							recursosGeneral[index]["valorU"] = valorU
 							aux1 = append(aux1, dependencia_nombre)
-							recursosGeneral[len(recursosGeneral)-1]["unidades"] = aux1
+							recursosGeneral[index]["unidades"] = aux1
 							for k := 0; k < len(unidades_total); k++ {
 								if unidades_total[k] == dependencia_nombre {
 									flag = true
@@ -1893,9 +2085,19 @@ func (c *ReportesController) Necesidades() {
 					var aux bool
 					var aux1 []string
 					if len(rubrosGeneral) == 0 {
+						var auxValor2 float64
+						var valorU []float64
+						if _, ok := rubros[i]["totalInc"].(float64); ok {
+							rubros[i]["totalInc"] = fmt.Sprintf("%f", rubros[i]["totalInc"])
+						}
+						auxValor2, _ = strconv.ParseFloat(rubros[i]["totalInc"].(string), 64)
+
 						rubrosGeneral = append(rubrosGeneral, rubros[i])
+						index := len(rubrosGeneral) - 1
+						valorU = append(valorU, auxValor2)
+						rubrosGeneral[index]["valorU"] = valorU
 						aux1 = append(aux1, dependencia_nombre)
-						rubrosGeneral[len(rubrosGeneral)-1]["unidades"] = aux1
+						rubrosGeneral[index]["unidades"] = aux1
 						unidades_rubros_total = append(unidades_rubros_total, dependencia_nombre)
 					} else {
 						for j := 0; j < len(rubrosGeneral); j++ {
@@ -1936,8 +2138,18 @@ func (c *ReportesController) Necesidades() {
 									}
 									auxValor, _ = strconv.ParseFloat(rubrosGeneral[j]["totalInc"].(string), 64)
 									auxValor2, _ = strconv.ParseFloat(rubros[i]["totalInc"].(string), 64)
+
+									if rubrosGeneral[j]["valorU"] == nil {
+										var valorU []float64
+										valorU = append(valorU, auxValor2)
+										rubrosGeneral[j]["valorU"] = valorU
+									} else {
+										rubrosGeneral[j]["valorU"] = append(rubrosGeneral[j]["valorU"].([]float64), auxValor2)
+									}
+
 									rubrosGeneral[j]["totalInc"] = auxValor + auxValor2
 								} else {
+									rubrosGeneral[j]["valorU"] = append(rubrosGeneral[j]["valorU"].([]float64), 0.0)
 									rubrosGeneral[j]["totalInc"] = rubros[i]["totalInc"]
 								}
 								aux = true
@@ -1948,9 +2160,25 @@ func (c *ReportesController) Necesidades() {
 						}
 						if !aux {
 							flag := false
-							recursosGeneral = append(recursosGeneral, recursos[i])
+							var valorU []float64
+							var auxValor float64
+							if fmt.Sprint(reflect.TypeOf(recursos[i]["valor"])) == "int" || fmt.Sprint(reflect.TypeOf(recursos[i]["valor"])) == "float64" {
+								auxValor = recursos[i]["valor"].(float64)
+							} else {
+								strValor2 := strings.TrimLeft(recursos[i]["valor"].(string), "$")
+								strValor2 = strings.ReplaceAll(strValor2, ",", "")
+								arrValor2 := strings.Split(strValor2, ".")
+								aux2, err := strconv.ParseFloat(arrValor2[0], 64)
+								if err == nil {
+									auxValor = aux2
+								}
+							}
+							rubrosGeneral = append(rubrosGeneral, recursos[i])
+							index := len(rubrosGeneral) - 1
+							valorU = append(valorU, auxValor)
+							rubrosGeneral[index]["valorU"] = valorU
 							aux1 = append(aux1, dependencia_nombre)
-							recursosGeneral[len(recursosGeneral)-1]["unidades"] = aux1
+							rubrosGeneral[index]["unidades"] = aux1
 							for k := 0; k < len(unidades_total); k++ {
 								if unidades_total[k] == dependencia_nombre {
 									flag = true
@@ -1962,9 +2190,23 @@ func (c *ReportesController) Necesidades() {
 						}
 						if !aux {
 							flag := false
+							var valorU []float64
+							var auxValor2 float64
+							if rubros[i]["totalInc"] != nil {
+								if _, ok := rubros[i]["totalInc"].(float64); ok {
+									rubros[i]["totalInc"] = fmt.Sprintf("%f", rubros[i]["totalInc"])
+								}
+								auxValor2, _ = strconv.ParseFloat(rubros[i]["totalInc"].(string), 64)
+								valorU = append(valorU, auxValor2)
+							} else {
+								valorU = append(valorU, 0.0)
+							}
+
 							rubrosGeneral = append(rubrosGeneral, rubros[i])
+							index := len(rubrosGeneral) - 1
+							rubrosGeneral[index]["valorU"] = valorU
 							aux1 = append(aux1, dependencia_nombre)
-							rubrosGeneral[len(rubrosGeneral)-1]["unidades"] = aux1
+							rubrosGeneral[index]["unidades"] = aux1
 							for k := 0; k < len(unidades_rubros_total); k++ {
 								if unidades_rubros_total[k] == dependencia_nombre {
 									flag = true
@@ -1976,8 +2218,8 @@ func (c *ReportesController) Necesidades() {
 						}
 					}
 				}
-				// comentariado temporalmente por no uso de docentes
-				/*if len(docentes) > 0 {
+
+				if len(docentes) > 0 {
 					docentesGeneral = reporteshelper.TotalDocentes(docentes)
 					primaServicios = primaServicios + docentesGeneral["primaServicios"].(int)
 					primaNavidad = primaNavidad + docentesGeneral["primaNavidad"].(int)
@@ -1993,10 +2235,9 @@ func (c *ReportesController) Necesidades() {
 					caja = caja + docentesGeneral["caja"].(int)
 					icbf = icbf + docentesGeneral["icbf"].(int)
 					arrDataDocentes = append(arrDataDocentes, reporteshelper.GetDataDocentes(docentes, planes[i]["dependencia_id"].(string)))
-				}*/
+				}
 
-				// comentariado temporalmente por no uso de docentes
-				/*if docentes["rubros"] != nil {
+				if docentes["rubros"] != nil {
 					var aux bool
 					var respuestaRubro map[string]interface{}
 					rubros := docentes["rubros"].([]map[string]interface{})
@@ -2005,7 +2246,8 @@ func (c *ReportesController) Necesidades() {
 							for j := 0; j < len(recursosGeneral); j++ {
 								if recursosGeneral[j]["codigo"] == rubros[i]["rubro"] {
 									aux = true
-									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "servicio") {
+									categoria := strings.ToLower(rubros[i]["categoria"].(string))
+									if strings.Contains(categoria, "prima") && strings.Contains(categoria, "servicio") {
 										if recursosGeneral[j]["valor"] != nil {
 											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
 												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + primaServicios
@@ -2022,7 +2264,8 @@ func (c *ReportesController) Necesidades() {
 											recursosGeneral[j]["valor"] = primaServicios
 										}
 									}
-									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "navidad") {
+
+									if strings.Contains(categoria, "prima") && strings.Contains(categoria, "navidad") {
 										if recursosGeneral[j]["valor"] != nil {
 											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
 												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + primaNavidad
@@ -2042,7 +2285,7 @@ func (c *ReportesController) Necesidades() {
 										}
 									}
 
-									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "vacaciones") {
+									if strings.Contains(categoria, "prima") && strings.Contains(categoria, "vacaciones") {
 										if recursosGeneral[j]["valor"] != nil {
 											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
 												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + primaVacaciones
@@ -2060,7 +2303,7 @@ func (c *ReportesController) Necesidades() {
 										}
 									}
 
-									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "bonificacion") || strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "bonificación") {
+									if strings.Contains(categoria, "bonificacion") || strings.Contains(categoria, "bonificación") {
 										if recursosGeneral[j]["valor"] != nil {
 											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
 												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + bonificacion
@@ -2079,7 +2322,7 @@ func (c *ReportesController) Necesidades() {
 										}
 									}
 
-									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "interes") && strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "cesantía") {
+									if strings.Contains(categoria, "interes") && strings.Contains(categoria, "cesantía") {
 										if recursosGeneral[j]["valor"] != nil {
 											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
 												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + interesesCesantias
@@ -2098,7 +2341,7 @@ func (c *ReportesController) Necesidades() {
 										}
 									}
 
-									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "cesantía") && strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "público") {
+									if strings.Contains(categoria, "cesantía") && strings.Contains(categoria, "público") {
 										if recursosGeneral[j]["valor"] != nil {
 											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
 												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + cesantiasPublicas
@@ -2116,7 +2359,7 @@ func (c *ReportesController) Necesidades() {
 										}
 									}
 
-									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "cesantía") && strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "privado") {
+									if strings.Contains(categoria, "cesantía") && strings.Contains(categoria, "privado") {
 										if recursosGeneral[j]["valor"] != nil {
 											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
 												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + cesantiasPrivadas
@@ -2134,7 +2377,7 @@ func (c *ReportesController) Necesidades() {
 										}
 									}
 
-									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "salud") {
+									if strings.Contains(categoria, "salud") {
 										if recursosGeneral[j]["valor"] != nil {
 											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
 												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + salud
@@ -2152,7 +2395,7 @@ func (c *ReportesController) Necesidades() {
 										}
 									}
 
-									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "pension") && strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "público") {
+									if strings.Contains(categoria, "pension") && strings.Contains(categoria, "público") {
 										if recursosGeneral[j]["valor"] != nil {
 											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
 												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + pensionesPublicas
@@ -2171,7 +2414,7 @@ func (c *ReportesController) Necesidades() {
 										}
 									}
 
-									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "pension") && strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "privado") {
+									if strings.Contains(categoria, "pension") && strings.Contains(categoria, "privado") {
 										if recursosGeneral[j]["valor"] != nil {
 											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
 												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + pensionesPrivadas
@@ -2190,7 +2433,7 @@ func (c *ReportesController) Necesidades() {
 										}
 									}
 
-									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "arl") {
+									if strings.Contains(categoria, "arl") {
 										if recursosGeneral[j]["valor"] != nil {
 											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
 												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + arl
@@ -2209,7 +2452,7 @@ func (c *ReportesController) Necesidades() {
 										}
 									}
 
-									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "ccf") {
+									if strings.Contains(categoria, "ccf") {
 										if recursosGeneral[j]["valor"] != nil {
 											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
 												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + caja
@@ -2228,7 +2471,7 @@ func (c *ReportesController) Necesidades() {
 										}
 									}
 
-									if strings.Contains(strings.ToLower(rubros[i]["categoria"].(string)), "icbf") {
+									if strings.Contains(categoria, "icbf") {
 										if recursosGeneral[j]["valor"] != nil {
 											if fmt.Sprint(reflect.TypeOf(recursosGeneral[j]["valor"])) == "int" {
 												recursosGeneral[j]["valor"] = recursosGeneral[j]["valor"].(int) + icbf
@@ -2251,16 +2494,21 @@ func (c *ReportesController) Necesidades() {
 									aux = false
 								}
 							}
-							if !aux {
+							if !aux && rubros[i]["rubro"] != nil {
 								rubro := make(map[string]interface{})
 								if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro/"+rubros[i]["rubro"].(string), &respuestaRubro); err == nil {
+									if respuestaRubro["Body"] == nil {
+										continue
+									}
 									aux := respuestaRubro["Body"].(map[string]interface{})
 									rubro["codigo"] = aux["Codigo"]
 									rubro["nombre"] = aux["Nombre"]
 									rubro["categoria"] = rubros[i]["categoria"]
 
 									if rubro["categoria"] != nil {
-										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(rubro["categoria"].(string)), "servicio") {
+										categoria := strings.ToLower(rubro["categoria"].(string))
+
+										if strings.Contains(categoria, "prima") && strings.Contains(categoria, "servicio") {
 											if rubro["valor"] != nil {
 												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
 												strValor = strings.ReplaceAll(strValor, ",", "")
@@ -2274,7 +2522,7 @@ func (c *ReportesController) Necesidades() {
 											}
 										}
 
-										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(rubro["categoria"].(string)), "navidad") {
+										if strings.Contains(categoria, "prima") && strings.Contains(categoria, "navidad") {
 											if rubro["valor"] != nil {
 												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
 												strValor = strings.ReplaceAll(strValor, ",", "")
@@ -2288,7 +2536,7 @@ func (c *ReportesController) Necesidades() {
 											}
 										}
 
-										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(rubro["categoria"].(string)), "vacaciones") {
+										if strings.Contains(categoria, "prima") && strings.Contains(categoria, "vacaciones") {
 											if rubro["valor"] != nil {
 												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
 												strValor = strings.ReplaceAll(strValor, ",", "")
@@ -2302,7 +2550,7 @@ func (c *ReportesController) Necesidades() {
 											}
 										}
 
-										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "bonificacion") || strings.Contains(strings.ToLower(rubro["categoria"].(string)), "bonificación") {
+										if strings.Contains(categoria, "bonificacion") || strings.Contains(categoria, "bonificación") {
 											if rubro["valor"] != nil {
 												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
 												strValor = strings.ReplaceAll(strValor, ",", "")
@@ -2316,7 +2564,7 @@ func (c *ReportesController) Necesidades() {
 											}
 										}
 
-										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "interes") && strings.Contains(strings.ToLower(rubro["categoria"].(string)), "cesantía") {
+										if strings.Contains(categoria, "interes") && strings.Contains(categoria, "cesantía") {
 											if rubro["valor"] != nil {
 												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
 												strValor = strings.ReplaceAll(strValor, ",", "")
@@ -2330,7 +2578,7 @@ func (c *ReportesController) Necesidades() {
 											}
 										}
 
-										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "cesantía") && strings.Contains(strings.ToLower(rubro["categoria"].(string)), "público") {
+										if strings.Contains(categoria, "cesantía") && strings.Contains(categoria, "público") {
 											if rubro["valor"] != nil {
 												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
 												strValor = strings.ReplaceAll(strValor, ",", "")
@@ -2344,7 +2592,7 @@ func (c *ReportesController) Necesidades() {
 											}
 										}
 
-										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "cesantía") && strings.Contains(strings.ToLower(rubro["categoria"].(string)), "privado") {
+										if strings.Contains(categoria, "cesantía") && strings.Contains(categoria, "privado") {
 											if rubro["valor"] != nil {
 												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
 												strValor = strings.ReplaceAll(strValor, ",", "")
@@ -2358,7 +2606,7 @@ func (c *ReportesController) Necesidades() {
 											}
 										}
 
-										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "salud") {
+										if strings.Contains(categoria, "salud") {
 											if rubro["valor"] != nil {
 												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
 												strValor = strings.ReplaceAll(strValor, ",", "")
@@ -2372,7 +2620,7 @@ func (c *ReportesController) Necesidades() {
 											}
 										}
 
-										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "pension") && strings.Contains(strings.ToLower(rubro["categoria"].(string)), "público") {
+										if strings.Contains(categoria, "pension") && strings.Contains(categoria, "público") {
 											if rubro["valor"] != nil {
 												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
 												strValor = strings.ReplaceAll(strValor, ",", "")
@@ -2386,7 +2634,7 @@ func (c *ReportesController) Necesidades() {
 											}
 										}
 
-										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "pension") && strings.Contains(strings.ToLower(rubro["categoria"].(string)), "privado") {
+										if strings.Contains(categoria, "pension") && strings.Contains(categoria, "privado") {
 											if rubro["valor"] != nil {
 												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
 												strValor = strings.ReplaceAll(strValor, ",", "")
@@ -2400,7 +2648,7 @@ func (c *ReportesController) Necesidades() {
 											}
 										}
 
-										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "arl") {
+										if strings.Contains(categoria, "arl") {
 											if rubro["valor"] != nil {
 												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
 												strValor = strings.ReplaceAll(strValor, ",", "")
@@ -2414,7 +2662,7 @@ func (c *ReportesController) Necesidades() {
 											}
 										}
 
-										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "ccf") {
+										if strings.Contains(categoria, "ccf") {
 											if rubro["valor"] != nil {
 												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
 												strValor = strings.ReplaceAll(strValor, ",", "")
@@ -2428,7 +2676,7 @@ func (c *ReportesController) Necesidades() {
 											}
 										}
 
-										if strings.Contains(strings.ToLower(rubro["categoria"].(string)), "icbf") {
+										if strings.Contains(categoria, "icbf") {
 											if rubro["valor"] != nil {
 												strValor := strings.TrimLeft(rubro["valor"].(string), "$")
 												strValor = strings.ReplaceAll(strValor, ",", "")
@@ -2448,312 +2696,558 @@ func (c *ReportesController) Necesidades() {
 
 						}
 					}
-				}*/
+				}
 			}
 		}
-		/*
-			// for i := 0; i < len(recursosGeneral); i++ {
-			// 	if recursosGeneral[i]["categoria"] != nil {
-			// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "servicio") {
-			// 			if recursosGeneral[i]["valor"] != nil {
-			// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-			// 				strValor = strings.ReplaceAll(strValor, ",", "")
-			// 				arrValor := strings.Split(strValor, ".")
-			// 				auxValor, err := strconv.Atoi(arrValor[0])
-			// 				if err == nil {
-			// 					recursosGeneral[i]["valor"] = auxValor + primaServicios
-			// 				}
-			// 			} else {
-			// 				recursosGeneral[i]["valor"] = primaServicios
-			// 			}
-			// 		}
-
-			// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "navidad") {
-			// 			if recursosGeneral[i]["valor"] != nil {
-			// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-			// 				strValor = strings.ReplaceAll(strValor, ",", "")
-			// 				arrValor := strings.Split(strValor, ".")
-			// 				auxValor, err := strconv.Atoi(arrValor[0])
-			// 				if err == nil {
-			// 					recursosGeneral[i]["valor"] = auxValor + primaNavidad
-			// 				}
-			// 			} else {
-			// 				recursosGeneral[i]["valor"] = primaNavidad
-			// 			}
-			// 		}
-
-			// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "prima") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "vacaciones") {
-			// 			if recursosGeneral[i]["valor"] != nil {
-			// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-			// 				strValor = strings.ReplaceAll(strValor, ",", "")
-			// 				arrValor := strings.Split(strValor, ".")
-			// 				auxValor, err := strconv.Atoi(arrValor[0])
-			// 				if err == nil {
-			// 					recursosGeneral[i]["valor"] = auxValor + primaVacaciones
-			// 				}
-			// 			} else {
-			// 				recursosGeneral[i]["valor"] = primaVacaciones
-			// 			}
-			// 		}
-
-			// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "bonificacion") || strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "bonificación") {
-			// 			if recursosGeneral[i]["valor"] != nil {
-			// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-			// 				strValor = strings.ReplaceAll(strValor, ",", "")
-			// 				arrValor := strings.Split(strValor, ".")
-			// 				auxValor, err := strconv.Atoi(arrValor[0])
-			// 				if err == nil {
-			// 					recursosGeneral[i]["valor"] = auxValor + bonificacion
-			// 				}
-			// 			} else {
-			// 				recursosGeneral[i]["valor"] = bonificacion
-			// 			}
-			// 		}
-
-			// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "interes") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "cesantía") {
-			// 			if recursosGeneral[i]["valor"] != nil {
-			// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-			// 				strValor = strings.ReplaceAll(strValor, ",", "")
-			// 				arrValor := strings.Split(strValor, ".")
-			// 				auxValor, err := strconv.Atoi(arrValor[0])
-			// 				if err == nil {
-			// 					recursosGeneral[i]["valor"] = auxValor + interesesCesantias
-			// 				}
-			// 			} else {
-			// 				recursosGeneral[i]["valor"] = interesesCesantias
-			// 			}
-			// 		}
-
-			// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "cesantía") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "público") {
-			// 			if recursosGeneral[i]["valor"] != nil {
-			// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-			// 				strValor = strings.ReplaceAll(strValor, ",", "")
-			// 				arrValor := strings.Split(strValor, ".")
-			// 				auxValor, err := strconv.Atoi(arrValor[0])
-			// 				if err == nil {
-			// 					recursosGeneral[i]["valor"] = auxValor + cesantiasPublicas
-			// 				}
-			// 			} else {
-			// 				recursosGeneral[i]["valor"] = cesantiasPublicas
-			// 			}
-			// 		}
-
-			// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "cesantía") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "privado") {
-			// 			if recursosGeneral[i]["valor"] != nil {
-			// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-			// 				strValor = strings.ReplaceAll(strValor, ",", "")
-			// 				arrValor := strings.Split(strValor, ".")
-			// 				auxValor, err := strconv.Atoi(arrValor[0])
-			// 				if err == nil {
-			// 					recursosGeneral[i]["valor"] = auxValor + cesantiasPrivadas
-			// 				}
-			// 			} else {
-			// 				recursosGeneral[i]["valor"] = cesantiasPrivadas
-			// 			}
-			// 		}
-
-			// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "salud") {
-			// 			if recursosGeneral[i]["valor"] != nil {
-			// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-			// 				strValor = strings.ReplaceAll(strValor, ",", "")
-			// 				arrValor := strings.Split(strValor, ".")
-			// 				auxValor, err := strconv.Atoi(arrValor[0])
-			// 				if err == nil {
-			// 					recursosGeneral[i]["valor"] = auxValor + salud
-			// 				}
-			// 			} else {
-			// 				recursosGeneral[i]["valor"] = salud
-			// 			}
-			// 		}
-
-			// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "pension") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "público") {
-			// 			if recursosGeneral[i]["valor"] != nil {
-			// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-			// 				strValor = strings.ReplaceAll(strValor, ",", "")
-			// 				arrValor := strings.Split(strValor, ".")
-			// 				auxValor, err := strconv.Atoi(arrValor[0])
-			// 				if err == nil {
-			// 					recursosGeneral[i]["valor"] = auxValor + pensionesPublicas
-			// 				}
-			// 			} else {
-			// 				recursosGeneral[i]["valor"] = pensionesPublicas
-			// 			}
-			// 		}
-
-			// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "pension") && strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "privado") {
-			// 			if recursosGeneral[i]["valor"] != nil {
-			// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-			// 				strValor = strings.ReplaceAll(strValor, ",", "")
-			// 				arrValor := strings.Split(strValor, ".")
-			// 				auxValor, err := strconv.Atoi(arrValor[0])
-			// 				if err == nil {
-			// 					recursosGeneral[i]["valor"] = auxValor + pensionesPrivadas
-			// 				}
-			// 			} else {
-			// 				recursosGeneral[i]["valor"] = pensionesPrivadas
-			// 			}
-			// 		}
-
-			// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "arl") {
-			// 			if recursosGeneral[i]["valor"] != nil {
-			// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-			// 				strValor = strings.ReplaceAll(strValor, ",", "")
-			// 				arrValor := strings.Split(strValor, ".")
-			// 				auxValor, err := strconv.Atoi(arrValor[0])
-			// 				if err == nil {
-			// 					recursosGeneral[i]["valor"] = auxValor + arl
-			// 				}
-			// 			} else {
-			// 				recursosGeneral[i]["valor"] = arl
-			// 			}
-			// 		}
-
-			// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "ccf") {
-			// 			if recursosGeneral[i]["valor"] != nil {
-			// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-			// 				strValor = strings.ReplaceAll(strValor, ",", "")
-			// 				arrValor := strings.Split(strValor, ".")
-			// 				auxValor, err := strconv.Atoi(arrValor[0])
-			// 				if err == nil {
-			// 					recursosGeneral[i]["valor"] = auxValor + caja
-			// 				}
-			// 			} else {
-			// 				recursosGeneral[i]["valor"] = caja
-			// 			}
-			// 		}
-
-			// 		if strings.Contains(strings.ToLower(recursosGeneral[i]["categoria"].(string)), "icbf") {
-			// 			if recursosGeneral[i]["valor"] != nil {
-			// 				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-			// 				strValor = strings.ReplaceAll(strValor, ",", "")
-			// 				arrValor := strings.Split(strValor, ".")
-			// 				auxValor, err := strconv.Atoi(arrValor[0])
-			// 				if err == nil {
-			// 					recursosGeneral[i]["valor"] = auxValor + icbf
-			// 				}
-			// 			} else {
-			// 				recursosGeneral[i]["valor"] = icbf
-			// 			}
-			// 		}
-			// 	}
-
-			// }
-		*/
-		//Completado de tablas
 
 		for i := 0; i < len(recursosGeneral); i++ {
-			unidades := ""
-			necesidadesExcel.SetCellValue("Necesidades", "A"+fmt.Sprint(contador), recursosGeneral[i]["codigo"])
-			if recursosGeneral[i]["Nombre"] != nil {
-				necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), recursosGeneral[i]["Nombre"])
-				if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" {
-					necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), recursosGeneral[i]["valor"])
-				} else {
-					strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-					strValor = strings.ReplaceAll(strValor, ",", "")
-					arrValor := strings.Split(strValor, ".")
-					auxValor, err := strconv.Atoi(arrValor[0])
-					if err == nil {
-						necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), auxValor)
+			if recursosGeneral[i]["categoria"] != nil {
+				categoria := strings.ToLower(recursosGeneral[i]["categoria"].(string))
+				if strings.Contains(categoria, "prima") && strings.Contains(categoria, "servicio") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + primaServicios
+						}
+					} else {
+						recursosGeneral[i]["valor"] = primaServicios
 					}
-				}
-				if recursosGeneral[i]["unidades"] != nil {
-					aux2 := recursosGeneral[i]["unidades"].([]string)
-					for j := 0; j < len(aux2); j++ {
-						unidades = unidades + aux2[j] + ", "
-					}
-					unidades = strings.TrimRight(unidades, ", ")
-					necesidadesExcel.SetCellValue("Necesidades", "D"+fmt.Sprint(contador), unidades)
 				}
 
-			} else {
-				necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), recursosGeneral[i]["nombre"])
-				if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" {
-					necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), recursosGeneral[i]["valor"])
-				} else {
-					strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-					strValor = strings.ReplaceAll(strValor, ",", "")
-					arrValor := strings.Split(strValor, ".")
-					auxValor, err := strconv.Atoi(arrValor[0])
-					if err == nil {
-						necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), auxValor)
+				if strings.Contains(categoria, "prima") && strings.Contains(categoria, "navidad") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + primaNavidad
+						}
+					} else {
+						recursosGeneral[i]["valor"] = primaNavidad
+					}
+				}
+
+				if strings.Contains(categoria, "prima") && strings.Contains(categoria, "vacaciones") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + primaVacaciones
+						}
+					} else {
+						recursosGeneral[i]["valor"] = primaVacaciones
+					}
+				}
+
+				if strings.Contains(categoria, "bonificacion") || strings.Contains(categoria, "bonificación") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + bonificacion
+						}
+					} else {
+						recursosGeneral[i]["valor"] = bonificacion
+					}
+				}
+
+				if strings.Contains(categoria, "interes") && strings.Contains(categoria, "cesantía") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + interesesCesantias
+						}
+					} else {
+						recursosGeneral[i]["valor"] = interesesCesantias
+					}
+				}
+
+				if strings.Contains(categoria, "cesantía") && strings.Contains(categoria, "público") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + cesantiasPublicas
+						}
+					} else {
+						recursosGeneral[i]["valor"] = cesantiasPublicas
+					}
+				}
+
+				if strings.Contains(categoria, "cesantía") && strings.Contains(categoria, "privado") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + cesantiasPrivadas
+						}
+					} else {
+						recursosGeneral[i]["valor"] = cesantiasPrivadas
+					}
+				}
+
+				if strings.Contains(categoria, "salud") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + salud
+						}
+					} else {
+						recursosGeneral[i]["valor"] = salud
+					}
+				}
+
+				if strings.Contains(categoria, "pension") && strings.Contains(categoria, "público") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + pensionesPublicas
+						}
+					} else {
+						recursosGeneral[i]["valor"] = pensionesPublicas
+					}
+				}
+
+				if strings.Contains(categoria, "pension") && strings.Contains(categoria, "privado") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + pensionesPrivadas
+						}
+					} else {
+						recursosGeneral[i]["valor"] = pensionesPrivadas
+					}
+				}
+
+				if strings.Contains(categoria, "arl") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + arl
+						}
+					} else {
+						recursosGeneral[i]["valor"] = arl
+					}
+				}
+
+				if strings.Contains(categoria, "ccf") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + caja
+						}
+					} else {
+						recursosGeneral[i]["valor"] = caja
+					}
+				}
+
+				if strings.Contains(categoria, "icbf") {
+					if recursosGeneral[i]["valor"] != nil {
+						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+						strValor = strings.ReplaceAll(strValor, ",", "")
+						arrValor := strings.Split(strValor, ".")
+						auxValor, err := strconv.Atoi(arrValor[0])
+						if err == nil {
+							recursosGeneral[i]["valor"] = auxValor + icbf
+						}
+					} else {
+						recursosGeneral[i]["valor"] = icbf
 					}
 				}
 			}
-			necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent)
+		}
+
+		if len(arrDataDocentes) < 7 {
+			ingenieria := true
+			ciencias := true
+			ambiente := true
+			tecnologica := true
+			ASAB := true
+			ILUD := true
+			matematicas := true
+			for _, data := range arrDataDocentes {
+				facultad := strings.ToLower(data["nombreFacultad"].(string))
+				if strings.Contains(facultad, "ingenieria") {
+					ingenieria = false
+				}
+				if strings.Contains(facultad, "ciencias") {
+					ciencias = false
+				}
+				if strings.Contains(facultad, "medio ambiente") {
+					ambiente = false
+				}
+				if strings.Contains(facultad, "tecnologica") {
+					tecnologica = false
+				}
+				if strings.Contains(facultad, "asab") {
+					ASAB = false
+				}
+				if strings.Contains(facultad, "ilud") {
+					ILUD = false
+				}
+				if strings.Contains(facultad, "matematicas") {
+					matematicas = false
+				}
+			}
+			if ingenieria {
+				vacio := map[string]interface{}{"hch": 0, "hchPos": 0, "hcp": 0, "hcpPos": 0, "mto": 0, "nombreFacultad": "FACULTAD DE INGENIERIA", "tco": 0, "valorPos": 0, "valorPre": 0}
+				arrDataDocentes = append(arrDataDocentes, vacio)
+			}
+			if ciencias {
+				vacio := map[string]interface{}{"hch": 0, "hchPos": 0, "hcp": 0, "hcpPos": 0, "mto": 0, "nombreFacultad": "FACULTAD DE CIENCIAS Y EDUCACION", "tco": 0, "valorPos": 0, "valorPre": 0}
+				arrDataDocentes = append(arrDataDocentes, vacio)
+			}
+			if ambiente {
+				vacio := map[string]interface{}{"hch": 0, "hchPos": 0, "hcp": 0, "hcpPos": 0, "mto": 0, "nombreFacultad": "FACULTAD DE MEDIO AMBIENTE", "tco": 0, "valorPos": 0, "valorPre": 0}
+				arrDataDocentes = append(arrDataDocentes, vacio)
+			}
+			if tecnologica {
+				vacio := map[string]interface{}{"hch": 0, "hchPos": 0, "hcp": 0, "hcpPos": 0, "mto": 0, "nombreFacultad": "FACULTAD TECNOLOGICA", "tco": 0, "valorPos": 0, "valorPre": 0}
+				arrDataDocentes = append(arrDataDocentes, vacio)
+			}
+			if ASAB {
+				vacio := map[string]interface{}{"hch": 0, "hchPos": 0, "hcp": 0, "hcpPos": 0, "mto": 0, "nombreFacultad": "FACULTAD DE ARTES - ASAB", "tco": 0, "valorPos": 0, "valorPre": 0}
+				arrDataDocentes = append(arrDataDocentes, vacio)
+			}
+			if ILUD {
+				vacio := map[string]interface{}{"hch": 0, "hchPos": 0, "hcp": 0, "hcpPos": 0, "mto": 0, "nombreFacultad": "INSTITUTO DE LENGUAS - ILUD", "tco": 0, "valorPos": 0, "valorPre": 0}
+				arrDataDocentes = append(arrDataDocentes, vacio)
+			}
+			if matematicas {
+				vacio := map[string]interface{}{"hch": 0, "hchPos": 0, "hcp": 0, "hcpPos": 0, "mto": 0, "nombreFacultad": "FACULTAD DE CIENCIAS MATEMATICAS Y NATURALES", "tco": 0, "valorPos": 0, "valorPre": 0}
+				arrDataDocentes = append(arrDataDocentes, vacio)
+			}
+		}
+		//Completado de tablas
+		for i := 0; i < len(recursosGeneral); i++ {
+			necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), recursosGeneral[i]["codigo"])
+			if recursosGeneral[i]["Nombre"] != nil {
+				necesidadesExcel.MergeCell("Necesidades", "C"+fmt.Sprint(contador), "E"+fmt.Sprint(contador))
+				necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), recursosGeneral[i]["Nombre"])
+
+				if recursosGeneral[i]["unidades"] != nil {
+					unidades := recursosGeneral[i]["unidades"].([]string)
+					valores := recursosGeneral[i]["valorU"].([]float64)
+					necesidadesExcel.MergeCell("Necesidades", "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+len(unidades)))
+					necesidadesExcel.MergeCell("Necesidades", "C"+fmt.Sprint(contador), "C"+fmt.Sprint(contador+len(unidades)))
+					reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "B"+fmt.Sprint(contador), "E"+fmt.Sprint(contador+len(unidades)), stylecontent, stylecontentS)
+					for j := 0; j < len(unidades); j++ {
+						necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador+j), unidades[j])
+						necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador+j), valores[j])
+						reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "F"+fmt.Sprint(contador+j), "F"+fmt.Sprint(contador+j), stylecontentCML, stylecontentCMLS)
+						reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "G"+fmt.Sprint(contador+j), "G"+fmt.Sprint(contador+j), stylecontentCL, stylecontentCLS)
+					}
+					contador = contador + len(unidades)
+				}
+			} else {
+				necesidadesExcel.MergeCell("Necesidades", "C"+fmt.Sprint(contador), "E"+fmt.Sprint(contador))
+				necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), recursosGeneral[i]["nombre"])
+				if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" {
+					necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador), recursosGeneral[i]["valor"])
+					necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador), "Total")
+				} else {
+					strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+					strValor = strings.ReplaceAll(strValor, ",", "")
+					arrValor := strings.Split(strValor, ".")
+					auxValor, err := strconv.Atoi(arrValor[0])
+					if err == nil {
+						necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador), auxValor)
+						necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador), "Total")
+					}
+				}
+			}
+			reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "B"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontent, stylecontentS)
+			reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "F"+fmt.Sprint(contador), "F"+fmt.Sprint(contador), stylecontentCMD, stylecontentCMD)
+			reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "G"+fmt.Sprint(contador), "G"+fmt.Sprint(contador), stylecontentCD, stylecontentCD)
+
+			if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" || fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "float64" {
+				necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador), recursosGeneral[i]["valor"])
+				necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador), "Total")
+			} else {
+				strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+				strValor = strings.ReplaceAll(strValor, ",", "")
+				arrValor := strings.Split(strValor, ".")
+				auxValor, err := strconv.Atoi(arrValor[0])
+				if err == nil {
+					necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador), auxValor)
+					necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador), "Total")
+				}
+			}
+
 			contador++
 		}
 
 		for i := 0; i < len(rubrosGeneral); i++ {
-			unidades := ""
-			necesidadesExcel.SetCellValue("Necesidades", "A"+fmt.Sprint(contador), rubrosGeneral[i]["rubro"])
-			if rubrosGeneral[i]["rubroNombre"] != nil {
-				necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), rubrosGeneral[i]["rubroNombre"])
-				if fmt.Sprint(reflect.TypeOf(rubrosGeneral[i]["totalInc"])) == "float64" {
-					necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), rubrosGeneral[i]["totalInc"])
+			if rubrosGeneral[i]["rubro"] != nil {
+				necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), rubrosGeneral[i]["rubro"])
+				if rubrosGeneral[i]["rubroNombre"] != nil {
+					necesidadesExcel.MergeCell("Necesidades", "C"+fmt.Sprint(contador), "E"+fmt.Sprint(contador))
+					necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), rubrosGeneral[i]["rubroNombre"])
+					if rubrosGeneral[i]["unidades"] != nil {
+
+						unidades := rubrosGeneral[i]["unidades"].([]string)
+						valores := rubrosGeneral[i]["valorU"].([]float64)
+						necesidadesExcel.MergeCell("Necesidades", "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+len(unidades)))
+						necesidadesExcel.MergeCell("Necesidades", "C"+fmt.Sprint(contador), "C"+fmt.Sprint(contador+len(unidades)))
+						reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "B"+fmt.Sprint(contador), "E"+fmt.Sprint(contador+len(unidades)), stylecontent, stylecontentS)
+						for j := 0; j < len(unidades); j++ {
+							necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador+j), unidades[j])
+							if j < len(valores) {
+								necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador+j), valores[j])
+							} else {
+								necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador+j), 0.0)
+							}
+							reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "F"+fmt.Sprint(contador+j), "F"+fmt.Sprint(contador+j), stylecontentCML, stylecontentCMLS)
+							reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "G"+fmt.Sprint(contador+j), "G"+fmt.Sprint(contador+j), stylecontentCL, stylecontentCLS)
+						}
+
+						if len(rubrosGeneral[i]["unidades"].([]string)) == 1 {
+							necesidadesExcel.MergeCell("Necesidades", "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+len(unidades)+1))
+							necesidadesExcel.MergeCell("Necesidades", "C"+fmt.Sprint(contador), "C"+fmt.Sprint(contador+len(unidades)+1))
+							reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "B"+fmt.Sprint(contador), "E"+fmt.Sprint(contador+len(unidades)+1), stylecontent, stylecontentS)
+							contador = contador + len(unidades) + 1
+						} else {
+							contador = contador + len(unidades)
+						}
+					}
 				} else {
-					strValor := strings.TrimLeft(rubrosGeneral[i]["totalInc"].(string), "$")
-					strValor = strings.ReplaceAll(strValor, ",", "")
-					auxValor, err := strconv.ParseFloat(strValor, 64)
-					if err == nil {
-						necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), auxValor)
-					}
-				}
-				if rubrosGeneral[i]["unidades"] != nil {
-					aux2 := rubrosGeneral[i]["unidades"].([]string)
-					for j := 0; j < len(aux2); j++ {
-						unidades = unidades + aux2[j] + ", "
-					}
-					unidades = strings.TrimRight(unidades, ", ")
-					necesidadesExcel.SetCellValue("Necesidades", "D"+fmt.Sprint(contador), unidades)
+					necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), rubrosGeneral[i]["rubroNombre"])
+					necesidadesExcel.MergeCell("Necesidades", "C"+fmt.Sprint(contador), "E"+fmt.Sprint(contador))
 				}
 
-			} else {
-				necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), rubrosGeneral[i]["rubroNombre"])
 				if fmt.Sprint(reflect.TypeOf(rubrosGeneral[i]["totalInc"])) == "float64" {
-					necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), rubrosGeneral[i]["totalInc"])
+					necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador), rubrosGeneral[i]["totalInc"])
+					necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador), "Total")
 				} else {
 					if rubrosGeneral[i]["totalInc"] != nil {
 						strValor := strings.TrimLeft(rubrosGeneral[i]["totalInc"].(string), "$")
 						strValor = strings.ReplaceAll(strValor, ",", "")
 						auxValor, err := strconv.ParseFloat(strValor, 64)
 						if err == nil {
-							necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), auxValor)
+							necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador), auxValor)
+							necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador), "Total")
 						}
-					} else {
-						contador--
 					}
 				}
+				reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "B"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontent, stylecontentS)
+				reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "F"+fmt.Sprint(contador), "F"+fmt.Sprint(contador), stylecontentCMD, stylecontentCMD)
+				reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "G"+fmt.Sprint(contador), "G"+fmt.Sprint(contador), stylecontentCD, stylecontentCD)
+
+				contador++
 			}
-			necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent)
-			contador++
 		}
+
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-plan/"+planes[0]["estado_plan_id"].(string), &respuestaEstado); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuestaEstado, &estado)
 		} else {
 			panic(map[string]interface{}{"funcion": "getNecesidades", "err": "Error ", "status": "400", "log": err})
 		}
+
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-plan/"+planes[0]["tipo_plan_id"].(string), &respuestaTipo); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuestaTipo, &tipo)
 		} else {
 			panic(map[string]interface{}{"funcion": "getNecesidades", "err": "Error ", "status": "400", "log": err})
 		}
 
+		contador++
+		necesidadesExcel.MergeCell("Necesidades", "B"+fmt.Sprint(contador), "J"+fmt.Sprint(contador))
+
+		necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), "Docentes por tipo de vinculación:")
+		necesidadesExcel.SetCellStyle("Necesidades", "B"+fmt.Sprint(contador), "J"+fmt.Sprint(contador), styletitles)
+
+		contador++
+		necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), "Facultad")
+		necesidadesExcel.MergeCell("Necesidades", "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+1))
+		necesidadesExcel.MergeCell("Necesidades", "C"+fmt.Sprint(contador), "G"+fmt.Sprint(contador))
+
+		necesidadesExcel.MergeCell("Necesidades", "H"+fmt.Sprint(contador), "J"+fmt.Sprint(contador))
+
+		necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), "Pregrado")
+		necesidadesExcel.SetCellValue("Necesidades", "H"+fmt.Sprint(contador), "Posgrado")
+
+		necesidadesExcel.SetCellStyle("Necesidades", "B"+fmt.Sprint(contador), "J"+fmt.Sprint(contador), stylehead)
+		necesidadesExcel.SetCellStyle("Necesidades", "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+1), stylehead)
+
+		contador++
+		necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), "TCO")
+		necesidadesExcel.SetCellValue("Necesidades", "D"+fmt.Sprint(contador), "MTO")
+		necesidadesExcel.SetCellValue("Necesidades", "E"+fmt.Sprint(contador), "HCH")
+		necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador), "HCP")
+		necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador), "Valor")
+		necesidadesExcel.SetCellValue("Necesidades", "H"+fmt.Sprint(contador), "HCH")
+		necesidadesExcel.SetCellValue("Necesidades", "I"+fmt.Sprint(contador), "HCP")
+		necesidadesExcel.SetCellValue("Necesidades", "J"+fmt.Sprint(contador), "Valor")
+		necesidadesExcel.SetCellStyle("Necesidades", "C"+fmt.Sprint(contador), "J"+fmt.Sprint(contador), styletitles)
+
+		contador++
+
+		tco := 0
+		mto := 0
+		hch := 0
+		hcp := 0
+		valorPre := 0.0
+		hchPos := 0
+		hcpPos := 0
+		valorPos := 0.0
+
+		for i := 0; i < len(arrDataDocentes); i++ {
+			necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), arrDataDocentes[i]["nombreFacultad"])
+			necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), arrDataDocentes[i]["tco"])
+			if fmt.Sprint(reflect.TypeOf(arrDataDocentes[i]["tco"])) == "int" {
+				tco += arrDataDocentes[i]["tco"].(int)
+			} else {
+				aux2, _ := strconv.Atoi(arrDataDocentes[i]["tco"].(string))
+				tco += aux2
+			}
+
+			necesidadesExcel.SetCellValue("Necesidades", "D"+fmt.Sprint(contador), arrDataDocentes[i]["mto"])
+			if fmt.Sprint(reflect.TypeOf(arrDataDocentes[i]["mto"])) == "int" {
+				mto += arrDataDocentes[i]["mto"].(int)
+			} else {
+				aux2, _ := strconv.Atoi(arrDataDocentes[i]["mto"].(string))
+				mto += aux2
+			}
+
+			necesidadesExcel.SetCellValue("Necesidades", "E"+fmt.Sprint(contador), arrDataDocentes[i]["hch"])
+			if fmt.Sprint(reflect.TypeOf(arrDataDocentes[i]["hch"])) == "int" {
+				hch += arrDataDocentes[i]["hch"].(int)
+			} else {
+				aux2, _ := strconv.Atoi(arrDataDocentes[i]["hch"].(string))
+				hch += aux2
+			}
+						
+			necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador), arrDataDocentes[i]["hcp"])
+			if fmt.Sprint(reflect.TypeOf(arrDataDocentes[i]["hcp"])) == "int" {
+				hcp += arrDataDocentes[i]["hcp"].(int)
+			} else {
+				aux2, _ := strconv.Atoi(arrDataDocentes[i]["hcp"].(string))
+				hcp += aux2
+			}
+
+			necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador), arrDataDocentes[i]["valorPre"])
+			if fmt.Sprint(reflect.TypeOf(arrDataDocentes[i]["valorPre"])) == "int" || fmt.Sprint(reflect.TypeOf(arrDataDocentes[i]["valorPre"])) == "float64" {
+				valorPre +=  float64(arrDataDocentes[i]["valorPre"].(int))
+			} else {
+				aux2, _ := strconv.ParseFloat(arrDataDocentes[i]["valorPre"].(string), 64)
+				valorPre += aux2
+			}
+
+			necesidadesExcel.SetCellValue("Necesidades", "H"+fmt.Sprint(contador), arrDataDocentes[i]["hchPos"])
+			if fmt.Sprint(reflect.TypeOf(arrDataDocentes[i]["hchPos"])) == "int"  {
+				hchPos += arrDataDocentes[i]["hchPos"].(int)
+			} else {
+				aux2, _ := strconv.Atoi(arrDataDocentes[i]["hchPos"].(string))
+				hchPos += aux2
+			}
+
+			necesidadesExcel.SetCellValue("Necesidades", "I"+fmt.Sprint(contador), arrDataDocentes[i]["hcpPos"])
+			if fmt.Sprint(reflect.TypeOf(arrDataDocentes[i]["hcpPos"])) == "int" {
+				hcpPos += arrDataDocentes[i]["hcpPos"].(int)
+			} else {
+				aux2, _ := strconv.Atoi(arrDataDocentes[i]["hcpPos"].(string))
+				hcpPos += aux2
+			}
+
+			necesidadesExcel.SetCellValue("Necesidades", "J"+fmt.Sprint(contador), arrDataDocentes[i]["valorPos"])
+			if fmt.Sprint(reflect.TypeOf(arrDataDocentes[i]["valorPos"])) == "int" || fmt.Sprint(reflect.TypeOf(arrDataDocentes[i]["valorPos"])) == "float64" {
+				valorPos += float64(arrDataDocentes[i]["valorPos"].(int))
+			} else {
+				aux2, _ := strconv.ParseFloat(arrDataDocentes[i]["valorPos"].(string), 64)
+				valorPos += aux2
+			}
+
+			reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "B"+fmt.Sprint(contador), "I"+fmt.Sprint(contador), stylecontent, stylecontentS)
+			reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "G"+fmt.Sprint(contador), "G"+fmt.Sprint(contador), stylecontentM, stylecontentMS)
+			reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "J"+fmt.Sprint(contador), "J"+fmt.Sprint(contador), stylecontentM, stylecontentMS)
+			contador++
+		}
+
+		necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), "Total")
+		necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), tco)
+		necesidadesExcel.SetCellValue("Necesidades", "D"+fmt.Sprint(contador), mto)
+		necesidadesExcel.SetCellValue("Necesidades", "E"+fmt.Sprint(contador), hch)
+		necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador), hcp)
+		necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador), valorPre)
+		necesidadesExcel.SetCellValue("Necesidades", "H"+fmt.Sprint(contador), hchPos)
+		necesidadesExcel.SetCellValue("Necesidades", "I"+fmt.Sprint(contador), hcpPos)
+		necesidadesExcel.SetCellValue("Necesidades", "J"+fmt.Sprint(contador), valorPos)
+
+		reporteshelper.SombrearCeldas(necesidadesExcel, 0, "Necesidades", "B"+fmt.Sprint(contador), "I"+fmt.Sprint(contador), stylecontentC, stylecontentC)
+		reporteshelper.SombrearCeldas(necesidadesExcel, 0, "Necesidades", "G"+fmt.Sprint(contador), "G"+fmt.Sprint(contador), stylecontentCM, stylecontentCM)
+		reporteshelper.SombrearCeldas(necesidadesExcel, 0, "Necesidades", "J"+fmt.Sprint(contador), "J"+fmt.Sprint(contador), stylecontentCM, stylecontentCM)
+
+		
+		styletitle, _ := necesidadesExcel.NewStyle(&excelize.Style{
+			Alignment: &excelize.Alignment{WrapText: true, Vertical: "center"},
+			Font:      &excelize.Font{Bold: true, Size: 18, Color: "000000"},
+			Border: []excelize.Border{
+				{Type: "right", Color: "ffffff", Style: 1},
+				{Type: "left", Color: "ffffff", Style: 1},
+				{Type: "top", Color: "ffffff", Style: 1},
+				{Type: "bottom", Color: "ffffff", Style: 1},
+			},
+		})
+		necesidadesExcel.InsertRows("Necesidades", 1, 7)
+		necesidadesExcel.MergeCell("Necesidades", "C2", "G6")
+		necesidadesExcel.SetCellStyle("Necesidades", "C2", "G6", styletitle)
+		var resPeriodo map[string]interface{}
+		var periodo []map[string]interface{}
+		if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+`/periodo?query=Id:`+body["vigencia"].(string), &resPeriodo); err == nil {
+			helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
+		}
+		if periodo[0] != nil {
+			necesidadesExcel.SetCellValue("Necesidades", "C2", "Consolidado proyeccción de necesidades "+periodo[0]["Nombre"].(string))
+		} else {
+			necesidadesExcel.SetCellValue("Necesidades", "C2", "Consolidado proyeccción de necesidades")
+		}
+
+		if err := necesidadesExcel.AddPicture("Necesidades", "B1", "static/img/UDEscudo2.png",
+			&excelize.GraphicOptions{ScaleX: 0.1, ScaleY: 0.1, Positioning: "oneCell", OffsetX: 25}); err != nil {
+			fmt.Println(err)
+		}
+
 		contador = 1
 
 		necesidadesExcel.NewSheet("Total Unidades")
-
 		necesidadesExcel.MergeCell("Total Unidades", "A", "B")
 		necesidadesExcel.MergeCell("Total Unidades", "A1", "A2")
-
 		necesidadesExcel.SetColWidth("Total Unidades", "A", "B", 30)
 
 		necesidadesExcel.MergeCell("Total Unidades", "A"+fmt.Sprint(contador), "B"+fmt.Sprint(contador))
 		necesidadesExcel.MergeCell("Total Unidades", "A"+fmt.Sprint(contador), "A"+fmt.Sprint(contador+1))
 		necesidadesExcel.SetCellValue("Total Unidades", "A"+fmt.Sprint(contador), "Total de unidades generadas:")
-		necesidadesExcel.SetCellStyle("Total Unidades", "A"+fmt.Sprint(contador), "B"+fmt.Sprint(contador), stylesubtitles)
-		necesidadesExcel.SetCellStyle("Total Unidades", "A"+fmt.Sprint(contador+1), "B"+fmt.Sprint(contador+1), stylesubtitles)
-		necesidadesExcel.SetCellStyle("Total Unidades", "A200", "F200", stylecontent)
+		necesidadesExcel.SetCellStyle("Total Unidades", "A"+fmt.Sprint(contador), "B"+fmt.Sprint(contador), styletitles)
+		necesidadesExcel.SetCellStyle("Total Unidades", "A"+fmt.Sprint(contador+1), "B"+fmt.Sprint(contador+1), styletitles)
 		contador++
 		contador++
 		necesidadesExcel.SetCellValue("Total Unidades", "A"+fmt.Sprint(contador), "Total de Unidades Generadas")
@@ -2774,59 +3268,6 @@ func (c *ReportesController) Necesidades() {
 		necesidadesExcel.SetCellValue("Total Unidades", "A"+fmt.Sprint(contador), len(unidades_total))
 		necesidadesExcel.SetCellValue("Total Unidades", "B"+fmt.Sprint(contador), unid_total)
 		necesidadesExcel.SetCellStyle("Total Unidades", "A"+fmt.Sprint(contador), "B"+fmt.Sprint(contador), stylecontent)
-		// comentariado temporalmente por no uso de docentes
-		/*necesidadesExcel.MergeCell("Necesidades", "A"+fmt.Sprint(contador), "F"+fmt.Sprint(contador))
-		necesidadesExcel.MergeCell("Necesidades", "A"+fmt.Sprint(contador), "A"+fmt.Sprint(contador+1))
-
-		necesidadesExcel.SetColWidth("Necesidades", "A", "A", 30)
-		necesidadesExcel.SetColWidth("Necesidades", "B", "E", 15)
-		necesidadesExcel.SetColWidth("Necesidades", "F", "F", 30)
-		necesidadesExcel.SetColWidth("Necesidades", "G", "H", 15)
-		necesidadesExcel.SetColWidth("Necesidades", "I", "I", 15)
-
-		necesidadesExcel.SetCellValue("Necesidades", "A"+fmt.Sprint(contador), "Docentes por tipo de vinculación:")
-		necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "F"+fmt.Sprint(contador), stylesubtitles)
-
-		necesidadesExcel.SetCellStyle("Necesidades", "A200", "F200", stylecontent)
-		contador++
-		contador++
-		necesidadesExcel.SetCellValue("Necesidades", "A"+fmt.Sprint(contador), "Facultad")
-		necesidadesExcel.MergeCell("Necesidades", "A"+fmt.Sprint(contador), "A"+fmt.Sprint(contador+1))
-		necesidadesExcel.MergeCell("Necesidades", "B"+fmt.Sprint(contador), "F"+fmt.Sprint(contador))
-
-		necesidadesExcel.MergeCell("Necesidades", "G"+fmt.Sprint(contador), "I"+fmt.Sprint(contador))
-
-		necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), "Pregrado")
-		necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador), "Posgrado")
-
-		necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "I"+fmt.Sprint(contador), stylehead)
-
-		contador++
-		necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), "TCO")
-		necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), "MTO")
-		necesidadesExcel.SetCellValue("Necesidades", "D"+fmt.Sprint(contador), "HCH")
-		necesidadesExcel.SetCellValue("Necesidades", "E"+fmt.Sprint(contador), "HCP")
-		necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador), "Valor")
-		necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador), "HCH")
-		necesidadesExcel.SetCellValue("Necesidades", "H"+fmt.Sprint(contador), "HCP")
-		necesidadesExcel.SetCellValue("Necesidades", "I"+fmt.Sprint(contador), "Valor")
-		necesidadesExcel.SetCellStyle("Necesidades", "B"+fmt.Sprint(contador), "I"+fmt.Sprint(contador), stylecontent)
-
-		contador++
-
-		for i := 0; i < len(arrDataDocentes); i++ {
-			necesidadesExcel.SetCellValue("Necesidades", "A"+fmt.Sprint(contador), arrDataDocentes[i]["nombreFacultad"])
-			necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), arrDataDocentes[i]["tco"])
-			necesidadesExcel.SetCellValue("Necesidades", "C"+fmt.Sprint(contador), arrDataDocentes[i]["mto"])
-			necesidadesExcel.SetCellValue("Necesidades", "D"+fmt.Sprint(contador), arrDataDocentes[i]["hch"])
-			necesidadesExcel.SetCellValue("Necesidades", "E"+fmt.Sprint(contador), arrDataDocentes[i]["hcp"])
-			necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador), arrDataDocentes[i]["valorPre"])
-			necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador), arrDataDocentes[i]["hchPos"])
-			necesidadesExcel.SetCellValue("Necesidades", "H"+fmt.Sprint(contador), arrDataDocentes[i]["hcpPos"])
-			necesidadesExcel.SetCellValue("Necesidades", "I"+fmt.Sprint(contador), arrDataDocentes[i]["valorPos"])
-			necesidadesExcel.SetCellStyle("Necesidades", "A"+fmt.Sprint(contador), "I"+fmt.Sprint(contador), stylecontent)
-			contador++
-		}*/
 
 		buf, _ := necesidadesExcel.WriteToBuffer()
 		strings.NewReader(buf.String())
