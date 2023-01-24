@@ -257,7 +257,7 @@ func (c *InversionController) GetAllProyectos() {
 
 	proyect := make(map[string]interface{})
 	//var subgruposData map[string]interface{}
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/?query=activo:true,tipo_plan_id:"+aplicativo_id, &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+aplicativo_id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &dataProyects)
 		//fmt.Println(res, "consulta realizada")
 		for i := range dataProyects {
