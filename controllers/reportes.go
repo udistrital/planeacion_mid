@@ -2090,7 +2090,11 @@ func (c *ReportesController) Necesidades() {
 						if _, ok := rubros[i]["totalInc"].(float64); ok {
 							rubros[i]["totalInc"] = fmt.Sprintf("%f", rubros[i]["totalInc"])
 						}
-						auxValor2, _ = strconv.ParseFloat(rubros[i]["totalInc"].(string), 64)
+						if rubros[i]["totalInc"] != nil {
+							auxValor2, _ = strconv.ParseFloat(rubros[i]["totalInc"].(string), 64)
+						} else {
+							auxValor2 = 0.0
+						}
 
 						rubrosGeneral = append(rubrosGeneral, rubros[i])
 						index := len(rubrosGeneral) - 1
@@ -2705,12 +2709,16 @@ func (c *ReportesController) Necesidades() {
 				categoria := strings.ToLower(recursosGeneral[i]["categoria"].(string))
 				if strings.Contains(categoria, "prima") && strings.Contains(categoria, "servicio") {
 					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + primaServicios
+						if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" {
+							recursosGeneral[i]["valor"] = recursosGeneral[i]["valor"].(int) + primaServicios
+						} else {
+							strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+							strValor = strings.ReplaceAll(strValor, ",", "")
+							arrValor := strings.Split(strValor, ".")
+							auxValor, err := strconv.Atoi(arrValor[0])
+							if err == nil {
+								recursosGeneral[i]["valor"] = auxValor + primaServicios
+							}
 						}
 					} else {
 						recursosGeneral[i]["valor"] = primaServicios
@@ -2719,12 +2727,16 @@ func (c *ReportesController) Necesidades() {
 
 				if strings.Contains(categoria, "prima") && strings.Contains(categoria, "navidad") {
 					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + primaNavidad
+						if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" {
+							recursosGeneral[i]["valor"] = recursosGeneral[i]["valor"].(int) + primaNavidad
+						} else {
+							strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+							strValor = strings.ReplaceAll(strValor, ",", "")
+							arrValor := strings.Split(strValor, ".")
+							auxValor, err := strconv.Atoi(arrValor[0])
+							if err == nil {
+								recursosGeneral[i]["valor"] = auxValor + primaNavidad
+							}
 						}
 					} else {
 						recursosGeneral[i]["valor"] = primaNavidad
@@ -2733,12 +2745,16 @@ func (c *ReportesController) Necesidades() {
 
 				if strings.Contains(categoria, "prima") && strings.Contains(categoria, "vacaciones") {
 					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + primaVacaciones
+						if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" {
+							recursosGeneral[i]["valor"] = recursosGeneral[i]["valor"].(int) + primaVacaciones
+						} else {
+							strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+							strValor = strings.ReplaceAll(strValor, ",", "")
+							arrValor := strings.Split(strValor, ".")
+							auxValor, err := strconv.Atoi(arrValor[0])
+							if err == nil {
+								recursosGeneral[i]["valor"] = auxValor + primaVacaciones
+							}
 						}
 					} else {
 						recursosGeneral[i]["valor"] = primaVacaciones
@@ -2747,12 +2763,16 @@ func (c *ReportesController) Necesidades() {
 
 				if strings.Contains(categoria, "bonificacion") || strings.Contains(categoria, "bonificación") {
 					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + bonificacion
+						if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" {
+							recursosGeneral[i]["valor"] = recursosGeneral[i]["valor"].(int) + bonificacion
+						} else {
+							strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+							strValor = strings.ReplaceAll(strValor, ",", "")
+							arrValor := strings.Split(strValor, ".")
+							auxValor, err := strconv.Atoi(arrValor[0])
+							if err == nil {
+								recursosGeneral[i]["valor"] = auxValor + bonificacion
+							}
 						}
 					} else {
 						recursosGeneral[i]["valor"] = bonificacion
@@ -2761,12 +2781,16 @@ func (c *ReportesController) Necesidades() {
 
 				if strings.Contains(categoria, "interes") && strings.Contains(categoria, "cesantía") {
 					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + interesesCesantias
+						if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" {
+							recursosGeneral[i]["valor"] = recursosGeneral[i]["valor"].(int) + interesesCesantias
+						} else {
+							strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+							strValor = strings.ReplaceAll(strValor, ",", "")
+							arrValor := strings.Split(strValor, ".")
+							auxValor, err := strconv.Atoi(arrValor[0])
+							if err == nil {
+								recursosGeneral[i]["valor"] = auxValor + interesesCesantias
+							}
 						}
 					} else {
 						recursosGeneral[i]["valor"] = interesesCesantias
@@ -2775,12 +2799,16 @@ func (c *ReportesController) Necesidades() {
 
 				if strings.Contains(categoria, "cesantía") && strings.Contains(categoria, "público") {
 					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + cesantiasPublicas
+						if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" {
+							recursosGeneral[i]["valor"] = recursosGeneral[i]["valor"].(int) + cesantiasPublicas
+						} else {
+							strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+							strValor = strings.ReplaceAll(strValor, ",", "")
+							arrValor := strings.Split(strValor, ".")
+							auxValor, err := strconv.Atoi(arrValor[0])
+							if err == nil {
+								recursosGeneral[i]["valor"] = auxValor + cesantiasPublicas
+							}
 						}
 					} else {
 						recursosGeneral[i]["valor"] = cesantiasPublicas
@@ -2789,12 +2817,16 @@ func (c *ReportesController) Necesidades() {
 
 				if strings.Contains(categoria, "cesantía") && strings.Contains(categoria, "privado") {
 					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + cesantiasPrivadas
+						if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" {
+							recursosGeneral[i]["valor"] = recursosGeneral[i]["valor"].(int) + cesantiasPrivadas
+						} else {
+							strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+							strValor = strings.ReplaceAll(strValor, ",", "")
+							arrValor := strings.Split(strValor, ".")
+							auxValor, err := strconv.Atoi(arrValor[0])
+							if err == nil {
+								recursosGeneral[i]["valor"] = auxValor + cesantiasPrivadas
+							}
 						}
 					} else {
 						recursosGeneral[i]["valor"] = cesantiasPrivadas
@@ -2803,12 +2835,16 @@ func (c *ReportesController) Necesidades() {
 
 				if strings.Contains(categoria, "salud") {
 					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + salud
+						if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" {
+							recursosGeneral[i]["valor"] = recursosGeneral[i]["valor"].(int) + salud
+						} else {
+							strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+							strValor = strings.ReplaceAll(strValor, ",", "")
+							arrValor := strings.Split(strValor, ".")
+							auxValor, err := strconv.Atoi(arrValor[0])
+							if err == nil {
+								recursosGeneral[i]["valor"] = auxValor + salud
+							}
 						}
 					} else {
 						recursosGeneral[i]["valor"] = salud
@@ -2817,12 +2853,16 @@ func (c *ReportesController) Necesidades() {
 
 				if strings.Contains(categoria, "pension") && strings.Contains(categoria, "público") {
 					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + pensionesPublicas
+						if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" {
+							recursosGeneral[i]["valor"] = recursosGeneral[i]["valor"].(int) + pensionesPublicas
+						} else {
+							strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+							strValor = strings.ReplaceAll(strValor, ",", "")
+							arrValor := strings.Split(strValor, ".")
+							auxValor, err := strconv.Atoi(arrValor[0])
+							if err == nil {
+								recursosGeneral[i]["valor"] = auxValor + pensionesPublicas
+							}
 						}
 					} else {
 						recursosGeneral[i]["valor"] = pensionesPublicas
@@ -2831,12 +2871,16 @@ func (c *ReportesController) Necesidades() {
 
 				if strings.Contains(categoria, "pension") && strings.Contains(categoria, "privado") {
 					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + pensionesPrivadas
+						if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" {
+							recursosGeneral[i]["valor"] = recursosGeneral[i]["valor"].(int) + pensionesPrivadas
+						} else {
+							strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+							strValor = strings.ReplaceAll(strValor, ",", "")
+							arrValor := strings.Split(strValor, ".")
+							auxValor, err := strconv.Atoi(arrValor[0])
+							if err == nil {
+								recursosGeneral[i]["valor"] = auxValor + pensionesPrivadas
+							}
 						}
 					} else {
 						recursosGeneral[i]["valor"] = pensionesPrivadas
@@ -2845,12 +2889,16 @@ func (c *ReportesController) Necesidades() {
 
 				if strings.Contains(categoria, "arl") {
 					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + arl
+						if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" {
+							recursosGeneral[i]["valor"] = recursosGeneral[i]["valor"].(int) + arl
+						} else {
+							strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+							strValor = strings.ReplaceAll(strValor, ",", "")
+							arrValor := strings.Split(strValor, ".")
+							auxValor, err := strconv.Atoi(arrValor[0])
+							if err == nil {
+								recursosGeneral[i]["valor"] = auxValor + arl
+							}
 						}
 					} else {
 						recursosGeneral[i]["valor"] = arl
@@ -2859,12 +2907,16 @@ func (c *ReportesController) Necesidades() {
 
 				if strings.Contains(categoria, "ccf") {
 					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + caja
+						if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" {
+							recursosGeneral[i]["valor"] = recursosGeneral[i]["valor"].(int) + caja
+						} else {
+							strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+							strValor = strings.ReplaceAll(strValor, ",", "")
+							arrValor := strings.Split(strValor, ".")
+							auxValor, err := strconv.Atoi(arrValor[0])
+							if err == nil {
+								recursosGeneral[i]["valor"] = auxValor + caja
+							}
 						}
 					} else {
 						recursosGeneral[i]["valor"] = caja
@@ -2873,12 +2925,16 @@ func (c *ReportesController) Necesidades() {
 
 				if strings.Contains(categoria, "icbf") {
 					if recursosGeneral[i]["valor"] != nil {
-						strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
-						strValor = strings.ReplaceAll(strValor, ",", "")
-						arrValor := strings.Split(strValor, ".")
-						auxValor, err := strconv.Atoi(arrValor[0])
-						if err == nil {
-							recursosGeneral[i]["valor"] = auxValor + icbf
+						if fmt.Sprint(reflect.TypeOf(recursosGeneral[i]["valor"])) == "int" {
+							recursosGeneral[i]["valor"] = recursosGeneral[i]["valor"].(int) + icbf
+						} else {
+							strValor := strings.TrimLeft(recursosGeneral[i]["valor"].(string), "$")
+							strValor = strings.ReplaceAll(strValor, ",", "")
+							arrValor := strings.Split(strValor, ".")
+							auxValor, err := strconv.Atoi(arrValor[0])
+							if err == nil {
+								recursosGeneral[i]["valor"] = auxValor + icbf
+							}
 						}
 					} else {
 						recursosGeneral[i]["valor"] = icbf
@@ -2949,6 +3005,7 @@ func (c *ReportesController) Necesidades() {
 			}
 		}
 		//Completado de tablas
+		idActividad := 0
 		for i := 0; i < len(recursosGeneral); i++ {
 			necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), recursosGeneral[i]["codigo"])
 			if recursosGeneral[i]["Nombre"] != nil {
@@ -3003,12 +3060,13 @@ func (c *ReportesController) Necesidades() {
 					necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador), "Total")
 				}
 			}
-
+			idActividad = i
 			contador++
 		}
 
 		for i := 0; i < len(rubrosGeneral); i++ {
 			if rubrosGeneral[i]["rubro"] != nil {
+				idActividad++
 				necesidadesExcel.SetCellValue("Necesidades", "B"+fmt.Sprint(contador), rubrosGeneral[i]["rubro"])
 				if rubrosGeneral[i]["rubroNombre"] != nil {
 					necesidadesExcel.MergeCell("Necesidades", "C"+fmt.Sprint(contador), "E"+fmt.Sprint(contador))
@@ -3019,7 +3077,7 @@ func (c *ReportesController) Necesidades() {
 						valores := rubrosGeneral[i]["valorU"].([]float64)
 						necesidadesExcel.MergeCell("Necesidades", "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+len(unidades)))
 						necesidadesExcel.MergeCell("Necesidades", "C"+fmt.Sprint(contador), "C"+fmt.Sprint(contador+len(unidades)))
-						reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "B"+fmt.Sprint(contador), "E"+fmt.Sprint(contador+len(unidades)), stylecontent, stylecontentS)
+						reporteshelper.SombrearCeldas(necesidadesExcel, idActividad, "Necesidades", "B"+fmt.Sprint(contador), "E"+fmt.Sprint(contador+len(unidades)), stylecontent, stylecontentS)
 						for j := 0; j < len(unidades); j++ {
 							necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador+j), unidades[j])
 							if j < len(valores) {
@@ -3027,14 +3085,14 @@ func (c *ReportesController) Necesidades() {
 							} else {
 								necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador+j), 0.0)
 							}
-							reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "F"+fmt.Sprint(contador+j), "F"+fmt.Sprint(contador+j), stylecontentCML, stylecontentCMLS)
-							reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "G"+fmt.Sprint(contador+j), "G"+fmt.Sprint(contador+j), stylecontentCL, stylecontentCLS)
+							reporteshelper.SombrearCeldas(necesidadesExcel, idActividad, "Necesidades", "F"+fmt.Sprint(contador+j), "F"+fmt.Sprint(contador+j), stylecontentCML, stylecontentCMLS)
+							reporteshelper.SombrearCeldas(necesidadesExcel, idActividad, "Necesidades", "G"+fmt.Sprint(contador+j), "G"+fmt.Sprint(contador+j), stylecontentCL, stylecontentCLS)
 						}
 
 						if len(rubrosGeneral[i]["unidades"].([]string)) == 1 {
 							necesidadesExcel.MergeCell("Necesidades", "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+len(unidades)+1))
 							necesidadesExcel.MergeCell("Necesidades", "C"+fmt.Sprint(contador), "C"+fmt.Sprint(contador+len(unidades)+1))
-							reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "B"+fmt.Sprint(contador), "E"+fmt.Sprint(contador+len(unidades)+1), stylecontent, stylecontentS)
+							reporteshelper.SombrearCeldas(necesidadesExcel, idActividad, "Necesidades", "B"+fmt.Sprint(contador), "E"+fmt.Sprint(contador+len(unidades)+1), stylecontent, stylecontentS)
 							contador = contador + len(unidades) + 1
 						} else {
 							contador = contador + len(unidades)
@@ -3059,9 +3117,10 @@ func (c *ReportesController) Necesidades() {
 						}
 					}
 				}
-				reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "B"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontent, stylecontentS)
-				reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "F"+fmt.Sprint(contador), "F"+fmt.Sprint(contador), stylecontentCMD, stylecontentCMD)
-				reporteshelper.SombrearCeldas(necesidadesExcel, i, "Necesidades", "G"+fmt.Sprint(contador), "G"+fmt.Sprint(contador), stylecontentCD, stylecontentCD)
+
+				reporteshelper.SombrearCeldas(necesidadesExcel, idActividad, "Necesidades", "B"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontent, stylecontentS)
+				reporteshelper.SombrearCeldas(necesidadesExcel, idActividad, "Necesidades", "F"+fmt.Sprint(contador), "F"+fmt.Sprint(contador), stylecontentCMD, stylecontentCMD)
+				reporteshelper.SombrearCeldas(necesidadesExcel, idActividad, "Necesidades", "G"+fmt.Sprint(contador), "G"+fmt.Sprint(contador), stylecontentCD, stylecontentCD)
 
 				contador++
 			}
