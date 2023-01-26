@@ -291,6 +291,7 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 							"brechaExistente":      0,
 							"acumuladoNumerador":   0,
 							"acumuladoDenominador": 0,
+							"meta":                 0,
 						}
 
 						for _, hijoI := range hijosIndicadores {
@@ -310,9 +311,15 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 										switch {
 										case strings.Contains(nombreDetalle, "nombre"):
 											informacion["nombre"] = dato_plan[index].(map[string]interface{})["dato"]
+											respuesta["nombre"] = dato_plan[index].(map[string]interface{})["dato"]
 											continue
 										case strings.Contains(nombreDetalle, "meta"):
 											informacion["meta"] = dato_plan[index].(map[string]interface{})["dato"]
+											if reflect.TypeOf(dato_plan[index].(map[string]interface{})["dato"]).String() == "string" {
+												respuesta["meta"], _ = strconv.ParseFloat(dato_plan[index].(map[string]interface{})["dato"].(string), 64)
+											} else {
+												respuesta["meta"] = dato_plan[index].(map[string]interface{})["dato"].(float64)
+											}
 											continue
 										case strings.Contains(nombreDetalle, "fórmula"):
 											informacion["formula"] = dato_plan[index].(map[string]interface{})["dato"]
@@ -324,7 +331,11 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 											}
 											continue
 										case strings.Contains(nombreDetalle, "tendencia"):
-											informacion["tendencia"] = dato_plan[index].(map[string]interface{})["dato"]
+											informacion["tendencia"] = strings.Trim(dato_plan[index].(map[string]interface{})["dato"].(string), " ")
+											continue
+										case strings.Contains(nombreDetalle, "unidad de medida"):
+											informacion["unidad"] = strings.Trim(dato_plan[index].(map[string]interface{})["dato"].(string), " ")
+											respuesta["unidad"] = strings.Trim(dato_plan[index].(map[string]interface{})["dato"].(string), " ")
 											continue
 										}
 									}
@@ -474,7 +485,15 @@ func GetDenominadorFijo(dataSeg map[string]interface{}, index int, indexActivida
 							if seguimientoActividad["cuantitativo"] == nil {
 								break
 							}
-							return seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(float64)
+
+							if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "int" {
+								return seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(float64)
+							} else {
+								aux2, err := strconv.ParseFloat(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(string), 64)
+								if err == nil {
+									return aux2
+								}
+							}
 						}
 						break
 					}
@@ -545,14 +564,31 @@ func GetRespuestaAcumulado(dataSeg map[string]interface{}, index int, respuestas
 								brechaExistente += seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["brechaExistente"].(float64)
 							}
 
-							if denominador == "Denominador fijo" {
-								acumuladoDenominador = seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(float64)
+							auxAcumDen := 0.0
+							if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "int" {
+								auxAcumDen = seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(float64)
 							} else {
-								acumuladoDenominador += seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(float64)
+								aux2, err := strconv.ParseFloat(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(string), 64)
+								if err == nil {
+									auxAcumDen = aux2
+								}
+							}
+							if denominador == "Denominador fijo" {
+								acumuladoDenominador = auxAcumDen
+							} else {
+								acumuladoDenominador += auxAcumDen
 							}
 
-							if seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"] == nil {
-								acumuladoNumerador += seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"].(float64)
+							if seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"] != nil {
+
+								if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"])) == "int" {
+									acumuladoNumerador += seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"].(float64)
+								} else {
+									aux2, err := strconv.ParseFloat(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"].(string), 64)
+									if err == nil {
+										acumuladoNumerador += aux2
+									}
+								}
 							}
 						}
 						respuestas[index]["indicadorAcumulado"] = indicadorAcumulado
