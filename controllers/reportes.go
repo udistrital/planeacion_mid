@@ -436,7 +436,6 @@ func (c *ReportesController) PlanAccionAnual() {
 				indexPlan, _ := consolidadoExcelPlanAnual.NewSheet(sheetName)
 
 				if planes == 0 {
-
 					styledefault, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
 						Border: []excelize.Border{
 							{Type: "right", Color: "ffffff", Style: 1},
@@ -581,7 +580,7 @@ func (c *ReportesController) PlanAccionAnual() {
 				consolidadoExcelPlanAnual.MergeCell(sheetName, "L1", "L2")
 				consolidadoExcelPlanAnual.MergeCell(sheetName, "P1", "P2")
 				consolidadoExcelPlanAnual.MergeCell(sheetName, "M1", "O1")
-				consolidadoExcelPlanAnual.SetColWidth(sheetName, "B", "B", 33)
+				consolidadoExcelPlanAnual.SetColWidth(sheetName, "B", "B", 18)
 				consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "P", 35)
 				consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "C", 11)
 				consolidadoExcelPlanAnual.SetColWidth(sheetName, "E", "E", 16)
@@ -824,7 +823,7 @@ func (c *ReportesController) PlanAccionAnual() {
 						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "E"+fmt.Sprint(contadorFactorGeneralOut), "E"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentS)
 						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "F"+fmt.Sprint(contadorLineamientoPIOut), "F"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentS)
 						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(contadorEstrategiaPIOut), "G"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentS)
-						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(contadorEstrategiaPIOut), "L"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentS)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(contadorDataGeneral), "L"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentS)
 						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(contadorDataGeneral), "J"+fmt.Sprint(contadorIndicadores), stylecontentC, stylecontentCS)
 						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "M"+fmt.Sprint(contadorIndicadores), "O"+fmt.Sprint(contadorIndicadores), stylecontentCLD, stylecontentCLDS)
 						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "P"+fmt.Sprint(contadorDataGeneral), "P"+fmt.Sprint(contadorIndicadores), stylecontentC, stylecontentCS)
@@ -849,7 +848,7 @@ func (c *ReportesController) PlanAccionAnual() {
 						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "E"+fmt.Sprint(contadorFactorGeneralOut), "E"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentS)
 						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "F"+fmt.Sprint(contadorLineamientoPIOut), "F"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentS)
 						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(contadorEstrategiaPIOut), "G"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentS)
-						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(contadorEstrategiaPIOut), "L"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentS)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(contadorDataGeneral), "L"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentS)
 						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(contadorDataGeneral), "J"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
 						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "M"+fmt.Sprint(contadorIndicadores), "O"+fmt.Sprint(contadorIndicadores), stylecontentCLD, stylecontentCLDS)
 						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "P"+fmt.Sprint(contadorDataGeneral), "P"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
@@ -893,7 +892,7 @@ func (c *ReportesController) PlanAccionAnual() {
 			}
 
 			if err := consolidadoExcelPlanAnual.AddPicture("Actividades del plan", "B1", "static/img/UDEscudo2.png",
-				&excelize.GraphicOptions{ScaleX: 0.1, ScaleY: 0.1, Positioning: "oneCell", OffsetX: 50}); err != nil {
+				&excelize.GraphicOptions{ScaleX: 0.1, ScaleY: 0.1, Positioning: "oneCell", OffsetX: 10}); err != nil {
 				fmt.Println(err)
 			}
 			if err := consolidadoExcelPlanAnual.AddPicture("Identificaciones", "B1", "static/img/UDEscudo2.png",
@@ -1228,7 +1227,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 			consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+1, 20)
 			consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+2, 20)
 			consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+3, 20)
-			consolidadoExcelPlanAnual.SetColWidth(sheetName, "B", "B", 33)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "B", "B", 19)
 			consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "P", 35)
 			consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "C", 11)
 			consolidadoExcelPlanAnual.SetColWidth(sheetName, "E", "E", 16)
@@ -1555,7 +1554,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 		}
 
 		if err := consolidadoExcelPlanAnual.AddPicture("REPORTE GENERAL", "B1", "static/img/UDEscudo2.png",
-			&excelize.GraphicOptions{ScaleX: 0.1, ScaleY: 0.1, Positioning: "oneCell", OffsetX: 50}); err != nil {
+			&excelize.GraphicOptions{ScaleX: 0.1, ScaleY: 0.1, Positioning: "oneCell", OffsetX: 10}); err != nil {
 			fmt.Println(err)
 		}
 
