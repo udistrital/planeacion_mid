@@ -14,6 +14,7 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
+	evaluacionhelper "github.com/udistrital/planeacion_mid/helpers/evaluacionHelper"
 	reporteshelper "github.com/udistrital/planeacion_mid/helpers/reportesHelper"
 	"github.com/udistrital/utils_oas/request"
 	"github.com/xuri/excelize/v2"
@@ -30,6 +31,7 @@ func (c *ReportesController) URLMapping() {
 	c.Mapping("PlanAccionAnual", c.PlanAccionAnual)
 	c.Mapping("PlanAccionAnualGeneral", c.PlanAccionAnualGeneral)
 	c.Mapping("Necesidades", c.Necesidades)
+	c.Mapping("PlanAccionEvaluacion", c.PlanAccionEvaluacion)
 }
 
 func CreateExcel(f *excelize.File, dir string) {
@@ -436,16 +438,14 @@ func (c *ReportesController) PlanAccionAnual() {
 				indexPlan, _ := consolidadoExcelPlanAnual.NewSheet(sheetName)
 
 				if planes == 0 {
-					styledefault, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
-						Border: []excelize.Border{
-							{Type: "right", Color: "ffffff", Style: 1},
-							{Type: "left", Color: "ffffff", Style: 1},
-							{Type: "top", Color: "ffffff", Style: 1},
-							{Type: "bottom", Color: "ffffff", Style: 1},
-						},
-					})
-					consolidadoExcelPlanAnual.InsertCols("Actividades del plan", "A", 1)
-					consolidadoExcelPlanAnual.SetColStyle(sheetName, "A:Q", styledefault)
+					consolidadoExcelPlanAnual.DeleteSheet("Sheet1")
+
+					disable := false
+					if err := consolidadoExcelPlanAnual.SetSheetView(sheetName, -1, &excelize.ViewOptions{
+						ShowGridLines: &disable,
+					}); err != nil {
+						fmt.Println(err)
+					}
 				}
 				stylehead, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
 					Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
@@ -900,10 +900,6 @@ func (c *ReportesController) PlanAccionAnual() {
 				fmt.Println(err)
 			}
 
-			if len(consolidadoExcelPlanAnual.GetSheetList()) > 1 {
-				consolidadoExcelPlanAnual.DeleteSheet("Sheet1")
-			}
-
 			consolidadoExcelPlanAnual.SetColWidth("Actividades del plan", "A", "A", 2)
 			buf, _ := consolidadoExcelPlanAnual.WriteToBuffer()
 			strings.NewReader(buf.String())
@@ -969,6 +965,22 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",nombre:"+nombre+"&fields=_id,dependencia_id,estado_plan_id,tipo_plan_id", &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
+		for _, planes := range planesFilter {
+			if idUnidad != planes["dependencia_id"].(string) {
+				if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=DependenciaId:"+planes["dependencia_id"].(string), &respuestaUnidad); err == nil {
+					planes["nombreUnidad"] = respuestaUnidad[0]["DependenciaId"].(map[string]interface{})["Nombre"].(string)
+				} else {
+					panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+				}
+			}
+		}
+
+		sort.SliceStable(planesFilter, func(i, j int) bool {
+			a := (planesFilter)[i]["nombreUnidad"].(string)
+			b := (planesFilter)[j]["nombreUnidad"].(string)
+			return a < b
+		})
+
 		for planes := 0; planes < len(planesFilter); planes++ {
 			reporteshelper.Limp()
 			planesFilterData := planesFilter[planes]
@@ -1070,17 +1082,20 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 
 							generalData := make(map[string]interface{})
 
-							if idUnidad != planesFilter[planes]["dependencia_id"].(string) {
-								if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=DependenciaId:"+planesFilter[planes]["dependencia_id"].(string), &respuestaUnidad); err == nil {
-									aux := respuestaUnidad[0]
-									dependenciaNombre := aux["DependenciaId"].(map[string]interface{})
-									nombreUnidad = dependenciaNombre["Nombre"].(string)
-									idUnidad = planesFilter[planes]["dependencia_id"].(string)
+							// if idUnidad != planesFilter[planes]["dependencia_id"].(string) {
+							// 	if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=DependenciaId:"+planesFilter[planes]["dependencia_id"].(string), &respuestaUnidad); err == nil {
+							// 		aux := respuestaUnidad[0]
+							// 		dependenciaNombre := aux["DependenciaId"].(map[string]interface{})
+							// 		nombreUnidad = dependenciaNombre["Nombre"].(string)
+							// 		idUnidad = planesFilter[planes]["dependencia_id"].(string)
 
-								} else {
-									panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
-								}
-							}
+							// 	} else {
+							// 		panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+							// 	}
+							// }
+
+							nombreUnidad = planesFilterData["nombreUnidad"].(string)
+
 							generalData["nombreUnidad"] = nombreUnidad
 							generalData["nombreActividad"] = actividadName
 							generalData["numeroActividad"] = index
@@ -1126,17 +1141,14 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 			indexPlan, _ := consolidadoExcelPlanAnual.NewSheet(sheetName)
 
 			if planes == 0 {
-				styledefault, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
-					Border: []excelize.Border{
-						{Type: "right", Color: "ffffff", Style: 1},
-						{Type: "left", Color: "ffffff", Style: 1},
-						{Type: "top", Color: "ffffff", Style: 1},
-						{Type: "bottom", Color: "ffffff", Style: 1},
-					},
-				})
-
+				consolidadoExcelPlanAnual.DeleteSheet("Sheet1")
 				consolidadoExcelPlanAnual.InsertCols("REPORTE GENERAL", "A", 1)
-				consolidadoExcelPlanAnual.SetColStyle(sheetName, "A:Q", styledefault)
+				disable := false
+				if err := consolidadoExcelPlanAnual.SetSheetView(sheetName, -1, &excelize.ViewOptions{
+					ShowGridLines: &disable,
+				}); err != nil {
+					fmt.Println(err)
+				}
 
 				if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+`/periodo?query=Id:`+body["vigencia"].(string), &resPeriodo); err == nil {
 					helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
@@ -1229,7 +1241,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 			consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+3, 20)
 			consolidadoExcelPlanAnual.SetColWidth(sheetName, "B", "B", 19)
 			consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "P", 35)
-			consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "C", 11)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "C", 13)
 			consolidadoExcelPlanAnual.SetColWidth(sheetName, "E", "E", 16)
 			consolidadoExcelPlanAnual.SetColWidth(sheetName, "H", "H", 6)
 			consolidadoExcelPlanAnual.SetColWidth(sheetName, "I", "J", 12)
@@ -1524,7 +1536,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 				contadorFactor = contadorIndicadores + 1
 				consolidadoExcelPlanAnual.SetActiveSheet(indexPlan)
 			}
-			contadorGeneral = contadorDataGeneral - 1
+			contadorGeneral = contadorDataGeneral - 2 
 			arregloPlanAnual = nil
 			consolidadoExcelPlanAnual.RemoveRow(sheetName, 1)
 		}
@@ -1556,10 +1568,6 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 		if err := consolidadoExcelPlanAnual.AddPicture("REPORTE GENERAL", "B1", "static/img/UDEscudo2.png",
 			&excelize.GraphicOptions{ScaleX: 0.1, ScaleY: 0.1, Positioning: "oneCell", OffsetX: 10}); err != nil {
 			fmt.Println(err)
-		}
-
-		if len(consolidadoExcelPlanAnual.GetSheetList()) > 1 {
-			consolidadoExcelPlanAnual.DeleteSheet("Sheet1")
 		}
 
 		consolidadoExcelPlanAnual.SetColWidth("REPORTE GENERAL", "A", "A", 2)
@@ -1712,14 +1720,6 @@ func (c *ReportesController) Necesidades() {
 			{Type: "bottom", Color: "000000", Style: 1},
 		},
 	})
-	styledefault, _ := necesidadesExcel.NewStyle(&excelize.Style{
-		Border: []excelize.Border{
-			{Type: "right", Color: "ffffff", Style: 1},
-			{Type: "left", Color: "ffffff", Style: 1},
-			{Type: "top", Color: "ffffff", Style: 1},
-			{Type: "bottom", Color: "ffffff", Style: 1},
-		},
-	})
 	stylecontentCL, _ := necesidadesExcel.NewStyle(&excelize.Style{
 		Alignment: &excelize.Alignment{Horizontal: "justify", Vertical: "center", WrapText: true},
 		Border: []excelize.Border{
@@ -1802,13 +1802,19 @@ func (c *ReportesController) Necesidades() {
 	})
 
 	necesidadesExcel.NewSheet("Necesidades")
-	necesidadesExcel.SetColStyle("Necesidades", "A:k", styledefault)
 	necesidadesExcel.DeleteSheet("Sheet1")
+	disable := false
+	if err := necesidadesExcel.SetSheetView("Necesidades", -1, &excelize.ViewOptions{
+		ShowGridLines: &disable,
+	}); err != nil {
+		fmt.Println(err)
+	}
 
 	necesidadesExcel.MergeCell("Necesidades", "C1", "E1")
 
 	necesidadesExcel.SetColWidth("Necesidades", "A", "A", 4)
 	necesidadesExcel.SetColWidth("Necesidades", "B", "B", 26)
+	necesidadesExcel.SetColWidth("Necesidades", "C", "C", 15)
 	necesidadesExcel.SetColWidth("Necesidades", "C", "E", 15)
 	necesidadesExcel.SetColWidth("Necesidades", "F", "F", 20)
 	necesidadesExcel.SetColWidth("Necesidades", "G", "G", 35)
@@ -3203,7 +3209,7 @@ func (c *ReportesController) Necesidades() {
 				aux2, _ := strconv.Atoi(arrDataDocentes[i]["hch"].(string))
 				hch += aux2
 			}
-						
+
 			necesidadesExcel.SetCellValue("Necesidades", "F"+fmt.Sprint(contador), arrDataDocentes[i]["hcp"])
 			if fmt.Sprint(reflect.TypeOf(arrDataDocentes[i]["hcp"])) == "int" {
 				hcp += arrDataDocentes[i]["hcp"].(int)
@@ -3214,14 +3220,14 @@ func (c *ReportesController) Necesidades() {
 
 			necesidadesExcel.SetCellValue("Necesidades", "G"+fmt.Sprint(contador), arrDataDocentes[i]["valorPre"])
 			if fmt.Sprint(reflect.TypeOf(arrDataDocentes[i]["valorPre"])) == "int" || fmt.Sprint(reflect.TypeOf(arrDataDocentes[i]["valorPre"])) == "float64" {
-				valorPre +=  float64(arrDataDocentes[i]["valorPre"].(int))
+				valorPre += float64(arrDataDocentes[i]["valorPre"].(int))
 			} else {
 				aux2, _ := strconv.ParseFloat(arrDataDocentes[i]["valorPre"].(string), 64)
 				valorPre += aux2
 			}
 
 			necesidadesExcel.SetCellValue("Necesidades", "H"+fmt.Sprint(contador), arrDataDocentes[i]["hchPos"])
-			if fmt.Sprint(reflect.TypeOf(arrDataDocentes[i]["hchPos"])) == "int"  {
+			if fmt.Sprint(reflect.TypeOf(arrDataDocentes[i]["hchPos"])) == "int" {
 				hchPos += arrDataDocentes[i]["hchPos"].(int)
 			} else {
 				aux2, _ := strconv.Atoi(arrDataDocentes[i]["hchPos"].(string))
@@ -3264,7 +3270,6 @@ func (c *ReportesController) Necesidades() {
 		reporteshelper.SombrearCeldas(necesidadesExcel, 0, "Necesidades", "G"+fmt.Sprint(contador), "G"+fmt.Sprint(contador), stylecontentCM, stylecontentCM)
 		reporteshelper.SombrearCeldas(necesidadesExcel, 0, "Necesidades", "J"+fmt.Sprint(contador), "J"+fmt.Sprint(contador), stylecontentCM, stylecontentCM)
 
-		
 		styletitle, _ := necesidadesExcel.NewStyle(&excelize.Style{
 			Alignment: &excelize.Alignment{WrapText: true, Vertical: "center"},
 			Font:      &excelize.Font{Bold: true, Size: 18, Color: "000000"},
@@ -3338,6 +3343,469 @@ func (c *ReportesController) Necesidades() {
 
 	} else {
 		panic(err)
+	}
+
+	c.ServeJSON()
+}
+
+// PlanAccionEvaluacion ...
+// @Title PlanAccionEvaluacion
+// @Description post Reportes by id
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Param	nombre		path 	string	true		"The key for staticblock"
+// @Success 201 {object} models.Reportes
+// @Failure 403 :nombre is empty
+// @router /plan_anual_evaluacion/:nombre [post]
+func (c *ReportesController) PlanAccionEvaluacion() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "ReportesController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
+	var body map[string]interface{}
+	var respuesta map[string]interface{}
+	var planes []map[string]interface{}
+	var arregloPlanAnual []map[string]interface{}
+	var periodo []map[string]interface{}
+	var unidadNombre string
+	var evaluacion []map[string]interface{}
+	var respuestaOikos []map[string]interface{}
+	var resPeriodo map[string]interface{}
+	nombre := c.Ctx.Input.Param(":nombre")
+	consolidadoExcelEvaluacion := excelize.NewFile()
+	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+
+	if body["unidad_id"].(string) != "" {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:6153355601c7a2365b2fb2a1,dependencia_id:"+body["unidad_id"].(string)+",nombre:"+nombre, &respuesta); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuesta, &planes)
+
+			trimestres := evaluacionhelper.GetPeriodos(body["vigencia"].(string))
+
+			if len(planes) <= 0 {
+				c.Abort("404")
+			}
+
+			dependencia := body["unidad_id"].(string)
+			if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia?query=Id:"+dependencia, &respuestaOikos); err == nil {
+				unidadNombre = respuestaOikos[0]["Nombre"].(string)
+				arregloPlanAnual = append(arregloPlanAnual, map[string]interface{}{"nombreUnidad": unidadNombre})
+			} else {
+				panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+			}
+
+			if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+`/periodo?query=Id:`+body["vigencia"].(string), &resPeriodo); err == nil {
+				helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
+			}
+
+			var index int
+			for index = 3; index >= 0; index-- {
+				evaluacion = evaluacionhelper.GetEvaluacion(planes[0]["_id"].(string), trimestres, index)
+				if fmt.Sprintf("%v", evaluacion) != "[]" {
+					break
+				}
+			}
+
+			trimestreVacio := map[string]interface{}{"actividad": 0.0, "acumulado": 0.0, "denominador": 0.0, "meta": 0.0, "numerador": 0.0, "periodo": 0.0}
+
+			switch index {
+			case 2:
+				for _, actividad := range evaluacion {
+					actividad["trimestre4"] = trimestreVacio
+				}
+			case 1:
+				for _, actividad := range evaluacion {
+					actividad["trimestre4"] = trimestreVacio
+					actividad["trimestre3"] = trimestreVacio
+				}
+			case 0:
+				for _, actividad := range evaluacion {
+					actividad["trimestre4"] = trimestreVacio
+					actividad["trimestre3"] = trimestreVacio
+					actividad["trimestre2"] = trimestreVacio
+				}
+			case -1:
+				c.Abort("404")
+			}
+
+			sheetName := "Evaluación"
+			consolidadoExcelEvaluacion.NewSheet(sheetName)
+			consolidadoExcelEvaluacion.DeleteSheet("Sheet1")
+
+			disable := false
+			if err := consolidadoExcelEvaluacion.SetSheetView(sheetName, -1, &excelize.ViewOptions{
+				ShowGridLines: &disable,
+			}); err != nil {
+				fmt.Println(err)
+			}
+
+			styleUnidad, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+				Alignment: &excelize.Alignment{Vertical: "center"},
+				Font:      &excelize.Font{Bold: true, Color: "000000", Family: "Bahnschrift SemiBold SemiConden", Size: 20},
+				Border: []excelize.Border{
+					{Type: "bottom", Color: "000000", Style: 2},
+				},
+			})
+			styleTituloSB, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+				Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center"},
+				Font:      &excelize.Font{Bold: true, Color: "FFFFFF", Family: "Calibri", Size: 11},
+				Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"CC0000"}},
+			})
+			styleSombreadoSB, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+				Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center"},
+				Font:      &excelize.Font{Color: "000000", Family: "Calibri", Size: 11},
+				Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+			})
+			styleNegrilla, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+				Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+				Font:      &excelize.Font{Color: "000000", Family: "Calibri", Size: 12, Bold: true},
+			})
+			styleTitulo, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+				Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+				Font:      &excelize.Font{Bold: true, Color: "FFFFFF", Family: "Calibri", Size: 11},
+				Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"CC0000"}},
+				Border: []excelize.Border{
+					{Type: "right", Color: "000000", Style: 1},
+					{Type: "left", Color: "000000", Style: 1},
+					{Type: "top", Color: "000000", Style: 1},
+					{Type: "bottom", Color: "000000", Style: 1},
+				},
+			})
+			styleContenido, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+				Alignment: &excelize.Alignment{Horizontal: "justify", Vertical: "center", WrapText: true},
+				Border: []excelize.Border{
+					{Type: "right", Color: "000000", Style: 1},
+					{Type: "left", Color: "000000", Style: 1},
+					{Type: "top", Color: "000000", Style: 1},
+					{Type: "bottom", Color: "000000", Style: 1},
+				},
+			})
+			styleContenidoC, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+				Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+				Border: []excelize.Border{
+					{Type: "right", Color: "000000", Style: 1},
+					{Type: "left", Color: "000000", Style: 1},
+					{Type: "top", Color: "000000", Style: 1},
+					{Type: "bottom", Color: "000000", Style: 1},
+				},
+			})
+			styleContenidoCI, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+				Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center"},
+				Font:      &excelize.Font{Color: "FFFFFF"},
+			})
+			styleContenidoCIP, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+				NumFmt:    10,
+				Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center"},
+				Font:      &excelize.Font{Color: "FFFFFF"},
+			})
+			styleContenidoCE, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+				NumFmt:    1,
+				Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+				Border: []excelize.Border{
+					{Type: "right", Color: "000000", Style: 1},
+					{Type: "left", Color: "000000", Style: 1},
+					{Type: "top", Color: "000000", Style: 1},
+					{Type: "bottom", Color: "000000", Style: 1},
+				},
+			})
+			styleContenidoCD, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+				NumFmt:    2,
+				Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+				Border: []excelize.Border{
+					{Type: "right", Color: "000000", Style: 1},
+					{Type: "left", Color: "000000", Style: 1},
+					{Type: "top", Color: "000000", Style: 1},
+					{Type: "bottom", Color: "000000", Style: 1},
+				},
+			})
+			styleContenidoCS, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+				Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+				Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"FCE4D6"}},
+				Border: []excelize.Border{
+					{Type: "right", Color: "000000", Style: 1},
+					{Type: "left", Color: "000000", Style: 1},
+					{Type: "top", Color: "000000", Style: 1},
+					{Type: "bottom", Color: "000000", Style: 1},
+				},
+			})
+			styleContenidoCP, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+				NumFmt:    10,
+				Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+				Border: []excelize.Border{
+					{Type: "right", Color: "000000", Style: 1},
+					{Type: "left", Color: "000000", Style: 1},
+					{Type: "top", Color: "000000", Style: 1},
+					{Type: "bottom", Color: "000000", Style: 1},
+				},
+			})
+			styleContenidoCPSR, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+				NumFmt:    10,
+				Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+				Font:      &excelize.Font{Bold: true, Color: "FFFFFF", Family: "Calibri", Size: 11},
+				Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"CC0000"}},
+				Border: []excelize.Border{
+					{Type: "right", Color: "000000", Style: 1},
+					{Type: "left", Color: "000000", Style: 1},
+					{Type: "top", Color: "000000", Style: 1},
+					{Type: "bottom", Color: "000000", Style: 1},
+				},
+			})
+			styleContenidoCPS, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+				NumFmt:    10,
+				Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+				Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"FCE4D6"}},
+				Border: []excelize.Border{
+					{Type: "right", Color: "000000", Style: 1},
+					{Type: "left", Color: "000000", Style: 1},
+					{Type: "top", Color: "000000", Style: 1},
+					{Type: "bottom", Color: "000000", Style: 1},
+				},
+			})
+
+			// Size
+			consolidadoExcelEvaluacion.SetColWidth(sheetName, "A", "A", 3)
+			consolidadoExcelEvaluacion.SetColWidth(sheetName, "B", "B", 4)
+			consolidadoExcelEvaluacion.SetColWidth(sheetName, "B", "B", 4)
+			consolidadoExcelEvaluacion.SetColWidth(sheetName, "C", "C", 8)
+			consolidadoExcelEvaluacion.SetColWidth(sheetName, "D", "D", 13)
+			consolidadoExcelEvaluacion.SetColWidth(sheetName, "D", "D", 13)
+			consolidadoExcelEvaluacion.SetColWidth(sheetName, "E", "E", 42)
+			consolidadoExcelEvaluacion.SetColWidth(sheetName, "F", "F", 16)
+			consolidadoExcelEvaluacion.SetColWidth(sheetName, "G", "G", 21)
+			consolidadoExcelEvaluacion.SetColWidth(sheetName, "H", "U", 14)
+			consolidadoExcelEvaluacion.SetColWidth(sheetName, "V", "Y", 3)
+			consolidadoExcelEvaluacion.SetRowHeight(sheetName, 1, 12)
+			consolidadoExcelEvaluacion.SetRowHeight(sheetName, 2, 27)
+			consolidadoExcelEvaluacion.SetRowHeight(sheetName, 19, 31)
+			consolidadoExcelEvaluacion.SetRowHeight(sheetName, 22, 27)
+			// Merge
+			consolidadoExcelEvaluacion.MergeCell(sheetName, "B4", "D4")
+			consolidadoExcelEvaluacion.MergeCell(sheetName, "B19", "E19")
+			consolidadoExcelEvaluacion.MergeCell(sheetName, "X19", "Y19")
+			consolidadoExcelEvaluacion.MergeCell(sheetName, "B21", "B22")
+			consolidadoExcelEvaluacion.MergeCell(sheetName, "C21", "C22")
+			consolidadoExcelEvaluacion.MergeCell(sheetName, "D21", "D22")
+			consolidadoExcelEvaluacion.MergeCell(sheetName, "E21", "E22")
+			consolidadoExcelEvaluacion.MergeCell(sheetName, "F21", "F22")
+			consolidadoExcelEvaluacion.MergeCell(sheetName, "G21", "G22")
+			consolidadoExcelEvaluacion.MergeCell(sheetName, "H21", "H22")
+			consolidadoExcelEvaluacion.MergeCell(sheetName, "I21", "I22")
+			consolidadoExcelEvaluacion.MergeCell(sheetName, "X21", "X22")
+			consolidadoExcelEvaluacion.MergeCell(sheetName, "Y21", "Y22")
+			consolidadoExcelEvaluacion.MergeCell(sheetName, "J21", "L21")
+			consolidadoExcelEvaluacion.MergeCell(sheetName, "M21", "O21")
+			consolidadoExcelEvaluacion.MergeCell(sheetName, "P21", "R21")
+			consolidadoExcelEvaluacion.MergeCell(sheetName, "S21", "U21")
+			// Style
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "B2", "T2", styleUnidad)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "B4", "D4", styleTituloSB)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "E4", "E4", styleSombreadoSB)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "B19", "B19", styleNegrilla)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "B21", "U22", styleTitulo)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "J22", "U22", styleContenidoC)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "L22", "L22", styleContenidoCS)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "O22", "O22", styleContenidoCS)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "R22", "R22", styleContenidoCS)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "U22", "U22", styleContenidoCS)
+
+			if periodo[0] != nil {
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "B2", "Evaluación Plan de Acción "+periodo[0]["Nombre"].(string)+" - "+unidadNombre)
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "B19", "Cumplimiento General Plan de Acción "+periodo[0]["Nombre"].(string)+" - "+unidadNombre)
+			} else {
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "B2", "Evaluación Plan de Acción - "+unidadNombre)
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "B19", "Cumplimiento General Plan de Acción - "+unidadNombre)
+			}
+
+			ddRango1 := excelize.NewDataValidation(true)
+			ddRango1.Sqref = "E4:E4"
+			ddRango1.SetDropList([]string{"Trimestre I", "Trimestre II", "Trimestre III", "Trimestre IV"})
+
+			if err = consolidadoExcelEvaluacion.AddDataValidation(sheetName, ddRango1); err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			// Titles
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "B4", "Seleccione el periodo:")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "B21", "No.")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "C21", "Pond.")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "D21", "Periodo de ejecución")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "E21", "Actividad General")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "F21", "Indicador asociado")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "G21", "Fórmula del Indicador")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "H21", "Meta")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "I21", "Tipo de Unidad")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "J21", "Trimestre I")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "M21", "Trimestre II")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "P21", "Trimestre III")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "S21", "Trimestre IV")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "J22", "Indicador Acumulado")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "K22", "Cumplimiento")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "L22", "Cumplimiento por actividad")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "M22", "Indicador Acumulado")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "N22", "Cumplimiento")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "O22", "Cumplimiento por actividad")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "P22", "Indicador Acumulado")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "Q22", "Cumplimiento")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "R22", "Cumplimiento por actividad")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "S22", "Indicador Acumulado")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "T22", "Cumplimiento")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "U22", "Cumplimiento por actividad")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "X19", "Gráfica")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "X21", "No.")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "Y21", "Cumplimiento")
+
+			indice := 23
+			for i, actividad := range evaluacion {
+				// Datos
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "B"+fmt.Sprint(indice), actividad["numero"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "C"+fmt.Sprint(indice), actividad["ponderado"].(float64)/100)
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "D"+fmt.Sprint(indice), actividad["periodo"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "E"+fmt.Sprint(indice), actividad["actividad"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "F"+fmt.Sprint(indice), actividad["indicador"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "G"+fmt.Sprint(indice), actividad["formula"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "H"+fmt.Sprint(indice), actividad["meta"].(float64))
+				if actividad["unidad"] == "Porcentaje" {
+					consolidadoExcelEvaluacion.SetCellValue(sheetName, "H"+fmt.Sprint(indice), actividad["meta"].(float64)/100)
+				}
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "I"+fmt.Sprint(indice), actividad["unidad"])
+
+				// Trimestres
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "J"+fmt.Sprint(indice), actividad["trimestre1"].(map[string]interface{})["acumulado"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "K"+fmt.Sprint(indice), actividad["trimestre1"].(map[string]interface{})["meta"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "L"+fmt.Sprint(indice), actividad["trimestre1"].(map[string]interface{})["actividad"].(float64))
+
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "M"+fmt.Sprint(indice), actividad["trimestre2"].(map[string]interface{})["acumulado"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "N"+fmt.Sprint(indice), actividad["trimestre2"].(map[string]interface{})["meta"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "O"+fmt.Sprint(indice), actividad["trimestre2"].(map[string]interface{})["actividad"].(float64))
+
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "P"+fmt.Sprint(indice), actividad["trimestre3"].(map[string]interface{})["acumulado"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "Q"+fmt.Sprint(indice), actividad["trimestre3"].(map[string]interface{})["meta"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "R"+fmt.Sprint(indice), actividad["trimestre3"].(map[string]interface{})["actividad"].(float64))
+
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "S"+fmt.Sprint(indice), actividad["trimestre4"].(map[string]interface{})["acumulado"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "T"+fmt.Sprint(indice), actividad["trimestre4"].(map[string]interface{})["meta"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "U"+fmt.Sprint(indice), actividad["trimestre4"].(map[string]interface{})["actividad"].(float64))
+
+				// Gaficos
+				consolidadoExcelEvaluacion.SetCellFormula(sheetName, "X"+fmt.Sprint(indice), "=B"+fmt.Sprint(indice))
+				consolidadoExcelEvaluacion.SetCellFormula(sheetName, "Y"+fmt.Sprint(indice), "=IF(E4=\"Trimestre I\",L"+fmt.Sprint(indice)+",IF(E4=\"Trimestre II\",O"+fmt.Sprint(indice)+",IF(E4=\"Trimestre III\",R"+fmt.Sprint(indice)+",IF(E4=\"Trimestre IV\",U"+fmt.Sprint(indice)+"))))")
+
+				// Estilos
+				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "B"+fmt.Sprint(indice), "U"+fmt.Sprint(indice), styleContenidoC)
+				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "C"+fmt.Sprint(indice), "C"+fmt.Sprint(indice), styleContenidoCP)
+				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "E"+fmt.Sprint(indice), "E"+fmt.Sprint(indice), styleContenido)
+
+				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "K"+fmt.Sprint(indice), "K"+fmt.Sprint(indice), styleContenidoCP)
+				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "N"+fmt.Sprint(indice), "N"+fmt.Sprint(indice), styleContenidoCP)
+				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "Q"+fmt.Sprint(indice), "Q"+fmt.Sprint(indice), styleContenidoCP)
+				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "T"+fmt.Sprint(indice), "T"+fmt.Sprint(indice), styleContenidoCP)
+
+				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "L"+fmt.Sprint(indice), "L"+fmt.Sprint(indice), styleContenidoCPS)
+				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "O"+fmt.Sprint(indice), "O"+fmt.Sprint(indice), styleContenidoCPS)
+				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "R"+fmt.Sprint(indice), "R"+fmt.Sprint(indice), styleContenidoCPS)
+				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "U"+fmt.Sprint(indice), "U"+fmt.Sprint(indice), styleContenidoCPS)
+
+				if actividad["unidad"] == "Porcentaje" {
+					consolidadoExcelEvaluacion.SetCellStyle(sheetName, "H"+fmt.Sprint(indice), "H"+fmt.Sprint(indice), styleContenidoCP)
+					consolidadoExcelEvaluacion.SetCellStyle(sheetName, "J"+fmt.Sprint(indice), "J"+fmt.Sprint(indice), styleContenidoCP)
+					consolidadoExcelEvaluacion.SetCellStyle(sheetName, "M"+fmt.Sprint(indice), "M"+fmt.Sprint(indice), styleContenidoCP)
+					consolidadoExcelEvaluacion.SetCellStyle(sheetName, "P"+fmt.Sprint(indice), "P"+fmt.Sprint(indice), styleContenidoCP)
+					consolidadoExcelEvaluacion.SetCellStyle(sheetName, "S"+fmt.Sprint(indice), "S"+fmt.Sprint(indice), styleContenidoCP)
+				}
+
+				if actividad["unidad"] == "Tasa" {
+					consolidadoExcelEvaluacion.SetCellStyle(sheetName, "H"+fmt.Sprint(indice), "H"+fmt.Sprint(indice), styleContenidoCD)
+					consolidadoExcelEvaluacion.SetCellStyle(sheetName, "J"+fmt.Sprint(indice), "J"+fmt.Sprint(indice), styleContenidoCD)
+					consolidadoExcelEvaluacion.SetCellStyle(sheetName, "M"+fmt.Sprint(indice), "M"+fmt.Sprint(indice), styleContenidoCD)
+					consolidadoExcelEvaluacion.SetCellStyle(sheetName, "P"+fmt.Sprint(indice), "P"+fmt.Sprint(indice), styleContenidoCD)
+					consolidadoExcelEvaluacion.SetCellStyle(sheetName, "S"+fmt.Sprint(indice), "S"+fmt.Sprint(indice), styleContenidoCD)
+				}
+
+				if actividad["unidad"] == "Unidad" {
+					consolidadoExcelEvaluacion.SetCellStyle(sheetName, "H"+fmt.Sprint(indice), "H"+fmt.Sprint(indice), styleContenidoCE)
+					consolidadoExcelEvaluacion.SetCellStyle(sheetName, "J"+fmt.Sprint(indice), "J"+fmt.Sprint(indice), styleContenidoCE)
+					consolidadoExcelEvaluacion.SetCellStyle(sheetName, "M"+fmt.Sprint(indice), "M"+fmt.Sprint(indice), styleContenidoCE)
+					consolidadoExcelEvaluacion.SetCellStyle(sheetName, "P"+fmt.Sprint(indice), "P"+fmt.Sprint(indice), styleContenidoCE)
+					consolidadoExcelEvaluacion.SetCellStyle(sheetName, "S"+fmt.Sprint(indice), "S"+fmt.Sprint(indice), styleContenidoCE)
+				}
+
+				// Unión de celdas por indicador
+				if i > 0 {
+					if actividad["numero"] == evaluacion[i-1]["numero"] {
+						consolidadoExcelEvaluacion.SetCellValue(sheetName, "B"+fmt.Sprint(indice), nil)
+						consolidadoExcelEvaluacion.SetCellValue(sheetName, "C"+fmt.Sprint(indice), nil)
+						consolidadoExcelEvaluacion.SetCellValue(sheetName, "D"+fmt.Sprint(indice), nil)
+						consolidadoExcelEvaluacion.SetCellValue(sheetName, "E"+fmt.Sprint(indice), nil)
+						consolidadoExcelEvaluacion.SetCellValue(sheetName, "L"+fmt.Sprint(indice), nil)
+						consolidadoExcelEvaluacion.SetCellValue(sheetName, "O"+fmt.Sprint(indice), nil)
+						consolidadoExcelEvaluacion.SetCellValue(sheetName, "R"+fmt.Sprint(indice), nil)
+						consolidadoExcelEvaluacion.SetCellValue(sheetName, "U"+fmt.Sprint(indice), nil)
+						consolidadoExcelEvaluacion.SetCellValue(sheetName, "X"+fmt.Sprint(indice), nil)
+						consolidadoExcelEvaluacion.SetCellValue(sheetName, "Y"+fmt.Sprint(indice), nil)
+
+						consolidadoExcelEvaluacion.MergeCell(sheetName, "B"+fmt.Sprint(indice-1), "B"+fmt.Sprint(indice))
+						consolidadoExcelEvaluacion.MergeCell(sheetName, "C"+fmt.Sprint(indice-1), "C"+fmt.Sprint(indice))
+						consolidadoExcelEvaluacion.MergeCell(sheetName, "D"+fmt.Sprint(indice-1), "D"+fmt.Sprint(indice))
+						consolidadoExcelEvaluacion.MergeCell(sheetName, "E"+fmt.Sprint(indice-1), "E"+fmt.Sprint(indice))
+						consolidadoExcelEvaluacion.MergeCell(sheetName, "L"+fmt.Sprint(indice-1), "L"+fmt.Sprint(indice))
+						consolidadoExcelEvaluacion.MergeCell(sheetName, "O"+fmt.Sprint(indice-1), "O"+fmt.Sprint(indice))
+						consolidadoExcelEvaluacion.MergeCell(sheetName, "R"+fmt.Sprint(indice-1), "R"+fmt.Sprint(indice))
+						consolidadoExcelEvaluacion.MergeCell(sheetName, "U"+fmt.Sprint(indice-1), "U"+fmt.Sprint(indice))
+					}
+				}
+				indice++
+			}
+
+			consolidadoExcelEvaluacion.MergeCell(sheetName, "B"+fmt.Sprint(indice), "I"+fmt.Sprint(indice))
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "B"+fmt.Sprint(indice), "I"+fmt.Sprint(indice), styleTituloSB)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "J"+fmt.Sprint(indice), "T"+fmt.Sprint(indice), styleContenidoC)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "L"+fmt.Sprint(indice), "L"+fmt.Sprint(indice), styleContenidoCPSR)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "O"+fmt.Sprint(indice), "O"+fmt.Sprint(indice), styleContenidoCPSR)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "R"+fmt.Sprint(indice), "R"+fmt.Sprint(indice), styleContenidoCPSR)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "U"+fmt.Sprint(indice), "U"+fmt.Sprint(indice), styleContenidoCPSR)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "X19", "X"+fmt.Sprint(indice), styleContenidoCI)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "Y19", "Z"+fmt.Sprint(indice), styleContenidoCIP)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "Y21", "Y22", styleContenidoCI)
+
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "B"+fmt.Sprint(indice), "Avance General del Plan de Acción")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "J"+fmt.Sprint(indice), "-")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "K"+fmt.Sprint(indice), "-")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "M"+fmt.Sprint(indice), "-")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "N"+fmt.Sprint(indice), "-")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "P"+fmt.Sprint(indice), "-")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "Q"+fmt.Sprint(indice), "-")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "S"+fmt.Sprint(indice), "-")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "T"+fmt.Sprint(indice), "-")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "X"+fmt.Sprint(indice), "General")
+
+			filaAnt := fmt.Sprint(indice - 1)
+			consolidadoExcelEvaluacion.SetCellFormula(sheetName, "L"+fmt.Sprint(indice), "=SUMPRODUCT(C23:C"+filaAnt+",L23:L"+filaAnt+")")
+			consolidadoExcelEvaluacion.SetCellFormula(sheetName, "O"+fmt.Sprint(indice), "=SUMPRODUCT(C23:C"+filaAnt+",O23:O"+filaAnt+")")
+			consolidadoExcelEvaluacion.SetCellFormula(sheetName, "R"+fmt.Sprint(indice), "=SUMPRODUCT(C23:C"+filaAnt+",R23:R"+filaAnt+")")
+			consolidadoExcelEvaluacion.SetCellFormula(sheetName, "U"+fmt.Sprint(indice), "=SUMPRODUCT(C23:C"+filaAnt+",U23:U"+filaAnt+")")
+			consolidadoExcelEvaluacion.SetCellFormula(sheetName, "Y"+fmt.Sprint(indice), "=IF(E4=\"Trimestre I\",L"+fmt.Sprint(indice)+",IF(E4=\"Trimestre II\",O"+fmt.Sprint(indice)+",IF(E4=\"Trimestre III\",R"+fmt.Sprint(indice)+",IF(E4=\"Trimestre IV\",U"+fmt.Sprint(indice)+"))))")
+			consolidadoExcelEvaluacion.SetCellFormula(sheetName, "Z"+fmt.Sprint(indice), "=100%-Y"+fmt.Sprint(indice))
+
+			buf, _ := consolidadoExcelEvaluacion.WriteToBuffer()
+			strings.NewReader(buf.String())
+			encoded := base64.StdEncoding.EncodeToString([]byte(buf.String()))
+
+			dataSend := make(map[string]interface{})
+			dataSend["generalData"] = arregloPlanAnual
+			dataSend["excelB64"] = encoded
+
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "201", "Message": "Successful", "Data": dataSend}
+		} else {
+			panic(err)
+		}
 	}
 
 	c.ServeJSON()
