@@ -600,7 +600,6 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 						if err != nil {
 							fmt.Println(err)
 						}
-						fmt.Println(test1)
 						periodId = priodoId_rest - 1
 					} else {
 						test1 = body["periodo_seguimiento_id"].(string)
@@ -608,7 +607,6 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 						if err != nil {
 							fmt.Println(err)
 						}
-						fmt.Println(test1)
 						periodId = priodoId_rest
 					}
 
@@ -905,7 +903,14 @@ func (c *SeguimientoController) GuardarCualitativo() {
 			} else {
 				estado = dato[indexActividad].(map[string]interface{})["estado"].(map[string]interface{})
 
-				if estado["nombre"] == "Actividad reportada" || estado["nombre"] == "Con observaciones" {
+				if estado["nombre"] == "Con observaciones" && body["dependencia"].(bool) {
+					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
+						estado = map[string]interface{}{
+							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
+							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
+						}
+					}
+				} else if estado["nombre"] == "Actividad reportada" || estado["nombre"] == "Con observaciones" {
 					var codigo_abreviacion string
 
 					observacion = seguimientohelper.ActividadConObservaciones(body)
@@ -916,13 +921,6 @@ func (c *SeguimientoController) GuardarCualitativo() {
 					}
 
 					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:"+codigo_abreviacion, &resEstado); err == nil {
-						estado = map[string]interface{}{
-							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
-							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
-						}
-					}
-				} else if estado["nombre"] == "Con observaciones" && body["dependencia"].(bool) {
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
 						estado = map[string]interface{}{
 							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -1007,7 +1005,14 @@ func (c *SeguimientoController) GuardarCuantitativo() {
 				dato[indexActividad] = map[string]interface{}{"estado": estado, "cuantitativo": cuantitativo}
 			} else {
 				estado = dato[indexActividad].(map[string]interface{})["estado"].(map[string]interface{})
-				if estado["nombre"] == "Actividad reportada" || estado["nombre"] == "Con observaciones" {
+				if estado["nombre"] == "Con observaciones" && body["dependencia"].(bool) {
+					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
+						estado = map[string]interface{}{
+							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
+							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
+						}
+					}
+				} else if estado["nombre"] == "Actividad reportada" || estado["nombre"] == "Con observaciones" {
 					var codigo_abreviacion string
 
 					observacion = seguimientohelper.ActividadConObservaciones(body)
@@ -1018,13 +1023,6 @@ func (c *SeguimientoController) GuardarCuantitativo() {
 					}
 
 					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:"+codigo_abreviacion, &resEstado); err == nil {
-						estado = map[string]interface{}{
-							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
-							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
-						}
-					}
-				} else if estado["nombre"] == "Con observaciones" && body["dependencia"].(bool) {
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
 						estado = map[string]interface{}{
 							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
