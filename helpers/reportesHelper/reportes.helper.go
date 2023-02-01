@@ -772,20 +772,17 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 			{Type: "left", Color: "000000", Style: 1},
 			{Type: "top", Color: "000000", Style: 1},
 			{Type: "bottom", Color: "000000", Style: 1}}})
-	styledefault, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
-		Border: []excelize.Border{
-			{Type: "right", Color: "ffffff", Style: 1},
-			{Type: "left", Color: "ffffff", Style: 1},
-			{Type: "top", Color: "ffffff", Style: 1},
-			{Type: "bottom", Color: "ffffff", Style: 1},
-		},
-	})
 
 	sheetName := "Identificaciones"
 
 	consolidadoExcelPlanAnual.NewSheet(sheetName)
 	consolidadoExcelPlanAnual.InsertCols(sheetName, "A", 1)
-	consolidadoExcelPlanAnual.SetColStyle(sheetName, "A:I", styledefault)
+	disable := false
+	if err := consolidadoExcelPlanAnual.SetSheetView(sheetName, -1, &excelize.ViewOptions{
+		ShowGridLines: &disable,
+	}); err != nil {
+		fmt.Println(err)
+	}
 	consolidadoExcelPlanAnual.MergeCell(sheetName, "B1", "F1")
 
 	consolidadoExcelPlanAnual.SetColWidth(sheetName, "A", "A", 2)
@@ -971,17 +968,17 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Identificación docente")
 		consolidadoExcelPlanAnual.SetRowHeight(sheetName, contador+1, 7)
 		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), styletitles)
-		
+
 		contador++
 		contador++
-		
+
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Código del rubro")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), "Nombre del rubro")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), "Valor")
 		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylehead)
-		
+
 		contador++
-		
+
 		//Cuerpo Tabla
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Prima de Servicios"))
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), "Prima de servicios - pregrado")

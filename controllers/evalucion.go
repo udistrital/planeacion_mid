@@ -94,8 +94,7 @@ func (c *EvaluacionController) GetPlanesPeriodo() {
 								}
 
 								if trimestreId == periodoId {
-
-									periodosSelecionados = append(periodosSelecionados, map[string]interface{}{"nombre": trimestre["ParametroId"].(map[string]interface{})["Nombre"].(string), "id": periodo["_id"]} )
+									periodosSelecionados = append(periodosSelecionados, map[string]interface{}{"nombre": trimestre["ParametroId"].(map[string]interface{})["Nombre"].(string), "id": periodo["_id"]})
 									break
 								}
 							}
@@ -104,7 +103,7 @@ func (c *EvaluacionController) GetPlanesPeriodo() {
 					}
 				}
 
-				respuesta = append(respuesta, map[string]interface{}{"plan": plan["nombre"], "id":plan["_id"], "periodos": periodosSelecionados})
+				respuesta = append(respuesta, map[string]interface{}{"plan": plan["nombre"], "id": plan["_id"], "periodos": periodosSelecionados})
 			}
 		}
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": respuesta}
