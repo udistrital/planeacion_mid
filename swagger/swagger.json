@@ -1294,6 +1294,44 @@
                 }
             }
         },
+        "/reportes/plan_anual_evaluacion/{nombre}": {
+            "post": {
+                "tags": [
+                    "reportes"
+                ],
+                "description": "post Reportes by id",
+                "operationId": "ReportesController.PlanAccionEvaluacion",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "nombre",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Reportes"
+                        }
+                    },
+                    "403": {
+                        "description": ":nombre is empty"
+                    }
+                }
+            }
+        },
         "/reportes/plan_anual_general/{nombre}": {
             "post": {
                 "tags": [

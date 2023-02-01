@@ -360,6 +360,15 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:ReportesController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:ReportesController"],
         beego.ControllerComments{
+            Method: "PlanAccionEvaluacion",
+            Router: "/plan_anual_evaluacion/:nombre",
+            AllowHTTPMethods: []string{"post"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:ReportesController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:ReportesController"],
+        beego.ControllerComments{
             Method: "PlanAccionAnualGeneral",
             Router: "/plan_anual_general/:nombre",
             AllowHTTPMethods: []string{"post"},
