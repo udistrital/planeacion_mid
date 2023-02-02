@@ -3,7 +3,7 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"sort"
@@ -114,7 +114,7 @@ func (c *FormulacionController) ClonarFormato() {
 
 		defer respuesta.Body.Close()
 
-		cuerpoRespuesta, err := ioutil.ReadAll(respuesta.Body)
+		cuerpoRespuesta, err := io.ReadAll(respuesta.Body)
 		if err != nil {
 			log.Fatalf("Error leyendo peticion: %v", err)
 		}

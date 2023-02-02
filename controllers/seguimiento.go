@@ -596,14 +596,14 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 					datoStrUltimoTrimestre := seguimiento1["dato"].(string)
 					if datoStrUltimoTrimestre == "{}" {
 						test1 = body["periodo_seguimiento_id"].(string)
-						priodoId_rest, err := strconv.ParseFloat(test1, 8)
+						priodoId_rest, err := strconv.ParseFloat(test1, 32)
 						if err != nil {
 							fmt.Println(err)
 						}
 						periodId = priodoId_rest - 1
 					} else {
 						test1 = body["periodo_seguimiento_id"].(string)
-						priodoId_rest, err := strconv.ParseFloat(test1, 8)
+						priodoId_rest, err := strconv.ParseFloat(test1, 32)
 						if err != nil {
 							fmt.Println(err)
 						}
@@ -642,12 +642,12 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 			panic(err)
 		}
 		avancePeriodo := body["avancePeriodo"].(string)
-		aPe, err := strconv.ParseFloat(avancePeriodo, 8)
+		aPe, err := strconv.ParseFloat(avancePeriodo, 32)
 		if err != nil {
 			fmt.Println(err)
 		}
 		fmt.Println(aPe, err, reflect.TypeOf(avanceAcumulado))
-		aAc, err := strconv.ParseFloat(avanceAcumulado, 8)
+		aAc, err := strconv.ParseFloat(avanceAcumulado, 32)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -1265,7 +1265,6 @@ func (c *SeguimientoController) RevisarSeguimiento() {
 	var seguimiento map[string]interface{}
 	var resEstado map[string]interface{}
 	dato := make(map[string]interface{})
-	estado := map[string]interface{}{}
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,_id:"+seguimientoId, &respuesta); err == nil {
 		aux := make([]map[string]interface{}, 1)
@@ -1287,7 +1286,7 @@ func (c *SeguimientoController) RevisarSeguimiento() {
 			}
 
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:"+codigo_abreviacion, &resEstado); err == nil {
-				estado = map[string]interface{}{
+				estado := map[string]interface{}{
 					"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 					"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
 				}
