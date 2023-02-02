@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -71,7 +71,7 @@ func (c *InversionController) AddProyecto() {
 
 		defer respuesta.Body.Close()
 
-		cuerpoRespuesta, err := ioutil.ReadAll(respuesta.Body)
+		cuerpoRespuesta, err := io.ReadAll(respuesta.Body)
 		if err != nil {
 			panic(err)
 		}
