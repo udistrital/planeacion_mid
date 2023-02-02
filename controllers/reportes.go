@@ -3781,7 +3781,7 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "Y21", "Y22", styleContenidoCI)
 
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "B"+fmt.Sprint(indice), "Avance General del Plan de Acción")
-			consolidadoExcelEvaluacion.SetCellValue(sheetName, "E4", "Trimestre I")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "E4", "Trimestre I") //
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "J"+fmt.Sprint(indice), "-")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "K"+fmt.Sprint(indice), "-")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "M"+fmt.Sprint(indice), "-")
@@ -3803,7 +3803,7 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "Z"+fmt.Sprint(indice+1), "Restante")
 
 			consolidadoExcelEvaluacion.AddChart(sheetName, "B5", &excelize.Chart{
-				Type: "doughnut",
+				Type: "pie",
 				Series: []excelize.ChartSeries{
 					{
 						Name:       "",
