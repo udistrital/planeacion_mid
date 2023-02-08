@@ -210,33 +210,40 @@ func GetInformacionPlan(seguimiento map[string]interface{}, index string) map[st
 				var res map[string]interface{}
 
 				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijo["_id"].(string), &res); err == nil {
+					datoPlan := make(map[string]interface{})
 					dato := make(map[string]interface{})
+					
 					nombreDetalle := strings.ToLower(res["Data"].([]interface{})[0].(map[string]interface{})["nombre"].(string))
 					if strings.Contains(nombreDetalle, "indicadores") || strings.Contains(nombreDetalle, "indicador") {
 						continue
 					}
 
-					json.Unmarshal([]byte(res["Data"].([]interface{})[0].(map[string]interface{})["dato_plan"].(string)), &dato)
+					json.Unmarshal([]byte(res["Data"].([]interface{})[0].(map[string]interface{})["dato"].(string)), &dato)
+					if dato["required"] == false || dato["required"] == "false"{
+						continue
+					}
 
-					if dato[index] == nil {
+					json.Unmarshal([]byte(res["Data"].([]interface{})[0].(map[string]interface{})["dato_plan"].(string)), &datoPlan)
+
+					if datoPlan[index] == nil {
 						continue
 					}
 
 					switch {
 					case strings.Contains(nombreDetalle, "ponderación"):
-						informacion["ponderacion"] = dato[index].(map[string]interface{})["dato"]
+						informacion["ponderacion"] = datoPlan[index].(map[string]interface{})["dato"]
 						continue
 					case strings.Contains(nombreDetalle, "periodo") || strings.Contains(nombreDetalle, "período"):
-						informacion["periodo"] = dato[index].(map[string]interface{})["dato"]
+						informacion["periodo"] = datoPlan[index].(map[string]interface{})["dato"]
 						continue
 					case strings.Contains(nombreDetalle, "tareas") || strings.Contains(nombreDetalle, "actividades específicas"):
-						informacion["tarea"] = dato[index].(map[string]interface{})["dato"]
+						informacion["tarea"] = datoPlan[index].(map[string]interface{})["dato"]
 						continue
 					case strings.Contains(nombreDetalle, "producto"):
-						informacion["producto"] = dato[index].(map[string]interface{})["dato"]
+						informacion["producto"] = datoPlan[index].(map[string]interface{})["dato"]
 						continue
 					case strings.Contains(nombreDetalle, "actividad general"):
-						informacion["descripcion"] = dato[index].(map[string]interface{})["dato"]
+						informacion["descripcion"] = datoPlan[index].(map[string]interface{})["dato"]
 						continue
 					}
 				}
