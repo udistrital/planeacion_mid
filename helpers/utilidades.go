@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/big"
 	"net/http"
 	"reflect"
@@ -29,7 +29,7 @@ func SendJson(url string, trequest string, target interface{}, datajson interfac
 	}
 
 	client := &http.Client{}
-	req, err := http.NewRequest(trequest, url, b)
+	req, _ := http.NewRequest(trequest, url, b)
 
 	defer func() {
 		//Catch
@@ -42,11 +42,11 @@ func SendJson(url string, trequest string, target interface{}, datajson interfac
 			}
 
 			defer resp.Body.Close()
-			mensaje, err := ioutil.ReadAll(resp.Body)
+			mensaje, err := io.ReadAll(resp.Body)
 			if err != nil {
 				beego.Error("Error converting response. ", err)
 			}
-			bodyreq, err := ioutil.ReadAll(req.Body)
+			bodyreq, err := io.ReadAll(req.Body)
 			if err != nil {
 				beego.Error("Error converting response. ", err)
 			}
@@ -136,7 +136,7 @@ func getXml(url string, target interface{}) error {
 func getJsonWSO2(urlp string, target interface{}) error {
 	b := new(bytes.Buffer)
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", urlp, b)
+	req, _ := http.NewRequest("GET", urlp, b)
 	req.Header.Set("Accept", "application/json")
 	r, err := client.Do(req)
 	if err != nil {

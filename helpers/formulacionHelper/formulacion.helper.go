@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"sort"
@@ -56,7 +56,7 @@ func ClonarHijos(hijos []map[string]interface{}, padre string) {
 
 		defer respuesta.Body.Close()
 
-		cuerpoRespuesta, err := ioutil.ReadAll(respuesta.Body)
+		cuerpoRespuesta, err := io.ReadAll(respuesta.Body)
 		if err != nil {
 			log.Fatalf("Error leyendo peticion: %v", err)
 		}
@@ -113,7 +113,7 @@ func ClonarHijosDetalle(subHijosDetalle []map[string]interface{}, subgrupo_id st
 
 		defer respuesta.Body.Close()
 
-		cuerpoRespuesta, err := ioutil.ReadAll(respuesta.Body)
+		cuerpoRespuesta, err := io.ReadAll(respuesta.Body)
 		if err != nil {
 			log.Fatalf("Error leyendo peticion: %v", err)
 		}

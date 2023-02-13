@@ -1079,13 +1079,39 @@
                 }
             }
         },
-        "/inversion/addProyecto": {
+        "/inversion/getproyectos/{aplicativo_id}": {
+            "get": {
+                "tags": [
+                    "inversion"
+                ],
+                "description": "get GetAllProyectos",
+                "operationId": "InversionController.GetAllProyectos",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "aplicativo_id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "403": {
+                        "description": ":aplicativo_id is empty"
+                    }
+                }
+            }
+        },
+        "/inversion/guardar_documentos": {
             "post": {
                 "tags": [
                     "inversion"
                 ],
                 "description": "post AddProyecto",
-                "operationId": "InversionController.AddProyecto",
+                "operationId": "InversionController.GuardarDocumentos",
                 "parameters": [
                     {
                         "in": "body",
@@ -1107,7 +1133,32 @@
                 }
             }
         },
-        "/inversion/getproyectoid/{id}": {
+        "/inversion/proyecto": {
+            "post": {
+                "tags": [
+                    "inversion"
+                ],
+                "description": "post AddProyecto",
+                "operationId": "InversionController.AddProyecto",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/inversion/proyecto/{id}": {
             "get": {
                 "tags": [
                     "inversion"
@@ -1131,41 +1182,13 @@
                         "description": ":id is empty"
                     }
                 }
-            }
-        },
-        "/inversion/getproyectos/{tipo_plan_id}": {
-            "get": {
+            },
+            "put": {
                 "tags": [
                     "inversion"
                 ],
-                "description": "get GetAllProyectos",
-                "operationId": "InversionController.GetAllProyectos",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "tipo_plan_id",
-                        "description": "The key for staticblock",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
-                    },
-                    "403": {
-                        "description": ":id is empty"
-                    }
-                }
-            }
-        },
-        "/inversion/guardar_documentos": {
-            "post": {
-                "tags": [
-                    "inversion"
-                ],
-                "description": "post AddProyecto",
-                "operationId": "InversionController.GuardarDocumentos",
+                "description": "post EditProyecto",
+                "operationId": "InversionController.EditProyecto",
                 "parameters": [
                     {
                         "in": "body",
@@ -1175,6 +1198,13 @@
                         "schema": {
                             "$ref": "#/definitions/{}"
                         }
+                    },
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
                     }
                 ],
                 "responses": {
