@@ -1557,7 +1557,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "C"+fmt.Sprint(contadorMetaGeneralOut), "C"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
 					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(contadorEstrategiaPEDOut), "D"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
 					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "E"+fmt.Sprint(contadorFactorGeneralOut), "E"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
-					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName,"F"+fmt.Sprint(contadorLineamientoPIOut), "F"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "F"+fmt.Sprint(contadorLineamientoPIOut), "F"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
 					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(contadorEstrategiaPIOut), "G"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
 					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(contadorDataGeneral), "J"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
 					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(contadorDataGeneral), "L"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentS)
@@ -3809,8 +3809,8 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "O"+fmt.Sprint(indice), "O"+fmt.Sprint(indice), styleContenidoCPSR)
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "R"+fmt.Sprint(indice), "R"+fmt.Sprint(indice), styleContenidoCPSR)
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "U"+fmt.Sprint(indice), "U"+fmt.Sprint(indice), styleContenidoCPSR)
-			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "X19", "X"+fmt.Sprint(indice + 1), styleContenidoCI)
-			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "Y19", "Z"+fmt.Sprint(indice + 1), styleContenidoCIP)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "X19", "X"+fmt.Sprint(indice+1), styleContenidoCI)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "Y19", "Z"+fmt.Sprint(indice+1), styleContenidoCIP)
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "Y21", "Y22", styleContenidoCI)
 
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "B"+fmt.Sprint(indice), "Avance General del Plan de Acción")
@@ -3876,9 +3876,9 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 				Type: "col",
 				Series: []excelize.ChartSeries{
 					{
-						Name: "",
-						Categories: sheetName + "!$X$23:$X$" + fmt.Sprint(indiceGraficos - 1),
-						Values:     sheetName + "!$Y$23:$Y$" + fmt.Sprint(indiceGraficos - 1),
+						Name:       "",
+						Categories: sheetName + "!$X$23:$X$" + fmt.Sprint(indiceGraficos-1),
+						Values:     sheetName + "!$Y$23:$Y$" + fmt.Sprint(indiceGraficos-1),
 					},
 				},
 				Format: excelize.GraphicOptions{
@@ -3899,7 +3899,7 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 				},
 				YAxis: excelize.ChartAxis{
 					MajorGridLines: true,
-					Font: excelize.Font{Family: "Calibri", Size: 9, Color: "000000"},
+					Font:           excelize.Font{Family: "Calibri", Size: 9, Color: "000000"},
 				},
 				XAxis: excelize.ChartAxis{
 					Font: excelize.Font{Family: "Calibri", Size: 9, Color: "000000"},
