@@ -1,11 +1,7 @@
 package controllers
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
 	"strings"
 
 	"github.com/astaxie/beego"
@@ -23,6 +19,7 @@ type InversionController struct {
 // URLMapping ...
 func (c *InversionController) URLMapping() {
 	c.Mapping("AddProyecto", c.AddProyecto)
+	c.Mapping("EditProyecto", c.EditProyecto)
 	c.Mapping("GuardarDocumentos", c.GuardarDocumentos)
 	c.Mapping("GetProyectoId", c.GetProyectoId)
 	c.Mapping("GetAllProyectos", c.GetAllProyectos)
@@ -35,82 +32,93 @@ func (c *InversionController) URLMapping() {
 // @Description post AddProyecto
 // @Param	body		body 	{}	true		"body for Plan content"
 // @Success 200
-// @Failure 403 :id is empty
-// @router /addProyecto [post]
+// @router /proyecto [post]
 func (c *InversionController) AddProyecto() {
 	var registroProyecto map[string]interface{}
-	plan := make(map[string]interface{})
-	//var dataProyect map[string]interface{}
-	var resPost map[string]interface{}
-	var idProyect string
-	var resSoportes map[string]interface{}
-	clienteHttp := &http.Client{}
-	var idPlan map[string]interface{}
+	var idProyecto string
+	var resPlan map[string]interface{}
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &registroProyecto); err == nil {
-		plan["activo"] = true
-		plan["nombre"] = registroProyecto["nombre_proyecto"]
-		plan["descripcion"] = registroProyecto["codigo_proyecto"]
-		plan["tipo_plan_id"] = "63ca86f1b6c0e5725a977dae"
-		plan["aplicativo_id"] = " "
+		plan := map[string]interface{}{
+			"activo":        true,
+			"nombre":        registroProyecto["nombre_proyecto"],
+			"descripcion":   registroProyecto["codigo_proyecto"],
+			"tipo_plan_id":  "63ca86f1b6c0e5725a977dae",
+			"aplicativo_id": " ",
+		}
+		var respuesta map[string]interface{}
 
-		//fmt.Println(plan)
-		aux, err := json.Marshal(plan)
-		if err != nil {
-			panic(err)
+		err1 := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan", "POST", &respuesta, plan)
+		if err1 == nil {
+			resPlan = respuesta["Data"].(map[string]interface{})
+			idProyecto = resPlan["_id"].(string)
+
+			soportes := map[string]interface{}{"codigo_proyecto": registroProyecto["codigo_proyecto"], "data": registroProyecto["soportes"]}
+			errSoporte := inversionhelper.ResgistrarInfoComplementaria(idProyecto, soportes, "soportes")
+
+			fuentes := map[string]interface{}{"codigo_proyecto": registroProyecto["codigo_proyecto"], "data": registroProyecto["fuentes"]}
+			errFuentes := inversionhelper.ResgistrarInfoComplementaria(idProyecto, fuentes, "fuentes apropiacion")
+			inversionhelper.ActualizarPresupuestoDisponible(registroProyecto["fuentes"].([]interface{}))
+
+			metas := map[string]interface{}{"codigo_proyecto": registroProyecto["codigo_proyecto"], "data": registroProyecto["metas"]}
+			errMetas := inversionhelper.ResgistrarInfoComplementaria(idProyecto, metas, "metas asociadas al proyecto de inversion")
+
+			if errSoporte != nil || errFuentes != nil || errMetas != nil {
+				c.Data["json"] = map[string]interface{}{"Success": false, "Status": "400", "Message": "error", "Data": errSoporte}
+				c.Abort("400")
+			}
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": resPlan}
+			c.ServeJSON()
 		}
 
-		peticion, err := http.NewRequest("POST", "http://"+beego.AppConfig.String("PlanesService")+"/plan", bytes.NewBuffer(aux))
-		if err != nil {
-			panic(err)
-		}
-		peticion.Header.Set("Content-Type", "application/json; charset=UTF-8")
-		respuesta, err := clienteHttp.Do(peticion)
-		if err != nil {
-			panic(err)
-		}
-
-		defer respuesta.Body.Close()
-
-		cuerpoRespuesta, err := io.ReadAll(respuesta.Body)
-		if err != nil {
-			panic(err)
-		}
-
-		json.Unmarshal(cuerpoRespuesta, &resPost)
-		fmt.Println(resPost)
-		idPlan = resPost["Data"].(map[string]interface{})
-		idProyect = idPlan["_id"].(string)
-		fmt.Println(idProyect, "prueba")
-		resSoportes, err = inversionhelper.RegistrarSoportes(idProyect, registroProyecto)
-		fmt.Println(err)
-		soporte := resSoportes["Data"].(map[string]interface{})
-		idSoporte := soporte["_id"].(string)
-		resSoporteDetalle, e := inversionhelper.RegistrarSoporteDetalle(idSoporte, registroProyecto)
-		fmt.Println(e)
-		fmt.Println(resSoporteDetalle)
-		resFuentesApropiacion, e := inversionhelper.RegistrarFuentesApropiacion(idProyect, registroProyecto)
-		fmt.Println(e)
-		fuentes := resFuentesApropiacion["Data"].(map[string]interface{})
-		idFuentes := fuentes["_id"].(string)
-		resFuentesDetalle, e := inversionhelper.RegistrarFuentesDetalle(idFuentes, registroProyecto)
-		fmt.Println(resFuentesDetalle, e)
-		resMetas, e := inversionhelper.RegistrarMetas(idProyect, registroProyecto)
-		fmt.Println(e)
-		metas := resMetas["Data"].(map[string]interface{})
-		idMetas := metas["_id"].(string)
-		resMetasDetalle, e := inversionhelper.RegistrarMetasDetalle(idMetas, registroProyecto)
-		fmt.Println(resMetasDetalle)
-		fmt.Println(e)
-		if e != nil {
-			c.Data["json"] = map[string]interface{}{"Success": false, "Status": "400", "Message": "error", "Data": e}
-			c.Abort("400")
-		}
-		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": resPost}
-		c.ServeJSON()
 	} else {
 		panic(map[string]interface{}{"funcion": "AddProyecto", "err": "Error Registrando Proyecto", "status": "400", "log": err})
 	}
+}
 
+// EditProyecto ...
+// @Title EditProyecto
+// @Description post EditProyecto
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Success 200
+// @Failure 403 :id is empty
+// @router /proyecto/:id [put]
+func (c *InversionController) EditProyecto() {
+	id := c.Ctx.Input.Param(":id")
+	var registroProyecto map[string]interface{}
+	var res map[string]interface{}
+	var infoProyect map[string]interface{}
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &registroProyecto); err == nil {
+
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &res); err == nil {
+			helpers.LimpiezaRespuestaRefactor(res, &infoProyect)
+			infoProyect["nombre"] = registroProyecto["nombre_proyecto"]
+			infoProyect["descripcion"] = registroProyecto["codigo_proyecto"]
+
+			var respuesta map[string]interface{}
+			err1 := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, "PUT", &respuesta, infoProyect)
+			if err1 == nil {
+				errSoporte := inversionhelper.ActualizarInfoComplDetalle(registroProyecto["id_detalle_soportes"].(string), registroProyecto["soportes"].([]interface{}))
+
+				errFuentes := inversionhelper.ActualizarInfoComplDetalle(registroProyecto["id_detalle_fuentes"].(string), registroProyecto["fuentes"].([]interface{}))
+				inversionhelper.ActualizarPresupuestoDisponible(registroProyecto["fuentes"].([]interface{}))
+
+				errMetas := inversionhelper.ActualizarInfoComplDetalle(registroProyecto["id_detalle_metas"].(string), registroProyecto["metas"].([]interface{}))
+
+				if errSoporte != nil || errFuentes != nil || errMetas != nil {
+					c.Data["json"] = map[string]interface{}{"Success": false, "Status": "400", "Message": "error", "Data": errSoporte}
+					c.Abort("400")
+				}
+				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": infoProyect}
+				c.ServeJSON()
+			}
+		} else {
+			panic(map[string]interface{}{"funcion": "GetProyectoId", "err": "Error obteniendo información plan", "status": "400", "log": err})
+		}
+
+	} else {
+		panic(map[string]interface{}{"funcion": "AddProyecto", "err": "Error Registrando Proyecto", "status": "400", "log": err})
+	}
 }
 
 // GuardarDocumentos ...
@@ -128,7 +136,6 @@ func (c *InversionController) GuardarDocumentos() {
 			resDocs := helpers.GuardarDocumento(body["documento"].([]interface{}))
 
 			for _, doc := range resDocs {
-
 				evidencias = append(evidencias, map[string]interface{}{
 					"Id":     doc.(map[string]interface{})["Id"],
 					"Enlace": doc.(map[string]interface{})["Enlace"],
@@ -148,7 +155,6 @@ func (c *InversionController) GuardarDocumentos() {
 			c.Abort("400")
 		}
 	}
-
 }
 
 // GetProyectoId ...
@@ -157,20 +163,8 @@ func (c *InversionController) GuardarDocumentos() {
 // @Param	id		path 	string	true		"The key for staticblock"
 // @Success 200
 // @Failure 403 :id is empty
-// @router /getproyectoid/:id [get]
+// @router /proyecto/:id [get]
 func (c *InversionController) GetProyectoId() {
-	// defer func() {
-	// 	if err := recover(); err != nil {
-	// 		localError := err.(map[string]interface{})
-	// 		c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "InversionController" + "/" + (localError["funcion"]).(string))
-	// 		c.Data["data"] = (localError["err"])
-	// 		if status, ok := localError["status"]; ok {
-	// 			c.Abort(status.(string))
-	// 		} else {
-	// 			c.Abort("404")
-	// 		}
-	// 	}
-	// }()
 	id := c.Ctx.Input.Param(":id")
 	var res map[string]interface{}
 	getProyect := make(map[string]interface{})
@@ -184,35 +178,31 @@ func (c *InversionController) GetProyectoId() {
 		padreId := infoProyect["_id"].(string)
 
 		var infoSubgrupos []map[string]interface{}
+
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+padreId, &subgruposData); err == nil {
 			helpers.LimpiezaRespuestaRefactor(subgruposData, &infoSubgrupos)
 			for i := range infoSubgrupos {
 				var subgrupoDetalle map[string]interface{}
 				var detalleSubgrupos []map[string]interface{}
-				if strings.Contains(strings.ToLower(infoSubgrupos[i]["nombre"].(string)), "soporte") {
-					getProyect["subgrupo_id_soportes"] = infoSubgrupos[i]["_id"]
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=subgrupo_id:"+infoSubgrupos[i]["_id"].(string), &subgrupoDetalle); err == nil {
-						helpers.LimpiezaRespuestaRefactor(subgrupoDetalle, &detalleSubgrupos)
-						getProyect["soportes"] = detalleSubgrupos[0]["dato"]
+
+				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=subgrupo_id:"+infoSubgrupos[i]["_id"].(string), &subgrupoDetalle); err == nil {
+					helpers.LimpiezaRespuestaRefactor(subgrupoDetalle, &detalleSubgrupos)
+
+					armonizacion_dato_str := detalleSubgrupos[0]["dato"].(string)
+					var subgrupo_dato []map[string]interface{}
+					json.Unmarshal([]byte(armonizacion_dato_str), &subgrupo_dato)
+
+					if strings.Contains(strings.ToLower(infoSubgrupos[i]["nombre"].(string)), "soporte") {
+						getProyect["soportes"] = subgrupo_dato
 						getProyect["id_detalle_soportes"] = detalleSubgrupos[0]["_id"]
 					}
-				}
-				if strings.Contains(strings.ToLower(infoSubgrupos[i]["nombre"].(string)), "metas") {
-					getProyect["subgrupo_id_metas"] = infoSubgrupos[i]["_id"]
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=subgrupo_id:"+infoSubgrupos[i]["_id"].(string), &subgrupoDetalle); err == nil {
-						helpers.LimpiezaRespuestaRefactor(subgrupoDetalle, &detalleSubgrupos)
-						getProyect["metas"] = detalleSubgrupos[0]["dato"]
+					if strings.Contains(strings.ToLower(infoSubgrupos[i]["nombre"].(string)), "metas") {
+						getProyect["metas"] = subgrupo_dato
 						getProyect["id_detalle_metas"] = detalleSubgrupos[0]["_id"]
-
 					}
-				}
-				if strings.Contains(strings.ToLower(infoSubgrupos[i]["nombre"].(string)), "fuentes") {
-					getProyect["subgrupo_id_fuentes"] = infoSubgrupos[i]["_id"]
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=subgrupo_id:"+infoSubgrupos[i]["_id"].(string), &subgrupoDetalle); err == nil {
-						helpers.LimpiezaRespuestaRefactor(subgrupoDetalle, &detalleSubgrupos)
-						getProyect["fuentes"] = detalleSubgrupos[0]["dato"]
+					if strings.Contains(strings.ToLower(infoSubgrupos[i]["nombre"].(string)), "fuentes") {
+						getProyect["fuentes"] = subgrupo_dato
 						getProyect["id_detalle_fuentes"] = detalleSubgrupos[0]["_id"]
-
 					}
 				}
 			}
@@ -227,47 +217,27 @@ func (c *InversionController) GetProyectoId() {
 // GetAllProyectos ...
 // @Title GetAllProyectos
 // @Description get GetAllProyectos
-// @Param	tipo_plan_id		path 	string	true		"The key for staticblock"
+// @Param	aplicativo_id		path 	string	true		"The key for staticblock"
 // @Success 200
-// @Failure 403 :id is empty
-// @router /getproyectos/:tipo_plan_id [get]
+// @Failure 403 :aplicativo_id is empty
+// @router /getproyectos/:aplicativo_id [get]
 func (c *InversionController) GetAllProyectos() {
-	//fmt.Println("entró a la función")
-	// defer func() {
-	// 	if err := recover(); err != nil {
-	// 		localError := err.(map[string]interface{})
-	// 		c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "InversionController" + "/" + (localError["funcion"]).(string))
-	// 		c.Data["data"] = (localError["err"])
-	// 		if status, ok := localError["status"]; ok {
-	// 			c.Abort(status.(string))
-	// 		} else {
-	// 			c.Abort("404")
-	// 		}
-	// 	}
-	// }()
-	aplicativo_id := c.Ctx.Input.Param(":aplicativo_id")
+	tipo_plan_id := c.Ctx.Input.Param(":aplicativo_id")
 
 	var res map[string]interface{}
 	var getProyect []map[string]interface{}
-	//infoProyect := make(map[string]interface{})
 	var proyecto map[string]interface{}
 	var dataProyects []map[string]interface{}
-	//var subgrupoDetalle map[string]interface{}
-	//var fuentes map[string]interface{}
 
 	proyect := make(map[string]interface{})
-	//var subgruposData map[string]interface{}
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+aplicativo_id, &res); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+tipo_plan_id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &dataProyects)
-		//fmt.Println(res, "consulta realizada")
 		for i := range dataProyects {
 			if dataProyects[i]["activo"] == true {
 				proyect["id"] = dataProyects[i]["_id"]
-				//padreId := dataProyects[i]["_id"].(string)
-				proyecto = inversionhelper.GetDataProyects(dataProyects[i]["_id"].(string))
+				proyecto = inversionhelper.GetDataProyects(dataProyects[i])
 			}
 			getProyect = append(getProyect, proyecto)
-
 		}
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": getProyect}
 	} else {

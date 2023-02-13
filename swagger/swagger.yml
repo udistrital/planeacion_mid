@@ -714,7 +714,42 @@ paths:
           description: ""
         "403":
           description: :id is empty
-  /inversion/addProyecto:
+  /inversion/getproyectos/{aplicativo_id}:
+    get:
+      tags:
+      - inversion
+      description: get GetAllProyectos
+      operationId: InversionController.GetAllProyectos
+      parameters:
+      - in: path
+        name: aplicativo_id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+        "403":
+          description: :aplicativo_id is empty
+  /inversion/guardar_documentos:
+    post:
+      tags:
+      - inversion
+      description: post AddProyecto
+      operationId: InversionController.GuardarDocumentos
+      parameters:
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "200":
+          description: ""
+        "403":
+          description: :id is empty
+  /inversion/proyecto:
     post:
       tags:
       - inversion
@@ -730,9 +765,7 @@ paths:
       responses:
         "200":
           description: ""
-        "403":
-          description: :id is empty
-  /inversion/getproyectoid/{id}:
+  /inversion/proyecto/{id}:
     get:
       tags:
       - inversion
@@ -749,29 +782,11 @@ paths:
           description: ""
         "403":
           description: :id is empty
-  /inversion/getproyectos/{tipo_plan_id}:
-    get:
+    put:
       tags:
       - inversion
-      description: get GetAllProyectos
-      operationId: InversionController.GetAllProyectos
-      parameters:
-      - in: path
-        name: tipo_plan_id
-        description: The key for staticblock
-        required: true
-        type: string
-      responses:
-        "200":
-          description: ""
-        "403":
-          description: :id is empty
-  /inversion/guardar_documentos:
-    post:
-      tags:
-      - inversion
-      description: post AddProyecto
-      operationId: InversionController.GuardarDocumentos
+      description: post EditProyecto
+      operationId: InversionController.EditProyecto
       parameters:
       - in: body
         name: body
@@ -779,6 +794,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/{}'
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
       responses:
         "200":
           description: ""
