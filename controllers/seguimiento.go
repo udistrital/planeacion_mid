@@ -875,6 +875,7 @@ func (c *SeguimientoController) GuardarCualitativo() {
 	var respuesta map[string]interface{}
 	var seguimiento map[string]interface{}
 	var cualitativo map[string]interface{}
+	var informacion map[string]interface{}
 	var estadoSeguimiento string
 	observacion := false
 	dato := make(map[string]interface{})
@@ -888,6 +889,7 @@ func (c *SeguimientoController) GuardarCualitativo() {
 			seguimiento = aux[0]
 
 			cualitativo = body["cualitativo"].(map[string]interface{})
+			informacion = body["informacion"].(map[string]interface{})
 
 			datoStr := seguimiento["dato"].(string)
 			json.Unmarshal([]byte(datoStr), &dato)
@@ -899,7 +901,7 @@ func (c *SeguimientoController) GuardarCualitativo() {
 						"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
 					}
 				}
-				dato[indexActividad] = map[string]interface{}{"estado": estado, "cualitativo": cualitativo}
+				dato[indexActividad] = map[string]interface{}{"estado": estado, "cualitativo": cualitativo, "informacion": informacion}
 			} else {
 				estado = dato[indexActividad].(map[string]interface{})["estado"].(map[string]interface{})
 
@@ -928,6 +930,7 @@ func (c *SeguimientoController) GuardarCualitativo() {
 					}
 				}
 
+				dato[indexActividad].(map[string]interface{})["informacion"] = informacion
 				dato[indexActividad].(map[string]interface{})["cualitativo"] = cualitativo
 				dato[indexActividad].(map[string]interface{})["estado"] = estado
 			}
@@ -978,6 +981,7 @@ func (c *SeguimientoController) GuardarCuantitativo() {
 	var respuesta map[string]interface{}
 	var seguimiento map[string]interface{}
 	var cuantitativo map[string]interface{}
+	var informacion map[string]interface{}
 	var estadoSeguimiento string
 	observacion := false
 	dato := make(map[string]interface{})
@@ -991,6 +995,7 @@ func (c *SeguimientoController) GuardarCuantitativo() {
 			seguimiento = aux[0]
 
 			cuantitativo = body["cuantitativo"].(map[string]interface{})
+			informacion = body["informacion"].(map[string]interface{})
 
 			datoStr := seguimiento["dato"].(string)
 			json.Unmarshal([]byte(datoStr), &dato)
@@ -1002,7 +1007,7 @@ func (c *SeguimientoController) GuardarCuantitativo() {
 						"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
 					}
 				}
-				dato[indexActividad] = map[string]interface{}{"estado": estado, "cuantitativo": cuantitativo}
+				dato[indexActividad] = map[string]interface{}{"estado": estado, "cuantitativo": cuantitativo, "informacion": informacion}
 			} else {
 				estado = dato[indexActividad].(map[string]interface{})["estado"].(map[string]interface{})
 				if estado["nombre"] == "Con observaciones" && body["dependencia"].(bool) {
@@ -1030,6 +1035,7 @@ func (c *SeguimientoController) GuardarCuantitativo() {
 					}
 				}
 
+				dato[indexActividad].(map[string]interface{})["informacion"] = informacion
 				dato[indexActividad].(map[string]interface{})["cuantitativo"] = cuantitativo
 				dato[indexActividad].(map[string]interface{})["estado"] = estado
 			}
