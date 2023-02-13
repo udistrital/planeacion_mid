@@ -1,11 +1,7 @@
 package inversionhelper
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
 	"strings"
 
 	"github.com/astaxie/beego"
@@ -25,222 +21,63 @@ func RegistrarProyecto(registroProyecto map[string]interface{}) map[string]inter
 	return respuestaProyecto
 }
 
-func RegistrarSoportes(idProyect string, registroProyecto map[string]interface{}) (map[string]interface{}, error) {
-	var resPostSoportes map[string]interface{}
-	planSoportes := make(map[string]interface{})
-	clienteHttp := &http.Client{}
-	planSoportes["activo"] = true
-	planSoportes["padre"] = idProyect
-	planSoportes["nombre"] = "soportes"
-	planSoportes["descripcion"] = registroProyecto["codigo_proyecto"]
-	fmt.Println(planSoportes, "soportes")
-	aux, err := json.Marshal(planSoportes)
-	if err != nil {
-		return nil, err
+func ResgistrarInfoComplementaria(idProyecto string, infoProyecto map[string]interface{}, nombreCoplementaria string) error {
+	var resSubgrupo map[string]interface{}
+	infoSubgrupo := map[string]interface{}{
+		"activo":      true,
+		"padre":       idProyecto,
+		"nombre":      nombreCoplementaria,
+		"descripcion": infoProyecto["codigo_proyecto"],
 	}
-	peticion, err := http.NewRequest("POST", "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo", bytes.NewBuffer(aux))
-	if err != nil {
-		return nil, err
-	}
-	peticion.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	respuesta, err := clienteHttp.Do(peticion)
-	if err != nil {
-		return nil, err
+	errSubgrupo := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo", "POST", &resSubgrupo, infoSubgrupo)
+	if errSubgrupo == nil {
+		idSubgrupo := resSubgrupo["Data"].(map[string]interface{})["_id"].(string)
+		detalle, _ := json.Marshal(infoProyecto["data"])
+		var resDetalle map[string]interface{}
+
+		subgrupoDetalle := map[string]interface{}{
+			"activo":      true,
+			"subgrupo_id": idSubgrupo,
+			"nombre":      nombreCoplementaria,
+			"descripcion": infoProyecto["codigo_proyecto"],
+			"dato":        string(detalle),
+		}
+
+		errDetalle := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle", "POST", &resDetalle, subgrupoDetalle)
+		return errDetalle
 	}
 
-	defer respuesta.Body.Close()
-
-	cuerpoRespuesta, err := ioutil.ReadAll(respuesta.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	json.Unmarshal(cuerpoRespuesta, &resPostSoportes)
-	return resPostSoportes, err
+	return errSubgrupo
 }
 
-func RegistrarSoporteDetalle(idSoporte string, registroProyecto map[string]interface{}) (map[string]interface{}, error) {
-	var resPostSoporteDetalle map[string]interface{}
-	planSoportesDetalle := make(map[string]interface{})
-	clienteHttp := &http.Client{}
-	soportes, err := json.Marshal(registroProyecto["soportes"])
-	if err != nil {
-		return nil, err
-	}
-	planSoportesDetalle["activo"] = true
-	planSoportesDetalle["subgrupo_id"] = idSoporte
-	planSoportesDetalle["nombre"] = "soportes"
-	planSoportesDetalle["descripcion"] = registroProyecto["codigo_proyecto"]
-	planSoportesDetalle["dato"] = string(soportes)
-	fmt.Println(planSoportesDetalle, "soportes")
-	aux, err := json.Marshal(planSoportesDetalle)
-	if err != nil {
-		return nil, err
-	}
-	peticion, err := http.NewRequest("POST", "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle", bytes.NewBuffer(aux))
-	if err != nil {
-		return nil, err
-	}
-	peticion.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	respuesta, err := clienteHttp.Do(peticion)
-	if err != nil {
-		return nil, err
-	}
+func ActualizarInfoComplDetalle(idSubgrupo string, detalleData []interface{}) error {
+	var resSubgrupo map[string]interface{}
+	var subgrupo map[string]interface{}
 
-	defer respuesta.Body.Close()
+	errGet := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+idSubgrupo, &resSubgrupo)
+	if errGet == nil {
+		helpers.LimpiezaRespuestaRefactor(resSubgrupo, &subgrupo)
+		detalle, _ := json.Marshal(detalleData)
+		subgrupo["dato"] = string(detalle)
 
-	cuerpoRespuesta, err := ioutil.ReadAll(respuesta.Body)
-	if err != nil {
-		return nil, err
+		var resDetalle map[string]interface{}
+		errDetalle := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+idSubgrupo, "PUT", &resDetalle, subgrupo)
+		return errDetalle
 	}
-
-	json.Unmarshal(cuerpoRespuesta, &resPostSoporteDetalle)
-	return resPostSoporteDetalle, err
+	return errGet
 }
 
-func RegistrarFuentesApropiacion(idProyect string, registroProyecto map[string]interface{}) (map[string]interface{}, error) {
-	var resPostFuentes map[string]interface{}
-	planFuentes := make(map[string]interface{})
-	clienteHttp := &http.Client{}
-	planFuentes["activo"] = true
-	planFuentes["padre"] = idProyect
-	planFuentes["nombre"] = "fuentes apropiacion"
-	planFuentes["descripcion"] = registroProyecto["codigo_proyecto"]
-	fmt.Println(planFuentes, "fuentes")
-	aux, err := json.Marshal(planFuentes)
-	if err != nil {
-		return nil, err
+func ActualizarPresupuestoDisponible(infoFuente []interface{}) {
+	for _, fuente := range infoFuente {
+		var dataFuente map[string]interface{}
+		err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/fuentes-apropiacion/"+fuente.(map[string]interface{})["id"].(string), &dataFuente)
+		if err == nil {
+			resFuente := dataFuente["Data"].(map[string]interface{})
+			var dataFuente map[string]interface{}
+			resFuente["presupuestoDisponible"] = fuente.(map[string]interface{})["presupuestoDisponible"]
+			helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/fuentes-apropiacion/"+fuente.(map[string]interface{})["id"].(string), "PUT", &dataFuente, resFuente)
+		}
 	}
-	peticion, err := http.NewRequest("POST", "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo", bytes.NewBuffer(aux))
-	if err != nil {
-		return nil, err
-	}
-	peticion.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	respuesta, err := clienteHttp.Do(peticion)
-	if err != nil {
-		return nil, err
-	}
-
-	defer respuesta.Body.Close()
-
-	cuerpoRespuesta, err := ioutil.ReadAll(respuesta.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	json.Unmarshal(cuerpoRespuesta, &resPostFuentes)
-	return resPostFuentes, err
-}
-
-func RegistrarFuentesDetalle(idFuentes string, registroProyecto map[string]interface{}) (map[string]interface{}, error) {
-	var resPostFuentesDetalle map[string]interface{}
-	planFuentesDetalle := make(map[string]interface{})
-	fuentes, err := json.Marshal(registroProyecto["fuentes"])
-	if err != nil {
-		return nil, err
-	}
-	clienteHttp := &http.Client{}
-	planFuentesDetalle["activo"] = true
-	planFuentesDetalle["subgrupo_id"] = idFuentes
-	planFuentesDetalle["nombre"] = "Fuentes"
-	planFuentesDetalle["descripcion"] = registroProyecto["codigo_proyecto"]
-	planFuentesDetalle["dato"] = string(fuentes)
-	aux, err := json.Marshal(planFuentesDetalle)
-	if err != nil {
-		return nil, err
-	}
-	peticion, err := http.NewRequest("POST", "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle", bytes.NewBuffer(aux))
-	if err != nil {
-		return nil, err
-	}
-	peticion.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	respuesta, err := clienteHttp.Do(peticion)
-	if err != nil {
-		return nil, err
-	}
-
-	defer respuesta.Body.Close()
-
-	cuerpoRespuesta, err := ioutil.ReadAll(respuesta.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	json.Unmarshal(cuerpoRespuesta, &resPostFuentesDetalle)
-	return resPostFuentesDetalle, err
-}
-
-func RegistrarMetas(idProyect string, registroProyecto map[string]interface{}) (map[string]interface{}, error) {
-	var resPostMetas map[string]interface{}
-	planMetas := make(map[string]interface{})
-	clienteHttp := &http.Client{}
-	planMetas["activo"] = true
-	planMetas["padre"] = idProyect
-	planMetas["nombre"] = "metas asociadas al proyecto de inversion"
-	planMetas["descripcion"] = registroProyecto["codigo_proyecto"]
-	aux, err := json.Marshal(planMetas)
-	if err != nil {
-		return nil, err
-	}
-	peticion, err := http.NewRequest("POST", "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo", bytes.NewBuffer(aux))
-	if err != nil {
-		return nil, err
-	}
-	peticion.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	respuesta, err := clienteHttp.Do(peticion)
-	if err != nil {
-		return nil, err
-	}
-
-	defer respuesta.Body.Close()
-
-	cuerpoRespuesta, err := ioutil.ReadAll(respuesta.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	json.Unmarshal(cuerpoRespuesta, &resPostMetas)
-	return resPostMetas, err
-}
-
-func RegistrarMetasDetalle(idMetas string, registroProyecto map[string]interface{}) (map[string]interface{}, error) {
-	var resPostMetasDetalle map[string]interface{}
-	planMetasDetalle := make(map[string]interface{})
-	metas, err := json.Marshal(registroProyecto["metas"])
-	if err != nil {
-		return nil, err
-	}
-	//url := "http://localhost:8070"
-	clienteHttp := &http.Client{}
-	planMetasDetalle["activo"] = true
-	planMetasDetalle["subgrupo_id"] = idMetas
-	planMetasDetalle["nombre"] = "Metas proyectos de inversion"
-	planMetasDetalle["descripcion"] = registroProyecto["codigo_proyecto"]
-	planMetasDetalle["dato"] = string(metas) //registroProyecto["metas"]
-	aux, err := json.Marshal(planMetasDetalle)
-	if err != nil {
-		return nil, err
-	}
-	peticion, err := http.NewRequest("POST", "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle", bytes.NewBuffer(aux))
-	if err != nil {
-		return nil, err
-	}
-	peticion.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	respuesta, err := clienteHttp.Do(peticion)
-	if err != nil {
-		return nil, err
-	}
-
-	defer respuesta.Body.Close()
-
-	cuerpoRespuesta, err := ioutil.ReadAll(respuesta.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	json.Unmarshal(cuerpoRespuesta, &resPostMetasDetalle)
-
-	return resPostMetasDetalle, err
 }
 
 // func GetIdSbugrupoDetalle(padreId string) map[string]interface{} {
@@ -270,56 +107,84 @@ func RegistrarMetasDetalle(idMetas string, registroProyecto map[string]interface
 
 //		return infoSubgrupos
 //	}
-func GetDataProyects(id string) map[string]interface{} {
-	var res map[string]interface{}
+
+func GetDataProyects(infoProyect map[string]interface{}) map[string]interface{} {
 	getProyect := make(map[string]interface{})
-	var infoProyect map[string]interface{}
 	var subgruposData map[string]interface{}
+	var infoSubgrupos []map[string]interface{}
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &res); err == nil {
-		helpers.LimpiezaRespuestaRefactor(res, &infoProyect)
-		getProyect["nombre_proyecto"] = infoProyect["nombre"]
-		getProyect["codigo_proyecto"] = infoProyect["descripcion"]
-		getProyect["fecha_creacion"] = infoProyect["fecha_creacion"]
-		getProyect["id"] = infoProyect["_id"]
-		padreId := infoProyect["_id"].(string)
+	getProyect["nombre_proyecto"] = infoProyect["nombre"]
+	getProyect["codigo_proyecto"] = infoProyect["descripcion"]
+	getProyect["fecha_creacion"] = infoProyect["fecha_creacion"]
+	getProyect["id"] = infoProyect["_id"]
 
-		var infoSubgrupos []map[string]interface{}
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+padreId, &subgruposData); err == nil {
-			helpers.LimpiezaRespuestaRefactor(subgruposData, &infoSubgrupos)
-			//getProyect["fecha_creacion"]
-			for i := range infoSubgrupos {
-				var subgrupoDetalle map[string]interface{}
-				var detalleSubgrupos []map[string]interface{}
-				if strings.Contains(strings.ToLower(infoSubgrupos[i]["nombre"].(string)), "soporte") {
-					getProyect["subgrupo_id_soportes"] = infoSubgrupos[i]["_id"]
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=subgrupo_id:"+infoSubgrupos[i]["_id"].(string), &subgrupoDetalle); err == nil {
-						helpers.LimpiezaRespuestaRefactor(subgrupoDetalle, &detalleSubgrupos)
-						getProyect["soportes"] = detalleSubgrupos[0]["dato"]
-						getProyect["id_detalle_soportes"] = detalleSubgrupos[0]["_id"]
-					}
-				}
-				if strings.Contains(strings.ToLower(infoSubgrupos[i]["nombre"].(string)), "metas") {
-					getProyect["subgrupo_id_metas"] = infoSubgrupos[i]["_id"]
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=subgrupo_id:"+infoSubgrupos[i]["_id"].(string), &subgrupoDetalle); err == nil {
-						helpers.LimpiezaRespuestaRefactor(subgrupoDetalle, &detalleSubgrupos)
-						getProyect["metas"] = detalleSubgrupos[0]["dato"]
-						getProyect["id_detalle_metas"] = detalleSubgrupos[0]["_id"]
+	padreId := infoProyect["_id"].(string)
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+padreId, &subgruposData); err == nil {
+		helpers.LimpiezaRespuestaRefactor(subgruposData, &infoSubgrupos)
+		for i := range infoSubgrupos {
+			var subgrupoDetalle map[string]interface{}
+			var detalleSubgrupos []map[string]interface{}
+			if strings.Contains(strings.ToLower(infoSubgrupos[i]["nombre"].(string)), "fuentes") {
 
-					}
-				}
-				if strings.Contains(strings.ToLower(infoSubgrupos[i]["nombre"].(string)), "fuentes") {
+				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=subgrupo_id:"+infoSubgrupos[i]["_id"].(string), &subgrupoDetalle); err == nil {
+					helpers.LimpiezaRespuestaRefactor(subgrupoDetalle, &detalleSubgrupos)
+
+					armonizacion_dato_str := detalleSubgrupos[0]["dato"].(string)
+					var subgrupo_dato []map[string]interface{}
+					json.Unmarshal([]byte(armonizacion_dato_str), &subgrupo_dato)
+
 					getProyect["subgrupo_id_fuentes"] = infoSubgrupos[i]["_id"]
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=subgrupo_id:"+infoSubgrupos[i]["_id"].(string), &subgrupoDetalle); err == nil {
-						helpers.LimpiezaRespuestaRefactor(subgrupoDetalle, &detalleSubgrupos)
-						getProyect["fuentes"] = detalleSubgrupos[0]["dato"]
-						getProyect["id_detalle_fuentes"] = detalleSubgrupos[0]["_id"]
-
-					}
+					getProyect["fuentes"] = subgrupo_dato
+					getProyect["id_detalle_fuentes"] = detalleSubgrupos[0]["_id"]
 				}
 			}
 		}
+	}
 
+	return getProyect
+}
+
+func GetDataProyect(proyect map[string]interface{}) map[string]interface{} {
+	getProyect := make(map[string]interface{})
+	var subgruposData map[string]interface{}
+	var infoSubgrupos []map[string]interface{}
+
+	getProyect["nombre_proyecto"] = proyect["nombre"]
+	getProyect["codigo_proyecto"] = proyect["descripcion"]
+	getProyect["fecha_creacion"] = proyect["fecha_creacion"]
+	getProyect["id"] = proyect["_id"]
+
+	padreId := proyect["_id"].(string)
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+padreId, &subgruposData); err == nil {
+		helpers.LimpiezaRespuestaRefactor(subgruposData, &infoSubgrupos)
+		for i := range infoSubgrupos {
+			var subgrupoDetalle map[string]interface{}
+			var detalleSubgrupos []map[string]interface{}
+
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=subgrupo_id:"+infoSubgrupos[i]["_id"].(string), &subgrupoDetalle); err == nil {
+				helpers.LimpiezaRespuestaRefactor(subgrupoDetalle, &detalleSubgrupos)
+
+				armonizacion_dato_str := detalleSubgrupos[0]["dato"].(string)
+				var subgrupo_dato []map[string]interface{}
+				json.Unmarshal([]byte(armonizacion_dato_str), &subgrupo_dato)
+
+				if strings.Contains(strings.ToLower(infoSubgrupos[i]["nombre"].(string)), "soporte") {
+					getProyect["subgrupo_id_soportes"] = infoSubgrupos[i]["_id"]
+					getProyect["soportes"] = subgrupo_dato
+					getProyect["id_detalle_soportes"] = detalleSubgrupos[0]["_id"]
+				}
+				if strings.Contains(strings.ToLower(infoSubgrupos[i]["nombre"].(string)), "metas") {
+					getProyect["subgrupo_id_metas"] = infoSubgrupos[i]["_id"]
+					getProyect["metas"] = subgrupo_dato
+					getProyect["id_detalle_metas"] = detalleSubgrupos[0]["_id"]
+				}
+				if strings.Contains(strings.ToLower(infoSubgrupos[i]["nombre"].(string)), "fuentes") {
+					getProyect["subgrupo_id_fuentes"] = infoSubgrupos[i]["_id"]
+					getProyect["fuentes"] = subgrupo_dato
+					getProyect["id_detalle_fuentes"] = detalleSubgrupos[0]["_id"]
+				}
+			}
+		}
 	}
 
 	return getProyect
