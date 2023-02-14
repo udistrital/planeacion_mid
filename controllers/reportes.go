@@ -28,6 +28,7 @@ type ReportesController struct {
 // URLMapping ...
 func (c *ReportesController) URLMapping() {
 	c.Mapping("Desagregado", c.Desagregado)
+	c.Mapping("ValidarReporte", c.ValidarReporte)
 	c.Mapping("PlanAccionAnual", c.PlanAccionAnual)
 	c.Mapping("PlanAccionAnualGeneral", c.PlanAccionAnualGeneral)
 	c.Mapping("Necesidades", c.Necesidades)
@@ -39,6 +40,170 @@ func CreateExcel(f *excelize.File, dir string) {
 		fmt.Println(err)
 	}
 
+}
+
+// ValidarReporte ...
+// @Title ValidarReporte
+// @Description post ValidarReporte
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Success 201 {object} models.Reportes
+// @router /validar_reporte [post]
+func (c *ReportesController) ValidarReporte() {
+	var res1 map[string]interface{}
+	var resFilter []map[string]interface{}
+	var body map[string]interface{}
+	res := make(map[string]interface{})
+	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+	if body["categoria"].(string) == "Evaluación" {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",dependencia_id:"+body["unidad_id"].(string), &res1); err == nil {
+			helpers.LimpiezaRespuestaRefactor(res1, &resFilter)
+
+			if len(resFilter) == 0 {
+				res["mensaje"] = "No existen planes para la unidad seleccionada"
+				res["reporte"] = false
+			} else {
+				noPlan := true
+				noVigencia := true
+				noEstado := true
+				for i := 0; i < len(resFilter); i++ {
+					if resFilter[i]["nombre"] == body["nombre"].(string) {
+						noPlan = false
+						if resFilter[i]["vigencia"] == body["vigencia"].(string) {
+							noVigencia = false
+							if resFilter[i]["estado_plan_id"] == "6153355601c7a2365b2fb2a1" {
+								noEstado = false
+								res["mensaje"] = ""
+								res["reporte"] = true
+								break
+							}
+						}
+					}
+				}
+
+				if noPlan {
+					res["mensaje"] = "La unidad no tiene registros con el plan seleccionado"
+					res["reporte"] = false
+				} else if noVigencia {
+					res["mensaje"] = "La unidad no cuenta con registros para la vigencia y el plan selecionados"
+					res["reporte"] = false
+				} else if noEstado {
+					res["mensaje"] = "La unidad no cuenta con plan avalado"
+					res["reporte"] = false
+				}
+			}
+		} else {
+			res["mensaje"] = "Ocurrio un error"
+		}
+	} else if body["categoria"].(string) == "Necesidades" {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string), &res1); err == nil {
+			helpers.LimpiezaRespuestaRefactor(res1, &resFilter)
+			if len(resFilter) == 0 {
+				res["mensaje"] = "No existen planes para la vigencia seleccionada"
+				res["reporte"] = false
+			} else {
+				noPlan := true
+				noEstado := true
+				for i := 0; i < len(resFilter); i++ {
+					if resFilter[i]["nombre"] == body["nombre"].(string) {
+						noPlan = false
+						if resFilter[i]["estado_plan_id"] == body["estado_plan_id"].(string) {
+							noEstado = false
+							res["mensaje"] = ""
+							res["reporte"] = true
+							break
+						}
+					}
+				}
+
+				if noPlan {
+					res["mensaje"] = "No existen registros con el plan seleccionado"
+					res["reporte"] = false
+				} else if noEstado {
+					res["mensaje"] = "No existen registros con el estado y plan seleccionado"
+					res["reporte"] = false
+				}
+			}
+		} else {
+			res["mensaje"] = "Ocurrio un error"
+		}
+	} else if body["categoria"].(string) == "Plan de acción unidad" {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",dependencia_id:"+body["unidad_id"].(string), &res1); err == nil {
+			helpers.LimpiezaRespuestaRefactor(res1, &resFilter)
+			if len(resFilter) == 0 {
+				res["mensaje"] = "No existen planes para la unidad seleccionada"
+				res["reporte"] = false
+			} else {
+				noPlan := true
+				noVigencia := true
+				noEstado := true
+				for i := 0; i < len(resFilter); i++ {
+					if resFilter[i]["nombre"] == body["nombre"].(string) {
+						noPlan = false
+						if resFilter[i]["vigencia"] == body["vigencia"].(string) {
+							noVigencia = false
+							if resFilter[i]["estado_plan_id"] == body["estado_plan_id"].(string) {
+								noEstado = false
+								res["mensaje"] = ""
+								res["reporte"] = true
+								break
+							}
+						}
+					}
+				}
+
+				if noPlan {
+					res["mensaje"] = "La unidad no tiene registros con el plan seleccionado"
+					res["reporte"] = false
+				} else if noVigencia {
+					res["mensaje"] = "La unidad no cuenta con registros para la vigencia y el plan selecionados"
+					res["reporte"] = false
+				} else if noEstado {
+					res["mensaje"] = "La unidad no cuenta con plan en el estado solicitado"
+					res["reporte"] = false
+				}
+			}
+		} else {
+			res["mensaje"] = "Ocurrio un error"
+		}
+	} else if body["categoria"].(string) == "Plan de acción general" {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string), &res1); err == nil {
+			helpers.LimpiezaRespuestaRefactor(res1, &resFilter)
+			if len(resFilter) == 0 {
+				res["mensaje"] = "No existen planes para la vigencia seleccionada"
+				res["reporte"] = false
+			} else {
+				noPlan := true
+				noEstado := true
+				for i := 0; i < len(resFilter); i++ {
+					if resFilter[i]["nombre"] == body["nombre"].(string) {
+						noPlan = false
+						if resFilter[i]["estado_plan_id"] == body["estado_plan_id"].(string) {
+							noEstado = false
+							res["mensaje"] = ""
+							res["reporte"] = true
+							break
+						}
+					}
+				}
+
+				if noPlan {
+					res["mensaje"] = "No existen registros con el plan seleccionado"
+					res["reporte"] = false
+				} else if noEstado {
+					res["mensaje"] = "No existen registros con el estado y plan seleccionado"
+					res["reporte"] = false
+				}
+			}
+		} else {
+			res["mensaje"] = "Ocurrio un error"
+		}
+	} else {
+		res["mensaje"] = "Categoria incorrecta"
+		res["reporte"] = false
+	}
+
+	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": res}
+	c.ServeJSON()
 }
 
 // Desagregado ...
@@ -1893,7 +2058,7 @@ func (c *ReportesController) Necesidades() {
 						}
 					}
 					if strings.Contains(nombre, "contratista") && flag {
-						if identificacion["dato"] != nil {
+						if identificacion["dato"] != nil && identificacion["dato"].(string) != "{}" {
 							var dato map[string]interface{}
 							var dato_contratistas []map[string]interface{}
 							dato_str := identificacion["dato"].(string)
@@ -3319,6 +3484,7 @@ func (c *ReportesController) Necesidades() {
 		if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+`/periodo?query=Id:`+body["vigencia"].(string), &resPeriodo); err == nil {
 			helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
 		}
+
 		if periodo[0] != nil {
 			necesidadesExcel.SetCellValue("Necesidades", "C2", "Consolidado proyeccción de necesidades "+periodo[0]["Nombre"].(string))
 		} else {
