@@ -1079,17 +1079,45 @@
                 }
             }
         },
-        "/inversion/getproyectos/{aplicativo_id}": {
+        "/inversion/crearplan": {
+            "post": {
+                "tags": [
+                    "inversion"
+                ],
+                "description": "post CrearPlan",
+                "operationId": "InversionController.CrearPlan",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "403": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/inversion/get_plan/{id}": {
             "get": {
                 "tags": [
                     "inversion"
                 ],
-                "description": "get GetAllProyectos",
-                "operationId": "InversionController.GetAllProyectos",
+                "description": "get GetPlanId",
+                "operationId": "InversionController.GetPlanId",
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "aplicativo_id",
+                        "name": "id",
                         "description": "The key for staticblock",
                         "required": true,
                         "type": "string"
@@ -1100,7 +1128,75 @@
                         "description": ""
                     },
                     "403": {
-                        "description": ":aplicativo_id is empty"
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
+        "/inversion/get_plan/{id}/{index}": {
+            "get": {
+                "tags": [
+                    "inversion"
+                ],
+                "description": "get Plan by id",
+                "operationId": "InversionController.GetPlan",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "index",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
+        "/inversion/guardar_actividad/{id}": {
+            "put": {
+                "tags": [
+                    "inversion"
+                ],
+                "description": "put Inversion by id",
+                "operationId": "InversionController.GuardarActividad",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "403": {
+                        "description": ":id is empty"
                     }
                 }
             }
@@ -1121,6 +1217,32 @@
                         "schema": {
                             "$ref": "#/definitions/{}"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
+        "/inversion/metaspro/{id}": {
+            "get": {
+                "tags": [
+                    "inversion"
+                ],
+                "description": "get GetMetasProyect",
+                "operationId": "InversionController.GetMetasProyect",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
                     }
                 ],
                 "responses": {
@@ -1213,6 +1335,32 @@
                     },
                     "403": {
                         "description": ":id is empty"
+                    }
+                }
+            }
+        },
+        "/inversion/proyectos/{aplicativo_id}": {
+            "get": {
+                "tags": [
+                    "inversion"
+                ],
+                "description": "get GetAllProyectos",
+                "operationId": "InversionController.GetAllProyectos",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "aplicativo_id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "403": {
+                        "description": ":aplicativo_id is empty"
                     }
                 }
             }
