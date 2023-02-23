@@ -285,8 +285,6 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 						var dato_plan map[string]interface{}
 
 						informacion := map[string]interface{}{
-							"reporteNumerador":   0,
-							"reporteDenominador": 1,
 							"detalleReporte":     "",
 						}
 
@@ -347,6 +345,10 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 									}
 								}
 							}
+						}
+
+						if informacion["reporteDenominador"] == 1.0 {
+							informacion["reporteDenominador"] = nil
 						}
 
 						if informacion["nombre"] != nil && informacion["nombre"] != "" {
@@ -491,8 +493,8 @@ func GetDenominadorFijo(dataSeg map[string]interface{}, index int, indexActivida
 							if seguimientoActividad["cuantitativo"] == nil {
 								break
 							}
-
-							if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "int" {
+							
+							if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "int" || fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "float64" {
 								return seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(float64)
 							} else {
 								aux2, err := strconv.ParseFloat(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(string), 64)
@@ -571,7 +573,7 @@ func GetRespuestaAcumulado(dataSeg map[string]interface{}, index int, respuestas
 							}
 
 							auxAcumDen := 0.0
-							if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "int" {
+							if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "int" || fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "float64" {
 								auxAcumDen = seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(float64)
 							} else {
 								aux2, err := strconv.ParseFloat(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(string), 64)
@@ -587,7 +589,7 @@ func GetRespuestaAcumulado(dataSeg map[string]interface{}, index int, respuestas
 
 							if seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"] != nil {
 
-								if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"])) == "int" {
+								if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"])) == "int" || fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"])) == "float64" {
 									acumuladoNumerador += seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"].(float64)
 								} else {
 									aux2, err := strconv.ParseFloat(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"].(string), 64)
