@@ -32,6 +32,10 @@ func (c *InversionController) URLMapping() {
 	c.Mapping("CrearPlan", c.CrearPlan)
 	c.Mapping("GetPlanId", c.GetPlanId)
 	c.Mapping("GuardarActividad", c.GuardarActividad)
+	c.Mapping("ArmonizarInversion", c.ArmonizarInversion)
+	c.Mapping("ActualizarMetaPlan", c.ActualizarMetaPlan)
+	c.Mapping("AllMetasPlan", c.AllMetasPlan)
+
 }
 
 // AddProyecto ...
@@ -237,17 +241,18 @@ func (c *InversionController) GetMetasProyect() {
 	var subgruposData map[string]interface{}
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &res); err == nil {
-		//fmt.Println(res, "respuesta")
+
 		helpers.LimpiezaRespuestaRefactor(res, &infoProyect)
 		//getProyect["nombre_proyecto"] = infoProyect["nombre"]
 		//getProyect["codigo_proyecto"] = infoProyect["descripcion"]
 		//getProyect["fecha_creacion"] = infoProyect["fecha_creacion"]
 		//fmt.Println(infoProyect, "respuesta")
-		padreId := infoProyect["_id"].(string)
-
+		//padreId := infoProyect["_id"].(string)
+		//padreId := id
 		var infoSubgrupos []map[string]interface{}
 
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+padreId, &subgruposData); err == nil {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+id, &subgruposData); err == nil {
+			fmt.Println(subgruposData, "respuesta")
 			helpers.LimpiezaRespuestaRefactor(subgruposData, &infoSubgrupos)
 			for i := range infoSubgrupos {
 				var subgrupoDetalle map[string]interface{}
@@ -257,6 +262,7 @@ func (c *InversionController) GetMetasProyect() {
 					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=subgrupo_id:"+infoSubgrupos[i]["_id"].(string), &subgrupoDetalle); err == nil {
 						helpers.LimpiezaRespuestaRefactor(subgrupoDetalle, &detalleSubgrupos)
 						var dato_metas []map[string]interface{}
+						getProyect["id_detalle_meta"] = detalleSubgrupos[0]["_id"]
 						datoMeta_str := detalleSubgrupos[0]["dato"].(string)
 						fmt.Println(datoMeta_str, "datoMetas_str")
 						json.Unmarshal([]byte(datoMeta_str), &dato_metas)
@@ -269,7 +275,7 @@ func (c *InversionController) GetMetasProyect() {
 			}
 			//fmt.Println(getProyect)
 		}
-		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": getProyect["metas"]}
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": getProyect}
 	} else {
 		panic(map[string]interface{}{"funcion": "GetMetasProyect", "err": "Error obteniendo información Metas Proyecto Inversión", "status": "400", "log": err})
 	}
@@ -364,7 +370,7 @@ func (c *InversionController) CrearPlan() {
 	defer func() {
 		if err := recover(); err != nil {
 			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "InversionController" + "/" + (localError["funcion"]).(string))
 			c.Data["data"] = (localError["err"])
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
@@ -659,23 +665,24 @@ func (c *InversionController) GuardarActividad() {
 	var entrada map[string]interface{}
 	var resPlan map[string]interface{}
 	var plan map[string]interface{}
-	var armonizacionExecuted bool = false
+	//var dataProyectIn bool = false
+	var respuestaGuardado map[string]interface{}
 
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
-	entrada = body
-	armonizacion := body["armo"]
-	armonizacionPI := body["armoPI"]
+	entrada = body["entrada"].(map[string]interface{})
+	idSubDetalleProI := body["idSubDetalle"]
+	indexMetaSubProI := body["indexMetaSubPro"]
 	maxIndex := formulacionhelper.GetIndexActividad(entrada)
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &resPlan); err != nil {
-		panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error get Plan \"id\"", "status": "400", "log": err})
+		panic(map[string]interface{}{"funcion": "GuardarActividad", "err": "Error get Plan \"id\"", "status": "400", "log": err})
 	}
 	helpers.LimpiezaRespuestaRefactor(resPlan, &plan)
 	if plan["estado_plan_id"] != "614d3ad301c7a200482fabfd" {
 		var res map[string]interface{}
 		plan["estado_plan_id"] = "614d3ad301c7a200482fabfd"
 		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, "PUT", &res, plan); err != nil {
-			panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizacion estado \"id\"", "status": "400", "log": err})
+			panic(map[string]interface{}{"funcion": "GuardarActividad", "err": "Error actualizacion estado \"id\"", "status": "400", "log": err})
 		}
 	}
 
@@ -688,7 +695,7 @@ func (c *InversionController) GuardarActividad() {
 
 		if element != "" {
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+key, &respuesta); err != nil {
-				panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error get subgrupo-detalle \"key\"", "status": "400", "log": err})
+				panic(map[string]interface{}{"funcion": "GuardarActividad", "err": "Error get subgrupo-detalle \"key\"", "status": "400", "log": err})
 			}
 			fmt.Println(key, "key")
 			helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
@@ -705,17 +712,20 @@ func (c *InversionController) GuardarActividad() {
 				b, _ := json.Marshal(dato_plan)
 				str := string(b)
 				subgrupo_detalle["dato_plan"] = str
-				if !armonizacionExecuted {
-					armonizacion_dato := make(map[string]interface{})
-					aux := make(map[string]interface{})
-					aux["armonizacionPED"] = armonizacion
-					aux["armonizacionPI"] = armonizacionPI
-					armonizacion_dato[i] = aux
-					c, _ := json.Marshal(armonizacion_dato)
-					strArmonizacion := string(c)
-					subgrupo_detalle["armonizacion_dato"] = strArmonizacion
-					armonizacionExecuted = true
-				}
+				fmt.Sprintln(subgrupo_detalle["dato_plan"], "dato plan")
+				//if !dataProyectIn {
+				armonizacion_dato := make(map[string]interface{})
+				aux := make(map[string]interface{})
+				aux["idSubDetalleProI"] = idSubDetalleProI
+				aux["indexMetaSubProI"] = indexMetaSubProI
+				aux["indexMetaPlan"] = 1
+				armonizacion_dato[i] = aux
+				c, _ := json.Marshal(armonizacion_dato)
+				strArmonizacion := string(c)
+				subgrupo_detalle["armonizacion_dato"] = strArmonizacion
+				fmt.Println(subgrupo_detalle["armonizacion_dato"], "armonización dato")
+				//dataProyectIn = true
+				//}
 			} else {
 				dato_plan_str := subgrupo_detalle["dato_plan"].(string)
 				json.Unmarshal([]byte(dato_plan_str), &dato_plan)
@@ -728,30 +738,37 @@ func (c *InversionController) GuardarActividad() {
 				b, _ := json.Marshal(dato_plan)
 				str := string(b)
 				subgrupo_detalle["dato_plan"] = str
+				fmt.Println(subgrupo_detalle["dato_plan"], "dato_plan 2")
 
-				if !armonizacionExecuted {
-					armonizacion_dato := make(map[string]interface{})
-					if subgrupo_detalle["armonizacion_dato"] != nil {
-						armonizacion_dato_str := subgrupo_detalle["armonizacion_dato"].(string)
-						json.Unmarshal([]byte(armonizacion_dato_str), &armonizacion_dato)
-					}
+				//if !dataProyectIn {
+				armonizacion_dato := make(map[string]interface{})
+				if subgrupo_detalle["armonizacion_dato"] != nil {
+					armonizacion_dato_str := subgrupo_detalle["armonizacion_dato"].(string)
+					json.Unmarshal([]byte(armonizacion_dato_str), &armonizacion_dato)
 					aux := make(map[string]interface{})
-					aux["armonizacionPED"] = armonizacion
-					aux["armonizacionPI"] = armonizacionPI
+					aux["idSubDetalleProI"] = idSubDetalleProI
+					aux["indexMetaSubProI"] = indexMetaSubProI
+					aux["indexMetaPlan"] = i
 					armonizacion_dato[i] = aux
 					c, _ := json.Marshal(armonizacion_dato)
 					strArmonizacion := string(c)
 					subgrupo_detalle["armonizacion_dato"] = strArmonizacion
-					armonizacionExecuted = true
-
+					fmt.Println(subgrupo_detalle["armonizacion_dato"], "armonización dato 2")
 				}
+
+				//dataProyectIn = true
+
+				//}
 			}
 			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupo_detalle["_id"].(string), "PUT", &res, subgrupo_detalle); err != nil {
-				panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
+				panic(map[string]interface{}{"funcion": "GuardarActividad", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
 			}
+			helpers.LimpiezaRespuestaRefactor(res, &respuestaGuardado)
+			//fmt.Println(res, "actividad Guardada")
+			fmt.Println(respuestaGuardado, "actividad Guardada")
 		}
 	}
-	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": entrada}
+	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": respuestaGuardado}
 	c.ServeJSON()
 
 }
@@ -760,15 +777,14 @@ func (c *InversionController) GuardarActividad() {
 // @Title GetPlan
 // @Description get Plan by id
 // @Param	id		path 	string	true		"The key for staticblock"
-// @Param	index		path 	string	true		"The key for staticblock"
 // @Success 200
 // @Failure 403 :id is empty
-// @router /get_plan/:id/:index [get]
+// @router /get_infoPlan/:id [get]
 func (c *InversionController) GetPlan() {
 	defer func() {
 		if err := recover(); err != nil {
 			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "InversionController" + "/" + (localError["funcion"]).(string))
 			c.Data["data"] = (localError["err"])
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
@@ -779,18 +795,427 @@ func (c *InversionController) GetPlan() {
 	}()
 
 	id := c.Ctx.Input.Param(":id")
+	//var body map[string]interface{}
+	var subgrupo []map[string]interface{}
+	var res map[string]interface{}
+	//getProyect := make(map[string]interface{})
+	var id_subgrupoDetalle string
+	var respuesta map[string]interface{}
+	var respuestaLimpia []map[string]interface{}
+	var subgrupo_detalle map[string]interface{}
+	armo_dato := make(map[string]interface{})
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=descripcion:Armonizar,activo:true,padre:"+id, &res); err == nil {
+		helpers.LimpiezaRespuestaRefactor(res, &subgrupo)
+		fmt.Println(res, "subgrupo")
+		// for i := range subgrupo {
+		// 	var subgrupoDetalle map[string]interface{}
+		// 	var detalleSubgrupos []map[string]interface{}
+		// 	if strings.Contains(strings.ToLower(subgrupo[i]["nombre"].(string)), "plan") {
+		// 		//getProyect["subgrupo_id_metas"] = subgrupo[i]["_id"]
+		// 		fmt.Println()
+		// 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=subgrupo_id:"+subgrupo[i]["_id"].(string), &subgrupoDetalle); err == nil {
+		// 			helpers.LimpiezaRespuestaRefactor(subgrupoDetalle, &detalleSubgrupos)
+		// 			fmt.Println(subgrupoDetalle, "detalleSub")
+		// 			var dato_metas []map[string]interface{}
+		// 			datoMeta_str := detalleSubgrupos[0]["armonizacion_dato"].(string)
+		// 			fmt.Println(datoMeta_str, "datoMetas_str")
+		// 			json.Unmarshal([]byte(datoMeta_str), &dato_metas)
+		// 			fmt.Println(dato_metas, "datoMetas")
+		// 			getProyect["armonizacion"] = dato_metas
+		// 			//getProyect["id_detalle_metas"] = detalleSubgrupos[0]["_id"]
+
+		// 		} else {
+		// 			panic(map[string]interface{}{"funcion": "GetPlan", "err": "Error get subgrupo-detalle", "status": "400", "log": err})
+		// 		}
+		// 	}
+		// }
+
+		id_subgrupoDetalle = subgrupo[0]["_id"].(string)
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=activo:true,subgrupo_id:"+id_subgrupoDetalle, &respuesta); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
+			subgrupo_detalle = respuestaLimpia[0]
+			armonizacion_dato_str := subgrupo_detalle["armonizacion_dato"].(string)
+			json.Unmarshal([]byte(armonizacion_dato_str), &armo_dato)
+		} else {
+			panic(map[string]interface{}{"funcion": "GetPlan", "err": "Error get subgrupo-detalle", "status": "400", "log": err})
+		}
+
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": armo_dato}
+	} else {
+		panic(map[string]interface{}{"funcion": "GetPlan", "err": "Error get subgrupo", "status": "400", "log": err})
+
+	}
+
+	c.ServeJSON()
+}
+
+// ArmonizarInversion ...
+// @Title ArmonizarInversion
+// @Description get Plan by id
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Success 200
+// @Failure 403 :id is empty
+// @router /armonizar/:id [put]
+func (c *InversionController) ArmonizarInversion() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "InversionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
+	id := c.Ctx.Input.Param(":id")
+	var res map[string]interface{}
+	var body map[string]interface{}
+	var subgrupo []map[string]interface{}
+	var id_subgrupoDetalle string
+	var respuesta map[string]interface{}
+	var respuestaLimpia map[string]interface{}
+	var armonizacionUpdate []map[string]interface{}
+	var subgrupo_detalle map[string]interface{}
+	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+	armonizacion_data, _ := json.Marshal(body)
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=descripcion:Armonizar,activo:true,padre:"+id, &res); err == nil {
+		helpers.LimpiezaRespuestaRefactor(res, &subgrupo)
+		//armo_dato := make(map[string]interface{})
+		subgrupoPost := make(map[string]interface{})
+		subDetallePost := make(map[string]interface{})
+
+		if len(subgrupo) > 0 {
+			id_subgrupoDetalle = subgrupo[0]["_id"].(string)
+			fmt.Println(id_subgrupoDetalle, "id_subgrupoDetalle")
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=activo:true,subgrupo_id:"+id_subgrupoDetalle, &respuesta); err == nil {
+				helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
+				if len(respuestaLimpia) > 0 {
+					fmt.Println(respuestaLimpia, "subgrupoDetalleb PUT")
+					subgrupo_detalle = respuestaLimpia
+					// if subgrupo_detalle["armonizacion_dato"] != nil {
+					// 	actividad := make(map[string]interface{})
+					//armonizacion_dato_str := subgrupo_detalle["armonizacion_dato"].(string)
+					//json.Unmarshal([]byte(armonizacion_dato_str), &armo_dato)
+
+					// 	b, _ := json.Marshal(dato_plan)
+					// 	str := string(b)
+					// 	subgrupo_detalle["dato_plan"] = str
+					// }
+					subDetallePost["subgrupo_id"] = id_subgrupoDetalle
+					subDetallePost["fecha_creacion"] = subgrupo_detalle["fecha_creacion"]
+					subDetallePost["nombre"] = "Detalle Información Armonización"
+					subDetallePost["descripcion"] = "Armonizar"
+					subDetallePost["dato"] = " "
+					subDetallePost["activo"] = true
+					subDetallePost["armonizacion_dato"] = string(armonizacion_data)
+					fmt.Println(subDetallePost, "dataJSON")
+					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupo_detalle["_id"].(string), "PUT", &res, subDetallePost); err == nil {
+						helpers.LimpiezaRespuestaRefactor(res, &armonizacionUpdate)
+						fmt.Println(armonizacionUpdate, "update911")
+					} else {
+						panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
+					}
+				} else {
+					subDetallePost["subgrupo_id"] = id_subgrupoDetalle
+					subDetallePost["nombre"] = "Detalle Información Armonización"
+					subDetallePost["descripcion"] = "Armonizar"
+					subDetallePost["dato"] = " "
+					subDetallePost["activo"] = true
+					subDetallePost["armonizacion_dato"] = string(armonizacion_data)
+					fmt.Println(subDetallePost["armonizacion_dato"], "dataJSON")
+
+					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/", "POST", &res, subDetallePost); err == nil {
+						helpers.LimpiezaRespuestaRefactor(res, &armonizacionUpdate)
+						fmt.Println(res, "update926")
+					} else {
+						panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error registrando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
+					}
+				}
+
+			} else {
+				panic(map[string]interface{}{"funcion": "ArmonizarInversion", "err": "Error get subgrupo-detalle", "status": "400", "log": err})
+			}
+		} else {
+			subgrupoPost["nombre"] = "Armonización Plan Inversión"
+			subgrupoPost["descripcion"] = "Armonizar"
+			subgrupoPost["padre"] = id
+			subgrupoPost["activo"] = true
+			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/", "POST", &respuesta, subgrupoPost); err == nil {
+				helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
+				fmt.Println(respuestaLimpia, "respuesta subgrupo POST")
+				subgrupo_detalle = respuestaLimpia
+				subDetallePost["subgrupo_id"] = subgrupo_detalle["_id"]
+				subDetallePost["nombre"] = "Detalle Información Armonización"
+				subDetallePost["descripcion"] = "Armonizar"
+				subDetallePost["dato"] = " "
+				subDetallePost["activo"] = true
+				subDetallePost["armonizacion_dato"] = string(armonizacion_data)
+				fmt.Println(subDetallePost["armonizacion_dato"], "dataJSON")
+
+				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/", "POST", &res, subDetallePost); err == nil {
+					helpers.LimpiezaRespuestaRefactor(res, &armonizacionUpdate)
+					fmt.Println(armonizacionUpdate, "update954")
+				} else {
+					panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error registrando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
+				}
+
+			} else {
+				panic(map[string]interface{}{"funcion": "ArmonizarInversion", "err": "Error registrando subgrupo", "status": "400", "log": err})
+			}
+		}
+		//formulacionhelper.Limpia()
+		//tree := formulacionhelper.BuildTreeFa(hijos, index)
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": res}
+	} else {
+		panic(err)
+
+	}
+
+	c.ServeJSON()
+}
+
+// ActualizarMetaPlan ...
+// @Title ActualizarMetaPlan
+// @Description put Inversion by id
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Param	index		path 	string	true		"The key for staticblock"
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Success 200
+// @Failure 403 :id is empty
+// @router /actualizar_meta/:id/:index [put]
+func (c *InversionController) ActualizarMetaPlan() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "InversionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+	id := c.Ctx.Input.Param(":id")
 	index := c.Ctx.Input.Param(":index")
+
+	var res map[string]interface{}
+	var entrada map[string]interface{}
+	var body map[string]interface{}
+
+	_ = id
+	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+	entrada = body["entrada"].(map[string]interface{})
+	idSubDetalleProI := body["idSubDetalle"]
+	indexMetaSubProI := body["indexMetaSubPro"]
+	for key, element := range entrada {
+		var respuesta map[string]interface{}
+		var respuestaLimpia []map[string]interface{}
+		var subgrupo_detalle map[string]interface{}
+		dato_plan := make(map[string]interface{})
+		var armonizacion_dato map[string]interface{}
+		var id_subgrupoDetalle string
+		keyStr := strings.Split(key, "_")
+
+		if len(keyStr) > 1 && keyStr[1] == "o" {
+			id_subgrupoDetalle = keyStr[0]
+			if element != "" {
+				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id_subgrupoDetalle, &respuesta); err != nil {
+					panic(map[string]interface{}{"funcion": "ActualizarMetaPlan", "err": "Error get subgrupo-detalle \"key\"", "status": "400", "log": err})
+				}
+				helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
+
+				subgrupo_detalle = respuestaLimpia[0]
+				if subgrupo_detalle["dato_plan"] != nil {
+					meta := make(map[string]interface{})
+					dato_plan_str := subgrupo_detalle["dato_plan"].(string)
+					json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+					fmt.Println(dato_plan, "dato_plan")
+					for index_actividad := range dato_plan {
+						if index_actividad == index {
+							aux_actividad := dato_plan[index_actividad].(map[string]interface{})
+							meta["index"] = index_actividad
+							meta["dato"] = aux_actividad["dato"]
+							meta["activo"] = aux_actividad["activo"]
+							meta["observacion"] = element
+
+							dato_plan[index_actividad] = meta
+						}
+					}
+					b, _ := json.Marshal(dato_plan)
+					str := string(b)
+					subgrupo_detalle["dato_plan"] = str
+				}
+
+				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupo_detalle["_id"].(string), "PUT", &res, subgrupo_detalle); err != nil {
+					panic(map[string]interface{}{"funcion": "ActualizarMetaPlan", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
+				}
+				fmt.Println(res, "res 1058")
+
+			}
+			continue
+		}
+		id_subgrupoDetalle = key
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id_subgrupoDetalle, &respuesta); err != nil {
+			panic(map[string]interface{}{"funcion": "ActualizarMetaPlan", "err": "Error get subgrupo-detalle \"key\"", "status": "400", "log": err})
+		}
+		helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
+
+		subgrupo_detalle = respuestaLimpia[0]
+		if subgrupo_detalle["armonizacion_dato"] != nil {
+			dato_armonizacion_str := subgrupo_detalle["armonizacion_dato"].(string)
+			json.Unmarshal([]byte(dato_armonizacion_str), &armonizacion_dato)
+			if armonizacion_dato[index] != nil {
+				aux := make(map[string]interface{})
+				aux["idSubDetalleProI"] = idSubDetalleProI
+				aux["indexMetaSubProI"] = indexMetaSubProI
+				armonizacion_dato[index] = aux
+				fmt.Println(armonizacion_dato, "armonizacion_dato")
+			}
+			c, _ := json.Marshal(armonizacion_dato)
+			strArmonizacion := string(c)
+			subgrupo_detalle["armonizacion_dato"] = strArmonizacion
+
+		}
+
+		nuevoDato := true
+		meta := make(map[string]interface{})
+
+		if subgrupo_detalle["dato_plan"] != nil {
+			dato_plan_str := subgrupo_detalle["dato_plan"].(string)
+			json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+
+			for index_actividad := range dato_plan {
+				if index_actividad == index {
+					nuevoDato = false
+					aux_actividad := dato_plan[index_actividad].(map[string]interface{})
+					meta["index"] = index_actividad
+					meta["dato"] = element
+					meta["activo"] = aux_actividad["activo"]
+					if aux_actividad["observacion"] != nil {
+						meta["observacion"] = aux_actividad["observacion"]
+					}
+					dato_plan[index_actividad] = meta
+				}
+			}
+		}
+
+		if nuevoDato {
+			meta["index"] = index
+			meta["dato"] = element
+			meta["activo"] = true
+			dato_plan[index] = meta
+		}
+
+		b, _ := json.Marshal(dato_plan)
+		str := string(b)
+		subgrupo_detalle["dato_plan"] = str
+
+		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupo_detalle["_id"].(string), "PUT", &res, subgrupo_detalle); err != nil {
+			panic(map[string]interface{}{"funcion": "ActualizarMetaPlan", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
+		}
+		fmt.Println(res, "res 1121")
+	}
+	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": entrada}
+	c.ServeJSON()
+
+}
+
+// AllMetasPlan ...
+// @Title AllMetasPlan
+// @Description put Inversion by id
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Success 200
+// @Failure 403 :id is empty
+// @router /all_metas/:id/ [get]
+func (c *InversionController) AllMetasPlan() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "InversionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+	id := c.Ctx.Input.Param(":id")
+	var res map[string]interface{}
+	var hijos []map[string]interface{}
+	var tabla map[string]interface{}
+	var auxHijos []interface{}
+	formulacionhelper.LimpiaTabla()
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
+		helpers.LimpiezaRespuestaRefactor(res, &hijos)
+		for i := 0; i < len(hijos); i++ {
+			auxHijos = append(auxHijos, hijos[i]["_id"])
+		}
+		tabla = inversionhelper.GetTabla(auxHijos)
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": tabla}
+	} else {
+		panic(map[string]interface{}{"funcion": "AllMetasPlan", "err": "Error al consultar metas del plan \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
+	}
+	c.ServeJSON()
+	// id := c.Ctx.Input.Param(":id")
+	// index := c.Ctx.Input.Param(":index")
+	// var res map[string]interface{}
+	// var hijos []map[string]interface{}
+
+	// if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
+	// 	helpers.LimpiezaRespuestaRefactor(res, &hijos)
+	// 	inversionhelper.Limpia()
+	// 	tree := inversionhelper.BuildTreeFa(hijos, index)
+	// 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": tree}
+	// } else {
+	// 	panic(err)
+
+	// }
+
+	c.ServeJSON()
+
+}
+
+// InactivarMeta ...
+// @Title InactivarMeta
+// @Description put Inversion by id
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Param	index		path 	string	true		"The key for staticblock"
+// @Success 200
+// @Failure 403 :id is empty
+// @router /inactivar_meta/:id/:index [put]
+func (c *InversionController) InactivarMeta() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "InversionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+	id := c.Ctx.Input.Param(":id")
+	index := c.Ctx.Input.Param(":index")
+
 	var res map[string]interface{}
 	var hijos []map[string]interface{}
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &hijos)
-		formulacionhelper.Limpia()
-		tree := formulacionhelper.BuildTreeFa(hijos, index)
-		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": tree}
+		inversionhelper.RecorrerHijos(hijos, index)
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "Meta Inactivada"}
 	} else {
 		panic(err)
-
 	}
 
 	c.ServeJSON()
