@@ -1686,6 +1686,34 @@
                 }
             }
         },
+        "/reportes/validar_reporte": {
+            "post": {
+                "tags": [
+                    "reportes"
+                ],
+                "description": "post ValidarReporte",
+                "operationId": "ReportesController.ValidarReporte",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Reportes"
+                        }
+                    }
+                }
+            }
+        },
         "/seguimiento/crear_reportes/{plan}/{tipo}": {
             "post": {
                 "tags": [

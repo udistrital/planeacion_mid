@@ -7,6 +7,7 @@ import (
 
 func init() {
 
+
 	beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:ArbolController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:ArbolController"],
 		beego.ControllerComments{
 			Method:           "GetArbol",
@@ -627,5 +628,6 @@ func init() {
 			MethodParams:     param.Make(),
 			Filters:          nil,
 			Params:           nil})
+
 
 }
