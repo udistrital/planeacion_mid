@@ -1044,6 +1044,48 @@
                 }
             }
         },
+        "/inversion/actualizar_meta/{id}/{index}": {
+            "put": {
+                "tags": [
+                    "inversion"
+                ],
+                "description": "put Inversion by id",
+                "operationId": "InversionController.ActualizarMetaPlan",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "index",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
         "/inversion/actualizar_proyecto/{id}": {
             "put": {
                 "tags": [
@@ -1051,6 +1093,76 @@
                 ],
                 "description": "put Inversion by id",
                 "operationId": "InversionController.ActualizarProyectoGeneral",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
+        "/inversion/all_metas/{id}/": {
+            "get": {
+                "tags": [
+                    "inversion"
+                ],
+                "description": "put Inversion by id",
+                "operationId": "InversionController.AllMetasPlan",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
+        "/inversion/armonizar/{id}": {
+            "put": {
+                "tags": [
+                    "inversion"
+                ],
+                "description": "get Plan by id",
+                "operationId": "InversionController.ArmonizarInversion",
                 "parameters": [
                     {
                         "in": "path",
@@ -1107,13 +1219,13 @@
                 }
             }
         },
-        "/inversion/get_plan/{id}": {
+        "/inversion/get_infoPlan/{id}": {
             "get": {
                 "tags": [
                     "inversion"
                 ],
-                "description": "get GetPlanId",
-                "operationId": "InversionController.GetPlanId",
+                "description": "get Plan by id",
+                "operationId": "InversionController.GetPlan",
                 "parameters": [
                     {
                         "in": "path",
@@ -1133,24 +1245,17 @@
                 }
             }
         },
-        "/inversion/get_plan/{id}/{index}": {
+        "/inversion/get_plan/{id}": {
             "get": {
                 "tags": [
                     "inversion"
                 ],
-                "description": "get Plan by id",
-                "operationId": "InversionController.GetPlan",
+                "description": "get GetPlanId",
+                "operationId": "InversionController.GetPlanId",
                 "parameters": [
                     {
                         "in": "path",
                         "name": "id",
-                        "description": "The key for staticblock",
-                        "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "in": "path",
-                        "name": "index",
                         "description": "The key for staticblock",
                         "required": true,
                         "type": "string"
@@ -1217,6 +1322,39 @@
                         "schema": {
                             "$ref": "#/definitions/{}"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
+        "/inversion/inactivar_meta/{id}/{index}": {
+            "put": {
+                "tags": [
+                    "inversion"
+                ],
+                "description": "put Inversion by id",
+                "operationId": "InversionController.InactivarMeta",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "index",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
                     }
                 ],
                 "responses": {
