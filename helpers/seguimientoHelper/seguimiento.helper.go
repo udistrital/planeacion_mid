@@ -331,7 +331,7 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 										case strings.Contains(nombreDetalle, "criterio"):
 											informacion["denominador"] = dato_plan[index].(map[string]interface{})["dato"]
 											if informacion["denominador"] == "Denominador fijo" {
-												informacion["reporteDenominador"] = GetDenominadorFijo(seguimiento, len(indicadores), index)
+												// informacion["reporteDenominador"] = GetDenominadorFijo(seguimiento, len(indicadores), index)
 											}
 											continue
 										case strings.Contains(nombreDetalle, "tendencia"):
@@ -530,6 +530,7 @@ func GetRespuestaAcumulado(dataSeg map[string]interface{}, index int, respuestas
 		indicadorAcumulado := 0.0
 		avanceAcumulado := 0.0
 		brechaExistente := 0.0
+		divisionCero := false
 		for _, seguimiento := range seguimientos {
 
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/"+seguimiento["periodo_seguimiento_id"].(string), &resPeriodoSeguimiento); err == nil {
@@ -549,6 +550,7 @@ func GetRespuestaAcumulado(dataSeg map[string]interface{}, index int, respuestas
 								respuestas[index]["indicadorAcumulado"] = indicadorAcumulado
 								respuestas[index]["avanceAcumulado"] = avanceAcumulado
 								respuestas[index]["brechaExistente"] = brechaExistente
+								respuestas[index]["divisionCero"] = divisionCero
 								continue
 							}
 
@@ -557,6 +559,7 @@ func GetRespuestaAcumulado(dataSeg map[string]interface{}, index int, respuestas
 								respuestas[index]["indicadorAcumulado"] = indicadorAcumulado
 								respuestas[index]["avanceAcumulado"] = avanceAcumulado
 								respuestas[index]["brechaExistente"] = brechaExistente
+								respuestas[index]["divisionCero"] = divisionCero
 								continue
 							}
 
@@ -570,6 +573,12 @@ func GetRespuestaAcumulado(dataSeg map[string]interface{}, index int, respuestas
 
 							if seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["brechaExistente"] != nil {
 								brechaExistente += seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["brechaExistente"].(float64)
+							}
+
+							if seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["divisionCero"] != nil {
+								divisionCero = seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["divisionCero"].(bool)
+							} else {
+								divisionCero = false
 							}
 
 							auxAcumDen := 0.0
@@ -604,6 +613,7 @@ func GetRespuestaAcumulado(dataSeg map[string]interface{}, index int, respuestas
 						respuestas[index]["brechaExistente"] = brechaExistente
 						respuestas[index]["acumuladoNumerador"] = acumuladoNumerador
 						respuestas[index]["acumuladoDenominador"] = acumuladoDenominador
+						respuestas[index]["divisionCero"] = divisionCero
 					}
 				}
 			}
