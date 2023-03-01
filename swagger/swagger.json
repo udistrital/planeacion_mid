@@ -1121,7 +1121,7 @@
                 }
             }
         },
-        "/inversion/all_metas/{id}/": {
+        "/inversion/all_metas/{id}": {
             "get": {
                 "tags": [
                     "inversion"
@@ -1271,21 +1271,14 @@
                 }
             }
         },
-        "/inversion/guardar_actividad/{id}": {
-            "put": {
+        "/inversion/guardar_documentos": {
+            "post": {
                 "tags": [
                     "inversion"
                 ],
-                "description": "put Inversion by id",
-                "operationId": "InversionController.GuardarActividad",
+                "description": "post AddProyecto",
+                "operationId": "InversionController.GuardarDocumentos",
                 "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "description": "The key for staticblock",
-                        "required": true,
-                        "type": "string"
-                    },
                     {
                         "in": "body",
                         "name": "body",
@@ -1306,14 +1299,21 @@
                 }
             }
         },
-        "/inversion/guardar_documentos": {
-            "post": {
+        "/inversion/guardar_meta/{id}": {
+            "put": {
                 "tags": [
                     "inversion"
                 ],
-                "description": "post AddProyecto",
-                "operationId": "InversionController.GuardarDocumentos",
+                "description": "put Inversion by id",
+                "operationId": "InversionController.GuardarMeta",
                 "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
                     {
                         "in": "body",
                         "name": "body",
@@ -1355,6 +1355,67 @@
                         "description": "The key for staticblock",
                         "required": true,
                         "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
+        "/inversion/magnitudes/{id}/{indexMeta}": {
+            "get": {
+                "tags": [
+                    "inversion"
+                ],
+                "description": "get MagnitudesProgramadas",
+                "operationId": "InversionController.MagnitudesProgramadas",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
+        "/inversion/magnitudes/{id}/{index}": {
+            "put": {
+                "tags": [
+                    "inversion"
+                ],
+                "description": "get Plan by id",
+                "operationId": "InversionController.ProgMagnitudesPlan",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
                     }
                 ],
                 "responses": {
