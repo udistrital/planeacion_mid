@@ -596,14 +596,14 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 					datoStrUltimoTrimestre := seguimiento1["dato"].(string)
 					if datoStrUltimoTrimestre == "{}" {
 						test1 = body["periodo_seguimiento_id"].(string)
-						priodoId_rest, err := strconv.ParseFloat(test1, 8)
+						priodoId_rest, err := strconv.ParseFloat(test1, 32)
 						if err != nil {
 							fmt.Println(err)
 						}
 						periodId = priodoId_rest - 1
 					} else {
 						test1 = body["periodo_seguimiento_id"].(string)
-						priodoId_rest, err := strconv.ParseFloat(test1, 8)
+						priodoId_rest, err := strconv.ParseFloat(test1, 32)
 						if err != nil {
 							fmt.Println(err)
 						}
@@ -642,12 +642,12 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 			panic(err)
 		}
 		avancePeriodo := body["avancePeriodo"].(string)
-		aPe, err := strconv.ParseFloat(avancePeriodo, 8)
+		aPe, err := strconv.ParseFloat(avancePeriodo, 32)
 		if err != nil {
 			fmt.Println(err)
 		}
 		fmt.Println(aPe, err, reflect.TypeOf(avanceAcumulado))
-		aAc, err := strconv.ParseFloat(avanceAcumulado, 8)
+		aAc, err := strconv.ParseFloat(avanceAcumulado, 32)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -843,7 +843,13 @@ func (c *SeguimientoController) GuardarDocumentos() {
 				panic(map[string]interface{}{"funcion": "GuardarDocumentos", "err": "Error guardado documentos del seguimiento \"seguimiento[\"_id\"].(string)\"", "status": "400", "log": err})
 			}
 
-			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": map[string]interface{}{"seguimiento": respuesta["Data"], "estadoActividad": dato[indexActividad].(map[string]interface{})["estado"]}}
+			datoPut := make(map[string]interface{})
+			var seguimientoPut map[string]interface{}
+			helpers.LimpiezaRespuestaRefactor(respuesta, &seguimientoPut)
+			datoStrPut := seguimientoPut["dato"].(string)
+			json.Unmarshal([]byte(datoStrPut), &datoPut)
+
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": map[string]interface{}{"seguimiento": datoPut[indexActividad].(map[string]interface{})["evidencia"], "estadoActividad": dato[indexActividad].(map[string]interface{})["estado"]}}
 		} else {
 			c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 			c.Abort("400")
@@ -875,6 +881,7 @@ func (c *SeguimientoController) GuardarCualitativo() {
 	var respuesta map[string]interface{}
 	var seguimiento map[string]interface{}
 	var cualitativo map[string]interface{}
+	var informacion map[string]interface{}
 	var estadoSeguimiento string
 	observacion := false
 	dato := make(map[string]interface{})
@@ -888,6 +895,7 @@ func (c *SeguimientoController) GuardarCualitativo() {
 			seguimiento = aux[0]
 
 			cualitativo = body["cualitativo"].(map[string]interface{})
+			informacion = body["informacion"].(map[string]interface{})
 
 			datoStr := seguimiento["dato"].(string)
 			json.Unmarshal([]byte(datoStr), &dato)
@@ -899,7 +907,7 @@ func (c *SeguimientoController) GuardarCualitativo() {
 						"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
 					}
 				}
-				dato[indexActividad] = map[string]interface{}{"estado": estado, "cualitativo": cualitativo}
+				dato[indexActividad] = map[string]interface{}{"estado": estado, "cualitativo": cualitativo, "informacion": informacion}
 			} else {
 				estado = dato[indexActividad].(map[string]interface{})["estado"].(map[string]interface{})
 
@@ -928,6 +936,7 @@ func (c *SeguimientoController) GuardarCualitativo() {
 					}
 				}
 
+				dato[indexActividad].(map[string]interface{})["informacion"] = informacion
 				dato[indexActividad].(map[string]interface{})["cualitativo"] = cualitativo
 				dato[indexActividad].(map[string]interface{})["estado"] = estado
 			}
@@ -978,6 +987,7 @@ func (c *SeguimientoController) GuardarCuantitativo() {
 	var respuesta map[string]interface{}
 	var seguimiento map[string]interface{}
 	var cuantitativo map[string]interface{}
+	var informacion map[string]interface{}
 	var estadoSeguimiento string
 	observacion := false
 	dato := make(map[string]interface{})
@@ -991,6 +1001,7 @@ func (c *SeguimientoController) GuardarCuantitativo() {
 			seguimiento = aux[0]
 
 			cuantitativo = body["cuantitativo"].(map[string]interface{})
+			informacion = body["informacion"].(map[string]interface{})
 
 			datoStr := seguimiento["dato"].(string)
 			json.Unmarshal([]byte(datoStr), &dato)
@@ -1002,7 +1013,7 @@ func (c *SeguimientoController) GuardarCuantitativo() {
 						"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
 					}
 				}
-				dato[indexActividad] = map[string]interface{}{"estado": estado, "cuantitativo": cuantitativo}
+				dato[indexActividad] = map[string]interface{}{"estado": estado, "cuantitativo": cuantitativo, "informacion": informacion}
 			} else {
 				estado = dato[indexActividad].(map[string]interface{})["estado"].(map[string]interface{})
 				if estado["nombre"] == "Con observaciones" && body["dependencia"].(bool) {
@@ -1030,6 +1041,7 @@ func (c *SeguimientoController) GuardarCuantitativo() {
 					}
 				}
 
+				dato[indexActividad].(map[string]interface{})["informacion"] = informacion
 				dato[indexActividad].(map[string]interface{})["cuantitativo"] = cuantitativo
 				dato[indexActividad].(map[string]interface{})["estado"] = estado
 			}
@@ -1265,7 +1277,6 @@ func (c *SeguimientoController) RevisarSeguimiento() {
 	var seguimiento map[string]interface{}
 	var resEstado map[string]interface{}
 	dato := make(map[string]interface{})
-	estado := map[string]interface{}{}
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,_id:"+seguimientoId, &respuesta); err == nil {
 		aux := make([]map[string]interface{}, 1)
@@ -1287,7 +1298,7 @@ func (c *SeguimientoController) RevisarSeguimiento() {
 			}
 
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:"+codigo_abreviacion, &resEstado); err == nil {
-				estado = map[string]interface{}{
+				estado := map[string]interface{}{
 					"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 					"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
 				}

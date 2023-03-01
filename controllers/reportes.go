@@ -28,6 +28,7 @@ type ReportesController struct {
 // URLMapping ...
 func (c *ReportesController) URLMapping() {
 	c.Mapping("Desagregado", c.Desagregado)
+	c.Mapping("ValidarReporte", c.ValidarReporte)
 	c.Mapping("PlanAccionAnual", c.PlanAccionAnual)
 	c.Mapping("PlanAccionAnualGeneral", c.PlanAccionAnualGeneral)
 	c.Mapping("Necesidades", c.Necesidades)
@@ -39,6 +40,170 @@ func CreateExcel(f *excelize.File, dir string) {
 		fmt.Println(err)
 	}
 
+}
+
+// ValidarReporte ...
+// @Title ValidarReporte
+// @Description post ValidarReporte
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Success 201 {object} models.Reportes
+// @router /validar_reporte [post]
+func (c *ReportesController) ValidarReporte() {
+	var res1 map[string]interface{}
+	var resFilter []map[string]interface{}
+	var body map[string]interface{}
+	res := make(map[string]interface{})
+	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+	if body["categoria"].(string) == "Evaluación" {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",dependencia_id:"+body["unidad_id"].(string), &res1); err == nil {
+			helpers.LimpiezaRespuestaRefactor(res1, &resFilter)
+
+			if len(resFilter) == 0 {
+				res["mensaje"] = "No existen planes para la unidad seleccionada"
+				res["reporte"] = false
+			} else {
+				noPlan := true
+				noVigencia := true
+				noEstado := true
+				for i := 0; i < len(resFilter); i++ {
+					if resFilter[i]["nombre"] == body["nombre"].(string) {
+						noPlan = false
+						if resFilter[i]["vigencia"] == body["vigencia"].(string) {
+							noVigencia = false
+							if resFilter[i]["estado_plan_id"] == "6153355601c7a2365b2fb2a1" {
+								noEstado = false
+								res["mensaje"] = ""
+								res["reporte"] = true
+								break
+							}
+						}
+					}
+				}
+
+				if noPlan {
+					res["mensaje"] = "La unidad no tiene registros con el plan seleccionado"
+					res["reporte"] = false
+				} else if noVigencia {
+					res["mensaje"] = "La unidad no cuenta con registros para la vigencia y el plan selecionados"
+					res["reporte"] = false
+				} else if noEstado {
+					res["mensaje"] = "La unidad no cuenta con plan avalado"
+					res["reporte"] = false
+				}
+			}
+		} else {
+			res["mensaje"] = "Ocurrio un error"
+		}
+	} else if body["categoria"].(string) == "Necesidades" {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string), &res1); err == nil {
+			helpers.LimpiezaRespuestaRefactor(res1, &resFilter)
+			if len(resFilter) == 0 {
+				res["mensaje"] = "No existen planes para la vigencia seleccionada"
+				res["reporte"] = false
+			} else {
+				noPlan := true
+				noEstado := true
+				for i := 0; i < len(resFilter); i++ {
+					if resFilter[i]["nombre"] == body["nombre"].(string) {
+						noPlan = false
+						if resFilter[i]["estado_plan_id"] == body["estado_plan_id"].(string) {
+							noEstado = false
+							res["mensaje"] = ""
+							res["reporte"] = true
+							break
+						}
+					}
+				}
+
+				if noPlan {
+					res["mensaje"] = "No existen registros con el plan seleccionado"
+					res["reporte"] = false
+				} else if noEstado {
+					res["mensaje"] = "No existen registros con el estado y plan seleccionado"
+					res["reporte"] = false
+				}
+			}
+		} else {
+			res["mensaje"] = "Ocurrio un error"
+		}
+	} else if body["categoria"].(string) == "Plan de acción unidad" {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",dependencia_id:"+body["unidad_id"].(string), &res1); err == nil {
+			helpers.LimpiezaRespuestaRefactor(res1, &resFilter)
+			if len(resFilter) == 0 {
+				res["mensaje"] = "No existen planes para la unidad seleccionada"
+				res["reporte"] = false
+			} else {
+				noPlan := true
+				noVigencia := true
+				noEstado := true
+				for i := 0; i < len(resFilter); i++ {
+					if resFilter[i]["nombre"] == body["nombre"].(string) {
+						noPlan = false
+						if resFilter[i]["vigencia"] == body["vigencia"].(string) {
+							noVigencia = false
+							if resFilter[i]["estado_plan_id"] == body["estado_plan_id"].(string) {
+								noEstado = false
+								res["mensaje"] = ""
+								res["reporte"] = true
+								break
+							}
+						}
+					}
+				}
+
+				if noPlan {
+					res["mensaje"] = "La unidad no tiene registros con el plan seleccionado"
+					res["reporte"] = false
+				} else if noVigencia {
+					res["mensaje"] = "La unidad no cuenta con registros para la vigencia y el plan selecionados"
+					res["reporte"] = false
+				} else if noEstado {
+					res["mensaje"] = "La unidad no cuenta con plan en el estado solicitado"
+					res["reporte"] = false
+				}
+			}
+		} else {
+			res["mensaje"] = "Ocurrio un error"
+		}
+	} else if body["categoria"].(string) == "Plan de acción general" {
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string), &res1); err == nil {
+			helpers.LimpiezaRespuestaRefactor(res1, &resFilter)
+			if len(resFilter) == 0 {
+				res["mensaje"] = "No existen planes para la vigencia seleccionada"
+				res["reporte"] = false
+			} else {
+				noPlan := true
+				noEstado := true
+				for i := 0; i < len(resFilter); i++ {
+					if resFilter[i]["nombre"] == body["nombre"].(string) {
+						noPlan = false
+						if resFilter[i]["estado_plan_id"] == body["estado_plan_id"].(string) {
+							noEstado = false
+							res["mensaje"] = ""
+							res["reporte"] = true
+							break
+						}
+					}
+				}
+
+				if noPlan {
+					res["mensaje"] = "No existen registros con el plan seleccionado"
+					res["reporte"] = false
+				} else if noEstado {
+					res["mensaje"] = "No existen registros con el estado y plan seleccionado"
+					res["reporte"] = false
+				}
+			}
+		} else {
+			res["mensaje"] = "Ocurrio un error"
+		}
+	} else {
+		res["mensaje"] = "Categoria incorrecta"
+		res["reporte"] = false
+	}
+
+	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": res}
+	c.ServeJSON()
 }
 
 // Desagregado ...
@@ -76,8 +241,7 @@ func (c *ReportesController) Desagregado() {
 	var nombreUnidadVer string
 
 	// excel
-	var consolidadoExcel *excelize.File
-	consolidadoExcel = excelize.NewFile()
+	var consolidadoExcel = excelize.NewFile()
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string), &respuesta); err == nil {
@@ -245,7 +409,7 @@ func (c *ReportesController) Desagregado() {
 		buf, _ := consolidadoExcel.WriteToBuffer()
 		strings.NewReader(buf.String())
 
-		encoded := base64.StdEncoding.EncodeToString([]byte(buf.String()))
+		encoded := base64.StdEncoding.EncodeToString([]byte(buf.Bytes()))
 
 		dataSend["generalData"] = data_identi
 		dataSend["excelB64"] = encoded
@@ -601,13 +765,13 @@ func (c *ReportesController) PlanAccionAnual() {
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "D2", "Estrategias")
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "E1", "Armonización Plan Indicativo")
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "E2", "Ejes transformadores")
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "F2", "Lineaminetos de acción")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "F2", "Lineamientos de acción")
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "G2", "Estrategias")
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "H2", "N°.")
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "I2", "Ponderación de la actividad")
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "J2", "Periodo de ejecución")
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "K2", "Actividad")
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "L2", "Tareas")
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "L2", "Actividades específicas")
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "M1", "Indicador")
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "M2", "Nombre")
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "N2", "Fórmula")
@@ -682,7 +846,7 @@ func (c *ReportesController) PlanAccionAnual() {
 							contadorEstrategias = contadorMetas
 							consolidadoExcelPlanAnual.MergeCell(sheetName, "C"+fmt.Sprint(contadorMetaGeneralIn), "C"+fmt.Sprint(contadorMetaGeneralOut))
 						}
-						contadorMetas = contadorLineamiento
+						// contadorMetas = contadorLineamiento
 						contadorLineamientoGeneralOut = contadorMetaGeneralOut
 
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorLineamientoGeneralIn), "B"+fmt.Sprint(contadorLineamientoGeneralOut))
@@ -731,7 +895,7 @@ func (c *ReportesController) PlanAccionAnual() {
 							reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "F"+fmt.Sprint(contadorLineamientoPIIn), "F"+fmt.Sprint(contadorLineamientoPIOut), stylecontent, stylecontentS)
 
 						}
-						contadorLineamientos = contadorFactor
+						// contadorLineamientos = contadorFactor
 						contadorFactorGeneralOut = contadorLineamientoPIOut
 
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "E"+fmt.Sprint(contadorFactorGeneralIn), "E"+fmt.Sprint(contadorFactorGeneralOut))
@@ -749,10 +913,10 @@ func (c *ReportesController) PlanAccionAnual() {
 
 					if contadorLineamientoGeneralOut > contadorFactorGeneralOut {
 						contadorFactorGeneralOut = contadorLineamientoGeneralOut
-						contadorFactor = contadorFactorGeneralOut + 1
+						// contadorFactor = contadorFactorGeneralOut + 1
 					} else if contadorLineamientoGeneralOut < contadorFactorGeneralOut {
 						contadorLineamientoGeneralOut = contadorFactorGeneralOut
-						contadorLineamiento = contadorLineamientoGeneralOut + 1
+						// contadorLineamiento = contadorLineamientoGeneralOut + 1
 					}
 
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorLineamientoGeneralIn), "B"+fmt.Sprint(contadorLineamientoGeneralOut))
@@ -770,7 +934,7 @@ func (c *ReportesController) PlanAccionAnual() {
 
 					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "B"+fmt.Sprint(contadorLineamientoGeneralIn), "B"+fmt.Sprint(contadorLineamientoGeneralOut), styleLineamiento, styleLineamientoSombra)
 					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(contadorEstrategiaPIOut), "G"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentS)
-					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(contadorDataGeneral), "L"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(contadorDataGeneral), "L"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentS)
 
 					indicadores := datosComplementarios["indicadores"].(map[string]interface{})
 					contadorIndicadores := contadorDataGeneral
@@ -903,7 +1067,7 @@ func (c *ReportesController) PlanAccionAnual() {
 			consolidadoExcelPlanAnual.SetColWidth("Actividades del plan", "A", "A", 2)
 			buf, _ := consolidadoExcelPlanAnual.WriteToBuffer()
 			strings.NewReader(buf.String())
-			encoded := base64.StdEncoding.EncodeToString([]byte(buf.String()))
+			encoded := base64.StdEncoding.EncodeToString(buf.Bytes())
 
 			dataSend := make(map[string]interface{})
 			dataSend["generalData"] = arregloPlanAnual
@@ -1178,6 +1342,25 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 				},
 			})
 			stylecontent, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+				Alignment: &excelize.Alignment{Horizontal: "justify", Vertical: "center", WrapText: true},
+				Border: []excelize.Border{
+					{Type: "right", Color: "000000", Style: 1},
+					{Type: "left", Color: "000000", Style: 1},
+					{Type: "top", Color: "000000", Style: 1},
+					{Type: "bottom", Color: "000000", Style: 1},
+				},
+			})
+			stylecontentS, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+				Alignment: &excelize.Alignment{Horizontal: "justify", Vertical: "center", WrapText: true},
+				Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+				Border: []excelize.Border{
+					{Type: "right", Color: "000000", Style: 1},
+					{Type: "left", Color: "000000", Style: 1},
+					{Type: "top", Color: "000000", Style: 1},
+					{Type: "bottom", Color: "000000", Style: 1},
+				},
+			})
+			stylecontentC, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
 				Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
 				Border: []excelize.Border{
 					{Type: "right", Color: "000000", Style: 1},
@@ -1186,7 +1369,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 					{Type: "bottom", Color: "000000", Style: 1},
 				},
 			})
-			stylecontentSombra, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+			stylecontentCS, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
 				Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
 				Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
 				Border: []excelize.Border{
@@ -1270,13 +1453,13 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contadorGeneral+3), "Estrategias")
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contadorGeneral+2), "Armonización Plan Indicativo")
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contadorGeneral+3), "Ejes transformadores")
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(contadorGeneral+3), "Lineaminetos de acción")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(contadorGeneral+3), "Lineamientos de acción")
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(contadorGeneral+3), "Estrategias")
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(contadorGeneral+3), "N°.")
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(contadorGeneral+3), "Ponderación de la actividad")
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(contadorGeneral+3), "Periodo de ejecución")
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(contadorGeneral+3), "Actividad")
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(contadorGeneral+3), "Tareas")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(contadorGeneral+3), "Actividades específicas")
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "M"+fmt.Sprint(contadorGeneral+2), "Indicador")
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "M"+fmt.Sprint(contadorGeneral+3), "Nombre")
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(contadorGeneral+3), "Fórmula")
@@ -1319,7 +1502,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 					// cuerpo del excel
 					consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contadorLineamiento), auxLineamiento)
 					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "B"+fmt.Sprint(contadorLineamiento), "B"+fmt.Sprint(contadorLineamiento), styleLineamiento, styleLineamientoSombra)
-					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "C"+fmt.Sprint(contadorLineamiento), "P"+fmt.Sprint(contadorLineamiento), stylecontent, stylecontentSombra)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "C"+fmt.Sprint(contadorLineamiento), "P"+fmt.Sprint(contadorLineamiento), stylecontentC, stylecontentCS)
 					consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorLineamiento, 70)
 
 					metas := datosArmo["meta"]
@@ -1331,7 +1514,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 						contadorMetaGeneralIn = contadorLineamiento
 
 						consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contadorMetas), auxMeta["nombreMeta"])
-						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "C"+fmt.Sprint(contadorMetas), "C"+fmt.Sprint(contadorMetas), stylecontent, stylecontentSombra)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "C"+fmt.Sprint(contadorMetas), "C"+fmt.Sprint(contadorMetas), stylecontentC, stylecontentCS)
 
 						if j == len(metas.([]map[string]interface{}))-1 {
 							contadorMetaGeneralOut = contadorMetas
@@ -1346,7 +1529,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 							contadorEstrategiaPEDIn = contadorMetas
 
 							consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contadorEstrategias), auxEstrategia["descripcionEstrategia"])
-							reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(contadorEstrategias), "D"+fmt.Sprint(contadorEstrategias), stylecontent, stylecontentSombra)
+							reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(contadorEstrategias), "D"+fmt.Sprint(contadorEstrategias), stylecontentC, stylecontentCS)
 
 							if k == len(estrategias)-1 {
 								contadorEstrategiaPEDOut = contadorMetas
@@ -1360,7 +1543,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "C"+fmt.Sprint(contadorMetaGeneralIn), "C"+fmt.Sprint(contadorMetaGeneralOut))
 
 					}
-					contadorMetas = contadorLineamiento
+					// contadorMetas = contadorLineamiento
 					contadorLineamientoGeneralOut = contadorMetaGeneralOut
 
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorLineamientoGeneralIn), "B"+fmt.Sprint(contadorLineamientoGeneralOut))
@@ -1375,7 +1558,8 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 
 					// cuerpo del excel
 					consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contadorFactor), auxFactor)
-					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "E"+fmt.Sprint(contadorFactor), "P"+fmt.Sprint(contadorFactor), stylecontent, stylecontentSombra)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "E"+fmt.Sprint(contadorFactor), "P"+fmt.Sprint(contadorFactor), stylecontentC, stylecontentCS)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(contadorFactor), "L"+fmt.Sprint(contadorFactor), stylecontent, stylecontentS)
 					consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorFactor, 70)
 
 					lineamientos := datosArmo["lineamientos"]
@@ -1387,7 +1571,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 						contadorLineamientoPIIn = contadorFactor
 
 						consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(contadorLineamientos), auxLineamiento["nombreLineamiento"])
-						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "F"+fmt.Sprint(contadorLineamientos), "F"+fmt.Sprint(contadorLineamientos), stylecontent, stylecontentSombra)
+						reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "F"+fmt.Sprint(contadorLineamientos), "F"+fmt.Sprint(contadorLineamientos), stylecontentC, stylecontentCS)
 
 						if j == len(lineamientos.([]map[string]interface{}))-1 {
 							contadorLineamientoPIOut = contadorLineamientos
@@ -1402,7 +1586,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 							contadorEstrategiaPEDIn = contadorLineamientos
 
 							consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(contadorEstrategias), auxEstrategia["descripcionEstrategia"])
-							reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(contadorEstrategias), "G"+fmt.Sprint(contadorEstrategias), stylecontent, stylecontentSombra)
+							reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(contadorEstrategias), "G"+fmt.Sprint(contadorEstrategias), stylecontentC, stylecontentCS)
 
 							if k == len(estrategiasPI)-1 {
 								contadorEstrategiaPIOut = contadorLineamientos
@@ -1416,7 +1600,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "F"+fmt.Sprint(contadorLineamientoPIIn), "F"+fmt.Sprint(contadorLineamientoPIOut))
 
 					}
-					contadorLineamientos = contadorFactor
+					// contadorLineamientos = contadorFactor
 					contadorFactorGeneralOut = contadorLineamientoPIOut
 
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "E"+fmt.Sprint(contadorFactorGeneralIn), "E"+fmt.Sprint(contadorFactorGeneralOut))
@@ -1433,13 +1617,14 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 
 				if contadorLineamientoGeneralOut > contadorFactorGeneralOut {
 					contadorFactorGeneralOut = contadorLineamientoGeneralOut
-					contadorFactor = contadorFactorGeneralOut + 1
+					// contadorFactor = contadorFactorGeneralOut + 1
 				} else if contadorLineamientoGeneralOut < contadorFactorGeneralOut {
 					contadorLineamientoGeneralOut = contadorFactorGeneralOut
 					contadorLineamiento = contadorLineamientoGeneralOut + 1
 				}
 
-				reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(contadorLineamiento), "P"+fmt.Sprint(contadorLineamiento), stylecontent, stylecontentSombra)
+				reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(contadorLineamiento), "P"+fmt.Sprint(contadorLineamiento), stylecontentC, stylecontentCS)
+				reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(contadorLineamiento), "L"+fmt.Sprint(contadorLineamiento), stylecontent, stylecontentS)
 
 				consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorLineamientoGeneralIn), "B"+fmt.Sprint(contadorLineamientoGeneralOut))
 				consolidadoExcelPlanAnual.MergeCell(sheetName, "C"+fmt.Sprint(contadorMetaGeneralIn), "C"+fmt.Sprint(contadorLineamientoGeneralOut))
@@ -1455,13 +1640,14 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 				consolidadoExcelPlanAnual.MergeCell(sheetName, "P"+fmt.Sprint(contadorDataGeneral), "P"+fmt.Sprint(contadorLineamientoGeneralOut))
 
 				reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "B"+fmt.Sprint(contadorLineamientoGeneralIn), "B"+fmt.Sprint(contadorLineamientoGeneralOut), styleLineamiento, styleLineamientoSombra)
-				reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "C"+fmt.Sprint(contadorMetaGeneralIn), "C"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentSombra)
-				reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(contadorEstrategiaPEDOut), "D"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentSombra)
-				reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "E"+fmt.Sprint(contadorFactorGeneralIn), "E"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentSombra)
-				reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "F"+fmt.Sprint(contadorLineamientoPIOut), "F"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentSombra)
-				reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(contadorEstrategiaPIOut), "G"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentSombra)
-				reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(contadorDataGeneral), "L"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentSombra)
-				reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "P"+fmt.Sprint(contadorDataGeneral), "P"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentSombra)
+				reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "C"+fmt.Sprint(contadorMetaGeneralIn), "C"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
+				reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(contadorEstrategiaPEDOut), "D"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
+				reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "E"+fmt.Sprint(contadorFactorGeneralIn), "E"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
+				reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "F"+fmt.Sprint(contadorLineamientoPIOut), "F"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
+				reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(contadorEstrategiaPIOut), "G"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
+				reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(contadorDataGeneral), "J"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
+				reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(contadorDataGeneral), "L"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentS)
+				reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "P"+fmt.Sprint(contadorDataGeneral), "P"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
 
 				indicadores := datosComplementarios["indicadores"].(map[string]interface{})
 				contadorIndicadores := contadorDataGeneral
@@ -1489,7 +1675,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 					consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(contadorIndicadores), formula)
 					consolidadoExcelPlanAnual.SetCellValue(sheetName, "O"+fmt.Sprint(contadorIndicadores), meta)
 
-					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "M"+fmt.Sprint(contadorIndicadores), "O"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentSombra)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "M"+fmt.Sprint(contadorIndicadores), "O"+fmt.Sprint(contadorIndicadores), stylecontentC, stylecontentCS)
 					contadorIndicadores = contadorIndicadores + 1
 				}
 
@@ -1509,13 +1695,14 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "P"+fmt.Sprint(contadorDataGeneral), "P"+fmt.Sprint(contadorIndicadores))
 
 					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "B"+fmt.Sprint(contadorLineamientoGeneralOut), "B"+fmt.Sprint(contadorIndicadores), styleLineamiento, styleLineamientoSombra)
-					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "C"+fmt.Sprint(contadorMetaGeneralOut), "C"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentSombra)
-					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(contadorEstrategiaPEDOut), "D"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentSombra)
-					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "E"+fmt.Sprint(contadorFactorGeneralOut), "E"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentSombra)
-					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "F"+fmt.Sprint(contadorLineamientoPIOut), "F"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentSombra)
-					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(contadorEstrategiaPIOut), "G"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentSombra)
-					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(contadorDataGeneral), "L"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentSombra)
-					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "P"+fmt.Sprint(contadorDataGeneral), "P"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentSombra)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "C"+fmt.Sprint(contadorMetaGeneralOut), "C"+fmt.Sprint(contadorIndicadores), stylecontentC, stylecontentCS)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(contadorEstrategiaPEDOut), "D"+fmt.Sprint(contadorIndicadores), stylecontentC, stylecontentCS)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "E"+fmt.Sprint(contadorFactorGeneralOut), "E"+fmt.Sprint(contadorIndicadores), stylecontentC, stylecontentCS)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "F"+fmt.Sprint(contadorLineamientoPIOut), "F"+fmt.Sprint(contadorIndicadores), stylecontentC, stylecontentCS)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(contadorEstrategiaPIOut), "G"+fmt.Sprint(contadorIndicadores), stylecontentC, stylecontentCS)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(contadorDataGeneral), "J"+fmt.Sprint(contadorIndicadores), stylecontentC, stylecontentCS)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(contadorDataGeneral), "L"+fmt.Sprint(contadorIndicadores), stylecontent, stylecontentS)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "P"+fmt.Sprint(contadorDataGeneral), "P"+fmt.Sprint(contadorIndicadores), stylecontentC, stylecontentCS)
 				} else {
 					contadorIndicadores = contadorLineamientoGeneralOut
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorLineamientoGeneralOut), "B"+fmt.Sprint(contadorLineamientoGeneralOut))
@@ -1530,13 +1717,23 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "K"+fmt.Sprint(contadorDataGeneral), "K"+fmt.Sprint(contadorLineamientoGeneralOut))
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(contadorDataGeneral), "L"+fmt.Sprint(contadorLineamientoGeneralOut))
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "P"+fmt.Sprint(contadorDataGeneral), "P"+fmt.Sprint(contadorLineamientoGeneralOut))
+
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "B"+fmt.Sprint(contadorLineamientoGeneralOut), "B"+fmt.Sprint(contadorLineamientoGeneralOut), styleLineamiento, styleLineamientoSombra)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "C"+fmt.Sprint(contadorMetaGeneralOut), "C"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(contadorEstrategiaPEDOut), "D"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "E"+fmt.Sprint(contadorFactorGeneralOut), "E"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "F"+fmt.Sprint(contadorLineamientoPIOut), "F"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(contadorEstrategiaPIOut), "G"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(contadorDataGeneral), "J"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(contadorDataGeneral), "L"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontent, stylecontentS)
+					reporteshelper.SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "P"+fmt.Sprint(contadorDataGeneral), "P"+fmt.Sprint(contadorLineamientoGeneralOut), stylecontentC, stylecontentCS)
 				}
 				contadorDataGeneral = contadorIndicadores + 1
 				contadorLineamiento = contadorIndicadores + 1
 				contadorFactor = contadorIndicadores + 1
 				consolidadoExcelPlanAnual.SetActiveSheet(indexPlan)
 			}
-			contadorGeneral = contadorDataGeneral - 2 
+			contadorGeneral = contadorDataGeneral - 2
 			arregloPlanAnual = nil
 			consolidadoExcelPlanAnual.RemoveRow(sheetName, 1)
 		}
@@ -1573,7 +1770,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 		consolidadoExcelPlanAnual.SetColWidth("REPORTE GENERAL", "A", "A", 2)
 		buf, _ := consolidadoExcelPlanAnual.WriteToBuffer()
 		strings.NewReader(buf.String())
-		encoded := base64.StdEncoding.EncodeToString([]byte(buf.String()))
+		encoded := base64.StdEncoding.EncodeToString(buf.Bytes())
 
 		dataSend := make(map[string]interface{})
 		dataSend["generalData"] = arregloInfoReportes
@@ -1861,7 +2058,7 @@ func (c *ReportesController) Necesidades() {
 						}
 					}
 					if strings.Contains(nombre, "contratista") && flag {
-						if identificacion["dato"] != nil {
+						if identificacion["dato"] != nil && identificacion["dato"].(string) != "{}" {
 							var dato map[string]interface{}
 							var dato_contratistas []map[string]interface{}
 							dato_str := identificacion["dato"].(string)
@@ -2025,8 +2222,7 @@ func (c *ReportesController) Necesidades() {
 										valorU = append(valorU, auxValor2)
 										recursosGeneral[j]["valorU"] = valorU
 									} else {
-										var valorU []float64
-										valorU = recursosGeneral[j]["valorU"].([]float64)
+										valorU := recursosGeneral[j]["valorU"].([]float64)
 										recursosGeneral[j]["valorU"] = append(valorU, auxValor2)
 									}
 								} else {
@@ -3288,6 +3484,7 @@ func (c *ReportesController) Necesidades() {
 		if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+`/periodo?query=Id:`+body["vigencia"].(string), &resPeriodo); err == nil {
 			helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
 		}
+
 		if periodo[0] != nil {
 			necesidadesExcel.SetCellValue("Necesidades", "C2", "Consolidado proyeccción de necesidades "+periodo[0]["Nombre"].(string))
 		} else {
@@ -3334,7 +3531,7 @@ func (c *ReportesController) Necesidades() {
 
 		buf, _ := necesidadesExcel.WriteToBuffer()
 		strings.NewReader(buf.String())
-		encoded := base64.StdEncoding.EncodeToString([]byte(buf.String()))
+		encoded := base64.StdEncoding.EncodeToString(buf.Bytes())
 		dataSend := make(map[string]interface{})
 		dataSend["generalData"] = arregloInfoReportes
 		dataSend["excelB64"] = encoded
@@ -3663,6 +3860,7 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "Y21", "Cumplimiento")
 
 			indice := 23
+			indiceGraficos := 23
 			for i, actividad := range evaluacion {
 				// Datos
 				consolidadoExcelEvaluacion.SetCellValue(sheetName, "B"+fmt.Sprint(indice), actividad["numero"])
@@ -3693,10 +3891,6 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 				consolidadoExcelEvaluacion.SetCellValue(sheetName, "S"+fmt.Sprint(indice), actividad["trimestre4"].(map[string]interface{})["acumulado"])
 				consolidadoExcelEvaluacion.SetCellValue(sheetName, "T"+fmt.Sprint(indice), actividad["trimestre4"].(map[string]interface{})["meta"])
 				consolidadoExcelEvaluacion.SetCellValue(sheetName, "U"+fmt.Sprint(indice), actividad["trimestre4"].(map[string]interface{})["actividad"].(float64))
-
-				// Gaficos
-				consolidadoExcelEvaluacion.SetCellFormula(sheetName, "X"+fmt.Sprint(indice), "=B"+fmt.Sprint(indice))
-				consolidadoExcelEvaluacion.SetCellFormula(sheetName, "Y"+fmt.Sprint(indice), "=IF(E4=\"Trimestre I\",L"+fmt.Sprint(indice)+",IF(E4=\"Trimestre II\",O"+fmt.Sprint(indice)+",IF(E4=\"Trimestre III\",R"+fmt.Sprint(indice)+",IF(E4=\"Trimestre IV\",U"+fmt.Sprint(indice)+"))))")
 
 				// Estilos
 				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "B"+fmt.Sprint(indice), "U"+fmt.Sprint(indice), styleContenidoC)
@@ -3759,7 +3953,17 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 						consolidadoExcelEvaluacion.MergeCell(sheetName, "O"+fmt.Sprint(indice-1), "O"+fmt.Sprint(indice))
 						consolidadoExcelEvaluacion.MergeCell(sheetName, "R"+fmt.Sprint(indice-1), "R"+fmt.Sprint(indice))
 						consolidadoExcelEvaluacion.MergeCell(sheetName, "U"+fmt.Sprint(indice-1), "U"+fmt.Sprint(indice))
+					} else {
+						// Gaficos
+						consolidadoExcelEvaluacion.SetCellFormula(sheetName, "X"+fmt.Sprint(indiceGraficos), "=B"+fmt.Sprint(indice))
+						consolidadoExcelEvaluacion.SetCellFormula(sheetName, "Y"+fmt.Sprint(indiceGraficos), "=IF(E4=\"Trimestre I\",L"+fmt.Sprint(indice)+",IF(E4=\"Trimestre II\",O"+fmt.Sprint(indice)+",IF(E4=\"Trimestre III\",R"+fmt.Sprint(indice)+",IF(E4=\"Trimestre IV\",U"+fmt.Sprint(indice)+"))))")
+						indiceGraficos++
 					}
+				} else if i == 0 {
+					// Gaficos
+					consolidadoExcelEvaluacion.SetCellFormula(sheetName, "X"+fmt.Sprint(indiceGraficos), "=B"+fmt.Sprint(indice))
+					consolidadoExcelEvaluacion.SetCellFormula(sheetName, "Y"+fmt.Sprint(indiceGraficos), "=IF(E4=\"Trimestre I\",L"+fmt.Sprint(indice)+",IF(E4=\"Trimestre II\",O"+fmt.Sprint(indice)+",IF(E4=\"Trimestre III\",R"+fmt.Sprint(indice)+",IF(E4=\"Trimestre IV\",U"+fmt.Sprint(indice)+"))))")
+					indiceGraficos++
 				}
 				indice++
 			}
@@ -3771,11 +3975,12 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "O"+fmt.Sprint(indice), "O"+fmt.Sprint(indice), styleContenidoCPSR)
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "R"+fmt.Sprint(indice), "R"+fmt.Sprint(indice), styleContenidoCPSR)
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "U"+fmt.Sprint(indice), "U"+fmt.Sprint(indice), styleContenidoCPSR)
-			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "X19", "X"+fmt.Sprint(indice), styleContenidoCI)
-			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "Y19", "Z"+fmt.Sprint(indice), styleContenidoCIP)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "X19", "X"+fmt.Sprint(indice+1), styleContenidoCI)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "Y19", "Z"+fmt.Sprint(indice+1), styleContenidoCIP)
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "Y21", "Y22", styleContenidoCI)
 
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "B"+fmt.Sprint(indice), "Avance General del Plan de Acción")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "E4", "Trimestre I") //
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "J"+fmt.Sprint(indice), "-")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "K"+fmt.Sprint(indice), "-")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "M"+fmt.Sprint(indice), "-")
@@ -3793,10 +3998,85 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			consolidadoExcelEvaluacion.SetCellFormula(sheetName, "U"+fmt.Sprint(indice), "=SUMPRODUCT(C23:C"+filaAnt+",U23:U"+filaAnt+")")
 			consolidadoExcelEvaluacion.SetCellFormula(sheetName, "Y"+fmt.Sprint(indice), "=IF(E4=\"Trimestre I\",L"+fmt.Sprint(indice)+",IF(E4=\"Trimestre II\",O"+fmt.Sprint(indice)+",IF(E4=\"Trimestre III\",R"+fmt.Sprint(indice)+",IF(E4=\"Trimestre IV\",U"+fmt.Sprint(indice)+"))))")
 			consolidadoExcelEvaluacion.SetCellFormula(sheetName, "Z"+fmt.Sprint(indice), "=100%-Y"+fmt.Sprint(indice))
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "Y"+fmt.Sprint(indice+1), "Avance")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "Z"+fmt.Sprint(indice+1), "Restante")
+
+			consolidadoExcelEvaluacion.AddChart(sheetName, "B5", &excelize.Chart{
+				Type: "pie",
+				Series: []excelize.ChartSeries{
+					{
+						Name:       "",
+						Categories: sheetName + "!$Y$" + fmt.Sprint(indice+1) + ":$Z$" + fmt.Sprint(indice+1),
+						Values:     sheetName + "!$Y$" + fmt.Sprint(indice) + ":$Z$" + fmt.Sprint(indice),
+					},
+				},
+				Format: excelize.GraphicOptions{
+					ScaleX:          1.0,
+					ScaleY:          1.0,
+					OffsetX:         15,
+					OffsetY:         10,
+					LockAspectRatio: false,
+					Locked:          &disable,
+				},
+				PlotArea: excelize.ChartPlotArea{
+					ShowCatName:     false,
+					ShowLeaderLines: false,
+					ShowPercent:     true,
+					ShowSerName:     false,
+					ShowVal:         false,
+				},
+				ShowBlanksAs: "zero",
+				Dimension: excelize.ChartDimension{
+					Height: 265,
+					Width:  454,
+				},
+				XAxis: excelize.ChartAxis{
+					None: true,
+				},
+				YAxis: excelize.ChartAxis{
+					None: true,
+				},
+			})
+
+			consolidadoExcelEvaluacion.AddChart(sheetName, "F4", &excelize.Chart{
+				Type: "col",
+				Series: []excelize.ChartSeries{
+					{
+						Name:       "",
+						Categories: sheetName + "!$X$23:$X$" + fmt.Sprint(indiceGraficos-1),
+						Values:     sheetName + "!$Y$23:$Y$" + fmt.Sprint(indiceGraficos-1),
+					},
+				},
+				Format: excelize.GraphicOptions{
+					OffsetX:         15,
+					LockAspectRatio: false,
+					Locked:          &disable,
+				},
+				Dimension: excelize.ChartDimension{
+					Height: 344,
+					Width:  1605,
+				},
+				PlotArea: excelize.ChartPlotArea{
+					ShowCatName:     false,
+					ShowLeaderLines: false,
+					ShowPercent:     false,
+					ShowSerName:     false,
+					ShowVal:         true,
+				},
+				YAxis: excelize.ChartAxis{
+					MajorGridLines: true,
+					Font:           excelize.Font{Family: "Calibri", Size: 9, Color: "000000"},
+				},
+				XAxis: excelize.ChartAxis{
+					Font: excelize.Font{Family: "Calibri", Size: 9, Color: "000000"},
+				},
+				VaryColors:   &disable,
+				ShowBlanksAs: "span",
+			})
 
 			buf, _ := consolidadoExcelEvaluacion.WriteToBuffer()
 			strings.NewReader(buf.String())
-			encoded := base64.StdEncoding.EncodeToString([]byte(buf.String()))
+			encoded := base64.StdEncoding.EncodeToString(buf.Bytes())
 
 			dataSend := make(map[string]interface{})
 			dataSend["generalData"] = arregloPlanAnual
