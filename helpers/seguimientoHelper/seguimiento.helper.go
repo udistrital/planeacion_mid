@@ -212,14 +212,14 @@ func GetInformacionPlan(seguimiento map[string]interface{}, index string) map[st
 				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijo["_id"].(string), &res); err == nil {
 					datoPlan := make(map[string]interface{})
 					dato := make(map[string]interface{})
-					
+
 					nombreDetalle := strings.ToLower(res["Data"].([]interface{})[0].(map[string]interface{})["nombre"].(string))
 					if strings.Contains(nombreDetalle, "indicadores") || strings.Contains(nombreDetalle, "indicador") {
 						continue
 					}
 
 					json.Unmarshal([]byte(res["Data"].([]interface{})[0].(map[string]interface{})["dato"].(string)), &dato)
-					if dato["required"] == false || dato["required"] == "false"{
+					if dato["required"] == false || dato["required"] == "false" {
 						continue
 					}
 
@@ -267,7 +267,6 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 	var subgrupos []map[string]interface{}
 	var indicadores []map[string]interface{}
 	var respuestas []map[string]interface{}
-	var subgrupo_detalle []map[string]interface{}
 	response := map[string]interface{}{}
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+seguimiento["plan_id"].(string), &resInformacion); err == nil {
@@ -286,8 +285,6 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 						var dato_plan map[string]interface{}
 
 						informacion := map[string]interface{}{
-							"reporteNumerador":   0,
-							"reporteDenominador": 1,
 							"detalleReporte":     "",
 						}
 
@@ -303,6 +300,7 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 
 						for _, hijoI := range hijosIndicadores {
 							if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijoI.(string), &resDetalle); err == nil {
+								var subgrupo_detalle []map[string]interface{}
 								helpers.LimpiezaRespuestaRefactor(resDetalle, &subgrupo_detalle)
 
 								if len(subgrupo_detalle) > 0 {
@@ -310,7 +308,6 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 										dato_plan_str := subgrupo_detalle[0]["dato_plan"].(string)
 										json.Unmarshal([]byte(dato_plan_str), &dato_plan)
 										nombreDetalle := strings.ToLower(subgrupo_detalle[0]["nombre"].(string))
-
 										if dato_plan[index] == nil || dato_plan[index].(map[string]interface{})["dato"] == "" {
 											break
 										}
@@ -334,7 +331,7 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 										case strings.Contains(nombreDetalle, "criterio"):
 											informacion["denominador"] = dato_plan[index].(map[string]interface{})["dato"]
 											if informacion["denominador"] == "Denominador fijo" {
-												informacion["reporteDenominador"] = GetDenominadorFijo(seguimiento, len(indicadores), index)
+												// informacion["reporteDenominador"] = GetDenominadorFijo(seguimiento, len(indicadores), index)
 											}
 											continue
 										case strings.Contains(nombreDetalle, "tendencia"):
@@ -348,6 +345,10 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 									}
 								}
 							}
+						}
+
+						if informacion["reporteDenominador"] == 1.0 {
+							informacion["reporteDenominador"] = nil
 						}
 
 						if informacion["nombre"] != nil && informacion["nombre"] != "" {
@@ -492,8 +493,8 @@ func GetDenominadorFijo(dataSeg map[string]interface{}, index int, indexActivida
 							if seguimientoActividad["cuantitativo"] == nil {
 								break
 							}
-
-							if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "int" {
+							
+							if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "int" || fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "float64" {
 								return seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(float64)
 							} else {
 								aux2, err := strconv.ParseFloat(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(string), 64)
@@ -529,6 +530,7 @@ func GetRespuestaAcumulado(dataSeg map[string]interface{}, index int, respuestas
 		indicadorAcumulado := 0.0
 		avanceAcumulado := 0.0
 		brechaExistente := 0.0
+		divisionCero := false
 		for _, seguimiento := range seguimientos {
 
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/"+seguimiento["periodo_seguimiento_id"].(string), &resPeriodoSeguimiento); err == nil {
@@ -548,6 +550,7 @@ func GetRespuestaAcumulado(dataSeg map[string]interface{}, index int, respuestas
 								respuestas[index]["indicadorAcumulado"] = indicadorAcumulado
 								respuestas[index]["avanceAcumulado"] = avanceAcumulado
 								respuestas[index]["brechaExistente"] = brechaExistente
+								respuestas[index]["divisionCero"] = divisionCero
 								continue
 							}
 
@@ -556,6 +559,7 @@ func GetRespuestaAcumulado(dataSeg map[string]interface{}, index int, respuestas
 								respuestas[index]["indicadorAcumulado"] = indicadorAcumulado
 								respuestas[index]["avanceAcumulado"] = avanceAcumulado
 								respuestas[index]["brechaExistente"] = brechaExistente
+								respuestas[index]["divisionCero"] = divisionCero
 								continue
 							}
 
@@ -571,8 +575,14 @@ func GetRespuestaAcumulado(dataSeg map[string]interface{}, index int, respuestas
 								brechaExistente += seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["brechaExistente"].(float64)
 							}
 
+							if seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["divisionCero"] != nil {
+								divisionCero = seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["divisionCero"].(bool)
+							} else {
+								divisionCero = false
+							}
+
 							auxAcumDen := 0.0
-							if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "int" {
+							if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "int" || fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "float64" {
 								auxAcumDen = seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(float64)
 							} else {
 								aux2, err := strconv.ParseFloat(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(string), 64)
@@ -588,7 +598,7 @@ func GetRespuestaAcumulado(dataSeg map[string]interface{}, index int, respuestas
 
 							if seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"] != nil {
 
-								if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"])) == "int" {
+								if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"])) == "int" || fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"])) == "float64" {
 									acumuladoNumerador += seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"].(float64)
 								} else {
 									aux2, err := strconv.ParseFloat(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"].(string), 64)
@@ -603,6 +613,7 @@ func GetRespuestaAcumulado(dataSeg map[string]interface{}, index int, respuestas
 						respuestas[index]["brechaExistente"] = brechaExistente
 						respuestas[index]["acumuladoNumerador"] = acumuladoNumerador
 						respuestas[index]["acumuladoDenominador"] = acumuladoDenominador
+						respuestas[index]["divisionCero"] = divisionCero
 					}
 				}
 			}
