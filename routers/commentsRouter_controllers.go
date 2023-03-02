@@ -307,7 +307,7 @@ func init() {
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"],
         beego.ControllerComments{
             Method: "AllMetasPlan",
-            Router: "/all_metas/:id/",
+            Router: "/all_metas/:id",
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
             Filters: nil,
@@ -351,15 +351,6 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"],
         beego.ControllerComments{
-            Method: "GuardarActividad",
-            Router: "/guardar_actividad/:id",
-            AllowHTTPMethods: []string{"put"},
-            MethodParams: param.Make(),
-            Filters: nil,
-            Params: nil})
-
-    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"],
-        beego.ControllerComments{
             Method: "GuardarDocumentos",
             Router: "/guardar_documentos",
             AllowHTTPMethods: []string{"post"},
@@ -369,9 +360,36 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"],
         beego.ControllerComments{
+            Method: "GuardarMeta",
+            Router: "/guardar_meta/:id",
+            AllowHTTPMethods: []string{"put"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"],
+        beego.ControllerComments{
             Method: "InactivarMeta",
             Router: "/inactivar_meta/:id/:index",
             AllowHTTPMethods: []string{"put"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"],
+        beego.ControllerComments{
+            Method: "ProgMagnitudesPlan",
+            Router: "/magnitudes/:id/:index",
+            AllowHTTPMethods: []string{"put"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"],
+        beego.ControllerComments{
+            Method: "MagnitudesProgramadas",
+            Router: "/magnitudes/:id/:indexMeta",
+            AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
             Filters: nil,
             Params: nil})
