@@ -15,6 +15,8 @@ import (
 var validDataT = []string{}
 
 func Limpia() {
+	data_source = nil
+	displayed_columns = nil
 	validDataT = []string{}
 }
 
@@ -459,22 +461,25 @@ func getActividadTabla(subgrupo map[string]interface{}) {
 			if subgrupo_detalle["dato_plan"] != nil {
 				dato_plan_str := subgrupo_detalle["dato_plan"].(string)
 				json.Unmarshal([]byte(dato_plan_str), &dato_plan)
-				fmt.Println(subgrupo_detalle, "subgrupoDetalle")
+				//fmt.Println(subgrupo_detalle, "subgrupoDetalle")
+				fmt.Println()
 				armonizacion_dato_str := subgrupo_detalle["armonizacion_dato"].(string)
 				json.Unmarshal([]byte(armonizacion_dato_str), &armonizacion_dato)
+				fmt.Println(armonizacion_dato, "JSON")
 				for key := range dato_plan {
 					actividad := make(map[string]interface{})
 					element := dato_plan[key].(map[string]interface{})
 					actividad["index"] = key
-					i := key
+					//i, _ := strconv.Atoi(key)
+
 					actividad[subgrupo["nombre"].(string)] = element["dato"]
 					actividad["activo"] = element["activo"]
-					if armonizacion_dato[i] != nil {
-						fmt.Println(armonizacion_dato[i], "entra a armonizacion dato")
-						dataProyect = armonizacion_dato[i].(map[string]interface{})
+					if armonizacion_dato[key] != nil {
+						//fmt.Println(armonizacion_dato[i], "entra a armonizacion dato")
+						dataProyect = armonizacion_dato[key].(map[string]interface{})
 						idSubDetalleProI := dataProyect["idSubDetalleProI"].(string)
 						indexMetaSubProI := dataProyect["indexMetaSubProI"]
-						fmt.Println(idSubDetalleProI, "idSubDetalleProI")
+						//fmt.Println(idSubDetalleProI, "idSubDetalleProI")
 						var respuestaLimpia2 map[string]interface{}
 						var res map[string]interface{}
 						//var posicion
@@ -488,13 +493,13 @@ func getActividadTabla(subgrupo map[string]interface{}) {
 						// 	panic(err)
 						// }
 						// json.Unmarshal(b, &respuestaLimpia2)
-						fmt.Println(respuestaLimpia2, "metas pro inversion")
+						//fmt.Println(respuestaLimpia2, "metas pro inversion")
 						subgrupo_proyect = respuestaLimpia2
 						dato_str := subgrupo_proyect["dato"].(string)
 						json.Unmarshal([]byte(dato_str), &dato)
-						fmt.Println(dato, "dato")
+						//fmt.Println(dato, "dato")
 						for key2 := range dato {
-							fmt.Println("entra a dato")
+							//fmt.Println("entra a dato")
 							//metaProyect := dato[key2]
 							// j, err := strconv.Atoi(indexMetaSubProI.(string))
 							// if err != nil {
@@ -505,7 +510,7 @@ func getActividadTabla(subgrupo map[string]interface{}) {
 							//j = dato[key2]["posicion"].(string)
 							//fmt.Println(dato[key2]["posicion"] == j, "j")
 							if indexMetaSubProI == dato[key2]["posicion"] {
-								fmt.Println("entra a presupuesto")
+								//fmt.Println("entra a presupuesto")
 								actividad["meta"] = dato[key2]["descripcion"]
 								actividad["presupuesto_programado"] = dato[key2]["presupuestoT"]
 								actividad["posicion"] = dato[key2]["posicion"]
@@ -514,27 +519,25 @@ func getActividadTabla(subgrupo map[string]interface{}) {
 
 						}
 					}
-					fmt.Println(actividad, "actividad")
 					data_source = append(data_source, actividad)
-					fmt.Println(actividad, "actividad")
-					fmt.Println(data_source, "data_source")
+					//fmt.Println(actividad, "actividad")
 				}
 			}
-		} //else {
-		// 	for i := 0; i < len(data_source); i++ {
-		// 		if subgrupo_detalle["dato_plan"] != nil {
-		// 			var data = data_source[i]
-		// 			dato_plan_str := subgrupo_detalle["dato_plan"].(string)
-		// 			json.Unmarshal([]byte(dato_plan_str), &dato_plan)
-		// 			if dato_plan[data["index"].(string)] != nil {
-		// 				element := dato_plan[data["index"].(string)].(map[string]interface{})
-		// 				data[subgrupo["nombre"].(string)] = element["dato"]
-		// 			}
+		} else {
+			for i := 0; i < len(data_source); i++ {
+				if subgrupo_detalle["dato_plan"] != nil {
+					var data = data_source[i]
+					dato_plan_str := subgrupo_detalle["dato_plan"].(string)
+					json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+					if dato_plan[data["index"].(string)] != nil {
+						element := dato_plan[data["index"].(string)].(map[string]interface{})
+						data[subgrupo["nombre"].(string)] = element["dato"]
+					}
 
-		// 		}
+				}
 
-		// 	}
-		// }
+			}
+		}
 
 	}
 	sort.SliceStable(data_source, func(i, j int) bool {
@@ -542,6 +545,79 @@ func getActividadTabla(subgrupo map[string]interface{}) {
 		b, _ := strconv.Atoi(data_source[j]["index"].(string))
 		return a < b
 	})
+}
+
+func GetSons(hijos []interface{}, index string) {
+	//tabla := make(map[string]interface{})
+	var respuesta map[string]interface{}
+	var subgrupo map[string]interface{}
+
+	for i := 0; i < len(hijos); i++ {
+
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+hijos[i].(string), &respuesta); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuesta, &subgrupo)
+			if subgrupo["bandera_tabla"] == true {
+				DeleteMetas(subgrupo, index)
+			}
+
+			if len(subgrupo["hijos"].([]interface{})) != 0 {
+				var respuestaHijos map[string]interface{}
+				var subgrupoHijo map[string]interface{}
+				for j := 0; j < len(subgrupo["hijos"].([]interface{})); j++ {
+					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+subgrupo["hijos"].([]interface{})[j].(string), &respuestaHijos); err == nil {
+						helpers.LimpiezaRespuestaRefactor(respuestaHijos, &subgrupoHijo)
+						if subgrupoHijo["bandera_tabla"] == true {
+							displayed_columns = append(displayed_columns, subgrupoHijo["nombre"].(string))
+							DeleteMetas(subgrupoHijo, index)
+						}
+					}
+				}
+			}
+		}
+	}
+	// tabla["displayed_columns"] = displayed_columns
+	// tabla["data_source"] = data_source
+	// return tabla
+}
+
+func DeleteMetas(subgrupo map[string]interface{}, index string) {
+	var respuesta map[string]interface{}
+	var res map[string]interface{}
+	var respuestaLimpia []map[string]interface{}
+	var subgrupo_detalle map[string]interface{}
+	var dato_plan map[string]interface{}
+	actividad := make(map[string]interface{})
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+subgrupo["_id"].(string), &respuesta); err == nil {
+		helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
+		subgrupo_detalle = respuestaLimpia[0]
+
+		if subgrupo_detalle["dato_plan"] != nil {
+			dato_plan_str := subgrupo_detalle["dato_plan"].(string)
+			json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+
+			for key := range dato_plan {
+				if key == index {
+					element := dato_plan[key].(map[string]interface{})
+					actividad["index"] = element["index"]
+					actividad["dato"] = element["dato"]
+					actividad["activo"] = false
+					if element["observacion"] != nil {
+						actividad["observacion"] = element["observacion"]
+					}
+					dato_plan[key] = actividad
+
+				}
+			}
+			b, _ := json.Marshal(dato_plan)
+			str := string(b)
+			subgrupo_detalle["dato_plan"] = str
+		}
+		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupo_detalle["_id"].(string), "PUT", &res, subgrupo_detalle); err != nil {
+			panic(map[string]interface{}{"funcion": "DeleteActividad", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
+		}
+		fmt.Println(res, "respuesta delete")
+	}
 }
 
 func RecorrerHijos(hijos []map[string]interface{}, index string) {
@@ -604,20 +680,21 @@ func desactivarMeta(subgrupo_id string, index string) {
 			for index_meta := range dato_plan {
 				if index_meta == index {
 					aux_meta := dato_plan[index_meta].(map[string]interface{})
+					meta["activo"] = false
 					meta["index"] = index_meta
 					meta["dato"] = aux_meta["dato"]
 					if aux_meta["observacion"] != nil {
 						meta["observacion"] = aux_meta["observacion"]
 					}
-					meta["activo"] = false
 					dato_plan[index_meta] = meta
-					fmt.Println(dato_plan, "Dato Plan")
+					fmt.Println(dato_plan[index_meta], "Dato Plan")
 				}
 			}
 			b, _ := json.Marshal(dato_plan)
 			str := string(b)
 			subgrupoDetalle["dato_plan"] = str
 		}
+
 		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupoDetalle["_id"].(string), "PUT", &res, subgrupoDetalle); err == nil {
 			fmt.Println(res, "res 622")
 		} else {
