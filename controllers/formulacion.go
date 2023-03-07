@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"sort"
 	"strconv"
@@ -972,6 +973,7 @@ func (c *FormulacionController) PonderacionActividades() {
 							if dato["activo"] != false && len(dato) != 0 {
 								ponderacionActividades["Actividad "+(j)] = dato["dato"]
 								suma += dato["dato"].(float64)
+								suma = math.Round(suma*100)/100
 							}
 						}
 
