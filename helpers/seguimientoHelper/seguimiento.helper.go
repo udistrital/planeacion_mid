@@ -360,7 +360,7 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 							informacion["denominador"] = ""
 						}
 
-						respuestas = GetRespuestaAcumulado(seguimiento, len(indicadores)-1, respuestas, index, trimestre, informacion["denominador"].(string))
+						respuestas = GetRespuestaAnterior(seguimiento, len(indicadores)-1, respuestas, index, trimestre)
 					}
 				}
 				break
@@ -513,7 +513,7 @@ func GetDenominadorFijo(dataSeg map[string]interface{}, index int, indexActivida
 	return 1
 }
 
-func GetRespuestaAcumulado(dataSeg map[string]interface{}, index int, respuestas []map[string]interface{}, indexActividad string, trimestre string, denominador string) []map[string]interface{} {
+func GetRespuestaAnterior(dataSeg map[string]interface{}, index int, respuestas []map[string]interface{}, indexActividad string, trimestre string) []map[string]interface{} {
 	plan_id := dataSeg["plan_id"].(string)
 	var resSeguimiento map[string]interface{}
 	var resPeriodoSeguimiento map[string]interface{}
@@ -541,7 +541,7 @@ func GetRespuestaAcumulado(dataSeg map[string]interface{}, index int, respuestas
 					tri, _ := strconv.Atoi(string(trimestre[1]))
 					segTrimestre, _ := strconv.Atoi(string(periodo[0]["ParametroId"].(map[string]interface{})["CodigoAbreviacion"].(string)[1]))
 
-					if tri >= segTrimestre {
+					if (tri-1) == segTrimestre {
 						if seguimiento["dato"] != "{}" {
 							dato := make(map[string]interface{})
 							datoStr := seguimiento["dato"].(string)
@@ -581,32 +581,34 @@ func GetRespuestaAcumulado(dataSeg map[string]interface{}, index int, respuestas
 								divisionCero = false
 							}
 
-							auxAcumDen := 0.0
-							if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "int" || fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "float64" {
-								auxAcumDen = seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(float64)
-							} else {
-								aux2, err := strconv.ParseFloat(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(string), 64)
-								if err == nil {
-									auxAcumDen = aux2
-								}
-							}
-							if denominador == "Denominador fijo" {
-								acumuladoDenominador = auxAcumDen
-							} else {
-								acumuladoDenominador += auxAcumDen
+							if seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["acumuladoDenominador"] != nil {
+								acumuladoDenominador += seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["acumuladoDenominador"].(float64)
 							}
 
-							if seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"] != nil {
-
-								if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"])) == "int" || fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"])) == "float64" {
-									acumuladoNumerador += seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"].(float64)
-								} else {
-									aux2, err := strconv.ParseFloat(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"].(string), 64)
-									if err == nil {
-										acumuladoNumerador += aux2
-									}
-								}
+							if seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["acumuladoNumerador"] != nil {
+								acumuladoNumerador += seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["acumuladoNumerador"].(float64)
 							}
+
+							// if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "int" || fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "float64" {
+							// 	acumuladoDenominador = seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(float64)
+							// } else {
+							// 	aux2, err := strconv.ParseFloat(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(string), 64)
+							// 	if err == nil {
+							// 		acumuladoDenominador = aux2
+							// 	}
+							// }
+
+							// if seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"] != nil {
+
+							// 	if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"])) == "int" || fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"])) == "float64" {
+							// 		acumuladoNumerador += seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"].(float64)
+							// 	} else {
+							// 		aux2, err := strconv.ParseFloat(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"].(string), 64)
+							// 		if err == nil {
+							// 			acumuladoNumerador += aux2
+							// 		}
+							// 	}
+							// }
 						}
 						respuestas[index]["indicadorAcumulado"] = indicadorAcumulado
 						respuestas[index]["avanceAcumulado"] = avanceAcumulado
@@ -614,6 +616,7 @@ func GetRespuestaAcumulado(dataSeg map[string]interface{}, index int, respuestas
 						respuestas[index]["acumuladoNumerador"] = acumuladoNumerador
 						respuestas[index]["acumuladoDenominador"] = acumuladoDenominador
 						respuestas[index]["divisionCero"] = divisionCero
+						break
 					}
 				}
 			}
