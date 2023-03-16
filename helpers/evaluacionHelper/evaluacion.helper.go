@@ -119,16 +119,32 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 
 				for i := ant; i < cont+ant; i++ {
 					if fmt.Sprintf("%v", evaluacion[i]["trimestre1"]) != "map[]" {
-						sum1 = sum1 + evaluacion[i]["trimestre1"].(map[string]interface{})["meta"].(float64)
+						if evaluacion[i]["trimestre1"].(map[string]interface{})["meta"].(float64) > 1 {
+							sum1 = sum1 + 1.0
+						} else {
+							sum1 = sum1 + evaluacion[i]["trimestre1"].(map[string]interface{})["meta"].(float64)
+						}
 					}
 					if fmt.Sprintf("%v", evaluacion[i]["trimestre2"]) != "map[]" {
-						sum2 = sum2 + evaluacion[i]["trimestre2"].(map[string]interface{})["meta"].(float64)
+						if evaluacion[i]["trimestre2"].(map[string]interface{})["meta"].(float64) > 1 {
+							sum2 = sum2 + 1.0
+						} else {
+							sum2 = sum2 + evaluacion[i]["trimestre2"].(map[string]interface{})["meta"].(float64)
+						}
 					}
 					if fmt.Sprintf("%v", evaluacion[i]["trimestre3"]) != "map[]" {
-						sum3 = sum3 + evaluacion[i]["trimestre3"].(map[string]interface{})["meta"].(float64)
+						if evaluacion[i]["trimestre3"].(map[string]interface{})["meta"].(float64) > 1 {
+							sum3 = sum3 + 1.0
+						} else {
+							sum3 = sum3 + evaluacion[i]["trimestre3"].(map[string]interface{})["meta"].(float64)
+						}
 					}
 					if fmt.Sprintf("%v", evaluacion[i]["trimestre4"]) != "map[]" {
-						sum4 = sum4 + evaluacion[i]["trimestre4"].(map[string]interface{})["meta"].(float64)
+						if evaluacion[i]["trimestre4"].(map[string]interface{})["meta"].(float64) > 1 {
+							sum4 = sum4 + 1.0
+						} else {
+							sum4 = sum4 + evaluacion[i]["trimestre4"].(map[string]interface{})["meta"].(float64)
+						}
 					}
 				}
 
