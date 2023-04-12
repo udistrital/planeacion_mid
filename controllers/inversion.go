@@ -40,6 +40,7 @@ func (c *InversionController) URLMapping() {
 	c.Mapping("ActualizarTablaActividad", c.ActualizarTablaActividad)
 	c.Mapping("ActualizarPresupuestoMeta", c.ActualizarPresupuestoMeta)
 	c.Mapping("VerificarMagnitudesProgramadas", c.VerificarMagnitudesProgramadas)
+	c.Mapping("VersionarPlan", c.VersionarPlan)
 }
 
 // AddProyecto ...
@@ -899,7 +900,9 @@ func (c *InversionController) ArmonizarInversion() {
 			fmt.Println(id_subgrupoDetalle, "id_subgrupoDetalle")
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=activo:true,subgrupo_id:"+id_subgrupoDetalle, &respuesta); err == nil {
 				helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
-				if respuestaLimpia != nil {
+				fmt.Println(respuesta, "respuesta")
+				fmt.Println(respuestaLimpia, "respuestaLimpia")
+				if len(respuestaLimpia) > 0 {
 					fmt.Println(respuesta, "subgrupoDetalleb PUT")
 					subgrupo_detalle = respuestaLimpia[0]
 					// if subgrupo_detalle["armonizacion_dato"] != nil {
@@ -1304,7 +1307,7 @@ func (c *InversionController) ProgMagnitudesPlan() {
 		subgrupoPost := make(map[string]interface{})
 		subDetallePost := make(map[string]interface{})
 
-		if subgrupo != nil {
+		if len(subgrupo) > 0 {
 			id_subgrupoDetalle = subgrupo[0]["_id"].(string)
 			fmt.Println(id_subgrupoDetalle, "id_subgrupoDetalle")
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=activo:true,subgrupo_id:"+id_subgrupoDetalle, &respuesta); err == nil {
@@ -1547,6 +1550,7 @@ func (c *InversionController) CrearGrupoMeta() {
 		plan["dependencia_id"] = parametros["dependencia_id"].(string)
 		plan["documento_id"] = parametros["indexMeta"].(string)
 		plan["estado_plan_id"] = "614d3ad301c7a200482fabfd"
+		plan["arbol_padre_id"] = parametros["arbol_padre_id"]
 
 		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/", "POST", &respuestaPost, plan); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuestaPost, &planSubgrupo)
@@ -2142,6 +2146,106 @@ func (c *InversionController) VerificarMagnitudesProgramadas() {
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": magnitud}
 	} else {
 		panic(map[string]interface{}{"funcion": "MagnitudesProgramadas", "err": "Error consultando subgrupo", "status": "400", "log": err})
+	}
+	c.ServeJSON()
+}
+
+// VersionarPlan ...
+// @Title VersionarPlan
+// @Description post Inversion by id
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Success 200
+// @Failure 403 :id is empty
+// @router /versionar_plan/:id [post]
+func (c *InversionController) VersionarPlan() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
+	id := c.Ctx.Input.Param(":id")
+
+	var respuesta map[string]interface{}
+	var res map[string]interface{}
+	var respuestaHijos map[string]interface{}
+	var hijos []map[string]interface{}
+	var actividadesPadre []map[string]interface{}
+	var planPadre map[string]interface{}
+	var respuestaPost map[string]interface{}
+	var respuestaPostActividad map[string]interface{}
+	var planVersionado map[string]interface{}
+	var actividadVersionada map[string]interface{}
+	plan := make(map[string]interface{})
+	grupoActividad := make(map[string]interface{})
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &respuesta); err == nil {
+
+		helpers.LimpiezaRespuestaRefactor(respuesta, &planPadre)
+
+		plan["nombre"] = planPadre["nombre"].(string)
+		plan["descripcion"] = planPadre["descripcion"].(string)
+		plan["tipo_plan_id"] = planPadre["tipo_plan_id"].(string)
+		plan["aplicativo_id"] = planPadre["aplicativo_id"].(string)
+		plan["activo"] = planPadre["activo"]
+		plan["formato"] = false
+		plan["vigencia"] = planPadre["vigencia"].(string)
+		plan["dependencia_id"] = planPadre["dependencia_id"].(string)
+		plan["estado_plan_id"] = "614d3ad301c7a200482fabfd"
+		plan["padre_plan_id"] = id
+
+		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan", "POST", &respuestaPost, plan); err != nil {
+			panic(map[string]interface{}{"funcion": "VersionarPlan", "err": "Error versionando plan \"plan[\"_id\"].(string)\"", "status": "400", "log": err})
+		}
+		planVersionado = respuestaPost["Data"].(map[string]interface{})
+		c.Data["json"] = respuestaPost
+
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &respuestaHijos); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuestaHijos, &hijos)
+			formulacionhelper.VersionarHijos(hijos, planVersionado["_id"].(string))
+		}
+
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=dependencia_id:"+planPadre["dependencia_id"].(string)+",vigencia:"+planPadre["vigencia"].(string)+",formato:false,arbol_padre_id:"+id, &res); err == nil {
+			helpers.LimpiezaRespuestaRefactor(res, &actividadesPadre)
+			if len(actividadesPadre) > 0 {
+				for key := range actividadesPadre {
+					actividadPadre := actividadesPadre[key]
+
+					grupoActividad["nombre"] = actividadPadre["nombre"].(string)
+					grupoActividad["descripcion"] = actividadPadre["descripcion"].(string)
+					grupoActividad["tipo_plan_id"] = actividadPadre["tipo_plan_id"].(string)
+					grupoActividad["aplicativo_id"] = actividadPadre["aplicativo_id"].(string)
+					grupoActividad["activo"] = actividadPadre["activo"]
+					grupoActividad["formato"] = false
+					grupoActividad["vigencia"] = actividadPadre["vigencia"].(string)
+					grupoActividad["dependencia_id"] = actividadPadre["dependencia_id"].(string)
+					grupoActividad["estado_plan_id"] = "614d3ad301c7a200482fabfd"
+					grupoActividad["padre_plan_id"] = actividadPadre["_id"].(string)
+					grupoActividad["arbol_padre_id"] = planVersionado["_id"].(string)
+					grupoActividad["documento_id"] = actividadPadre["documento_id"].(string)
+
+					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan", "POST", &respuestaPostActividad, grupoActividad); err != nil {
+						panic(map[string]interface{}{"funcion": "VersionarPlan", "err": "Error versionando actividades \"actividadPadre[\"_id\"].(string)\"", "status": "400", "log": err})
+					}
+
+					actividadVersionada = respuestaPostActividad["Data"].(map[string]interface{})
+					c.Data["json"] = respuestaPost
+
+					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+actividadPadre["_id"].(string), &respuestaHijos); err == nil {
+						helpers.LimpiezaRespuestaRefactor(respuestaHijos, &hijos)
+						formulacionhelper.VersionarHijos(hijos, actividadVersionada["_id"].(string))
+					}
+
+				}
+			}
+		}
 	}
 	c.ServeJSON()
 }

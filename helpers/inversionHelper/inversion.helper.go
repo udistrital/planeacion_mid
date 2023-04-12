@@ -718,3 +718,83 @@ func desactivarMeta(subgrupo_id string, index string) {
 		panic(map[string]interface{}{"funcion": "InactivarMeta", "err": "Error obteniendo subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
 	}
 }
+
+func VersionarHijos(hijos []map[string]interface{}, padre string) {
+
+	var respuestaPost map[string]interface{}
+	var subgrupoVersionado map[string]interface{}
+	for i := 0; i < len(hijos); i++ {
+		hijo := make(map[string]interface{})
+		hijo["nombre"] = hijos[i]["nombre"]
+		hijo["descripcion"] = hijos[i]["descripcion"]
+		hijo["activo"] = hijos[i]["activo"]
+		hijo["padre"] = padre
+		hijo["bandera_tabla"] = hijos[i]["bandera_tabla"]
+
+		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/registrar_nodo", "POST", &respuestaPost, hijo); err != nil {
+			panic(map[string]interface{}{"funcion": "VersionarHijos", "err": "Error versionando subgrupo \"hijo[\"_id\"].(string)\"", "status": "400", "log": err})
+		}
+		subgrupoVersionado = respuestaPost["Data"].(map[string]interface{})
+
+		var respuestaHijos map[string]interface{}
+		var respuestaHijosDetalle map[string]interface{}
+		var subHijos []map[string]interface{}
+		var subHijosDetalle []map[string]interface{}
+
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijos[i]["_id"].(string), &respuestaHijosDetalle); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuestaHijosDetalle, &subHijosDetalle)
+			VersionarHijosDetalle(subHijosDetalle, subgrupoVersionado["_id"].(string))
+		}
+
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+hijos[i]["_id"].(string), &respuestaHijos); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuestaHijos, &subHijos)
+			VersionarHijos(subHijos, subgrupoVersionado["_id"].(string))
+		}
+
+	}
+}
+
+func VersionarHijosDetalle(subHijosDetalle []map[string]interface{}, subgrupo_id string) {
+	for i := 0; i < len(subHijosDetalle); i++ {
+		hijoDetalle := make(map[string]interface{})
+		hijoDetalle["nombre"] = subHijosDetalle[i]["nombre"]
+		hijoDetalle["descripcion"] = subHijosDetalle[i]["descripcion"]
+		hijoDetalle["subgrupo_id"] = subgrupo_id
+		hijoDetalle["activo"] = subHijosDetalle[i]["activo"]
+		hijoDetalle["dato"] = subHijosDetalle[i]["dato"]
+		hijoDetalle["dato_plan"] = subHijosDetalle[i]["dato_plan"]
+		hijoDetalle["armonizacion_dato"] = subHijosDetalle[i]["armonizacion_dato"]
+
+		var respuestaPost map[string]interface{}
+
+		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle", "POST", &respuestaPost, hijoDetalle); err != nil {
+			panic(map[string]interface{}{"funcion": "VersionarHijosDetalle", "err": "Error versionando subgrupo_detalle ", "status": "400", "log": err})
+		}
+
+	}
+}
+
+func OrdenarVersiones(versiones []map[string]interface{}) []map[string]interface{} {
+	var versionesOrdenadas []map[string]interface{}
+
+	for i := range versiones {
+		if versiones[i]["padre_plan_id"] == nil {
+			versionesOrdenadas = append(versionesOrdenadas, versiones[i])
+		}
+	}
+
+	for len(versionesOrdenadas) < len(versiones) {
+		versionesOrdenadas = append(versionesOrdenadas, getVersionHija(versionesOrdenadas[len(versionesOrdenadas)-1]["_id"], versiones))
+	}
+
+	return versionesOrdenadas
+}
+
+func getVersionHija(id interface{}, versiones []map[string]interface{}) map[string]interface{} {
+	for i := range versiones {
+		if versiones[i]["padre_plan_id"] == id {
+			return versiones[i]
+		}
+	}
+	return nil
+}

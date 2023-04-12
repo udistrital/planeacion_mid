@@ -1151,6 +1151,23 @@ paths:
           description: ""
         "403":
           description: :id is empty
+  /inversion/versionar_plan/{id}:
+    post:
+      tags:
+      - inversion
+      description: post Inversion by id
+      operationId: InversionController.VersionarPlan
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+        "403":
+          description: :id is empty
   /reportes/desagregado:
     post:
       tags:
