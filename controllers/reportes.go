@@ -4002,7 +4002,7 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "Z"+fmt.Sprint(indice+1), "Restante")
 
 			consolidadoExcelEvaluacion.AddChart(sheetName, "B5", &excelize.Chart{
-				Type: "pie",
+				Type: excelize.Pie,
 				Series: []excelize.ChartSeries{
 					{
 						Name:       "",
@@ -4039,7 +4039,7 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			})
 
 			consolidadoExcelEvaluacion.AddChart(sheetName, "F4", &excelize.Chart{
-				Type: "col",
+				Type: excelize.Col,
 				Series: []excelize.ChartSeries{
 					{
 						Name:       "",
