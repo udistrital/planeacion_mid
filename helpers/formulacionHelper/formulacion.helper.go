@@ -257,7 +257,7 @@ func contains(s []string, e string) bool {
 }
 
 func add(id string) {
-	if !contains(validDataT, id) && id != ""{
+	if !contains(validDataT, id) && id != "" {
 		validDataT = append(validDataT, id)
 	}
 }
@@ -284,7 +284,9 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 					if aux != nil {
 						armonizacion["armo"] = aux.(map[string]interface{})["armonizacionPED"]
 						armonizacion["armoPI"] = aux.(map[string]interface{})["armonizacionPI"]
-
+						armonizacion["fuentesActividad"] = aux.(map[string]interface{})["fuentesActividad"]
+						armonizacion["indexMetaSubProI"] = aux.(map[string]interface{})["fuentesActividad"]
+						armonizacion["ponderacionH"] = aux.(map[string]interface{})["ponderacionH"]
 					}
 				}
 				if subgrupo_detalle[0]["dato_plan"] != nil {

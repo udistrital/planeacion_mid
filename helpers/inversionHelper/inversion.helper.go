@@ -452,6 +452,7 @@ func getActividadTabla(subgrupo map[string]interface{}) {
 	var subgrupo_proyect map[string]interface{}
 	var dataProyect map[string]interface{}
 	var dato_plan map[string]interface{}
+	var totalPresupuestoActividad int
 	var armonizacion_dato map[string]interface{}
 	var dato []map[string]interface{}
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+subgrupo["_id"].(string), &respuesta); err == nil {
@@ -462,9 +463,10 @@ func getActividadTabla(subgrupo map[string]interface{}) {
 				dato_plan_str := subgrupo_detalle["dato_plan"].(string)
 				json.Unmarshal([]byte(dato_plan_str), &dato_plan)
 				//fmt.Println(subgrupo_detalle, "subgrupoDetalle")
-				fmt.Println()
+
 				armonizacion_dato_str := subgrupo_detalle["armonizacion_dato"].(string)
 				json.Unmarshal([]byte(armonizacion_dato_str), &armonizacion_dato)
+
 				fmt.Println(armonizacion_dato, "JSON")
 				for key := range dato_plan {
 					actividad := make(map[string]interface{})
@@ -477,47 +479,58 @@ func getActividadTabla(subgrupo map[string]interface{}) {
 					if armonizacion_dato[key] != nil {
 						//fmt.Println(armonizacion_dato[i], "entra a armonizacion dato")
 						dataProyect = armonizacion_dato[key].(map[string]interface{})
-						idSubDetalleProI := dataProyect["idSubDetalleProI"].(string)
-						indexMetaSubProI := dataProyect["indexMetaSubProI"]
-						//fmt.Println(idSubDetalleProI, "idSubDetalleProI")
-						var respuestaLimpia2 map[string]interface{}
-						var res map[string]interface{}
-						//var posicion
-						//var indexPro int
-						if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+idSubDetalleProI, &res); err != nil {
-							panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error get subgrupo-detalle \"key\"", "status": "400", "log": err})
-						}
-						helpers.LimpiezaRespuestaRefactor(res, &respuestaLimpia2)
-						// b, err := json.Marshal(res["Data"])
-						// if err != nil {
-						// 	panic(err)
-						// }
-						// json.Unmarshal(b, &respuestaLimpia2)
-						//fmt.Println(respuestaLimpia2, "metas pro inversion")
-						subgrupo_proyect = respuestaLimpia2
-						dato_str := subgrupo_proyect["dato"].(string)
-						json.Unmarshal([]byte(dato_str), &dato)
-						//fmt.Println(dato, "dato")
-						for key2 := range dato {
-							//fmt.Println("entra a dato")
-							//metaProyect := dato[key2]
-							// j, err := strconv.Atoi(indexMetaSubProI.(string))
+						actividad["presupuesto"] = dataProyect["presupuesto_programado"]
+						actividad["presupuesto_programado"] = dataProyect["presupuesto_programado"]
+						fmt.Println(actividad["presupuesto"], "presupuesto")
+						if dataProyect["idSubDetalleProI"] != nil {
+
+							idSubDetalleProI := dataProyect["idSubDetalleProI"].(string) //para las actividades no está guardado éste valor
+							indexMetaSubProI := dataProyect["indexMetaSubProI"]
+							//totalPresupuestoActividad = dataProyect["totalPresupuestoActividad"].(int)
+							fmt.Println(totalPresupuestoActividad, "total")
+							//fmt.Println(idSubDetalleProI, "idSubDetalleProI")
+							var respuestaLimpia2 map[string]interface{}
+							var res map[string]interface{}
+							//var posicion
+							//var indexPro int
+							if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+idSubDetalleProI, &res); err != nil {
+								panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error get subgrupo-detalle \"key\"", "status": "400", "log": err})
+							}
+							helpers.LimpiezaRespuestaRefactor(res, &respuestaLimpia2)
+							// b, err := json.Marshal(res["Data"])
 							// if err != nil {
 							// 	panic(err)
 							// }
-							//indexPro = j
-							//posicion = dato[key2]["posicion"]
-							//j = dato[key2]["posicion"].(string)
-							//fmt.Println(dato[key2]["posicion"] == j, "j")
-							if indexMetaSubProI == dato[key2]["posicion"] {
-								//fmt.Println("entra a presupuesto")
-								actividad["meta"] = dato[key2]["descripcion"]
-								actividad["presupuesto_programado"] = dato[key2]["presupuestoT"]
-								actividad["posicion"] = dato[key2]["posicion"]
-								actividad["indexMetaSubProI"] = indexMetaSubProI
-							}
+							// json.Unmarshal(b, &respuestaLimpia2)
+							//fmt.Println(respuestaLimpia2, "metas pro inversion")
+							subgrupo_proyect = respuestaLimpia2
+							dato_str := subgrupo_proyect["dato"].(string)
+							json.Unmarshal([]byte(dato_str), &dato)
+							//fmt.Println(dato, "dato")
+							for key2 := range dato {
+								//fmt.Println("entra a dato")
+								//metaProyect := dato[key2]
+								// j, err := strconv.Atoi(indexMetaSubProI.(string))
+								// if err != nil {
+								// 	panic(err)
+								// }
+								//indexPro = j
+								//posicion = dato[key2]["posicion"]
+								//j = dato[key2]["posicion"].(string)
+								//fmt.Println(dato[key2]["posicion"] == j, "j")
+								if indexMetaSubProI == dato[key2]["posicion"] {
+									//fmt.Println("entra a presupuesto")
+									actividad["meta"] = dato[key2]["descripcion"]
+									//actividad["presupuesto_programado"] = dato[key2]["presupuestoT"]
+									actividad["posicion"] = dato[key2]["posicion"]
+									actividad["indexMetaSubProI"] = indexMetaSubProI
 
+								}
+
+							}
 						}
+						actividad["indexMeta"] = dataProyect["indexMetaSubProI"]
+						//actividad["presupuesto"] = dataProyect["totalPresupuestoActividad"]
 					}
 					data_source = append(data_source, actividad)
 					//fmt.Println(actividad, "actividad")
@@ -704,4 +717,84 @@ func desactivarMeta(subgrupo_id string, index string) {
 	} else {
 		panic(map[string]interface{}{"funcion": "InactivarMeta", "err": "Error obteniendo subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
 	}
+}
+
+func VersionarHijos(hijos []map[string]interface{}, padre string) {
+
+	var respuestaPost map[string]interface{}
+	var subgrupoVersionado map[string]interface{}
+	for i := 0; i < len(hijos); i++ {
+		hijo := make(map[string]interface{})
+		hijo["nombre"] = hijos[i]["nombre"]
+		hijo["descripcion"] = hijos[i]["descripcion"]
+		hijo["activo"] = hijos[i]["activo"]
+		hijo["padre"] = padre
+		hijo["bandera_tabla"] = hijos[i]["bandera_tabla"]
+
+		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/registrar_nodo", "POST", &respuestaPost, hijo); err != nil {
+			panic(map[string]interface{}{"funcion": "VersionarHijos", "err": "Error versionando subgrupo \"hijo[\"_id\"].(string)\"", "status": "400", "log": err})
+		}
+		subgrupoVersionado = respuestaPost["Data"].(map[string]interface{})
+
+		var respuestaHijos map[string]interface{}
+		var respuestaHijosDetalle map[string]interface{}
+		var subHijos []map[string]interface{}
+		var subHijosDetalle []map[string]interface{}
+
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijos[i]["_id"].(string), &respuestaHijosDetalle); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuestaHijosDetalle, &subHijosDetalle)
+			VersionarHijosDetalle(subHijosDetalle, subgrupoVersionado["_id"].(string))
+		}
+
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+hijos[i]["_id"].(string), &respuestaHijos); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuestaHijos, &subHijos)
+			VersionarHijos(subHijos, subgrupoVersionado["_id"].(string))
+		}
+
+	}
+}
+
+func VersionarHijosDetalle(subHijosDetalle []map[string]interface{}, subgrupo_id string) {
+	for i := 0; i < len(subHijosDetalle); i++ {
+		hijoDetalle := make(map[string]interface{})
+		hijoDetalle["nombre"] = subHijosDetalle[i]["nombre"]
+		hijoDetalle["descripcion"] = subHijosDetalle[i]["descripcion"]
+		hijoDetalle["subgrupo_id"] = subgrupo_id
+		hijoDetalle["activo"] = subHijosDetalle[i]["activo"]
+		hijoDetalle["dato"] = subHijosDetalle[i]["dato"]
+		hijoDetalle["dato_plan"] = subHijosDetalle[i]["dato_plan"]
+		hijoDetalle["armonizacion_dato"] = subHijosDetalle[i]["armonizacion_dato"]
+
+		var respuestaPost map[string]interface{}
+
+		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle", "POST", &respuestaPost, hijoDetalle); err != nil {
+			panic(map[string]interface{}{"funcion": "VersionarHijosDetalle", "err": "Error versionando subgrupo_detalle ", "status": "400", "log": err})
+		}
+
+	}
+}
+
+func OrdenarVersiones(versiones []map[string]interface{}) []map[string]interface{} {
+	var versionesOrdenadas []map[string]interface{}
+
+	for i := range versiones {
+		if versiones[i]["padre_plan_id"] == nil {
+			versionesOrdenadas = append(versionesOrdenadas, versiones[i])
+		}
+	}
+
+	for len(versionesOrdenadas) < len(versiones) {
+		versionesOrdenadas = append(versionesOrdenadas, getVersionHija(versionesOrdenadas[len(versionesOrdenadas)-1]["_id"], versiones))
+	}
+
+	return versionesOrdenadas
+}
+
+func getVersionHija(id interface{}, versiones []map[string]interface{}) map[string]interface{} {
+	for i := range versiones {
+		if versiones[i]["padre_plan_id"] == id {
+			return versiones[i]
+		}
+	}
+	return nil
 }
