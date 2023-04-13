@@ -206,6 +206,7 @@ func GetInformacionPlan(seguimiento map[string]interface{}, index string) map[st
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+seguimiento["plan_id"].(string), &resInformacion); err == nil {
 		helpers.LimpiezaRespuestaRefactor(resInformacion, &hijos)
 		for _, hijo := range hijos {
+			nombreHijo := strings.ToLower(hijo["nombre"].(string))
 			if hijo["activo"] == true {
 				var res map[string]interface{}
 
@@ -230,19 +231,19 @@ func GetInformacionPlan(seguimiento map[string]interface{}, index string) map[st
 					}
 
 					switch {
-					case strings.Contains(nombreDetalle, "ponderación"):
+					case strings.Contains(nombreHijo, "ponderación"):
 						informacion["ponderacion"] = datoPlan[index].(map[string]interface{})["dato"]
 						continue
-					case strings.Contains(nombreDetalle, "periodo") || strings.Contains(nombreDetalle, "período"):
+					case strings.Contains(nombreHijo, "periodo") || strings.Contains(nombreHijo, "período"):
 						informacion["periodo"] = datoPlan[index].(map[string]interface{})["dato"]
 						continue
-					case strings.Contains(nombreDetalle, "tareas") || strings.Contains(nombreDetalle, "actividades específicas"):
+					case strings.Contains(nombreHijo, "tareas") || strings.Contains(nombreHijo, "actividades específicas"):
 						informacion["tarea"] = datoPlan[index].(map[string]interface{})["dato"]
 						continue
-					case strings.Contains(nombreDetalle, "producto"):
+					case strings.Contains(nombreHijo, "producto"):
 						informacion["producto"] = datoPlan[index].(map[string]interface{})["dato"]
 						continue
-					case strings.Contains(nombreDetalle, "actividad general"):
+					case strings.Contains(nombreHijo, "actividad general"):
 						informacion["descripcion"] = datoPlan[index].(map[string]interface{})["dato"]
 						continue
 					}
@@ -285,7 +286,7 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 						var dato_plan map[string]interface{}
 
 						informacion := map[string]interface{}{
-							"detalleReporte":     "",
+							"detalleReporte": "",
 						}
 
 						respuesta := map[string]interface{}{
@@ -493,7 +494,7 @@ func GetDenominadorFijo(dataSeg map[string]interface{}, index int, indexActivida
 							if seguimientoActividad["cuantitativo"] == nil {
 								break
 							}
-							
+
 							if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "int" || fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "float64" {
 								return seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(float64)
 							} else {
@@ -541,7 +542,7 @@ func GetRespuestaAnterior(dataSeg map[string]interface{}, index int, respuestas 
 					tri, _ := strconv.Atoi(string(trimestre[1]))
 					segTrimestre, _ := strconv.Atoi(string(periodo[0]["ParametroId"].(map[string]interface{})["CodigoAbreviacion"].(string)[1]))
 
-					if (tri-1) == segTrimestre {
+					if (tri - 1) == segTrimestre {
 						if seguimiento["dato"] != "{}" {
 							dato := make(map[string]interface{})
 							datoStr := seguimiento["dato"].(string)
