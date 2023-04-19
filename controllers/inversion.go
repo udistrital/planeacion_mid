@@ -1019,7 +1019,7 @@ func (c *InversionController) ActualizarMetaPlan() {
 	_ = id
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 	entrada = body["entrada"].(map[string]interface{})
-	idSubDetalleProI := body["idSubDetalle"]
+	//idSubDetalleProI := body["idSubDetalle"]
 	indexMetaSubProI := body["indexMetaSubPro"]
 	for key, element := range entrada {
 		var respuesta map[string]interface{}
@@ -1083,10 +1083,11 @@ func (c *InversionController) ActualizarMetaPlan() {
 			dato_armonizacion_str := subgrupo_detalle["armonizacion_dato"].(string)
 			json.Unmarshal([]byte(dato_armonizacion_str), &armonizacion_dato)
 			if armonizacion_dato[index] != nil {
+				aux_armonizacion := armonizacion_dato[index].(map[string]interface{})
 				aux := make(map[string]interface{})
-				aux["idSubDetalleProI"] = idSubDetalleProI
+				aux["idSubDetalleProI"] = aux_armonizacion["idSubDetalleProI"]
 				aux["indexMetaSubProI"] = indexMetaSubProI
-				aux["presupuesto_programado"] = body["presupuesto_programado"]
+				aux["presupuesto_programado"] = aux_armonizacion["presupuesto_programado"]
 				armonizacion_dato[index] = aux
 				fmt.Println(armonizacion_dato, "armonizacion_dato")
 			}
