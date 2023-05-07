@@ -1360,23 +1360,6 @@ paths:
             $ref: '#/definitions/models.Seguimiento'
         "403":
           description: :plan_id is empty
-  /seguimiento/get_data/{plan_id}/{index}:
-    get:
-      tags:
-      - seguimiento
-      description: get Seguimiento
-      operationId: SeguimientoController.GetDataActividad
-      parameters:
-      - in: path
-        name: periodo
-        description: The key for staticblock
-        required: true
-        type: string
-      responses:
-        "200":
-          description: ""
-        "403":
-          description: ""
   /seguimiento/get_estado_trimestre/{plan_id}/{trimestre}:
     get:
       tags:
@@ -1594,6 +1577,28 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/{}'
+      responses:
+        "200":
+          description: ""
+        "403":
+          description: ""
+  /seguimiento/migrar_seguimiento/{plan_id}/{trimestre}:
+    post:
+      tags:
+      - seguimiento
+      description: post Segrar la informacion de los seguimientos
+      operationId: SeguimientoController.MigrarInformacion
+      parameters:
+      - in: path
+        name: plan_id
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: trimestre
+        description: The key for staticblock
+        required: true
+        type: string
       responses:
         "200":
           description: ""

@@ -282,11 +282,13 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 					json.Unmarshal([]byte(dato_armonizacion_str), &dato_armonizacion)
 					aux := dato_armonizacion[index]
 					if aux != nil {
-						armonizacion["armo"] = aux.(map[string]interface{})["armonizacionPED"]
-						armonizacion["armoPI"] = aux.(map[string]interface{})["armonizacionPI"]
-						armonizacion["fuentesActividad"] = aux.(map[string]interface{})["fuentesActividad"]
-						armonizacion["indexMetaSubProI"] = aux.(map[string]interface{})["fuentesActividad"]
-						armonizacion["ponderacionH"] = aux.(map[string]interface{})["ponderacionH"]
+						armonizacion["armo"] = dato_armonizacion[index].(map[string]interface{})["armonizacionPED"]
+						armonizacion["armoPI"] = dato_armonizacion[index].(map[string]interface{})["armonizacionPI"]
+						armonizacion["fuentesActividad"] = dato_armonizacion[index].(map[string]interface{})["fuentesActividad"]
+						armonizacion["indexMetaSubProI"] = dato_armonizacion[index].(map[string]interface{})["indexMetaSubProI"]
+						armonizacion["ponderacionH"] = dato_armonizacion[index].(map[string]interface{})["ponderacionH"]
+						armonizacion["object"] = aux
+						fmt.Println(armonizacion, "Meta consultada")
 					}
 				}
 				if subgrupo_detalle[0]["dato_plan"] != nil {
