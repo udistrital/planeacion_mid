@@ -576,15 +576,6 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"],
         beego.ControllerComments{
-            Method: "GetDataActividad",
-            Router: "/get_data/:plan_id/:index",
-            AllowHTTPMethods: []string{"get"},
-            MethodParams: param.Make(),
-            Filters: nil,
-            Params: nil})
-
-    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"],
-        beego.ControllerComments{
             Method: "GetEstadoTrimestre",
             Router: "/get_estado_trimestre/:plan_id/:trimestre",
             AllowHTTPMethods: []string{"get"},
@@ -660,6 +651,15 @@ func init() {
             Method: "HabilitarReportes",
             Router: "/habilitar_reportes",
             AllowHTTPMethods: []string{"put"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"],
+        beego.ControllerComments{
+            Method: "MigrarInformacion",
+            Router: "/migrar_seguimiento/:plan_id/:trimestre",
+            AllowHTTPMethods: []string{"post"},
             MethodParams: param.Make(),
             Filters: nil,
             Params: nil})
