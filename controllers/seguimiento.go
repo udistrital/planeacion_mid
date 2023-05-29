@@ -128,6 +128,7 @@ func (c *SeguimientoController) CrearReportes() {
 	plan_id := c.Ctx.Input.Param(":plan")
 	tipo := c.Ctx.Input.Param(":tipo")
 	var res map[string]interface{}
+	var resDependencia map[string]interface{}
 	var resTrimestres map[string]interface{}
 	var plan map[string]interface{}
 	var respuestaPost map[string]interface{}
@@ -142,7 +143,12 @@ func (c *SeguimientoController) CrearReportes() {
 			periodo := int(trimestres[i]["Id"].(float64))
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?query=tipo_seguimiento_id:61f236f525e40c582a0840d0,periodo_id:`+strconv.Itoa(periodo), &resTrimestres); err == nil {
 				reporte["nombre"] = "Seguimiento para el " + plan["nombre"].(string)
-				reporte["descripcion"] = "Seguimiento " + plan["nombre"].(string) + " dependencia " + plan["dependencia"].(string)
+				reporte["descripcion"] = "Seguimiento " + plan["nombre"].(string)
+				if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"dependencia/"+ plan["dependencia_id"].(string), &resDependencia); err == nil {
+					if resDependencia["Nombre"] != nil {
+						reporte["descripcion"] = reporte["descripcion"].(string) + " dependencia " + resDependencia["Nombre"].(string)
+					}
+				}
 				reporte["activo"] = false
 				reporte["plan_id"] = plan_id
 				reporte["estado_seguimiento_id"] = "61f237df25e40c57a60840d5"
