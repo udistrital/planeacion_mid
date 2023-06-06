@@ -230,10 +230,11 @@ func GetEvaluacionTrimestre(planId string, periodoId string, actividadId string)
 			return nil
 		}
 
-		id, segregado := actividades[actividadId].(map[string]interface{})["id"].(string)
 
 		var indicadores []interface{}
 		var resultados []interface{}
+		id, segregado := actividades[actividadId].(map[string]interface{})["id"].(string)
+    
 		if segregado && id != "" {
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id, &resSeguimientoDetalle); err == nil {
 				helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
