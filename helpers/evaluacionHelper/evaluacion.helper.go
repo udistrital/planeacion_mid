@@ -90,6 +90,7 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 	var resSeguimientoDetalle map[string]interface{}
 	detalle := make(map[string]interface{})
 	actividades := make(map[string]interface{})
+
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/seguimiento?query=estado_seguimiento_id:622ba49216511e93a95c326d,plan_id:`+planId+`,periodo_seguimiento_id:`+periodos[trimestre]["_id"].(string), &resSeguimiento); err == nil {
 		aux := make([]map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(resSeguimiento, &aux)
@@ -98,27 +99,27 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 		}
 
 		seguimiento = aux[0]
-
 		datoStr := seguimiento["dato"].(string)
 		json.Unmarshal([]byte(datoStr), &actividades)
 
 		for actividadId, act := range actividades {
-			actividad := act.(map[string]interface{})
+			id, segregado := actividades[actividadId].(map[string]interface{})["id"].(string)
+			var actividad map[string]interface{}
+
+			if segregado && id != "" {
+				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id, &resSeguimientoDetalle); err == nil {
+					helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
+					actividad = seguimientohelper.ConvertirStringJson(detalle)
+				}
+			} else {
+				actividad = act.(map[string]interface{})
+			}
 			for indexPeriodo, periodo := range periodos {
 				if indexPeriodo > trimestre {
 					break
 				}
 				resIndicadores := GetEvaluacionTrimestre(planId, periodo["_id"].(string), actividadId)
 				for _, resIndicador := range resIndicadores {
-
-					id, segregado := actividad["id"]
-			
-					if segregado && id != "" {
-						if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id.(string), &resSeguimientoDetalle); err == nil {
-							helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
-							actividad = seguimientohelper.ConvertirStringJson(detalle)
-						}
-					}
 
 					indice := -1
 					for index, eval := range evaluacion {
