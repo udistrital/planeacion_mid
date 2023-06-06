@@ -241,24 +241,6 @@ func GetEvaluacionTrimestre(planId string, periodoId string, actividadId string)
 
 		var indicadores []interface{}
 		var resultados []interface{}
-		id, segregado := actividades[actividadId].(map[string]interface{})["id"].(string)
-    
-		if segregado && id != "" {
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id, &resSeguimientoDetalle); err == nil {
-				helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
-				detalle = seguimientohelper.ConvertirStringJson(detalle)
-				indicadores = detalle["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})
-				resultados = detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})
-			}
-		} else {
-			indicadores = actividades[actividadId].(map[string]interface{})["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})
-			resultados = actividades[actividadId].(map[string]interface{})["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})
-		}
-
-		for i := 0; i < len(indicadores); i++ {
-
-		var indicadores []interface{}
-		var resultados []interface{}
 		id, segregado := actividades[actividadId].(map[string]interface{})["id"]
 
 		if segregado && id != "" {
