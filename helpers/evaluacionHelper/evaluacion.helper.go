@@ -52,6 +52,15 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 				resIndicadores := GetEvaluacionTrimestre(planId, periodo["_id"].(string), actividadId)
 				for _, resIndicador := range resIndicadores {
 
+					id, segregado := actividad["id"]
+			
+					if segregado && id != "" {
+						if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id.(string), &resSeguimientoDetalle); err == nil {
+							helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
+							actividad = seguimientohelper.ConvertirStringJson(detalle)
+						}
+					}
+
 					indice := -1
 					for index, eval := range evaluacion {
 						if eval["numero"] == actividad["informacion"].(map[string]interface{})["index"] && eval["indicador"] == resIndicador["indicador"] {
@@ -211,8 +220,8 @@ func GetEvaluacionTrimestre(planId string, periodoId string, actividadId string)
 	var seguimiento map[string]interface{}
 	var evaluacion []map[string]interface{}
 	var resSeguimientoDetalle map[string]interface{}
-	detalle := make(map[string]interface{})
 	actividades := make(map[string]interface{})
+	detalle := make(map[string]interface{})
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/seguimiento?query=estado_seguimiento_id:622ba49216511e93a95c326d,plan_id:`+planId+`,periodo_seguimiento_id:`+periodoId, &resSeguimiento); err == nil {
 		aux := make([]map[string]interface{}, 1)
@@ -230,10 +239,10 @@ func GetEvaluacionTrimestre(planId string, periodoId string, actividadId string)
 			return nil
 		}
 
-		id, segregado := actividades[actividadId].(map[string]interface{})["id"].(string)
-
 		var indicadores []interface{}
 		var resultados []interface{}
+		id, segregado := actividades[actividadId].(map[string]interface{})["id"].(string)
+    
 		if segregado && id != "" {
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id, &resSeguimientoDetalle); err == nil {
 				helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
@@ -248,11 +257,32 @@ func GetEvaluacionTrimestre(planId string, periodoId string, actividadId string)
 
 		for i := 0; i < len(indicadores); i++ {
 
+		var indicadores []interface{}
+		var resultados []interface{}
+		id, segregado := actividades[actividadId].(map[string]interface{})["id"]
+
+		if segregado && id != "" {
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id.(string), &resSeguimientoDetalle); err == nil {
+				helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
+				detalle = seguimientohelper.ConvertirStringJson(detalle)
+				indicadores = detalle["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})
+				resultados = detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})
+			}
+		} else {
+			indicadores = actividades[actividadId].(map[string]interface{})["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})
+			resultados = actividades[actividadId].(map[string]interface{})["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})
+		}
+
+		for i := 0; i < len(indicadores); i++ {
 			var metaA float64
-			if reflect.TypeOf(indicadores[i].(map[string]interface{})["meta"]).String() == "string" {
-				metaA, _ = strconv.ParseFloat(indicadores[i].(map[string]interface{})["meta"].(string), 64)
+			if indicadores[i].(map[string]interface{})["meta"] == nil {
+				metaA = 0
 			} else {
-				metaA = indicadores[i].(map[string]interface{})["meta"].(float64)
+				if reflect.TypeOf(indicadores[i].(map[string]interface{})["meta"]).String() == "string" {
+					metaA, _ = strconv.ParseFloat(indicadores[i].(map[string]interface{})["meta"].(string), 64)
+				} else {
+					metaA = indicadores[i].(map[string]interface{})["meta"].(float64)
+				}
 			}
 
 			evaluacion = append(evaluacion, map[string]interface{}{
