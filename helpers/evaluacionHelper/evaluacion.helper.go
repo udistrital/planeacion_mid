@@ -14,6 +14,75 @@ import (
 	"github.com/udistrital/utils_oas/request"
 )
 
+func GetEvaluacionTrimestre(planId string, periodoId string, actividadId string) []map[string]interface{} {
+	var resSeguimiento map[string]interface{}
+	var seguimiento map[string]interface{}
+	var evaluacion []map[string]interface{}
+	var resSeguimientoDetalle map[string]interface{}
+	actividades := make(map[string]interface{})
+	detalle := make(map[string]interface{})
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/seguimiento?query=estado_seguimiento_id:622ba49216511e93a95c326d,plan_id:`+planId+`,periodo_seguimiento_id:`+periodoId, &resSeguimiento); err == nil {
+		aux := make([]map[string]interface{}, 1)
+		helpers.LimpiezaRespuestaRefactor(resSeguimiento, &aux)
+		if fmt.Sprintf("%v", aux) == "[]" {
+			return nil
+		}
+
+		seguimiento = aux[0]
+
+		datoStr := seguimiento["dato"].(string)
+		json.Unmarshal([]byte(datoStr), &actividades)
+
+		if actividades[actividadId] == nil {
+			return nil
+		}
+
+		var indicadores []interface{}
+		var resultados []interface{}
+		id, segregado := actividades[actividadId].(map[string]interface{})["id"]
+
+		if segregado && id != "" {
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id.(string), &resSeguimientoDetalle); err == nil {
+				helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
+				detalle = seguimientohelper.ConvertirStringJson(detalle)
+				indicadores = detalle["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})
+				resultados = detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})
+			}
+		} else {
+			indicadores = actividades[actividadId].(map[string]interface{})["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})
+			resultados = actividades[actividadId].(map[string]interface{})["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})
+		}
+
+		for i := 0; i < len(indicadores); i++ {
+			var metaA float64
+			if indicadores[i].(map[string]interface{})["meta"] == nil {
+				metaA = 0
+			} else {
+				if reflect.TypeOf(indicadores[i].(map[string]interface{})["meta"]).String() == "string" {
+					metaA, _ = strconv.ParseFloat(indicadores[i].(map[string]interface{})["meta"].(string), 64)
+				} else {
+					metaA = indicadores[i].(map[string]interface{})["meta"].(float64)
+				}
+			}
+
+			evaluacion = append(evaluacion, map[string]interface{}{
+				"indicador":   indicadores[i].(map[string]interface{})["nombre"],
+				"formula":     indicadores[i].(map[string]interface{})["formula"],
+				"metaA":       metaA,
+				"unidad":      indicadores[i].(map[string]interface{})["unidad"],
+				"numerador":   indicadores[i].(map[string]interface{})["reporteNumerador"],
+				"denominador": indicadores[i].(map[string]interface{})["reporteDenominador"],
+				"periodo":     resultados[i].(map[string]interface{})["indicador"],
+				"acumulado":   resultados[i].(map[string]interface{})["indicadorAcumulado"],
+				"meta":        resultados[i].(map[string]interface{})["avanceAcumulado"],
+				"actividad":   0})
+		}
+		return evaluacion
+	}
+	return nil
+}
+
 func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre int) []map[string]interface{} {
 	var resSeguimiento map[string]interface{}
 	var seguimiento map[string]interface{}
@@ -201,73 +270,6 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 			}
 		}
 
-		return evaluacion
-	}
-	return nil
-}
-
-func GetEvaluacionTrimestre(planId string, periodoId string, actividadId string) []map[string]interface{} {
-	var resSeguimiento map[string]interface{}
-	var seguimiento map[string]interface{}
-	var evaluacion []map[string]interface{}
-	var resSeguimientoDetalle map[string]interface{}
-	detalle := make(map[string]interface{})
-	actividades := make(map[string]interface{})
-
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/seguimiento?query=estado_seguimiento_id:622ba49216511e93a95c326d,plan_id:`+planId+`,periodo_seguimiento_id:`+periodoId, &resSeguimiento); err == nil {
-		aux := make([]map[string]interface{}, 1)
-		helpers.LimpiezaRespuestaRefactor(resSeguimiento, &aux)
-		if fmt.Sprintf("%v", aux) == "[]" {
-			return nil
-		}
-
-		seguimiento = aux[0]
-
-		datoStr := seguimiento["dato"].(string)
-		json.Unmarshal([]byte(datoStr), &actividades)
-
-		if actividades[actividadId] == nil {
-			return nil
-		}
-
-
-		var indicadores []interface{}
-		var resultados []interface{}
-		id, segregado := actividades[actividadId].(map[string]interface{})["id"].(string)
-    
-		if segregado && id != "" {
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id, &resSeguimientoDetalle); err == nil {
-				helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
-				detalle = seguimientohelper.ConvertirStringJson(detalle)
-				indicadores = detalle["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})
-				resultados = detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})
-			}
-		} else {
-			indicadores = actividades[actividadId].(map[string]interface{})["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})
-			resultados = actividades[actividadId].(map[string]interface{})["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})
-		}
-
-		for i := 0; i < len(indicadores); i++ {
-
-			var metaA float64
-			if reflect.TypeOf(indicadores[i].(map[string]interface{})["meta"]).String() == "string" {
-				metaA, _ = strconv.ParseFloat(indicadores[i].(map[string]interface{})["meta"].(string), 64)
-			} else {
-				metaA = indicadores[i].(map[string]interface{})["meta"].(float64)
-			}
-
-			evaluacion = append(evaluacion, map[string]interface{}{
-				"indicador":   indicadores[i].(map[string]interface{})["nombre"],
-				"formula":     indicadores[i].(map[string]interface{})["formula"],
-				"metaA":       metaA,
-				"unidad":      indicadores[i].(map[string]interface{})["unidad"],
-				"numerador":   indicadores[i].(map[string]interface{})["reporteNumerador"],
-				"denominador": indicadores[i].(map[string]interface{})["reporteDenominador"],
-				"periodo":     resultados[i].(map[string]interface{})["indicador"],
-				"acumulado":   resultados[i].(map[string]interface{})["indicadorAcumulado"],
-				"meta":        resultados[i].(map[string]interface{})["avanceAcumulado"],
-				"actividad":   0})
-		}
 		return evaluacion
 	}
 	return nil
