@@ -487,6 +487,8 @@ func GetRespuestaAnterior(dataSeg map[string]interface{}, index int, respuestas 
 	var periodoSeguimiento map[string]interface{}
 	var seguimientos []map[string]interface{}
 	var periodo []map[string]interface{}
+	var resSeguimientoDetalle map[string]interface{}
+	detalle := make(map[string]interface{})
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+plan_id, &resSeguimiento); err == nil {
 		helpers.LimpiezaRespuestaRefactor(resSeguimiento, &seguimientos)
@@ -520,62 +522,84 @@ func GetRespuestaAnterior(dataSeg map[string]interface{}, index int, respuestas 
 								continue
 							}
 
-							seguimientoActividad := dato[indexActividad].(map[string]interface{})
-							if seguimientoActividad["cuantitativo"] == nil {
-								respuestas[index]["indicadorAcumulado"] = indicadorAcumulado
-								respuestas[index]["avanceAcumulado"] = avanceAcumulado
-								respuestas[index]["brechaExistente"] = brechaExistente
-								respuestas[index]["divisionCero"] = divisionCero
-								continue
-							}
+							id, segregado := dato[indexActividad].(map[string]interface{})["id"]
+							if segregado && id != "" {
+								if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+dato[indexActividad].(map[string]interface{})["id"].(string), &resSeguimientoDetalle); err == nil {
+									helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
+									detalle = ConvertirStringJson(detalle)
 
-							if seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["indicadorAcumulado"] != nil {
-								indicadorAcumulado += seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["indicadorAcumulado"].(float64)
-							}
+									if fmt.Sprintf("%v", detalle["cuantitativo"]) == "map[]" {
+										respuestas[index]["indicadorAcumulado"] = indicadorAcumulado
+										respuestas[index]["avanceAcumulado"] = avanceAcumulado
+										respuestas[index]["brechaExistente"] = brechaExistente
+										respuestas[index]["divisionCero"] = divisionCero
+										continue
+									}
 
-							if seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["avanceAcumulado"] != nil {
-								avanceAcumulado += seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["avanceAcumulado"].(float64)
-							}
+									if detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["indicadorAcumulado"] != nil {
+										indicadorAcumulado += detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["indicadorAcumulado"].(float64)
+									}
 
-							if seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["brechaExistente"] != nil {
-								brechaExistente += seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["brechaExistente"].(float64)
-							}
+									if detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["avanceAcumulado"] != nil {
+										avanceAcumulado += detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["avanceAcumulado"].(float64)
+									}
 
-							if seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["divisionCero"] != nil {
-								divisionCero = seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["divisionCero"].(bool)
+									if detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["brechaExistente"] != nil {
+										brechaExistente += detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["brechaExistente"].(float64)
+									}
+
+									if detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["divisionCero"] != nil {
+										divisionCero = detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["divisionCero"].(bool)
+									} else {
+										divisionCero = false
+									}
+
+									if detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["acumuladoDenominador"] != nil {
+										acumuladoDenominador += detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["acumuladoDenominador"].(float64)
+									}
+
+									if detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["acumuladoNumerador"] != nil {
+										acumuladoNumerador += detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["acumuladoNumerador"].(float64)
+									}
+								}
 							} else {
-								divisionCero = false
+								seguimientoActividad := dato[indexActividad].(map[string]interface{})
+								if seguimientoActividad["cuantitativo"] == nil {
+									respuestas[index]["indicadorAcumulado"] = indicadorAcumulado
+									respuestas[index]["avanceAcumulado"] = avanceAcumulado
+									respuestas[index]["brechaExistente"] = brechaExistente
+									respuestas[index]["divisionCero"] = divisionCero
+									continue
+								}
+
+								if seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["indicadorAcumulado"] != nil {
+									indicadorAcumulado += seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["indicadorAcumulado"].(float64)
+								}
+
+								if seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["avanceAcumulado"] != nil {
+									avanceAcumulado += seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["avanceAcumulado"].(float64)
+								}
+
+								if seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["brechaExistente"] != nil {
+									brechaExistente += seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["brechaExistente"].(float64)
+								}
+
+								if seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["divisionCero"] != nil {
+									divisionCero = seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["divisionCero"].(bool)
+								} else {
+									divisionCero = false
+								}
+
+								if seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["acumuladoDenominador"] != nil {
+									acumuladoDenominador += seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["acumuladoDenominador"].(float64)
+								}
+
+								if seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["acumuladoNumerador"] != nil {
+									acumuladoNumerador += seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["acumuladoNumerador"].(float64)
+								}
 							}
-
-							if seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["acumuladoDenominador"] != nil {
-								acumuladoDenominador += seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["acumuladoDenominador"].(float64)
-							}
-
-							if seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["acumuladoNumerador"] != nil {
-								acumuladoNumerador += seguimientoActividad["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["acumuladoNumerador"].(float64)
-							}
-
-							// if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "int" || fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"])) == "float64" {
-							// 	acumuladoDenominador = seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(float64)
-							// } else {
-							// 	aux2, err := strconv.ParseFloat(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteDenominador"].(string), 64)
-							// 	if err == nil {
-							// 		acumuladoDenominador = aux2
-							// 	}
-							// }
-
-							// if seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"] != nil {
-
-							// 	if fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"])) == "int" || fmt.Sprint(reflect.TypeOf(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"])) == "float64" {
-							// 		acumuladoNumerador += seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"].(float64)
-							// 	} else {
-							// 		aux2, err := strconv.ParseFloat(seguimientoActividad["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{})[index].(map[string]interface{})["reporteNumerador"].(string), 64)
-							// 		if err == nil {
-							// 			acumuladoNumerador += aux2
-							// 		}
-							// 	}
-							// }
 						}
+
 						respuestas[index]["indicadorAcumulado"] = indicadorAcumulado
 						respuestas[index]["avanceAcumulado"] = avanceAcumulado
 						respuestas[index]["brechaExistente"] = brechaExistente
