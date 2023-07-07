@@ -7,6 +7,7 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -693,7 +694,7 @@ func (c *FormulacionController) GetAllIdentificacion() {
 
 				identi = nil
 				data_identi = nil
-				
+
 				if dato["rubros_pos"] != nil {
 					dato_aux = dato["rubros_pos"].(string)
 					if dato_aux == "{}" {
@@ -884,6 +885,19 @@ func (c *FormulacionController) VersionarPlan() {
 			formulacionhelper.VersionarHijos(hijos, planVersionado["_id"].(string))
 		}
 
+		var resPadres map[string]interface{}
+		var planesPadre []map[string]interface{}
+
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=dependencia_id:"+plan["dependencia_id"].(string)+",vigencia:"+plan["vigencia"].(string)+",formato:false,nombre:"+url.QueryEscape(plan["nombre"].(string)), &resPadres); err == nil {
+			helpers.LimpiezaRespuestaRefactor(resPadres, &planesPadre)
+			for _, padre := range planesPadre {
+				var resActualizacion map[string]interface{}
+				if padre["_id"].(string) != planVersionado["_id"].(string) {
+					padre["activo"] = false
+					helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+padre["_id"].(string), "PUT", &resActualizacion, padre)
+				}
+			}
+		}
 	}
 	c.ServeJSON()
 }
@@ -973,7 +987,7 @@ func (c *FormulacionController) PonderacionActividades() {
 							if dato["activo"] != false && len(dato) != 0 {
 								ponderacionActividades["Actividad "+(j)] = dato["dato"]
 								suma += dato["dato"].(float64)
-								suma = math.Round(suma*100)/100
+								suma = math.Round(suma*100) / 100
 							}
 						}
 
