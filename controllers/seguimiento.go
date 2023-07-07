@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"reflect"
 	"strconv"
 	"strings"
@@ -128,45 +129,136 @@ func (c *SeguimientoController) CrearReportes() {
 	plan_id := c.Ctx.Input.Param(":plan")
 	tipo := c.Ctx.Input.Param(":tipo")
 	var res map[string]interface{}
+	var resPadres map[string]interface{}
 	var resDependencia map[string]interface{}
 	var resTrimestres map[string]interface{}
 	var plan map[string]interface{}
+	var planesPadre []map[string]interface{}
 	var respuestaPost map[string]interface{}
 	var arrReportes []map[string]interface{}
 	reporte := make(map[string]interface{})
+	nuevo := true
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+plan_id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &plan)
 		trimestres := seguimientohelper.GetTrimestres(plan["vigencia"].(string))
 
-		for i := 0; i < len(trimestres); i++ {
-			periodo := int(trimestres[i]["Id"].(float64))
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?query=tipo_seguimiento_id:61f236f525e40c582a0840d0,periodo_id:`+strconv.Itoa(periodo), &resTrimestres); err == nil {
-				reporte["nombre"] = "Seguimiento para el " + plan["nombre"].(string)
-				reporte["descripcion"] = "Seguimiento " + plan["nombre"].(string)
-				if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"dependencia/"+ plan["dependencia_id"].(string), &resDependencia); err == nil {
-					if resDependencia["Nombre"] != nil {
-						reporte["descripcion"] = reporte["descripcion"].(string) + " dependencia " + resDependencia["Nombre"].(string)
+		// Caso especial para el plan de acción, retomar avances de seguimiento de versiones anteriores
+		if tipo == "61f236f525e40c582a0840d0" && plan["padre_plan_id"] != nil {
+			nuevo = false
+
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=dependencia_id:"+plan["dependencia_id"].(string)+",vigencia:"+plan["vigencia"].(string)+",formato:false,nombre:"+url.QueryEscape(plan["nombre"].(string)), &resPadres); err == nil {
+				helpers.LimpiezaRespuestaRefactor(resPadres, &planesPadre)
+
+				var seguimientosLlenos []map[string]interface{}
+				var seguimientosVacios []map[string]interface{}
+
+				for _, padre := range planesPadre {
+					var resSeguimientos map[string]interface{}
+					var seguimientos []map[string]interface{}
+
+					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+padre["_id"].(string), &resSeguimientos); err == nil {
+						helpers.LimpiezaRespuestaRefactor(resSeguimientos, &seguimientos)
+						for _, seguimiento := range seguimientos {
+							if len(seguimientosLlenos) < 4 {
+								seguimientosLlenos = append(seguimientosLlenos, seguimiento)
+							} else if fmt.Sprintf("%v", seguimiento["dato"]) == "{}" {
+								seguimientosVacios = append(seguimientosVacios, seguimiento)
+							} else {
+								seguimientosVacios = append(seguimientosVacios, seguimientosLlenos...)
+								seguimientosLlenos = seguimientos
+								break
+							}
+						}
 					}
 				}
-				reporte["activo"] = false
-				reporte["plan_id"] = plan_id
-				reporte["estado_seguimiento_id"] = "61f237df25e40c57a60840d5"
-				reporte["periodo_seguimiento_id"] = resTrimestres["Data"].([]interface{})[0].(map[string]interface{})["_id"]
-				reporte["fecha_inicio"] = resTrimestres["Data"].([]interface{})[0].(map[string]interface{})["fecha_fin"]
-				reporte["tipo_seguimiento_id"] = tipo
-				reporte["dato"] = "{}"
-				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &respuestaPost, reporte); err != nil {
-					panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error creando reporte", "status": "400", "log": err})
+
+				var resActualizacion map[string]interface{}
+				var resSeguimientoDetalle map[string]interface{}
+				detalle := make(map[string]interface{})
+				dato := make(map[string]interface{})
+				var resEstado map[string]interface{}
+				estado := map[string]interface{}{}
+
+				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
+					estado = map[string]interface{}{
+						"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
+						"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
+					}
 				}
 
-				arrReportes = append(arrReportes, respuestaPost["Data"].(map[string]interface{}))
-				respuestaPost = nil
-			} else {
-				panic(err)
+				for _, seguimiento := range seguimientosVacios {
+					seguimiento["activo"] = false
+					helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &resActualizacion, seguimiento)
+				}
+
+				for _, seguimiento := range seguimientosLlenos {
+					seguimiento["plan_id"] = plan_id
+					seguimiento["estado_seguimiento_id"] = "635c11e1e092c5fa5f099971" // En reporte
+
+					datoStr := seguimiento["dato"].(string)
+					json.Unmarshal([]byte(datoStr), &dato)
+
+					for indexActividad := range dato {
+						id, segregado := dato[indexActividad].(map[string]interface{})["id"]
+
+						if segregado && id != "" {
+							if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+dato[indexActividad].(map[string]interface{})["id"].(string), &resSeguimientoDetalle); err == nil {
+								helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
+								detalle = seguimientohelper.ConvertirStringJson(detalle)
+								delete(detalle, "cuantitativo")
+								detalle["estado"] = estado
+								seguimientohelper.GuardarDetalleSegimiento(detalle, true)
+							}
+						} else {
+							dato[indexActividad].(map[string]interface{})["estado"] = estado
+							delete(dato[indexActividad].(map[string]interface{}), "cuantitativo")
+							delete(dato[indexActividad].(map[string]interface{}), "_id")
+							dato[indexActividad] = map[string]interface{}{"id": seguimientohelper.GuardarDetalleSegimiento(dato[indexActividad].(map[string]interface{}), false)}
+						}
+
+					}
+
+					valor, _ := json.Marshal(dato)
+					str := string(valor)
+					seguimiento["dato"] = str
+
+					helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &resActualizacion, seguimiento)
+					arrReportes = append(arrReportes, resActualizacion["Data"].(map[string]interface{}))
+				}
 			}
 		}
 
+		if nuevo {
+			for i := 0; i < len(trimestres); i++ {
+				periodo := int(trimestres[i]["Id"].(float64))
+				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?query=tipo_seguimiento_id:`+tipo+`,periodo_id:`+strconv.Itoa(periodo), &resTrimestres); err == nil {
+					reporte["nombre"] = "Seguimiento para el " + plan["nombre"].(string)
+					reporte["descripcion"] = "Seguimiento " + plan["nombre"].(string)
+					if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"dependencia/"+plan["dependencia_id"].(string), &resDependencia); err == nil {
+						if resDependencia["Nombre"] != nil {
+							reporte["descripcion"] = reporte["descripcion"].(string) + " dependencia " + resDependencia["Nombre"].(string)
+						}
+					}
+					reporte["activo"] = false
+					reporte["plan_id"] = plan_id
+					reporte["estado_seguimiento_id"] = "61f237df25e40c57a60840d5"
+					reporte["periodo_seguimiento_id"] = resTrimestres["Data"].([]interface{})[0].(map[string]interface{})["_id"]
+					reporte["fecha_inicio"] = resTrimestres["Data"].([]interface{})[0].(map[string]interface{})["fecha_fin"]
+					reporte["tipo_seguimiento_id"] = tipo
+					reporte["dato"] = "{}"
+
+					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &respuestaPost, reporte); err != nil {
+						panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error creando reporte", "status": "400", "log": err})
+					}
+
+					arrReportes = append(arrReportes, respuestaPost["Data"].(map[string]interface{}))
+					respuestaPost = nil
+				} else {
+					panic(err)
+				}
+			}
+		}
 	} else {
 		panic(err)
 	}
