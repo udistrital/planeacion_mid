@@ -3713,7 +3713,7 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 				},
 			})
 			styleContenidoCD, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
-				NumFmt:    2,
+				NumFmt:    4,
 				Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
 				Border: []excelize.Border{
 					{Type: "right", Color: "000000", Style: 1},
@@ -3807,10 +3807,10 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "B19", "B19", styleNegrilla)
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "B21", "AS22", styleTitulo)
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "J22", "AS22", styleContenidoC)
-			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "Q22", "Q22", styleContenidoCS)
-			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "Z22", "Z22", styleContenidoCS)
-			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "AI22", "AI22", styleContenidoCS)
-			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "AR22", "AR22", styleContenidoCS)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "R22", "R22", styleContenidoCS)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "AA22", "AA22", styleContenidoCS)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "AJ22", "AJ22", styleContenidoCS)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "AS22", "AS22", styleContenidoCS)
 
 			if periodo[0] != nil {
 				consolidadoExcelEvaluacion.SetCellValue(sheetName, "B2", "Evaluación Plan de Acción "+periodo[0]["Nombre"].(string)+" - "+unidadNombre)
@@ -3850,8 +3850,8 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "N22", "Denominador Acumulador")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "O22", "Indicador Acumulado")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "P22", "Cumplimiento por meta")
-			consolidadoExcelEvaluacion.SetCellValue(sheetName, "Q22", "Cumplimiento por actividad")
-			consolidadoExcelEvaluacion.SetCellValue(sheetName, "R22", "Brecha")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "Q22", "Brecha")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "R22", "Cumplimiento por actividad")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "S22", "Numerador del Periodo")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "T22", "Denominador del Periodo")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "U22", "Indicador del Periodo")
@@ -3859,8 +3859,8 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "W22", "Denominador Acumulador")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "X22", "Indicador Acumulado")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "Y22", "Cumplimiento por meta")
-			consolidadoExcelEvaluacion.SetCellValue(sheetName, "Z22", "Cumplimiento por actividad")
-			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AA22", "Brecha")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "Z22", "Brecha")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AA22", "Cumplimiento por actividad")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AB22", "Numerador del Periodo")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AC22", "Denominador del Periodo")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AD22", "Indicador del Periodo")
@@ -3868,8 +3868,8 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AF22", "Denominador Acumulador")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AG22", "Indicador Acumulado")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AH22", "Cumplimiento por meta")
-			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AI22", "Cumplimiento por actividad")
-			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AJ22", "Brecha")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AI22", "Brecha")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AJ22", "Cumplimiento por actividad")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AK22", "Numerador del Periodo")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AL22", "Denominador del Periodo")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AM22", "Indicador del Periodo")
@@ -3877,8 +3877,8 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AO22", "Denominador Acumulador")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AP22", "Indicador Acumulado")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AQ22", "Cumplimiento por meta")
-			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AR22", "Cumplimiento por actividad")
-			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AS22", "Brecha")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AR22", "Brecha")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AS22", "Cumplimiento por actividad")
 
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AX19", "Gráfica")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AX21", "No.")
@@ -3910,8 +3910,8 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 				consolidadoExcelEvaluacion.SetCellValue(sheetName, "N"+fmt.Sprint(indice), actividad["trimestre1"].(map[string]interface{})["denominadorAcumulado"])
 				consolidadoExcelEvaluacion.SetCellValue(sheetName, "O"+fmt.Sprint(indice), actividad["trimestre1"].(map[string]interface{})["acumulado"])
 				consolidadoExcelEvaluacion.SetCellValue(sheetName, "P"+fmt.Sprint(indice), actividad["trimestre1"].(map[string]interface{})["meta"])
-				consolidadoExcelEvaluacion.SetCellValue(sheetName, "Q"+fmt.Sprint(indice), actividad["trimestre1"].(map[string]interface{})["actividad"].(float64))
-				consolidadoExcelEvaluacion.SetCellValue(sheetName, "R"+fmt.Sprint(indice), actividad["trimestre1"].(map[string]interface{})["brecha"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "Q"+fmt.Sprint(indice), actividad["trimestre1"].(map[string]interface{})["brecha"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "R"+fmt.Sprint(indice), actividad["trimestre1"].(map[string]interface{})["actividad"].(float64))
 
 				num, _ = strconv.ParseFloat(actividad["trimestre2"].(map[string]interface{})["numerador"].(string), 64)
 				den, _ = strconv.ParseFloat(actividad["trimestre2"].(map[string]interface{})["denominador"].(string), 64)
@@ -3922,8 +3922,8 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 				consolidadoExcelEvaluacion.SetCellValue(sheetName, "W"+fmt.Sprint(indice), actividad["trimestre2"].(map[string]interface{})["denominadorAcumulado"])
 				consolidadoExcelEvaluacion.SetCellValue(sheetName, "X"+fmt.Sprint(indice), actividad["trimestre2"].(map[string]interface{})["acumulado"])
 				consolidadoExcelEvaluacion.SetCellValue(sheetName, "Y"+fmt.Sprint(indice), actividad["trimestre2"].(map[string]interface{})["meta"])
-				consolidadoExcelEvaluacion.SetCellValue(sheetName, "Z"+fmt.Sprint(indice), actividad["trimestre2"].(map[string]interface{})["actividad"].(float64))
-				consolidadoExcelEvaluacion.SetCellValue(sheetName, "AA"+fmt.Sprint(indice), actividad["trimestre2"].(map[string]interface{})["brecha"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "Z"+fmt.Sprint(indice), actividad["trimestre2"].(map[string]interface{})["brecha"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "AA"+fmt.Sprint(indice), actividad["trimestre2"].(map[string]interface{})["actividad"].(float64))
 
 				num, _ = strconv.ParseFloat(actividad["trimestre3"].(map[string]interface{})["numerador"].(string), 64)
 				den, _ = strconv.ParseFloat(actividad["trimestre3"].(map[string]interface{})["denominador"].(string), 64)
@@ -3934,8 +3934,8 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 				consolidadoExcelEvaluacion.SetCellValue(sheetName, "AF"+fmt.Sprint(indice), actividad["trimestre3"].(map[string]interface{})["denominadorAcumulado"])
 				consolidadoExcelEvaluacion.SetCellValue(sheetName, "AG"+fmt.Sprint(indice), actividad["trimestre3"].(map[string]interface{})["acumulado"])
 				consolidadoExcelEvaluacion.SetCellValue(sheetName, "AH"+fmt.Sprint(indice), actividad["trimestre3"].(map[string]interface{})["meta"])
-				consolidadoExcelEvaluacion.SetCellValue(sheetName, "AI"+fmt.Sprint(indice), actividad["trimestre3"].(map[string]interface{})["actividad"].(float64))
-				consolidadoExcelEvaluacion.SetCellValue(sheetName, "AJ"+fmt.Sprint(indice), actividad["trimestre3"].(map[string]interface{})["brecha"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "AI"+fmt.Sprint(indice), actividad["trimestre3"].(map[string]interface{})["brecha"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "AJ"+fmt.Sprint(indice), actividad["trimestre3"].(map[string]interface{})["actividad"].(float64))
 
 				num, _ = strconv.ParseFloat(actividad["trimestre4"].(map[string]interface{})["numerador"].(string), 64)
 				den, _ = strconv.ParseFloat(actividad["trimestre4"].(map[string]interface{})["denominador"].(string), 64)
@@ -3946,8 +3946,8 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 				consolidadoExcelEvaluacion.SetCellValue(sheetName, "AO"+fmt.Sprint(indice), actividad["trimestre4"].(map[string]interface{})["denominadorAcumulado"])
 				consolidadoExcelEvaluacion.SetCellValue(sheetName, "AP"+fmt.Sprint(indice), actividad["trimestre4"].(map[string]interface{})["acumulado"])
 				consolidadoExcelEvaluacion.SetCellValue(sheetName, "AQ"+fmt.Sprint(indice), actividad["trimestre4"].(map[string]interface{})["meta"])
-				consolidadoExcelEvaluacion.SetCellValue(sheetName, "AR"+fmt.Sprint(indice), actividad["trimestre4"].(map[string]interface{})["actividad"].(float64))
-				consolidadoExcelEvaluacion.SetCellValue(sheetName, "AS"+fmt.Sprint(indice), actividad["trimestre4"].(map[string]interface{})["brecha"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "AR"+fmt.Sprint(indice), actividad["trimestre4"].(map[string]interface{})["brecha"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "AS"+fmt.Sprint(indice), actividad["trimestre4"].(map[string]interface{})["actividad"].(float64))
 
 				// Estilos
 				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "B"+fmt.Sprint(indice), "AS"+fmt.Sprint(indice), styleContenidoC)
@@ -3968,10 +3968,10 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "AK"+fmt.Sprint(indice), "AL"+fmt.Sprint(indice), styleContenidoCD)
 				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "AN"+fmt.Sprint(indice), "AO"+fmt.Sprint(indice), styleContenidoCD)
 
-				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "Q"+fmt.Sprint(indice), "Q"+fmt.Sprint(indice), styleContenidoCPS)
-				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "Z"+fmt.Sprint(indice), "Z"+fmt.Sprint(indice), styleContenidoCPS)
-				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "AI"+fmt.Sprint(indice), "AI"+fmt.Sprint(indice), styleContenidoCPS)
-				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "AR"+fmt.Sprint(indice), "AR"+fmt.Sprint(indice), styleContenidoCPS)
+				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "R"+fmt.Sprint(indice), "R"+fmt.Sprint(indice), styleContenidoCPS)
+				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "AA"+fmt.Sprint(indice), "AA"+fmt.Sprint(indice), styleContenidoCPS)
+				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "AJ"+fmt.Sprint(indice), "AJ"+fmt.Sprint(indice), styleContenidoCPS)
+				consolidadoExcelEvaluacion.SetCellStyle(sheetName, "AS"+fmt.Sprint(indice), "AS"+fmt.Sprint(indice), styleContenidoCPS)
 
 				if actividad["unidad"] == "Porcentaje" {
 					consolidadoExcelEvaluacion.SetCellStyle(sheetName, "H"+fmt.Sprint(indice), "H"+fmt.Sprint(indice), styleContenidoCP)
@@ -4034,13 +4034,13 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 					} else {
 						// Gaficos
 						consolidadoExcelEvaluacion.SetCellFormula(sheetName, "AX"+fmt.Sprint(indiceGraficos), "=B"+fmt.Sprint(indice))
-						consolidadoExcelEvaluacion.SetCellFormula(sheetName, "AY"+fmt.Sprint(indiceGraficos), "=IF(E4=\"Trimestre I\",Q"+fmt.Sprint(indice)+",IF(E4=\"Trimestre II\",Z"+fmt.Sprint(indice)+",IF(E4=\"Trimestre III\",AI"+fmt.Sprint(indice)+",IF(E4=\"Trimestre IV\",AR"+fmt.Sprint(indice)+"))))")
+						consolidadoExcelEvaluacion.SetCellFormula(sheetName, "AY"+fmt.Sprint(indiceGraficos), "=IF(E4=\"Trimestre I\",R"+fmt.Sprint(indice)+",IF(E4=\"Trimestre II\",AA"+fmt.Sprint(indice)+",IF(E4=\"Trimestre III\",AJ"+fmt.Sprint(indice)+",IF(E4=\"Trimestre IV\",AS"+fmt.Sprint(indice)+"))))")
 						indiceGraficos++
 					}
 				} else if i == 0 {
 					// Gaficos
 					consolidadoExcelEvaluacion.SetCellFormula(sheetName, "AX"+fmt.Sprint(indiceGraficos), "=B"+fmt.Sprint(indice))
-					consolidadoExcelEvaluacion.SetCellFormula(sheetName, "AY"+fmt.Sprint(indiceGraficos), "=IF(E4=\"Trimestre I\",Q"+fmt.Sprint(indice)+",IF(E4=\"Trimestre II\",Z"+fmt.Sprint(indice)+",IF(E4=\"Trimestre III\",AI"+fmt.Sprint(indice)+",IF(E4=\"Trimestre IV\",AR"+fmt.Sprint(indice)+"))))")
+					consolidadoExcelEvaluacion.SetCellFormula(sheetName, "AY"+fmt.Sprint(indiceGraficos), "=IF(E4=\"Trimestre I\",R"+fmt.Sprint(indice)+",IF(E4=\"Trimestre II\",AA"+fmt.Sprint(indice)+",IF(E4=\"Trimestre III\",AJ"+fmt.Sprint(indice)+",IF(E4=\"Trimestre IV\",AS"+fmt.Sprint(indice)+"))))")
 					indiceGraficos++
 				}
 				indice++
@@ -4049,10 +4049,10 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			consolidadoExcelEvaluacion.MergeCell(sheetName, "B"+fmt.Sprint(indice), "I"+fmt.Sprint(indice))
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "B"+fmt.Sprint(indice), "I"+fmt.Sprint(indice), styleTituloSB)
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "J"+fmt.Sprint(indice), "AS"+fmt.Sprint(indice), styleContenidoC)
-			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "Q"+fmt.Sprint(indice), "Q"+fmt.Sprint(indice), styleContenidoCPSR)
-			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "Z"+fmt.Sprint(indice), "Z"+fmt.Sprint(indice), styleContenidoCPSR)
-			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "AI"+fmt.Sprint(indice), "AI"+fmt.Sprint(indice), styleContenidoCPSR)
-			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "AR"+fmt.Sprint(indice), "AR"+fmt.Sprint(indice), styleContenidoCPSR)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "R"+fmt.Sprint(indice), "R"+fmt.Sprint(indice), styleContenidoCPSR)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "AA"+fmt.Sprint(indice), "AA"+fmt.Sprint(indice), styleContenidoCPSR)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "AJ"+fmt.Sprint(indice), "AJ"+fmt.Sprint(indice), styleContenidoCPSR)
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "AS"+fmt.Sprint(indice), "AS"+fmt.Sprint(indice), styleContenidoCPSR)
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "AX19", "AX"+fmt.Sprint(indice+1), styleContenidoCI)
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "AY19", "AZ"+fmt.Sprint(indice+1), styleContenidoCIP)
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "AY21", "AY22", styleContenidoCI)
@@ -4066,7 +4066,7 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "N"+fmt.Sprint(indice), "-")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "O"+fmt.Sprint(indice), "-")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "P"+fmt.Sprint(indice), "-")
-			consolidadoExcelEvaluacion.SetCellValue(sheetName, "R"+fmt.Sprint(indice), "-")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "Q"+fmt.Sprint(indice), "-")
 
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "S"+fmt.Sprint(indice), "-")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "T"+fmt.Sprint(indice), "-")
@@ -4075,7 +4075,7 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "W"+fmt.Sprint(indice), "-")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "X"+fmt.Sprint(indice), "-")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "Y"+fmt.Sprint(indice), "-")
-			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AA"+fmt.Sprint(indice), "-")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "Z"+fmt.Sprint(indice), "-")
 
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AB"+fmt.Sprint(indice), "-")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AC"+fmt.Sprint(indice), "-")
@@ -4084,7 +4084,7 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AF"+fmt.Sprint(indice), "-")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AG"+fmt.Sprint(indice), "-")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AH"+fmt.Sprint(indice), "-")
-			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AJ"+fmt.Sprint(indice), "-")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AI"+fmt.Sprint(indice), "-")
 
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AK"+fmt.Sprint(indice), "-")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AL"+fmt.Sprint(indice), "-")
@@ -4093,16 +4093,16 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AO"+fmt.Sprint(indice), "-")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AP"+fmt.Sprint(indice), "-")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AQ"+fmt.Sprint(indice), "-")
-			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AS"+fmt.Sprint(indice), "-")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AR"+fmt.Sprint(indice), "-")
 
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AX"+fmt.Sprint(indice), "General")
 
 			filaAnt := fmt.Sprint(indice - 1)
-			consolidadoExcelEvaluacion.SetCellFormula(sheetName, "Q"+fmt.Sprint(indice), "=SUMPRODUCT(C23:C"+filaAnt+",Q23:Q"+filaAnt+")")
-			consolidadoExcelEvaluacion.SetCellFormula(sheetName, "Z"+fmt.Sprint(indice), "=SUMPRODUCT(C23:C"+filaAnt+",Z23:Z"+filaAnt+")")
-			consolidadoExcelEvaluacion.SetCellFormula(sheetName, "AI"+fmt.Sprint(indice), "=SUMPRODUCT(C23:C"+filaAnt+",AI23:AI"+filaAnt+")")
-			consolidadoExcelEvaluacion.SetCellFormula(sheetName, "AR"+fmt.Sprint(indice), "=SUMPRODUCT(C23:C"+filaAnt+",AR23:AR"+filaAnt+")")
-			consolidadoExcelEvaluacion.SetCellFormula(sheetName, "AY"+fmt.Sprint(indice), "=IF(E4=\"Trimestre I\",Q"+fmt.Sprint(indice)+",IF(E4=\"Trimestre II\",Z"+fmt.Sprint(indice)+",IF(E4=\"Trimestre III\",AI"+fmt.Sprint(indice)+",IF(E4=\"Trimestre IV\",AR"+fmt.Sprint(indice)+"))))")
+			consolidadoExcelEvaluacion.SetCellFormula(sheetName, "R"+fmt.Sprint(indice), "=SUMPRODUCT(C23:C"+filaAnt+",R23:R"+filaAnt+")")
+			consolidadoExcelEvaluacion.SetCellFormula(sheetName, "AA"+fmt.Sprint(indice), "=SUMPRODUCT(C23:C"+filaAnt+",AA23:AA"+filaAnt+")")
+			consolidadoExcelEvaluacion.SetCellFormula(sheetName, "AJ"+fmt.Sprint(indice), "=SUMPRODUCT(C23:C"+filaAnt+",AJ23:AJ"+filaAnt+")")
+			consolidadoExcelEvaluacion.SetCellFormula(sheetName, "AS"+fmt.Sprint(indice), "=SUMPRODUCT(C23:C"+filaAnt+",AS23:AS"+filaAnt+")")
+			consolidadoExcelEvaluacion.SetCellFormula(sheetName, "AY"+fmt.Sprint(indice), "=IF(E4=\"Trimestre I\",R"+fmt.Sprint(indice)+",IF(E4=\"Trimestre II\",AA"+fmt.Sprint(indice)+",IF(E4=\"Trimestre III\",AJ"+fmt.Sprint(indice)+",IF(E4=\"Trimestre IV\",AS"+fmt.Sprint(indice)+"))))")
 			consolidadoExcelEvaluacion.SetCellFormula(sheetName, "AZ"+fmt.Sprint(indice), "=100%-AY"+fmt.Sprint(indice))
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AY"+fmt.Sprint(indice+1), "Avance")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AZ"+fmt.Sprint(indice+1), "Restante")
