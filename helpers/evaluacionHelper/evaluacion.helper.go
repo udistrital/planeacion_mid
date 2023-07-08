@@ -67,16 +67,19 @@ func GetEvaluacionTrimestre(planId string, periodoId string, actividadId string)
 			}
 
 			evaluacion = append(evaluacion, map[string]interface{}{
-				"indicador":   indicadores[i].(map[string]interface{})["nombre"],
-				"formula":     indicadores[i].(map[string]interface{})["formula"],
-				"metaA":       metaA,
-				"unidad":      indicadores[i].(map[string]interface{})["unidad"],
-				"numerador":   indicadores[i].(map[string]interface{})["reporteNumerador"],
-				"denominador": indicadores[i].(map[string]interface{})["reporteDenominador"],
-				"periodo":     resultados[i].(map[string]interface{})["indicador"],
-				"acumulado":   resultados[i].(map[string]interface{})["indicadorAcumulado"],
-				"meta":        resultados[i].(map[string]interface{})["avanceAcumulado"],
-				"actividad":   0})
+				"indicador":            indicadores[i].(map[string]interface{})["nombre"],
+				"formula":              indicadores[i].(map[string]interface{})["formula"],
+				"metaA":                metaA,
+				"unidad":               indicadores[i].(map[string]interface{})["unidad"],
+				"numerador":            indicadores[i].(map[string]interface{})["reporteNumerador"],
+				"denominador":          indicadores[i].(map[string]interface{})["reporteDenominador"],
+				"periodo":              resultados[i].(map[string]interface{})["indicador"],
+				"acumulado":            resultados[i].(map[string]interface{})["indicadorAcumulado"],
+				"meta":                 resultados[i].(map[string]interface{})["avanceAcumulado"],
+				"numeradorAcumulado":   resultados[i].(map[string]interface{})["acumuladoNumerador"],
+				"denominadorAcumulado": resultados[i].(map[string]interface{})["acumuladoDenominador"],
+				"brecha":               resultados[i].(map[string]interface{})["brechaExistente"],
+				"actividad":            0})
 		}
 		return evaluacion
 	}
@@ -156,21 +159,27 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 						evaluacionAct["formula"] = resIndicador["formula"]
 						evaluacionAct["meta"] = resIndicador["metaA"].(float64)
 						evaluacionAct[trimestreNom] = map[string]interface{}{
-							"acumulado":   resIndicador["acumulado"],
-							"denominador": resIndicador["denominador"],
-							"meta":        resIndicador["meta"],
-							"numerador":   resIndicador["numerador"],
-							"periodo":     resIndicador["periodo"],
+							"acumulado":            resIndicador["acumulado"],
+							"denominador":          resIndicador["denominador"],
+							"meta":                 resIndicador["meta"],
+							"numerador":            resIndicador["numerador"],
+							"periodo":              resIndicador["periodo"],
+							"numeradorAcumulado":   resIndicador["numeradorAcumulado"],
+							"denominadorAcumulado": resIndicador["denominadorAcumulado"],
+							"brecha":               resIndicador["brecha"],
 						}
 
 						evaluacion = append(evaluacion, evaluacionAct)
 					} else {
 						evaluacion[indice][trimestreNom] = map[string]interface{}{
-							"acumulado":   resIndicador["acumulado"],
-							"denominador": resIndicador["denominador"],
-							"meta":        resIndicador["meta"],
-							"numerador":   resIndicador["numerador"],
-							"periodo":     resIndicador["periodo"],
+							"acumulado":            resIndicador["acumulado"],
+							"denominador":          resIndicador["denominador"],
+							"meta":                 resIndicador["meta"],
+							"numerador":            resIndicador["numerador"],
+							"periodo":              resIndicador["periodo"],
+							"numeradorAcumulado":   resIndicador["numeradorAcumulado"],
+							"denominadorAcumulado": resIndicador["denominadorAcumulado"],
+							"brecha":               resIndicador["brecha"],
 						}
 					}
 				}
