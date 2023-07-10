@@ -1558,3 +1558,15 @@ func SombrearCeldas(excel *excelize.File, idActividad int, sheetName string, hCe
 		excel.SetCellStyle(sheetName, hCell, vCell, styleSombreado)
 	}
 }
+
+func Convert2Num(value interface{}) interface{} {
+	switch value.(type) {
+	case float64:
+		return value.(float64)
+	case string:
+		num, _ := strconv.ParseFloat(value.(string), 64)
+		return num
+	default:
+		return "-"
+	}
+}
