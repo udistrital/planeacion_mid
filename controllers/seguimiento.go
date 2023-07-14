@@ -202,6 +202,7 @@ func (c *SeguimientoController) CrearReportes() {
 
 				for _, seguimiento := range seguimientosLlenos {
 
+					dato = map[string]interface{}{}
 					datoStr := seguimiento["dato"].(string)
 					json.Unmarshal([]byte(datoStr), &dato)
 
