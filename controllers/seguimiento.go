@@ -348,10 +348,10 @@ func (c *SeguimientoController) GetActividadesGenerales() {
 	var res map[string]interface{}
 	var subgrupos []map[string]interface{}
 	var seguimiento []map[string]interface{}
-	var seguimientoDetalle map[string]interface{}
+	var seguimientoDetalle []map[string]interface{}
 	var datoPlan map[string]interface{}
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=_id:"+seguimiento_id, &resSeguimiento); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,_id:"+seguimiento_id, &resSeguimiento); err == nil {
 		helpers.LimpiezaRespuestaRefactor(resSeguimiento, &seguimiento)
 		if fmt.Sprintf("%v", seguimiento) != "[]" {
 			planId := seguimiento[0]["plan_id"].(string)
@@ -385,10 +385,10 @@ func (c *SeguimientoController) GetActividadesGenerales() {
 											actividad["estado"] = element.(map[string]interface{})["estado"]
 											break
 										} else {
-											if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+element.(map[string]interface{})["id"].(string), &resSeguimientoDetalle); err == nil {
+											if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle?query=activo:true,_id:"+element.(map[string]interface{})["id"].(string), &resSeguimientoDetalle); err == nil {
 												helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &seguimientoDetalle)
 												dato := make(map[string]interface{})
-												json.Unmarshal([]byte(seguimientoDetalle["estado"].(string)), &dato)
+												json.Unmarshal([]byte(seguimientoDetalle[0]["estado"].(string)), &dato)
 												actividad["estado"] = dato
 												break
 											}
@@ -799,7 +799,7 @@ func (c *SeguimientoController) GetEstadoTrimestre() {
 	planId := c.Ctx.Input.Param(":plan_id")
 	trimestre := c.Ctx.Input.Param(":trimestre")
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=plan_id:"+planId, &resSeguimiento); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId, &resSeguimiento); err == nil {
 		helpers.LimpiezaRespuestaRefactor(resSeguimiento, &planes)
 
 		for _, plan := range planes {
