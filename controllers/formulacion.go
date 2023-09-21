@@ -567,18 +567,188 @@ func (c *FormulacionController) GuardarIdentificacion() {
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id+",tipo_identificacion_id:"+tipoIdenti, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &respuesta)
-		jsonString, _ := json.Marshal(respuesta[0]["_id"])
-		json.Unmarshal(jsonString, &idStr)
 
-		identificacion = respuesta[0]
-		b, _ := json.Marshal(entrada)
-		str := string(b)
+		if tipoIdenti == "61897518f6fc97091727c3c3" { // ? Recurso docente unicamente
+			if len(respuesta) > 0 {
+				if strings.Contains(respuesta[0]["dato"].(string), "ids_detalle") {
+					identificacion = respuesta[0]
+					dato_json := map[string]interface{}{}
+					json.Unmarshal([]byte(identificacion["dato"].(string)), &dato_json)
 
-		identificacion["dato"] = str
-		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion/"+idStr, "PUT", &resJ, identificacion); err != nil {
-			panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error actualizando identificacion \"idStr\"", "status": "400", "log": err})
+					iddetail := ""
+					identificacionDetalle := map[string]interface{}{}
+					errIdentificacionDetalle := error(nil)
+
+					iddetail = dato_json["ids_detalle"].(map[string]interface{})["rhf"].(string)
+					errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
+					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
+						identificacionDetallePut := identificacionDetalle["Data"].(map[string]interface{})
+						identificacionDetallePut["dato"] = entrada["rhf"]
+						identificacionDetalle = map[string]interface{}{}
+						errIdentificacionDetalle = helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, "PUT", &identificacionDetalle, identificacionDetallePut)
+						if errIdentificacionDetalle != nil || identificacionDetalle["Status"] != "200" {
+							panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error actualizando detalle identificacion \"rhf\"", "status": "400", "log": err})
+						}
+					} else {
+						panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error consultando detalle identificacion \"rhf\"", "status": "400", "log": err})
+					}
+
+					iddetail = dato_json["ids_detalle"].(map[string]interface{})["rhv_pre"].(string)
+					errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
+					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
+						identificacionDetallePut := identificacionDetalle["Data"].(map[string]interface{})
+						identificacionDetallePut["dato"] = entrada["rhv_pre"]
+						identificacionDetalle = map[string]interface{}{}
+						errIdentificacionDetalle = helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, "PUT", &identificacionDetalle, identificacionDetallePut)
+						if errIdentificacionDetalle != nil || identificacionDetalle["Status"] != "200" {
+							panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error actualizando detalle identificacion \"rhv_pre\"", "status": "400", "log": err})
+						}
+					} else {
+						panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error consultando detalle identificacion \"rhv_pre\"", "status": "400", "log": err})
+					}
+
+					iddetail = dato_json["ids_detalle"].(map[string]interface{})["rhv_pos"].(string)
+					errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
+					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
+						identificacionDetallePut := identificacionDetalle["Data"].(map[string]interface{})
+						identificacionDetallePut["dato"] = entrada["rhv_pos"]
+						identificacionDetalle = map[string]interface{}{}
+						errIdentificacionDetalle = helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, "PUT", &identificacionDetalle, identificacionDetallePut)
+						if errIdentificacionDetalle != nil || identificacionDetalle["Status"] != "200" {
+							panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error actualizando detalle identificacion \"rhv_pos\"", "status": "400", "log": err})
+						}
+					} else {
+						panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error consultando detalle identificacion \"rhv_pos\"", "status": "400", "log": err})
+					}
+
+					iddetail = dato_json["ids_detalle"].(map[string]interface{})["rubros"].(string)
+					errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
+					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
+						identificacionDetallePut := identificacionDetalle["Data"].(map[string]interface{})
+						identificacionDetallePut["dato"] = entrada["rubros"]
+						identificacionDetalle = map[string]interface{}{}
+						errIdentificacionDetalle = helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, "PUT", &identificacionDetalle, identificacionDetallePut)
+						if errIdentificacionDetalle != nil || identificacionDetalle["Status"] != "200" {
+							panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error actualizando detalle identificacion \"rubros\"", "status": "400", "log": err})
+						}
+					} else {
+						panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error consultando detalle identificacion \"rubros\"", "status": "400", "log": err})
+					}
+
+					iddetail = dato_json["ids_detalle"].(map[string]interface{})["rubros_pos"].(string)
+					errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
+					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
+						identificacionDetallePut := identificacionDetalle["Data"].(map[string]interface{})
+						identificacionDetallePut["dato"] = entrada["rubros_pos"]
+						identificacionDetalle = map[string]interface{}{}
+						errIdentificacionDetalle = helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, "PUT", &identificacionDetalle, identificacionDetallePut)
+						if errIdentificacionDetalle != nil || identificacionDetalle["Status"] != "200" {
+							panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error actualizando detalle identificacion \"rubros_pos\"", "status": "400", "log": err})
+						}
+					} else {
+						panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error consultando detalle identificacion \"rubros_pos\"", "status": "400", "log": err})
+					}
+
+					c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "Registro de identificación"}
+
+				} else {
+					// ? -- Transicional mientras migran datos --
+					identificacion = respuesta[0]
+					detalles := map[string]interface{}{
+						"rhf":        "",
+						"rhv_pre":    "",
+						"rhv_pos":    "",
+						"rubros":     "",
+						"rubros_pos": "",
+					}
+					identificacionDetalle := map[string]interface{}{}
+					errIdentificacionDetalle := error(nil)
+
+					data := map[string]interface{}{
+						"dato": entrada["rhf"],
+					}
+					errIdentificacionDetalle = helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/", "POST", &identificacionDetalle, data)
+					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "201" {
+						detalles["rhf"] = identificacionDetalle["Data"].(map[string]interface{})["_id"].(string)
+						identificacionDetalle = map[string]interface{}{}
+					} else {
+						panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error guardando detalle identificacion \"rhf\"", "status": "400", "log": err})
+					}
+
+					data = map[string]interface{}{
+						"dato": entrada["rhv_pre"],
+					}
+					errIdentificacionDetalle = helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/", "POST", &identificacionDetalle, data)
+					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "201" {
+						detalles["rhv_pre"] = identificacionDetalle["Data"].(map[string]interface{})["_id"].(string)
+						identificacionDetalle = map[string]interface{}{}
+					} else {
+						panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error guardando detalle identificacion \"rhv_pre\"", "status": "400", "log": err})
+					}
+
+					data = map[string]interface{}{
+						"dato": entrada["rhv_pos"],
+					}
+					errIdentificacionDetalle = helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/", "POST", &identificacionDetalle, data)
+					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "201" {
+						detalles["rhv_pos"] = identificacionDetalle["Data"].(map[string]interface{})["_id"].(string)
+						identificacionDetalle = map[string]interface{}{}
+					} else {
+						panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error guardando detalle identificacion \"rhv_pos\"", "status": "400", "log": err})
+					}
+
+					data = map[string]interface{}{
+						"dato": entrada["rubros"],
+					}
+					errIdentificacionDetalle = helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/", "POST", &identificacionDetalle, data)
+					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "201" {
+						detalles["rubros"] = identificacionDetalle["Data"].(map[string]interface{})["_id"].(string)
+						identificacionDetalle = map[string]interface{}{}
+					} else {
+						panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error guardando detalle identificacion \"rubros\"", "status": "400", "log": err})
+					}
+
+					data = map[string]interface{}{
+						"dato": entrada["rubros_pos"],
+					}
+					errIdentificacionDetalle = helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/", "POST", &identificacionDetalle, data)
+					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "201" {
+						detalles["rubros_pos"] = identificacionDetalle["Data"].(map[string]interface{})["_id"].(string)
+						identificacionDetalle = map[string]interface{}{}
+					} else {
+						panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error guardando detalle identificacion \"rubros_pos\"", "status": "400", "log": err})
+					}
+
+					bt, _ := json.Marshal(map[string]interface{}{"ids_detalle": detalles})
+					identificacion["dato"] = string(bt)
+
+					identificacionAns := map[string]interface{}{}
+					errIdentificacion := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion/"+identificacion["_id"].(string), "PUT", &identificacionAns, identificacion)
+					if errIdentificacion == nil && identificacionAns["Status"] == "200" {
+						c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "Registro de identificación"}
+					} else {
+						panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error actualizando identificacion", "status": "400", "log": err})
+					}
+
+				}
+			} else {
+				panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error sin dato identificacion", "status": "400", "log": err})
+			}
+		} else {
+			jsonString, _ := json.Marshal(respuesta[0]["_id"])
+			json.Unmarshal(jsonString, &idStr)
+
+			identificacion = respuesta[0]
+			b, _ := json.Marshal(entrada)
+			str := string(b)
+
+			identificacion["dato"] = str
+			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion/"+idStr, "PUT", &resJ, identificacion); err != nil {
+				panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error actualizando identificacion \"idStr\"", "status": "400", "log": err})
+			}
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "Registro de identificación"}
 		}
-		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "Registro de identificación"}
+
 	} else {
 		panic(err)
 	}
@@ -615,109 +785,238 @@ func (c *FormulacionController) GetAllIdentificacion() {
 	var identificacion map[string]interface{}
 	var dato map[string]interface{}
 	var data_identi []map[string]interface{}
-	if tipoIdenti == "61897518f6fc97091727c3c3" {
+	if tipoIdenti == "61897518f6fc97091727c3c3" { // ? Recurso docente unicamente
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id+",tipo_identificacion_id:"+tipoIdenti, &res); err == nil {
 			helpers.LimpiezaRespuestaRefactor(res, &respuesta)
-			identificacion = respuesta[0]
-			if identificacion["dato"] != nil && identificacion["dato"] != "{}" {
-				result := make(map[string]interface{})
-				dato_str := identificacion["dato"].(string)
-				json.Unmarshal([]byte(dato_str), &dato)
+			if len(respuesta) > 0 {
+				if strings.Contains(respuesta[0]["dato"].(string), "ids_detalle") { // ? Nuevo método fraccionado
+					identificacion = respuesta[0]
+					dato_json := map[string]interface{}{}
+					json.Unmarshal([]byte(identificacion["dato"].(string)), &dato_json)
+					result := dato_json["ids_detalle"].(map[string]interface{})
 
-				var identi map[string]interface{} = nil
-				dato_aux := ""
+					iddetail := ""
+					identificacionDetalle := map[string]interface{}{}
+					errIdentificacionDetalle := error(nil)
 
-				dato_aux = dato["rhf"].(string)
-				if dato_aux == "{}" {
-					result["rhf"] = "{}"
-				} else {
-					json.Unmarshal([]byte(dato_aux), &identi)
-					for key := range identi {
-						element := identi[key].(map[string]interface{})
-						if element["activo"] == true {
-							data_identi = append(data_identi, element)
-						}
-					}
-					result["rhf"] = data_identi
-				}
-
-				identi = nil
-				data_identi = nil
-
-				dato_aux = dato["rhv_pre"].(string)
-				if dato_aux == "{}" {
-					result["rhv_pre"] = "{}"
-				} else {
-					json.Unmarshal([]byte(dato_aux), &identi)
-					for key := range identi {
-						element := identi[key].(map[string]interface{})
-						if element["activo"] == true {
-							data_identi = append(data_identi, element)
-						}
-					}
-					result["rhv_pre"] = data_identi
-				}
-
-				identi = nil
-				data_identi = nil
-
-				dato_aux = dato["rhv_pos"].(string)
-				if dato_aux == "{}" {
-					result["rhv_pos"] = "{}"
-				} else {
-					json.Unmarshal([]byte(dato_aux), &identi)
-					for key := range identi {
-						element := identi[key].(map[string]interface{})
-						if element["activo"] == true {
-							data_identi = append(data_identi, element)
-						}
-					}
-					result["rhv_pos"] = data_identi
-				}
-
-				identi = nil
-				data_identi = nil
-
-				dato_aux = dato["rubros"].(string)
-				if dato_aux == "{}" {
-					result["rubros"] = "{}"
-				} else {
-					json.Unmarshal([]byte(dato_aux), &identi)
-					for key := range identi {
-						element := identi[key].(map[string]interface{})
-						if element["activo"] == true {
-							data_identi = append(data_identi, element)
-						}
-					}
-					result["rubros"] = data_identi
-				}
-
-				identi = nil
-				data_identi = nil
-
-				if dato["rubros_pos"] != nil {
-					dato_aux = dato["rubros_pos"].(string)
-					if dato_aux == "{}" {
-						result["rubros_pos"] = "{}"
-					} else {
-						json.Unmarshal([]byte(dato_aux), &identi)
-						for key := range identi {
-							element := identi[key].(map[string]interface{})
+					iddetail = dato_json["ids_detalle"].(map[string]interface{})["rhf"].(string)
+					errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
+					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
+						dato_str := identificacionDetalle["Data"].(map[string]interface{})["dato"].(string)
+						dato := map[string]interface{}{}
+						datos := []map[string]interface{}{}
+						json.Unmarshal([]byte(dato_str), &dato)
+						for key := range dato {
+							element := dato[key].(map[string]interface{})
 							if element["activo"] == true {
-								data_identi = append(data_identi, element)
+								datos = append(datos, element)
 							}
 						}
-						result["rubros_pos"] = data_identi
+						if len(datos) > 0 {
+							result["rhf"] = datos
+						} else {
+							result["rhf"] = "{}"
+						}
+					} else {
+						result["rhf"] = "{}"
+					}
+
+					iddetail = dato_json["ids_detalle"].(map[string]interface{})["rhv_pre"].(string)
+					errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
+					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
+						dato_str := identificacionDetalle["Data"].(map[string]interface{})["dato"].(string)
+						dato := map[string]interface{}{}
+						datos := []map[string]interface{}{}
+						json.Unmarshal([]byte(dato_str), &dato)
+						for key := range dato {
+							element := dato[key].(map[string]interface{})
+							if element["activo"] == true {
+								datos = append(datos, element)
+							}
+						}
+						if len(datos) > 0 {
+							result["rhv_pre"] = datos
+						} else {
+							result["rhv_pre"] = "{}"
+						}
+					} else {
+						result["rhv_pre"] = "{}"
+					}
+
+					iddetail = dato_json["ids_detalle"].(map[string]interface{})["rhv_pos"].(string)
+					errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
+					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
+						dato_str := identificacionDetalle["Data"].(map[string]interface{})["dato"].(string)
+						dato := map[string]interface{}{}
+						datos := []map[string]interface{}{}
+						json.Unmarshal([]byte(dato_str), &dato)
+						for key := range dato {
+							element := dato[key].(map[string]interface{})
+							if element["activo"] == true {
+								datos = append(datos, element)
+							}
+						}
+						if len(datos) > 0 {
+							result["rhv_pos"] = datos
+						} else {
+							result["rhv_pos"] = "{}"
+						}
+					} else {
+						result["rhv_pos"] = "{}"
+					}
+
+					iddetail = dato_json["ids_detalle"].(map[string]interface{})["rubros"].(string)
+					errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
+					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
+						dato_str := identificacionDetalle["Data"].(map[string]interface{})["dato"].(string)
+						dato := map[string]interface{}{}
+						datos := []map[string]interface{}{}
+						json.Unmarshal([]byte(dato_str), &dato)
+						for key := range dato {
+							element := dato[key].(map[string]interface{})
+							if element["activo"] == true {
+								datos = append(datos, element)
+							}
+						}
+						if len(datos) > 0 {
+							result["rubros"] = datos
+						} else {
+							result["rubros"] = "{}"
+						}
+					} else {
+						result["rubros"] = "{}"
+					}
+
+					iddetail = dato_json["ids_detalle"].(map[string]interface{})["rubros_pos"].(string)
+					errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
+					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
+						dato_str := identificacionDetalle["Data"].(map[string]interface{})["dato"].(string)
+						dato := map[string]interface{}{}
+						datos := []map[string]interface{}{}
+						json.Unmarshal([]byte(dato_str), &dato)
+						for key := range dato {
+							element := dato[key].(map[string]interface{})
+							if element["activo"] == true {
+								datos = append(datos, element)
+							}
+						}
+						if len(datos) > 0 {
+							result["rubros_pos"] = datos
+						} else {
+							result["rubros_pos"] = "{}"
+						}
+					} else {
+						result["rubros_pos"] = "{}"
+					}
+
+					c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": result}
+
+				} else {
+					identificacion = respuesta[0]
+					if identificacion["dato"] != nil && identificacion["dato"] != "{}" { // ? Antiguo método unificado
+						result := make(map[string]interface{})
+						dato_str := identificacion["dato"].(string)
+						json.Unmarshal([]byte(dato_str), &dato)
+
+						var identi map[string]interface{} = nil
+						dato_aux := ""
+
+						dato_aux = dato["rhf"].(string)
+						if dato_aux == "{}" {
+							result["rhf"] = "{}"
+						} else {
+							json.Unmarshal([]byte(dato_aux), &identi)
+							for key := range identi {
+								element := identi[key].(map[string]interface{})
+								if element["activo"] == true {
+									data_identi = append(data_identi, element)
+								}
+							}
+							result["rhf"] = data_identi
+						}
+
+						identi = nil
+						data_identi = nil
+
+						dato_aux = dato["rhv_pre"].(string)
+						if dato_aux == "{}" {
+							result["rhv_pre"] = "{}"
+						} else {
+							json.Unmarshal([]byte(dato_aux), &identi)
+							for key := range identi {
+								element := identi[key].(map[string]interface{})
+								if element["activo"] == true {
+									data_identi = append(data_identi, element)
+								}
+							}
+							result["rhv_pre"] = data_identi
+						}
+
+						identi = nil
+						data_identi = nil
+
+						dato_aux = dato["rhv_pos"].(string)
+						if dato_aux == "{}" {
+							result["rhv_pos"] = "{}"
+						} else {
+							json.Unmarshal([]byte(dato_aux), &identi)
+							for key := range identi {
+								element := identi[key].(map[string]interface{})
+								if element["activo"] == true {
+									data_identi = append(data_identi, element)
+								}
+							}
+							result["rhv_pos"] = data_identi
+						}
+
+						identi = nil
+						data_identi = nil
+
+						dato_aux = dato["rubros"].(string)
+						if dato_aux == "{}" {
+							result["rubros"] = "{}"
+						} else {
+							json.Unmarshal([]byte(dato_aux), &identi)
+							for key := range identi {
+								element := identi[key].(map[string]interface{})
+								if element["activo"] == true {
+									data_identi = append(data_identi, element)
+								}
+							}
+							result["rubros"] = data_identi
+						}
+
+						identi = nil
+						data_identi = nil
+
+						if dato["rubros_pos"] != nil {
+							dato_aux = dato["rubros_pos"].(string)
+							if dato_aux == "{}" {
+								result["rubros_pos"] = "{}"
+							} else {
+								json.Unmarshal([]byte(dato_aux), &identi)
+								for key := range identi {
+									element := identi[key].(map[string]interface{})
+									if element["activo"] == true {
+										data_identi = append(data_identi, element)
+									}
+								}
+								result["rubros_pos"] = data_identi
+							}
+						}
+
+						c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": result}
+
+					} else {
+						c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": ""}
 					}
 				}
-				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": result}
-
 			} else {
 				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": ""}
 			}
-
+		} else {
+			panic(err)
 		}
-
 	} else {
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id+",tipo_identificacion_id:"+tipoIdenti, &res); err == nil {
 			helpers.LimpiezaRespuestaRefactor(res, &respuesta)
