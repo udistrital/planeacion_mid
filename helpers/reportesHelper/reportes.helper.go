@@ -641,64 +641,116 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 				contratistas = data_identi
 			}
 		} else if strings.Contains(nombre, "docente") {
-			var dato map[string]interface{}
+			dato := map[string]interface{}{}
 			var data_identi []map[string]interface{}
 			if identificacion["dato"] != nil && identificacion["dato"] != "{}" {
 				result := make(map[string]interface{})
 				dato_str := identificacion["dato"].(string)
-				json.Unmarshal([]byte(dato_str), &dato)
 
-				var identi map[string]interface{}
-				dato_aux := dato["rhf"].(string)
-				if dato_aux == "{}" {
-					result["rhf"] = "{}"
-				} else {
-					json.Unmarshal([]byte(dato_aux), &identi)
-					for key := range identi {
-						element := identi[key].(map[string]interface{})
-						if element["activo"] == true {
-							data_identi = append(data_identi, element)
+				// ? Se tiene en cuenta la nueva estructura la info ahora está en identificacion-detalle, pero tambien tiene en cuenta la estructura de indentificaciones viejas (else)
+				if strings.Contains(dato_str, "ids_detalle") {
+					json.Unmarshal([]byte(dato_str), &dato)
+
+					var identi map[string]interface{}
+					iddetail := ""
+					identificacionDetalle := map[string]interface{}{}
+					errIdentificacionDetalle := error(nil)
+
+					iddetail = dato["ids_detalle"].(map[string]interface{})["rhf"].(string)
+					errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
+					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
+						dato_aux := identificacionDetalle["Data"].(map[string]interface{})["dato"].(string)
+						if dato_aux == "{}" {
+							result["rhf"] = "{}"
+						} else {
+							json.Unmarshal([]byte(dato_aux), &identi)
+							for key := range identi {
+								element := identi[key].(map[string]interface{})
+								if element["activo"] == true {
+									data_identi = append(data_identi, element)
+								}
+							}
+							result["rhf"] = data_identi
 						}
+						data_identi = nil
+						identificacionDetalle = map[string]interface{}{}
+					} else {
+						result["rhf"] = "{}"
 					}
-					result["rhf"] = data_identi
-				}
 
-				data_identi = nil
-
-				dato_aux = dato["rhv_pre"].(string)
-				if dato_aux == "{}" {
-					result["rhv_pre"] = "{}"
-				} else {
-					json.Unmarshal([]byte(dato_aux), &identi)
-					for key := range identi {
-						element := identi[key].(map[string]interface{})
-						if element["activo"] == true {
-							data_identi = append(data_identi, element)
+					iddetail = dato["ids_detalle"].(map[string]interface{})["rhv_pre"].(string)
+					errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
+					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
+						dato_aux := identificacionDetalle["Data"].(map[string]interface{})["dato"].(string)
+						if dato_aux == "{}" {
+							result["rhv_pre"] = "{}"
+						} else {
+							json.Unmarshal([]byte(dato_aux), &identi)
+							for key := range identi {
+								element := identi[key].(map[string]interface{})
+								if element["activo"] == true {
+									data_identi = append(data_identi, element)
+								}
+							}
+							result["rhv_pre"] = data_identi
 						}
+						data_identi = nil
+						identificacionDetalle = map[string]interface{}{}
+					} else {
+						result["rhv_pre"] = "{}"
 					}
-					result["rhv_pre"] = data_identi
-				}
-				data_identi = nil
-				dato_aux = dato["rhv_pos"].(string)
 
-				if dato_aux == "{}" {
-					result["rhv_pos"] = "{}"
-				} else {
-					json.Unmarshal([]byte(dato_aux), &identi)
-					for key := range identi {
-						element := identi[key].(map[string]interface{})
-						if element["activo"] == true {
-							data_identi = append(data_identi, element)
+					iddetail = dato["ids_detalle"].(map[string]interface{})["rhv_pos"].(string)
+					errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
+					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
+						dato_aux := identificacionDetalle["Data"].(map[string]interface{})["dato"].(string)
+						if dato_aux == "{}" {
+							result["rhv_pos"] = "{}"
+						} else {
+							json.Unmarshal([]byte(dato_aux), &identi)
+							for key := range identi {
+								element := identi[key].(map[string]interface{})
+								if element["activo"] == true {
+									data_identi = append(data_identi, element)
+								}
+							}
+							result["rhv_pos"] = data_identi
 						}
+						data_identi = nil
+						identificacionDetalle = map[string]interface{}{}
+					} else {
+						result["rhv_pos"] = "{}"
 					}
-					result["rhv_pos"] = data_identi
-				}
-				data_identi = nil
 
-				if dato["rubros"] != nil {
-					dato_aux = dato["rubros"].(string)
-					if dato_aux == "{}" {
+					iddetail = dato["ids_detalle"].(map[string]interface{})["rubros"].(string)
+					errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
+					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
+						dato_aux := identificacionDetalle["Data"].(map[string]interface{})["dato"].(string)
+						if dato_aux == "{}" {
+							result["rubros"] = "{}"
+						} else {
+							json.Unmarshal([]byte(dato_aux), &identi)
+							for key := range identi {
+								element := identi[key].(map[string]interface{})
+								if element["activo"] == true {
+									data_identi = append(data_identi, element)
+								}
+							}
+							result["rubros"] = data_identi
+						}
+						data_identi = nil
+						identificacionDetalle = map[string]interface{}{}
+					} else {
 						result["rubros"] = "{}"
+					}
+
+				} else {
+					json.Unmarshal([]byte(dato_str), &dato)
+
+					var identi map[string]interface{}
+					dato_aux := dato["rhf"].(string)
+					if dato_aux == "{}" {
+						result["rhf"] = "{}"
 					} else {
 						json.Unmarshal([]byte(dato_aux), &identi)
 						for key := range identi {
@@ -707,10 +759,59 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 								data_identi = append(data_identi, element)
 							}
 						}
-						result["rubros"] = data_identi
+						result["rhf"] = data_identi
+					}
+
+					data_identi = nil
+
+					dato_aux = dato["rhv_pre"].(string)
+					if dato_aux == "{}" {
+						result["rhv_pre"] = "{}"
+					} else {
+						json.Unmarshal([]byte(dato_aux), &identi)
+						for key := range identi {
+							element := identi[key].(map[string]interface{})
+							if element["activo"] == true {
+								data_identi = append(data_identi, element)
+							}
+						}
+						result["rhv_pre"] = data_identi
 					}
 					data_identi = nil
+					dato_aux = dato["rhv_pos"].(string)
+
+					if dato_aux == "{}" {
+						result["rhv_pos"] = "{}"
+					} else {
+						json.Unmarshal([]byte(dato_aux), &identi)
+						for key := range identi {
+							element := identi[key].(map[string]interface{})
+							if element["activo"] == true {
+								data_identi = append(data_identi, element)
+							}
+						}
+						result["rhv_pos"] = data_identi
+					}
+					data_identi = nil
+
+					if dato["rubros"] != nil {
+						dato_aux = dato["rubros"].(string)
+						if dato_aux == "{}" {
+							result["rubros"] = "{}"
+						} else {
+							json.Unmarshal([]byte(dato_aux), &identi)
+							for key := range identi {
+								element := identi[key].(map[string]interface{})
+								if element["activo"] == true {
+									data_identi = append(data_identi, element)
+								}
+							}
+							result["rubros"] = data_identi
+						}
+						data_identi = nil
+					}
 				}
+
 				docentes = result
 			}
 		}
