@@ -2072,64 +2072,116 @@ func (c *ReportesController) Necesidades() {
 
 						}
 					} else if strings.Contains(nombre, "docente") {
-						var dato map[string]interface{}
+						dato := map[string]interface{}{}
 						var data_identi []map[string]interface{}
 						if identificacion["dato"] != nil && identificacion["dato"] != "{}" {
 							result := make(map[string]interface{})
 							dato_str := identificacion["dato"].(string)
-							json.Unmarshal([]byte(dato_str), &dato)
 
-							var identi map[string]interface{}
-							dato_aux := dato["rhf"].(string)
-							if dato_aux == "{}" {
-								result["rhf"] = "{}"
-							} else {
-								json.Unmarshal([]byte(dato_aux), &identi)
-								for key := range identi {
-									element := identi[key].(map[string]interface{})
-									if element["activo"] == true {
-										data_identi = append(data_identi, element)
+							// ? Se tiene en cuenta la nueva estructura la info ahora está en identificacion-detalle, pero tambien tiene en cuenta la estructura de indentificaciones viejas (else)
+							if strings.Contains(dato_str, "ids_detalle") {
+								json.Unmarshal([]byte(dato_str), &dato)
+
+								var identi map[string]interface{}
+								iddetail := ""
+								identificacionDetalle := map[string]interface{}{}
+								errIdentificacionDetalle := error(nil)
+
+								iddetail = dato["ids_detalle"].(map[string]interface{})["rhf"].(string)
+								errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
+								if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
+									dato_aux := identificacionDetalle["Data"].(map[string]interface{})["dato"].(string)
+									if dato_aux == "{}" {
+										result["rhf"] = "{}"
+									} else {
+										json.Unmarshal([]byte(dato_aux), &identi)
+										for key := range identi {
+											element := identi[key].(map[string]interface{})
+											if element["activo"] == true {
+												data_identi = append(data_identi, element)
+											}
+										}
+										result["rhf"] = data_identi
 									}
+									data_identi = nil
+									identificacionDetalle = map[string]interface{}{}
+								} else {
+									result["rhf"] = "{}"
 								}
-								result["rhf"] = data_identi
-							}
 
-							data_identi = nil
-
-							dato_aux = dato["rhv_pre"].(string)
-							if dato_aux == "{}" {
-								result["rhv_pre"] = "{}"
-							} else {
-								json.Unmarshal([]byte(dato_aux), &identi)
-								for key := range identi {
-									element := identi[key].(map[string]interface{})
-									if element["activo"] == true {
-										data_identi = append(data_identi, element)
+								iddetail = dato["ids_detalle"].(map[string]interface{})["rhv_pre"].(string)
+								errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
+								if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
+									dato_aux := identificacionDetalle["Data"].(map[string]interface{})["dato"].(string)
+									if dato_aux == "{}" {
+										result["rhv_pre"] = "{}"
+									} else {
+										json.Unmarshal([]byte(dato_aux), &identi)
+										for key := range identi {
+											element := identi[key].(map[string]interface{})
+											if element["activo"] == true {
+												data_identi = append(data_identi, element)
+											}
+										}
+										result["rhv_pre"] = data_identi
 									}
+									data_identi = nil
+									identificacionDetalle = map[string]interface{}{}
+								} else {
+									result["rhv_pre"] = "{}"
 								}
-								result["rhv_pre"] = data_identi
-							}
-							data_identi = nil
 
-							dato_aux = dato["rhv_pos"].(string)
-							if dato_aux == "{}" {
-								result["rhv_pos"] = "{}"
-							} else {
-								json.Unmarshal([]byte(dato_aux), &identi)
-								for key := range identi {
-									element := identi[key].(map[string]interface{})
-									if element["activo"] == true {
-										data_identi = append(data_identi, element)
+								iddetail = dato["ids_detalle"].(map[string]interface{})["rhv_pos"].(string)
+								errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
+								if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
+									dato_aux := identificacionDetalle["Data"].(map[string]interface{})["dato"].(string)
+									if dato_aux == "{}" {
+										result["rhv_pos"] = "{}"
+									} else {
+										json.Unmarshal([]byte(dato_aux), &identi)
+										for key := range identi {
+											element := identi[key].(map[string]interface{})
+											if element["activo"] == true {
+												data_identi = append(data_identi, element)
+											}
+										}
+										result["rhv_pos"] = data_identi
 									}
+									data_identi = nil
+									identificacionDetalle = map[string]interface{}{}
+								} else {
+									result["rhv_pos"] = "{}"
 								}
-								result["rhv_pos"] = data_identi
-							}
-							data_identi = nil
 
-							if dato["rubros"] != nil {
-								dato_aux = dato["rubros"].(string)
-								if dato_aux == "{}" {
+								iddetail = dato["ids_detalle"].(map[string]interface{})["rubros"].(string)
+								errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
+								if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
+									dato_aux := identificacionDetalle["Data"].(map[string]interface{})["dato"].(string)
+									if dato_aux == "{}" {
+										result["rubros"] = "{}"
+									} else {
+										json.Unmarshal([]byte(dato_aux), &identi)
+										for key := range identi {
+											element := identi[key].(map[string]interface{})
+											if element["activo"] == true {
+												data_identi = append(data_identi, element)
+											}
+										}
+										result["rubros"] = data_identi
+									}
+									data_identi = nil
+									identificacionDetalle = map[string]interface{}{}
+								} else {
 									result["rubros"] = "{}"
+								}
+
+							} else {
+								json.Unmarshal([]byte(dato_str), &dato)
+
+								var identi map[string]interface{}
+								dato_aux := dato["rhf"].(string)
+								if dato_aux == "{}" {
+									result["rhf"] = "{}"
 								} else {
 									json.Unmarshal([]byte(dato_aux), &identi)
 									for key := range identi {
@@ -2138,11 +2190,59 @@ func (c *ReportesController) Necesidades() {
 											data_identi = append(data_identi, element)
 										}
 									}
-									result["rubros"] = data_identi
+									result["rhf"] = data_identi
 								}
-							}
 
-							data_identi = nil
+								data_identi = nil
+
+								dato_aux = dato["rhv_pre"].(string)
+								if dato_aux == "{}" {
+									result["rhv_pre"] = "{}"
+								} else {
+									json.Unmarshal([]byte(dato_aux), &identi)
+									for key := range identi {
+										element := identi[key].(map[string]interface{})
+										if element["activo"] == true {
+											data_identi = append(data_identi, element)
+										}
+									}
+									result["rhv_pre"] = data_identi
+								}
+								data_identi = nil
+
+								dato_aux = dato["rhv_pos"].(string)
+								if dato_aux == "{}" {
+									result["rhv_pos"] = "{}"
+								} else {
+									json.Unmarshal([]byte(dato_aux), &identi)
+									for key := range identi {
+										element := identi[key].(map[string]interface{})
+										if element["activo"] == true {
+											data_identi = append(data_identi, element)
+										}
+									}
+									result["rhv_pos"] = data_identi
+								}
+								data_identi = nil
+
+								if dato["rubros"] != nil {
+									dato_aux = dato["rubros"].(string)
+									if dato_aux == "{}" {
+										result["rubros"] = "{}"
+									} else {
+										json.Unmarshal([]byte(dato_aux), &identi)
+										for key := range identi {
+											element := identi[key].(map[string]interface{})
+											if element["activo"] == true {
+												data_identi = append(data_identi, element)
+											}
+										}
+										result["rubros"] = data_identi
+									}
+								}
+
+								data_identi = nil
+							}
 
 							docentes = result
 						}
@@ -2367,26 +2467,30 @@ func (c *ReportesController) Necesidades() {
 							flag := false
 							var valorU []float64
 							var auxValor float64
-							if fmt.Sprint(reflect.TypeOf(recursos[i]["valor"])) == "int" || fmt.Sprint(reflect.TypeOf(recursos[i]["valor"])) == "float64" {
-								auxValor = recursos[i]["valor"].(float64)
-							} else {
-								strValor2 := strings.TrimLeft(recursos[i]["valor"].(string), "$")
-								strValor2 = strings.ReplaceAll(strValor2, ",", "")
-								arrValor2 := strings.Split(strValor2, ".")
-								aux2, err := strconv.ParseFloat(arrValor2[0], 64)
-								if err == nil {
-									auxValor = aux2
+							// ? puede haber recursos[] sin datos
+							if len(recursos) > 0 {
+								if fmt.Sprint(reflect.TypeOf(recursos[i]["valor"])) == "int" || fmt.Sprint(reflect.TypeOf(recursos[i]["valor"])) == "float64" {
+									auxValor = recursos[i]["valor"].(float64)
+								} else {
+									strValor2 := strings.TrimLeft(recursos[i]["valor"].(string), "$")
+									strValor2 = strings.ReplaceAll(strValor2, ",", "")
+									arrValor2 := strings.Split(strValor2, ".")
+									aux2, err := strconv.ParseFloat(arrValor2[0], 64)
+									if err == nil {
+										auxValor = aux2
+									}
 								}
-							}
-							rubrosGeneral = append(rubrosGeneral, recursos[i])
-							index := len(rubrosGeneral) - 1
-							valorU = append(valorU, auxValor)
-							rubrosGeneral[index]["valorU"] = valorU
-							aux1 = append(aux1, dependencia_nombre)
-							rubrosGeneral[index]["unidades"] = aux1
-							for k := 0; k < len(unidades_total); k++ {
-								if unidades_total[k] == dependencia_nombre {
-									flag = true
+								rubrosGeneral = append(rubrosGeneral, recursos[i])
+
+								index := len(rubrosGeneral) - 1
+								valorU = append(valorU, auxValor)
+								rubrosGeneral[index]["valorU"] = valorU
+								aux1 = append(aux1, dependencia_nombre)
+								rubrosGeneral[index]["unidades"] = aux1
+								for k := 0; k < len(unidades_total); k++ {
+									if unidades_total[k] == dependencia_nombre {
+										flag = true
+									}
 								}
 							}
 							if !flag {
@@ -3276,6 +3380,13 @@ func (c *ReportesController) Necesidades() {
 
 						unidades := rubrosGeneral[i]["unidades"].([]string)
 						valores := rubrosGeneral[i]["valorU"].([]float64)
+
+						// TODO: Revisar este machete, hay menos valores que unidades, se repite la primera unidad, el problema se presenta más arriba.
+						if unidades[0] == unidades[1] && (len(unidades)-1) == len(valores) {
+							unidades = unidades[1:]
+						}
+						// --- end of machete
+
 						necesidadesExcel.MergeCell("Necesidades", "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+len(unidades)))
 						necesidadesExcel.MergeCell("Necesidades", "C"+fmt.Sprint(contador), "C"+fmt.Sprint(contador+len(unidades)))
 						reporteshelper.SombrearCeldas(necesidadesExcel, idActividad, "Necesidades", "B"+fmt.Sprint(contador), "E"+fmt.Sprint(contador+len(unidades)), stylecontent, stylecontentS)
