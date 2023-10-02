@@ -2,6 +2,7 @@ package reporteshelper
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"reflect"
 	"strconv"
 	"strings"
@@ -656,6 +657,9 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 					identificacionDetalle := map[string]interface{}{}
 					errIdentificacionDetalle := error(nil)
 
+					identi = nil
+					data_identi = nil
+					identificacionDetalle = map[string]interface{}{}
 					iddetail = dato["ids_detalle"].(map[string]interface{})["rhf"].(string)
 					errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
 					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
@@ -672,12 +676,13 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 							}
 							result["rhf"] = data_identi
 						}
-						data_identi = nil
-						identificacionDetalle = map[string]interface{}{}
 					} else {
 						result["rhf"] = "{}"
 					}
 
+					identi = nil
+					data_identi = nil
+					identificacionDetalle = map[string]interface{}{}
 					iddetail = dato["ids_detalle"].(map[string]interface{})["rhv_pre"].(string)
 					errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
 					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
@@ -694,12 +699,13 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 							}
 							result["rhv_pre"] = data_identi
 						}
-						data_identi = nil
-						identificacionDetalle = map[string]interface{}{}
 					} else {
 						result["rhv_pre"] = "{}"
 					}
 
+					identi = nil
+					data_identi = nil
+					identificacionDetalle = map[string]interface{}{}
 					iddetail = dato["ids_detalle"].(map[string]interface{})["rhv_pos"].(string)
 					errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
 					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
@@ -716,12 +722,13 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 							}
 							result["rhv_pos"] = data_identi
 						}
-						data_identi = nil
-						identificacionDetalle = map[string]interface{}{}
 					} else {
 						result["rhv_pos"] = "{}"
 					}
 
+					identi = nil
+					data_identi = nil
+					identificacionDetalle = map[string]interface{}{}
 					iddetail = dato["ids_detalle"].(map[string]interface{})["rubros"].(string)
 					errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
 					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
@@ -738,16 +745,39 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 							}
 							result["rubros"] = data_identi
 						}
-						data_identi = nil
-						identificacionDetalle = map[string]interface{}{}
 					} else {
 						result["rubros"] = "{}"
+					}
+
+					identi = nil
+					data_identi = nil
+					identificacionDetalle = map[string]interface{}{}
+					iddetail = dato["ids_detalle"].(map[string]interface{})["rubros_pos"].(string)
+					errIdentificacionDetalle = request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion-detalle/"+iddetail, &identificacionDetalle)
+					if errIdentificacionDetalle == nil && identificacionDetalle["Status"] == "200" && identificacionDetalle["Data"] != nil {
+						dato_aux := identificacionDetalle["Data"].(map[string]interface{})["dato"].(string)
+						if dato_aux == "{}" {
+							result["rubros_pos"] = "{}"
+						} else {
+							json.Unmarshal([]byte(dato_aux), &identi)
+							for key := range identi {
+								element := identi[key].(map[string]interface{})
+								if element["activo"] == true {
+									data_identi = append(data_identi, element)
+								}
+							}
+							result["rubros_pos"] = data_identi
+						}
+					} else {
+						result["rubros_pos"] = "{}"
 					}
 
 				} else {
 					json.Unmarshal([]byte(dato_str), &dato)
 
 					var identi map[string]interface{}
+					identi = nil
+					data_identi = nil
 					dato_aux := dato["rhf"].(string)
 					if dato_aux == "{}" {
 						result["rhf"] = "{}"
@@ -762,8 +792,8 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 						result["rhf"] = data_identi
 					}
 
+					identi = nil
 					data_identi = nil
-
 					dato_aux = dato["rhv_pre"].(string)
 					if dato_aux == "{}" {
 						result["rhv_pre"] = "{}"
@@ -777,9 +807,10 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 						}
 						result["rhv_pre"] = data_identi
 					}
+
+					identi = nil
 					data_identi = nil
 					dato_aux = dato["rhv_pos"].(string)
-
 					if dato_aux == "{}" {
 						result["rhv_pos"] = "{}"
 					} else {
@@ -792,8 +823,9 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 						}
 						result["rhv_pos"] = data_identi
 					}
-					data_identi = nil
 
+					identi = nil
+					data_identi = nil
 					if dato["rubros"] != nil {
 						dato_aux = dato["rubros"].(string)
 						if dato_aux == "{}" {
@@ -808,7 +840,24 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 							}
 							result["rubros"] = data_identi
 						}
-						data_identi = nil
+					}
+
+					identi = nil
+					data_identi = nil
+					if dato["rubros_pos"] != nil {
+						dato_aux = dato["rubros_pos"].(string)
+						if dato_aux == "{}" {
+							result["rubros_pos"] = "{}"
+						} else {
+							json.Unmarshal([]byte(dato_aux), &identi)
+							for key := range identi {
+								element := identi[key].(map[string]interface{})
+								if element["activo"] == true {
+									data_identi = append(data_identi, element)
+								}
+							}
+							result["rubros_pos"] = data_identi
+						}
 					}
 				}
 
@@ -1063,49 +1112,280 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 	contador++
 
 	if docentes != nil {
-		infoDocentes := TotalDocentes(docentes)
+		infoDocentes := TotalDocentes(docentes)["TotalesPorTipo"].(TotalesDocentes)
 		rubros := docentes["rubros"].([]map[string]interface{})
+		rubros_pos := docentes["rubros_pos"].([]map[string]interface{})
 		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador))
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Identificación docente")
 		consolidadoExcelPlanAnual.SetRowHeight(sheetName, contador+1, 7)
-		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), styletitles)
+		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), styletitles)
 
 		contador++
 		contador++
 
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Código del rubro")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), "Nombre del rubro")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), "Valor")
-		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylehead)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Categoría")
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), "Código del rubro")
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), "Nombre del rubro")
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), "Valor")
+		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylehead)
 
 		contador++
 
 		//Cuerpo Tabla
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Prima de Servicios"))
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), "Prima de servicios - pregrado")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), infoDocentes["primaServicios"])
-		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent, stylecontentS)
-		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "D"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		content, _ := ioutil.ReadFile("static/json/rubros.json")
+		rubrosJson := []map[string]interface{}{}
+		_ = json.Unmarshal(content, &rubrosJson)
+
+		code := ""
+		nombre := ""
+
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+1))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Salario básico")
+		code = codigoRubrosDocentes(rubros, "Salario básico")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhf.SalarioBasico+infoDocentes.Rhv_pre.SalarioBasico)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+		code = codigoRubrosDocentes(rubros_pos, "Salario básico")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhv_pos.SalarioBasico)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
 		contador++
 
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Prima de navidad"))
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), "Prima de navidad - posgrado")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), infoDocentes["primaNavidad"])
-		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent, stylecontentS)
-		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "D"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+1))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Prima de Servicios")
+		code = codigoRubrosDocentes(rubros, "Prima de Servicios")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhf.PrimaServicios+infoDocentes.Rhv_pre.PrimaServicios)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+		code = codigoRubrosDocentes(rubros_pos, "Prima de Servicios")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhv_pos.PrimaServicios)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
 		contador++
 
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), codigoRubrosDocentes(rubros, "Prima de vacaciones"))
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), "Prima de vacaciones")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), infoDocentes["primaVacaciones"])
-		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontent, stylecontentS)
-		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "D"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+1))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Prima de navidad")
+		code = codigoRubrosDocentes(rubros, "Prima de navidad")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhf.PrimaNavidad+infoDocentes.Rhv_pre.PrimaNavidad)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+		code = codigoRubrosDocentes(rubros_pos, "Prima de navidad")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhv_pos.PrimaNavidad)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+1))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Prima de vacaciones")
+		code = codigoRubrosDocentes(rubros, "Prima de vacaciones")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhf.PrimaVacaciones+infoDocentes.Rhv_pre.PrimaVacaciones)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+		code = codigoRubrosDocentes(rubros_pos, "Prima de vacaciones")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhv_pos.PrimaVacaciones)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+1))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Fondo pensiones público")
+		code = codigoRubrosDocentes(rubros, "Fondo pensiones público")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhf.PensionesPublicas+infoDocentes.Rhv_pre.PensionesPublicas)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+		code = codigoRubrosDocentes(rubros_pos, "Fondo pensiones público")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhv_pos.PensionesPublicas)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+1))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Fondo pensiones privado")
+		code = codigoRubrosDocentes(rubros, "Fondo pensiones privado")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador+1))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhf.PensionesPrivadas+infoDocentes.Rhv_pre.PensionesPrivadas+infoDocentes.Rhv_pos.PensionesPrivadas)
+		//consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), infoDocentes.Rhf.PensionesPrivadas+infoDocentes.Rhv_pre.PensionesPrivadas)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+		code = codigoRubrosDocentes(rubros_pos, "Fondo pensiones privado")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		//consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), infoDocentes.Rhv_pos.PensionesPrivadas)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+1))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Aporte salud")
+		code = codigoRubrosDocentes(rubros, "Aporte salud")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhf.Salud+infoDocentes.Rhv_pre.Salud)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+		code = codigoRubrosDocentes(rubros_pos, "Aporte salud")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhv_pos.Salud)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+1))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Aporte cesantías público")
+		code = codigoRubrosDocentes(rubros, "Aporte cesantías público")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhf.CesantiasPublicas+infoDocentes.Rhv_pre.CesantiasPublicas)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+		code = codigoRubrosDocentes(rubros_pos, "Aporte cesantías público")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhv_pos.CesantiasPublicas)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+1))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Aporte cesantías privado")
+		code = codigoRubrosDocentes(rubros, "Aporte cesantías privado")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhf.CesantiasPrivadas+infoDocentes.Rhv_pre.CesantiasPrivadas)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+		code = codigoRubrosDocentes(rubros_pos, "Aporte cesantías privado")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhv_pos.CesantiasPrivadas)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+1))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Aporte CCF")
+		code = codigoRubrosDocentes(rubros, "Aporte CCF")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhf.Caja+infoDocentes.Rhv_pre.Caja)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+		code = codigoRubrosDocentes(rubros_pos, "Aporte CCF")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhv_pos.Caja)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+1))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Aporte ARL")
+		code = codigoRubrosDocentes(rubros, "Aporte ARL")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhf.Arl+infoDocentes.Rhv_pre.Arl)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+		code = codigoRubrosDocentes(rubros_pos, "Aporte ARL")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhv_pos.Arl)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+1))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Aporte ICBF")
+		code = codigoRubrosDocentes(rubros, "Aporte ICBF")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhf.Icbf+infoDocentes.Rhv_pre.Icbf)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+		code = codigoRubrosDocentes(rubros_pos, "Aporte ICBF")
+		nombre = NombreRubroByCodigo(rubrosJson, code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhv_pos.Icbf)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
+		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+		contador++
+
 	}
 
 	consolidadoExcelPlanAnual.InsertRows(sheetName, 1, 7)
 	consolidadoExcelPlanAnual.MergeCell(sheetName, "C2", "G6")
 
 	return consolidadoExcelPlanAnual
+}
+
+func NombreRubroByCodigo(rubros []map[string]interface{}, codigo string) string {
+	nombre := ""
+	for i := 0; i < len(rubros); i++ {
+		if rubros[i]["Codigo"] == codigo {
+			nombre = rubros[i]["Nombre"].(string)
+			break
+		}
+	}
+	return nombre
 }
 
 func codigoRubrosDocentes(rubros []map[string]interface{}, categoria string) string {
@@ -1118,6 +1398,29 @@ func codigoRubrosDocentes(rubros []map[string]interface{}, categoria string) str
 		}
 	}
 	return codigo
+}
+
+type TotalDocentVal struct {
+	SalarioBasico      int
+	PrimaServicios     int
+	PrimaNavidad       int
+	PrimaVacaciones    int
+	Bonificacion       int
+	PensionesPublicas  int
+	PensionesPrivadas  int
+	Salud              int
+	InteresesCesantias int
+	CesantiasPublicas  int
+	CesantiasPrivadas  int
+	Caja               int
+	Arl                int
+	Icbf               int
+}
+
+type TotalesDocentes struct {
+	Rhf     TotalDocentVal
+	Rhv_pre TotalDocentVal
+	Rhv_pos TotalDocentVal
 }
 
 func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
@@ -1138,6 +1441,9 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 
 	totalDocentes := make(map[string]interface{})
 
+	totales := TotalesDocentes{}
+
+	sueldoBasico := 0
 	primaServicios := 0
 	primaNavidad := 0
 	primaVacaciones := 0
@@ -1154,6 +1460,18 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 
 	for i := 0; i < len(rhf); i++ {
 		aux := rhf[i]
+
+		if aux["sueldoBasico"] != nil {
+			strSueldoBasico := strings.TrimLeft(aux["sueldoBasico"].(string), "$")
+			strSueldoBasico = strings.ReplaceAll(strSueldoBasico, ",", "")
+			arrSueldoBasico := strings.Split(strSueldoBasico, ".")
+			auxSueldoBasico, err := strconv.Atoi(arrSueldoBasico[0])
+			if err == nil {
+				sueldoBasico += auxSueldoBasico * int(aux["cantidad"].(float64))
+				totales.Rhf.SalarioBasico += auxSueldoBasico * int(aux["cantidad"].(float64))
+			}
+		}
+
 		if aux["primaServicios"] != nil {
 			strPrimaServicios := strings.TrimLeft(aux["primaServicios"].(string), "$")
 			strPrimaServicios = strings.ReplaceAll(strPrimaServicios, ",", "")
@@ -1161,6 +1479,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxPrimaServicios, err := strconv.Atoi(arrPrimaServicios[0])
 			if err == nil {
 				primaServicios += auxPrimaServicios
+				totales.Rhf.PrimaServicios += auxPrimaServicios
 			}
 		}
 
@@ -1171,6 +1490,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxPrimaNavidad, err := strconv.Atoi(arrPrimaNavidad[0])
 			if err == nil {
 				primaNavidad += auxPrimaNavidad
+				totales.Rhf.PrimaNavidad += auxPrimaNavidad
 			}
 		}
 
@@ -1181,6 +1501,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxPrimaVacaciones, err := strconv.Atoi(arrPrimaVacaiones[0])
 			if err == nil {
 				primaVacaciones += auxPrimaVacaciones
+				totales.Rhf.PrimaVacaciones += auxPrimaVacaciones
 			}
 		}
 
@@ -1191,6 +1512,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxBonificacion, err := strconv.Atoi(arrBonificacion[0])
 			if err == nil {
 				bonificacion += auxBonificacion
+				totales.Rhf.Bonificacion += auxBonificacion
 			}
 		}
 
@@ -1201,6 +1523,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxInteresesCesantias, err := strconv.Atoi(arrInteresesCesantias[0])
 			if err == nil {
 				interesesCesantias += auxInteresesCesantias
+				totales.Rhf.InteresesCesantias += auxInteresesCesantias
 			}
 		}
 
@@ -1211,6 +1534,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxCesantiasPublico, err := strconv.Atoi(arrCesantiasPublico[0])
 			if err == nil {
 				cesantiasPublicas += auxCesantiasPublico
+				totales.Rhf.CesantiasPublicas += auxCesantiasPublico
 			}
 		}
 
@@ -1221,6 +1545,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxCesantiasPrivado, err := strconv.Atoi(arrCesantiasPrivado[0])
 			if err == nil {
 				cesantiasPrivadas += auxCesantiasPrivado
+				totales.Rhf.CesantiasPrivadas += auxCesantiasPrivado
 			}
 		}
 
@@ -1231,6 +1556,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxSalud, err := strconv.Atoi(arrSalud[0])
 			if err == nil {
 				salud += auxSalud
+				totales.Rhf.Salud += auxSalud
 			}
 		}
 
@@ -1241,6 +1567,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxPensionesPublicas, err := strconv.Atoi(arrPensionesPublicas[0])
 			if err == nil {
 				pensionesPublicas += auxPensionesPublicas
+				totales.Rhf.PensionesPublicas += auxPensionesPublicas
 			}
 		}
 
@@ -1251,6 +1578,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxPensionesPrivadas, err := strconv.Atoi(arrPensionesPrivadas[0])
 			if err == nil {
 				pensionesPrivadas += auxPensionesPrivadas
+				totales.Rhf.PensionesPrivadas += auxPensionesPrivadas
 			}
 		}
 
@@ -1261,6 +1589,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxCaja, err := strconv.Atoi(arrCaja[0])
 			if err == nil {
 				caja += auxCaja
+				totales.Rhf.Caja += auxCaja
 			}
 
 		}
@@ -1272,6 +1601,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxArl, err := strconv.Atoi(arrArl[0])
 			if err == nil {
 				arl += auxArl
+				totales.Rhf.Arl += auxArl
 			}
 		}
 
@@ -1282,12 +1612,25 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxIcbf, err := strconv.Atoi(arrIcbf[0])
 			if err == nil {
 				icbf += auxIcbf
+				totales.Rhf.Icbf += auxIcbf
 			}
 		}
 	}
 
 	for i := 0; i < len(rhvPre); i++ {
 		aux := rhvPre[i]
+
+		if aux["sueldoBasico"] != nil {
+			strSueldoBasico := strings.TrimLeft(aux["sueldoBasico"].(string), "$")
+			strSueldoBasico = strings.ReplaceAll(strSueldoBasico, ",", "")
+			arrSueldoBasico := strings.Split(strSueldoBasico, ".")
+			auxSueldoBasico, err := strconv.Atoi(arrSueldoBasico[0])
+			if err == nil {
+				sueldoBasico += auxSueldoBasico * int(aux["cantidad"].(float64))
+				totales.Rhv_pre.SalarioBasico += auxSueldoBasico * int(aux["cantidad"].(float64))
+			}
+		}
+
 		if aux["primaServicios"] != nil {
 			strPrimaServicios := strings.TrimLeft(aux["primaServicios"].(string), "$")
 			strPrimaServicios = strings.ReplaceAll(strPrimaServicios, ",", "")
@@ -1295,6 +1638,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxPrimaServicios, err := strconv.Atoi(arrPrimaServicios[0])
 			if err == nil {
 				primaServicios += auxPrimaServicios
+				totales.Rhv_pre.PrimaServicios += auxPrimaServicios
 			}
 		}
 
@@ -1305,6 +1649,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxPrimaNavidad, err := strconv.Atoi(arrPrimaNavidad[0])
 			if err == nil {
 				primaNavidad += auxPrimaNavidad
+				totales.Rhv_pre.PrimaNavidad += auxPrimaNavidad
 			}
 		}
 
@@ -1315,6 +1660,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxPrimaVacaciones, err := strconv.Atoi(arrPrimaVacaiones[0])
 			if err == nil {
 				primaVacaciones += auxPrimaVacaciones
+				totales.Rhv_pre.PrimaVacaciones += auxPrimaVacaciones
 			}
 		}
 
@@ -1325,6 +1671,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxBonificacion, err := strconv.Atoi(arrBonificacion[0])
 			if err == nil {
 				bonificacion += auxBonificacion
+				totales.Rhv_pre.Bonificacion += auxBonificacion
 			}
 		}
 
@@ -1335,6 +1682,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxInteresesCesantias, err := strconv.Atoi(arrInteresesCesantias[0])
 			if err == nil {
 				interesesCesantias += auxInteresesCesantias
+				totales.Rhv_pre.InteresesCesantias += auxInteresesCesantias
 			}
 		}
 
@@ -1345,6 +1693,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxCesantiasPublico, err := strconv.Atoi(arrCesantiasPublico[0])
 			if err == nil {
 				cesantiasPublicas += auxCesantiasPublico
+				totales.Rhv_pre.CesantiasPublicas += auxCesantiasPublico
 			}
 		}
 
@@ -1355,6 +1704,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxCesantiasPrivado, err := strconv.Atoi(arrCesantiasPrivado[0])
 			if err == nil {
 				cesantiasPrivadas += auxCesantiasPrivado
+				totales.Rhv_pre.CesantiasPrivadas += auxCesantiasPrivado
 			}
 		}
 
@@ -1365,6 +1715,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxSalud, err := strconv.Atoi(arrSalud[0])
 			if err == nil {
 				salud += auxSalud
+				totales.Rhv_pre.Salud += auxSalud
 			}
 		}
 
@@ -1375,6 +1726,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxPensionesPublicas, err := strconv.Atoi(arrPensionesPublicas[0])
 			if err == nil {
 				pensionesPublicas += auxPensionesPublicas
+				totales.Rhv_pre.PensionesPublicas += auxPensionesPublicas
 			}
 		}
 
@@ -1385,6 +1737,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxPensionesPrivadas, err := strconv.Atoi(arrPensionesPrivadas[0])
 			if err == nil {
 				pensionesPrivadas += auxPensionesPrivadas
+				totales.Rhv_pre.PensionesPrivadas += auxPensionesPrivadas
 			}
 		}
 
@@ -1395,6 +1748,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxCaja, err := strconv.Atoi(arrCaja[0])
 			if err == nil {
 				caja += auxCaja
+				totales.Rhv_pre.Caja += auxCaja
 			}
 
 		}
@@ -1406,6 +1760,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxArl, err := strconv.Atoi(arrArl[0])
 			if err == nil {
 				arl += auxArl
+				totales.Rhv_pre.Arl += auxArl
 			}
 		}
 
@@ -1416,12 +1771,25 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxIcbf, err := strconv.Atoi(arrIcbf[0])
 			if err == nil {
 				icbf += auxIcbf
+				totales.Rhv_pre.Icbf += auxIcbf
 			}
 		}
 	}
 
 	for i := 0; i < len(rhvPos); i++ {
 		aux := rhvPos[i]
+
+		if aux["sueldoBasico"] != nil {
+			strSueldoBasico := strings.TrimLeft(aux["sueldoBasico"].(string), "$")
+			strSueldoBasico = strings.ReplaceAll(strSueldoBasico, ",", "")
+			arrSueldoBasico := strings.Split(strSueldoBasico, ".")
+			auxSueldoBasico, err := strconv.Atoi(arrSueldoBasico[0])
+			if err == nil {
+				sueldoBasico += auxSueldoBasico * int(aux["cantidad"].(float64))
+				totales.Rhv_pos.SalarioBasico += auxSueldoBasico * int(aux["cantidad"].(float64))
+			}
+		}
+
 		if aux["primaServicios"] != nil {
 			strPrimaServicios := strings.TrimLeft(aux["primaServicios"].(string), "$")
 			strPrimaServicios = strings.ReplaceAll(strPrimaServicios, ",", "")
@@ -1429,6 +1797,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxPrimaServicios, err := strconv.Atoi(arrPrimaServicios[0])
 			if err == nil {
 				primaServicios += auxPrimaServicios
+				totales.Rhv_pos.PrimaServicios += auxPrimaServicios
 			}
 		}
 
@@ -1439,6 +1808,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxPrimaNavidad, err := strconv.Atoi(arrPrimaNavidad[0])
 			if err == nil {
 				primaNavidad += auxPrimaNavidad
+				totales.Rhv_pos.PrimaNavidad += auxPrimaNavidad
 			}
 		}
 
@@ -1449,6 +1819,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxPrimaVacaciones, err := strconv.Atoi(arrPrimaVacaiones[0])
 			if err == nil {
 				primaVacaciones += auxPrimaVacaciones
+				totales.Rhv_pos.PrimaVacaciones += auxPrimaVacaciones
 			}
 		}
 
@@ -1459,6 +1830,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxBonificacion, err := strconv.Atoi(arrBonificacion[0])
 			if err == nil {
 				bonificacion += auxBonificacion
+				totales.Rhv_pos.Bonificacion += auxBonificacion
 			}
 		}
 
@@ -1469,6 +1841,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxInteresesCesantias, err := strconv.Atoi(arrInteresesCesantias[0])
 			if err == nil {
 				interesesCesantias += auxInteresesCesantias
+				totales.Rhv_pos.InteresesCesantias += auxInteresesCesantias
 			}
 		}
 
@@ -1479,6 +1852,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxCesantiasPublico, err := strconv.Atoi(arrCesantiasPublico[0])
 			if err == nil {
 				cesantiasPublicas += auxCesantiasPublico
+				totales.Rhv_pos.CesantiasPublicas += auxCesantiasPublico
 			}
 		}
 
@@ -1489,6 +1863,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxCesantiasPrivado, err := strconv.Atoi(arrCesantiasPrivado[0])
 			if err == nil {
 				cesantiasPrivadas += auxCesantiasPrivado
+				totales.Rhv_pos.CesantiasPrivadas += auxCesantiasPrivado
 			}
 		}
 
@@ -1499,6 +1874,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxSalud, err := strconv.Atoi(arrSalud[0])
 			if err == nil {
 				salud += auxSalud
+				totales.Rhv_pos.Salud += auxSalud
 			}
 		}
 
@@ -1509,6 +1885,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxPensionesPublicas, err := strconv.Atoi(arrPensionesPublicas[0])
 			if err == nil {
 				pensionesPublicas += auxPensionesPublicas
+				totales.Rhv_pos.PensionesPublicas += auxPensionesPublicas
 			}
 		}
 
@@ -1519,6 +1896,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxPensionesPrivadas, err := strconv.Atoi(arrPensionesPrivadas[0])
 			if err == nil {
 				pensionesPrivadas += auxPensionesPrivadas
+				totales.Rhv_pos.PensionesPrivadas += auxPensionesPrivadas
 			}
 		}
 
@@ -1529,6 +1907,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxCaja, err := strconv.Atoi(arrCaja[0])
 			if err == nil {
 				caja += auxCaja
+				totales.Rhv_pos.Caja += auxCaja
 			}
 
 		}
@@ -1540,6 +1919,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxArl, err := strconv.Atoi(arrArl[0])
 			if err == nil {
 				arl += auxArl
+				totales.Rhv_pos.Arl += auxArl
 			}
 		}
 
@@ -1550,10 +1930,12 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			auxIcbf, err := strconv.Atoi(arrIcbf[0])
 			if err == nil {
 				icbf += auxIcbf
+				totales.Rhv_pos.Icbf += auxIcbf
 			}
 		}
 	}
 
+	totalDocentes["sueldoBasico"] = sueldoBasico
 	totalDocentes["primaServicios"] = primaServicios
 	totalDocentes["primaNavidad"] = primaNavidad
 	totalDocentes["primaVacaciones"] = primaVacaciones
@@ -1567,6 +1949,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 	totalDocentes["arl"] = arl
 	totalDocentes["caja"] = caja
 	totalDocentes["icbf"] = icbf
+	totalDocentes["TotalesPorTipo"] = totales
 
 	return totalDocentes
 }
