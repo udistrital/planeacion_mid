@@ -244,6 +244,189 @@ func getChildren(children []interface{}, exist bool) (childrenTree []map[string]
 	return
 }
 
+func ArbolArmonizacionV2(armonizacion string) []map[string]interface{} {
+
+	var estrategias []map[string]interface{}
+	var metas []map[string]interface{}
+	var lineamientos []map[string]interface{}
+	var arregloArmo []map[string]interface{}
+
+	if armonizacion != "" {
+		armonizacionPED := strings.Split(armonizacion, ",")
+		for i := 0; i < len(armonizacionPED); i++ {
+			var respuesta map[string]interface{}
+			var respuestaSubgrupo map[string]interface{}
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+armonizacionPED[i], &respuesta); err == nil {
+				helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaSubgrupo)
+				if len(respuestaSubgrupo) > 0 {
+					nombre := strings.ToLower(respuestaSubgrupo["nombre"].(string))
+					if strings.Contains(nombre, "lineamiento") {
+						lineamientos = append(lineamientos, respuestaSubgrupo)
+					} else if strings.Contains(nombre, "meta") {
+						metas = append(metas, respuestaSubgrupo)
+					} else if strings.Contains(nombre, "estrategia") {
+						estrategias = append(estrategias, respuestaSubgrupo)
+					}
+				}
+			} else {
+				panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+			}
+		}
+
+		for i := 0; i < len(lineamientos); i++ {
+			arregloArmo = append(arregloArmo, map[string]interface{}{
+				"_id":                  lineamientos[i]["_id"],
+				"nombreLineamiento":    lineamientos[i]["nombre"],
+				"meta":                 []map[string]interface{}{},
+				"nombrePlanDesarrollo": "Plan Estrategico de Desarrollo",
+				"hijos":                lineamientos[i]["hijos"],
+			})
+		}
+
+		for i := 0; i < len(metas); i++ {
+			foundPadreMeta := false
+			for j := 0; j < len(arregloArmo); j++ {
+				if arregloArmo[j]["_id"] == metas[i]["padre"] {
+					arregloArmo[j]["meta"] = append(arregloArmo[j]["meta"].([]map[string]interface{}), map[string]interface{}{
+						"_id":         metas[i]["_id"],
+						"nombreMeta":  metas[i]["nombre"],
+						"estrategias": []map[string]interface{}{},
+					})
+					foundPadreMeta = true
+					break
+				}
+			}
+			if !foundPadreMeta {
+				arregloArmo = append(arregloArmo, map[string]interface{}{
+					"_id":               metas[i]["padre"],
+					"nombreLineamiento": "No seleccionado",
+					"meta": []map[string]interface{}{
+						{
+							"_id":         metas[i]["_id"],
+							"nombreMeta":  metas[i]["nombre"],
+							"estrategias": []map[string]interface{}{},
+						},
+					},
+					"nombrePlanDesarrollo": "Plan Estrategico de Desarrollo",
+					"hijos":                []interface{}{},
+				})
+			}
+		}
+
+		for i := 0; i < len(estrategias); i++ {
+			foundPadreEstrategia := false
+			for j := 0; j < len(arregloArmo); j++ {
+				for k := 0; k < len(arregloArmo[j]["meta"].([]map[string]interface{})); k++ {
+					if arregloArmo[j]["meta"].([]map[string]interface{})[k]["_id"] == estrategias[i]["padre"] {
+						arregloArmo[j]["meta"].([]map[string]interface{})[k]["estrategias"] = append(arregloArmo[j]["meta"].([]map[string]interface{})[k]["estrategias"].([]map[string]interface{}), map[string]interface{}{
+							"_id":                   estrategias[i]["_id"],
+							"nombreEstrategia":      estrategias[i]["nombre"],
+							"descripcionEstrategia": estrategias[i]["descripcion"],
+						})
+						foundPadreEstrategia = true
+						break
+					}
+				}
+			}
+			if !foundPadreEstrategia {
+				for j := 0; j < len(arregloArmo); j++ {
+					for k := 0; k < len(arregloArmo[j]["hijos"].([]interface{})); k++ {
+						if arregloArmo[j]["hijos"].([]interface{})[k] == estrategias[i]["padre"] {
+							arregloArmo[j]["meta"] = append(arregloArmo[j]["meta"].([]map[string]interface{}), map[string]interface{}{
+								"_id":        estrategias[i]["padre"],
+								"nombreMeta": "No seleccionado",
+								"estrategias": []map[string]interface{}{
+									{
+										"_id":                   estrategias[i]["_id"],
+										"nombreEstrategia":      estrategias[i]["nombre"],
+										"descripcionEstrategia": estrategias[i]["descripcion"],
+									},
+								},
+							})
+							foundPadreEstrategia = true
+							break
+						}
+					}
+					if foundPadreEstrategia {
+						break
+					}
+				}
+			}
+			if !foundPadreEstrategia {
+				arregloArmo = append(arregloArmo, map[string]interface{}{
+					"_id":               "",
+					"nombreLineamiento": "No seleccionado",
+					"meta": []map[string]interface{}{
+						{
+							"_id":        estrategias[i]["padre"],
+							"nombreMeta": "No seleccionado",
+							"estrategias": []map[string]interface{}{
+								{
+									"_id":                   estrategias[i]["_id"],
+									"nombreEstrategia":      estrategias[i]["nombre"],
+									"descripcionEstrategia": estrategias[i]["descripcion"],
+								},
+							},
+						},
+					},
+					"nombrePlanDesarrollo": "Plan Estrategico de Desarrollo",
+					"hijos": []interface{}{
+						estrategias[i]["padre"],
+					},
+				})
+			}
+		}
+
+		for i := 0; i < len(arregloArmo); i++ {
+			if len(arregloArmo[i]["meta"].([]map[string]interface{})) == 0 {
+				arregloArmo[i]["meta"] = append(arregloArmo[i]["meta"].([]map[string]interface{}), map[string]interface{}{
+					"_id":        "",
+					"nombreMeta": "No seleccionado",
+					"estrategias": []map[string]interface{}{
+						{
+							"_id":                   "",
+							"nombreEstrategia":      "No seleccionado",
+							"descripcionEstrategia": "No seleccionado",
+						},
+					},
+				})
+			} else {
+				for j := 0; j < len(arregloArmo[i]["meta"].([]map[string]interface{})); j++ {
+					if len(arregloArmo[i]["meta"].([]map[string]interface{})[j]["estrategias"].([]map[string]interface{})) == 0 {
+						arregloArmo[i]["meta"].([]map[string]interface{})[j]["estrategias"] = append(arregloArmo[i]["meta"].([]map[string]interface{})[j]["estrategias"].([]map[string]interface{}), map[string]interface{}{
+							"_id":                   "",
+							"nombreEstrategia":      "No seleccionado",
+							"descripcionEstrategia": "No seleccionado",
+						})
+					}
+				}
+			}
+			delete(arregloArmo[i], "hijos")
+		}
+	} else {
+		arregloArmo = append(arregloArmo, map[string]interface{}{
+			"_id":               "",
+			"nombreLineamiento": "No seleccionado",
+			"meta": []map[string]interface{}{
+				{
+					"_id":        "",
+					"nombreMeta": "No seleccionado",
+					"estrategias": []map[string]interface{}{
+						{
+							"_id":                   "",
+							"nombreEstrategia":      "No seleccionado",
+							"descripcionEstrategia": "No seleccionado",
+						},
+					},
+				},
+			},
+			"nombrePlanDesarrollo": "Plan Estrategico de Desarrollo",
+		})
+	}
+
+	return arregloArmo
+}
+
 func ArbolArmonizacion(armonizacion string) []map[string]interface{} {
 
 	var respuesta map[string]interface{}
@@ -399,6 +582,189 @@ func ArbolArmonizacion(armonizacion string) []map[string]interface{} {
 	}
 
 	return arreglo
+}
+
+func ArbolArmonizacionPIV2(armonizacion string) []map[string]interface{} {
+
+	var estrategias []map[string]interface{}
+	var lineamientos []map[string]interface{}
+	var factores []map[string]interface{}
+	var arregloArmo []map[string]interface{}
+
+	if armonizacion != "" {
+		armonizacionPI := strings.Split(armonizacion, ",")
+		for i := 0; i < len(armonizacionPI); i++ {
+			var respuesta map[string]interface{}
+			var respuestaSubgrupo map[string]interface{}
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+armonizacionPI[i], &respuesta); err == nil {
+				helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaSubgrupo)
+				if len(respuestaSubgrupo) > 0 {
+					nombre := strings.ToLower(respuestaSubgrupo["nombre"].(string))
+					if (strings.Contains(nombre, "eje") && strings.Contains(nombre, "transformador")) || strings.Contains(nombre, "nivel 1") {
+						factores = append(factores, respuestaSubgrupo)
+					} else if strings.Contains(nombre, "lineamientos") || strings.Contains(nombre, "lineamiento") || strings.Contains(nombre, "nivel 2") {
+						lineamientos = append(lineamientos, respuestaSubgrupo)
+					} else if strings.Contains(nombre, "estrategia") || strings.Contains(nombre, "proyecto") || strings.Contains(nombre, "nivel 3") {
+						estrategias = append(estrategias, respuestaSubgrupo)
+					}
+				}
+			} else {
+				panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+			}
+		}
+
+		for i := 0; i < len(factores); i++ {
+			arregloArmo = append(arregloArmo, map[string]interface{}{
+				"_id":                  factores[i]["_id"],
+				"nombreFactor":         factores[i]["nombre"],
+				"lineamientos":         []map[string]interface{}{},
+				"nombrePlanDesarrollo": "Plan Indicativo",
+				"hijos":                factores[i]["hijos"],
+			})
+		}
+
+		for i := 0; i < len(lineamientos); i++ {
+			foundPadreMeta := false
+			for j := 0; j < len(arregloArmo); j++ {
+				if arregloArmo[j]["_id"] == lineamientos[i]["padre"] {
+					arregloArmo[j]["lineamientos"] = append(arregloArmo[j]["lineamientos"].([]map[string]interface{}), map[string]interface{}{
+						"_id":               lineamientos[i]["_id"],
+						"nombreLineamiento": lineamientos[i]["nombre"],
+						"estrategias":       []map[string]interface{}{},
+					})
+					foundPadreMeta = true
+					break
+				}
+			}
+			if !foundPadreMeta {
+				arregloArmo = append(arregloArmo, map[string]interface{}{
+					"_id":          lineamientos[i]["padre"],
+					"nombreFactor": "No seleccionado",
+					"lineamientos": []map[string]interface{}{
+						{
+							"_id":               lineamientos[i]["_id"],
+							"nombreLineamiento": lineamientos[i]["nombre"],
+							"estrategias":       []map[string]interface{}{},
+						},
+					},
+					"nombrePlanDesarrollo": "Plan Indicativo",
+					"hijos":                []interface{}{},
+				})
+			}
+		}
+
+		for i := 0; i < len(estrategias); i++ {
+			foundPadreEstrategia := false
+			for j := 0; j < len(arregloArmo); j++ {
+				for k := 0; k < len(arregloArmo[j]["lineamientos"].([]map[string]interface{})); k++ {
+					if arregloArmo[j]["lineamientos"].([]map[string]interface{})[k]["_id"] == estrategias[i]["padre"] {
+						arregloArmo[j]["lineamientos"].([]map[string]interface{})[k]["estrategias"] = append(arregloArmo[j]["lineamientos"].([]map[string]interface{})[k]["estrategias"].([]map[string]interface{}), map[string]interface{}{
+							"_id":                   estrategias[i]["_id"],
+							"nombreEstrategia":      estrategias[i]["nombre"],
+							"descripcionEstrategia": estrategias[i]["descripcion"],
+						})
+						foundPadreEstrategia = true
+						break
+					}
+				}
+			}
+			if !foundPadreEstrategia {
+				for j := 0; j < len(arregloArmo); j++ {
+					for k := 0; k < len(arregloArmo[j]["hijos"].([]interface{})); k++ {
+						if arregloArmo[j]["hijos"].([]interface{})[k] == estrategias[i]["padre"] {
+							arregloArmo[j]["lineamientos"] = append(arregloArmo[j]["lineamientos"].([]map[string]interface{}), map[string]interface{}{
+								"_id":               estrategias[i]["padre"],
+								"nombreLineamiento": "No seleccionado",
+								"estrategias": []map[string]interface{}{
+									{
+										"_id":                   estrategias[i]["_id"],
+										"nombreEstrategia":      estrategias[i]["nombre"],
+										"descripcionEstrategia": estrategias[i]["descripcion"],
+									},
+								},
+							})
+							foundPadreEstrategia = true
+							break
+						}
+					}
+					if foundPadreEstrategia {
+						break
+					}
+				}
+			}
+			if !foundPadreEstrategia {
+				arregloArmo = append(arregloArmo, map[string]interface{}{
+					"_id":          "",
+					"nombreFactor": "No seleccionado",
+					"lineamientos": []map[string]interface{}{
+						{
+							"_id":               estrategias[i]["padre"],
+							"nombreLineamiento": "No seleccionado",
+							"estrategias": []map[string]interface{}{
+								{
+									"_id":                   estrategias[i]["_id"],
+									"nombreEstrategia":      estrategias[i]["nombre"],
+									"descripcionEstrategia": estrategias[i]["descripcion"],
+								},
+							},
+						},
+					},
+					"nombrePlanDesarrollo": "Plan Indicativo",
+					"hijos": []interface{}{
+						estrategias[i]["padre"],
+					},
+				})
+			}
+		}
+
+		for i := 0; i < len(arregloArmo); i++ {
+			if len(arregloArmo[i]["lineamientos"].([]map[string]interface{})) == 0 {
+				arregloArmo[i]["lineamientos"] = append(arregloArmo[i]["lineamientos"].([]map[string]interface{}), map[string]interface{}{
+					"_id":               "",
+					"nombreLineamiento": "No seleccionado",
+					"estrategias": []map[string]interface{}{
+						{
+							"_id":                   "",
+							"nombreEstrategia":      "No seleccionado",
+							"descripcionEstrategia": "No seleccionado",
+						},
+					},
+				})
+			} else {
+				for j := 0; j < len(arregloArmo[i]["lineamientos"].([]map[string]interface{})); j++ {
+					if len(arregloArmo[i]["lineamientos"].([]map[string]interface{})[j]["estrategias"].([]map[string]interface{})) == 0 {
+						arregloArmo[i]["lineamientos"].([]map[string]interface{})[j]["estrategias"] = append(arregloArmo[i]["lineamientos"].([]map[string]interface{})[j]["estrategias"].([]map[string]interface{}), map[string]interface{}{
+							"_id":                   "",
+							"nombreEstrategia":      "No seleccionado",
+							"descripcionEstrategia": "No seleccionado",
+						})
+					}
+				}
+			}
+			delete(arregloArmo[i], "hijos")
+		}
+	} else {
+		arregloArmo = append(arregloArmo, map[string]interface{}{
+			"_id":          "",
+			"nombreFactor": "No seleccionado",
+			"lineamientos": []map[string]interface{}{
+				{
+					"_id":               "",
+					"nombreLineamiento": "No seleccionado",
+					"estrategias": []map[string]interface{}{
+						{
+							"_id":                   "",
+							"nombreEstrategia":      "No seleccionado",
+							"descripcionEstrategia": "No seleccionado",
+						},
+					},
+				},
+			},
+			"nombrePlanDesarrollo": "Plan Indicativo",
+		})
+	}
+
+	return arregloArmo
 }
 
 func ArbolArmonizacionPI(armonizacion interface{}) []map[string]interface{} {
@@ -585,6 +951,62 @@ func ArbolArmonizacionPI(armonizacion interface{}) []map[string]interface{} {
 	}
 
 	return arreglo
+}
+
+type nodo struct {
+	valor     int
+	divisible bool
+	hijos     []*nodo
+}
+
+func MinComMul_Armonization(armoPED, armoPI []map[string]interface{}, lenIndicadores int) int {
+	sizePED := &nodo{valor: len(armoPED)}
+	for _, n2 := range armoPED {
+		h1 := &nodo{valor: len(n2["meta"].([]map[string]interface{}))}
+		sizePED.hijos = append(sizePED.hijos, h1)
+		for _, n3 := range n2["meta"].([]map[string]interface{}) {
+			h2 := &nodo{valor: len(n3["estrategias"].([]map[string]interface{}))}
+			h1.hijos = append(h1.hijos, h2)
+		}
+	}
+
+	sizePI := &nodo{valor: len(armoPI)}
+	for _, n2 := range armoPI {
+		h1 := &nodo{valor: len(n2["lineamientos"].([]map[string]interface{}))}
+		sizePI.hijos = append(sizePI.hijos, h1)
+		for _, n3 := range n2["lineamientos"].([]map[string]interface{}) {
+			h2 := &nodo{valor: len(n3["estrategias"].([]map[string]interface{}))}
+			h1.hijos = append(h1.hijos, h2)
+		}
+	}
+
+	fitSize1 := false
+	fitSize2 := false
+	fitSize3 := false
+	rowMax := lenIndicadores
+	for !(fitSize1 && fitSize2 && fitSize3) {
+		fitSize1 = calcMinCol(sizePED, rowMax)
+		fitSize2 = calcMinCol(sizePI, rowMax)
+		fitSize3 = (rowMax % lenIndicadores) == 0
+		rowMax++
+	}
+
+	return rowMax - 1
+}
+
+func calcMinCol(node *nodo, size int) bool {
+	if (size % node.valor) == 0 {
+		node.divisible = true
+		div := size / node.valor
+		for _, hijo := range node.hijos {
+			if !calcMinCol(hijo, div) {
+				return false
+			}
+		}
+	} else {
+		node.divisible = false
+	}
+	return node.divisible
 }
 
 func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId string) *excelize.File {
