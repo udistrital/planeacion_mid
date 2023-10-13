@@ -204,6 +204,13 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 		detallesLlenados = true
 	}
 
+	if detalles_armonizacion[index] == nil {
+		armonizacion["armo"] = map[string]interface{}{
+			"armonizacionPED": "",
+			"armonizacionPI":  "",
+		}
+	}
+
 	validadores = append(validadores, forkData)
 	return validadores, armonizacion
 }
@@ -377,31 +384,52 @@ func ArbolArmonizacionV2(armonizacion string) []map[string]interface{} {
 			}
 		}
 
-		for i := 0; i < len(arregloArmo); i++ {
-			if len(arregloArmo[i]["meta"].([]map[string]interface{})) == 0 {
-				arregloArmo[i]["meta"] = append(arregloArmo[i]["meta"].([]map[string]interface{}), map[string]interface{}{
-					"_id":        "",
-					"nombreMeta": "No seleccionado",
-					"estrategias": []map[string]interface{}{
-						{
-							"_id":                   "",
-							"nombreEstrategia":      "No seleccionado",
-							"descripcionEstrategia": "No seleccionado",
+		if len(arregloArmo) > 0 {
+			for i := 0; i < len(arregloArmo); i++ {
+				if len(arregloArmo[i]["meta"].([]map[string]interface{})) == 0 {
+					arregloArmo[i]["meta"] = append(arregloArmo[i]["meta"].([]map[string]interface{}), map[string]interface{}{
+						"_id":        "",
+						"nombreMeta": "No seleccionado",
+						"estrategias": []map[string]interface{}{
+							{
+								"_id":                   "",
+								"nombreEstrategia":      "No seleccionado",
+								"descripcionEstrategia": "No seleccionado",
+							},
 						},
-					},
-				})
-			} else {
-				for j := 0; j < len(arregloArmo[i]["meta"].([]map[string]interface{})); j++ {
-					if len(arregloArmo[i]["meta"].([]map[string]interface{})[j]["estrategias"].([]map[string]interface{})) == 0 {
-						arregloArmo[i]["meta"].([]map[string]interface{})[j]["estrategias"] = append(arregloArmo[i]["meta"].([]map[string]interface{})[j]["estrategias"].([]map[string]interface{}), map[string]interface{}{
-							"_id":                   "",
-							"nombreEstrategia":      "No seleccionado",
-							"descripcionEstrategia": "No seleccionado",
-						})
+					})
+				} else {
+					for j := 0; j < len(arregloArmo[i]["meta"].([]map[string]interface{})); j++ {
+						if len(arregloArmo[i]["meta"].([]map[string]interface{})[j]["estrategias"].([]map[string]interface{})) == 0 {
+							arregloArmo[i]["meta"].([]map[string]interface{})[j]["estrategias"] = append(arregloArmo[i]["meta"].([]map[string]interface{})[j]["estrategias"].([]map[string]interface{}), map[string]interface{}{
+								"_id":                   "",
+								"nombreEstrategia":      "No seleccionado",
+								"descripcionEstrategia": "No seleccionado",
+							})
+						}
 					}
 				}
+				delete(arregloArmo[i], "hijos")
 			}
-			delete(arregloArmo[i], "hijos")
+		} else {
+			arregloArmo = append(arregloArmo, map[string]interface{}{
+				"_id":               "",
+				"nombreLineamiento": "No seleccionado",
+				"meta": []map[string]interface{}{
+					{
+						"_id":        "",
+						"nombreMeta": "No seleccionado",
+						"estrategias": []map[string]interface{}{
+							{
+								"_id":                   "",
+								"nombreEstrategia":      "No seleccionado",
+								"descripcionEstrategia": "No seleccionado",
+							},
+						},
+					},
+				},
+				"nombrePlanDesarrollo": "Plan Estrategico de Desarrollo",
+			})
 		}
 	} else {
 		arregloArmo = append(arregloArmo, map[string]interface{}{
@@ -600,7 +628,7 @@ func ArbolArmonizacionPIV2(armonizacion string) []map[string]interface{} {
 				helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaSubgrupo)
 				if len(respuestaSubgrupo) > 0 {
 					nombre := strings.ToLower(respuestaSubgrupo["nombre"].(string))
-					if (strings.Contains(nombre, "eje") && strings.Contains(nombre, "transformador")) || strings.Contains(nombre, "nivel 1") {
+					if (strings.Contains(nombre, "eje") || strings.Contains(nombre, "transformador")) || strings.Contains(nombre, "nivel 1") {
 						factores = append(factores, respuestaSubgrupo)
 					} else if strings.Contains(nombre, "lineamientos") || strings.Contains(nombre, "lineamiento") || strings.Contains(nombre, "nivel 2") {
 						lineamientos = append(lineamientos, respuestaSubgrupo)
@@ -717,31 +745,52 @@ func ArbolArmonizacionPIV2(armonizacion string) []map[string]interface{} {
 			}
 		}
 
-		for i := 0; i < len(arregloArmo); i++ {
-			if len(arregloArmo[i]["lineamientos"].([]map[string]interface{})) == 0 {
-				arregloArmo[i]["lineamientos"] = append(arregloArmo[i]["lineamientos"].([]map[string]interface{}), map[string]interface{}{
-					"_id":               "",
-					"nombreLineamiento": "No seleccionado",
-					"estrategias": []map[string]interface{}{
-						{
-							"_id":                   "",
-							"nombreEstrategia":      "No seleccionado",
-							"descripcionEstrategia": "No seleccionado",
+		if len(arregloArmo) > 0 {
+			for i := 0; i < len(arregloArmo); i++ {
+				if len(arregloArmo[i]["lineamientos"].([]map[string]interface{})) == 0 {
+					arregloArmo[i]["lineamientos"] = append(arregloArmo[i]["lineamientos"].([]map[string]interface{}), map[string]interface{}{
+						"_id":               "",
+						"nombreLineamiento": "No seleccionado",
+						"estrategias": []map[string]interface{}{
+							{
+								"_id":                   "",
+								"nombreEstrategia":      "No seleccionado",
+								"descripcionEstrategia": "No seleccionado",
+							},
 						},
-					},
-				})
-			} else {
-				for j := 0; j < len(arregloArmo[i]["lineamientos"].([]map[string]interface{})); j++ {
-					if len(arregloArmo[i]["lineamientos"].([]map[string]interface{})[j]["estrategias"].([]map[string]interface{})) == 0 {
-						arregloArmo[i]["lineamientos"].([]map[string]interface{})[j]["estrategias"] = append(arregloArmo[i]["lineamientos"].([]map[string]interface{})[j]["estrategias"].([]map[string]interface{}), map[string]interface{}{
-							"_id":                   "",
-							"nombreEstrategia":      "No seleccionado",
-							"descripcionEstrategia": "No seleccionado",
-						})
+					})
+				} else {
+					for j := 0; j < len(arregloArmo[i]["lineamientos"].([]map[string]interface{})); j++ {
+						if len(arregloArmo[i]["lineamientos"].([]map[string]interface{})[j]["estrategias"].([]map[string]interface{})) == 0 {
+							arregloArmo[i]["lineamientos"].([]map[string]interface{})[j]["estrategias"] = append(arregloArmo[i]["lineamientos"].([]map[string]interface{})[j]["estrategias"].([]map[string]interface{}), map[string]interface{}{
+								"_id":                   "",
+								"nombreEstrategia":      "No seleccionado",
+								"descripcionEstrategia": "No seleccionado",
+							})
+						}
 					}
 				}
+				delete(arregloArmo[i], "hijos")
 			}
-			delete(arregloArmo[i], "hijos")
+		} else {
+			arregloArmo = append(arregloArmo, map[string]interface{}{
+				"_id":          "",
+				"nombreFactor": "No seleccionado",
+				"lineamientos": []map[string]interface{}{
+					{
+						"_id":               "",
+						"nombreLineamiento": "No seleccionado",
+						"estrategias": []map[string]interface{}{
+							{
+								"_id":                   "",
+								"nombreEstrategia":      "No seleccionado",
+								"descripcionEstrategia": "No seleccionado",
+							},
+						},
+					},
+				},
+				"nombrePlanDesarrollo": "Plan Indicativo",
+			})
 		}
 	} else {
 		arregloArmo = append(arregloArmo, map[string]interface{}{
@@ -995,6 +1044,9 @@ func MinComMul_Armonization(armoPED, armoPI []map[string]interface{}, lenIndicad
 }
 
 func calcMinCol(node *nodo, size int) bool {
+	if node.valor == 0 {
+		node.valor = 1
+	}
 	if (size % node.valor) == 0 {
 		node.divisible = true
 		div := size / node.valor
