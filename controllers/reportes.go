@@ -3498,17 +3498,35 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			case 2:
 				for _, actividad := range evaluacion {
 					actividad["trimestre4"] = trimestreVacio
+					if len(actividad["trimestre3"].(map[string]interface{})) == 0 {
+						actividad["trimestre3"] = trimestreVacio
+					}
+					if len(actividad["trimestre2"].(map[string]interface{})) == 0 {
+						actividad["trimestre2"] = trimestreVacio
+					}
+					if len(actividad["trimestre1"].(map[string]interface{})) == 0 {
+						actividad["trimestre1"] = trimestreVacio
+					}
 				}
 			case 1:
 				for _, actividad := range evaluacion {
 					actividad["trimestre4"] = trimestreVacio
 					actividad["trimestre3"] = trimestreVacio
+					if len(actividad["trimestre2"].(map[string]interface{})) == 0 {
+						actividad["trimestre2"] = trimestreVacio
+					}
+					if len(actividad["trimestre1"].(map[string]interface{})) == 0 {
+						actividad["trimestre1"] = trimestreVacio
+					}
 				}
 			case 0:
 				for _, actividad := range evaluacion {
 					actividad["trimestre4"] = trimestreVacio
 					actividad["trimestre3"] = trimestreVacio
 					actividad["trimestre2"] = trimestreVacio
+					if len(actividad["trimestre1"].(map[string]interface{})) == 0 {
+						actividad["trimestre1"] = trimestreVacio
+					}
 				}
 			case -1:
 				c.Abort("404")
