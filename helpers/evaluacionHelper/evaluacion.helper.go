@@ -192,95 +192,86 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 		}
 
 		helpers.SortSlice(&evaluacion, "numero")
-		cont := 0
-		ant := 0
-		size := len(evaluacion) - 1
-		for index, eval := range evaluacion {
-			if index == 0 {
-				cont++
-				continue
+		agrupacion_actividades := make(map[string][]int)
+		for i, eval := range evaluacion {
+			if _, ok := agrupacion_actividades[eval["numero"].(string)]; !ok {
+				agrupacion_actividades[eval["numero"].(string)] = []int{}
+			}
+			agrupacion_actividades[eval["numero"].(string)] = append(agrupacion_actividades[eval["numero"].(string)], i)
+		}
+
+		for _, idxs := range agrupacion_actividades {
+			sum1 := 0.0
+			sum2 := 0.0
+			sum3 := 0.0
+			sum4 := 0.0
+
+			for _, i := range idxs {
+				if fmt.Sprintf("%v", evaluacion[i]["trimestre1"]) != "map[]" {
+					if evaluacion[i]["trimestre1"].(map[string]interface{})["meta"].(float64) > 1 {
+						sum1 = sum1 + 1.0
+					} else {
+						sum1 = sum1 + evaluacion[i]["trimestre1"].(map[string]interface{})["meta"].(float64)
+					}
+				}
+				if fmt.Sprintf("%v", evaluacion[i]["trimestre2"]) != "map[]" {
+					if evaluacion[i]["trimestre2"].(map[string]interface{})["meta"].(float64) > 1 {
+						sum2 = sum2 + 1.0
+					} else {
+						sum2 = sum2 + evaluacion[i]["trimestre2"].(map[string]interface{})["meta"].(float64)
+					}
+				}
+				if fmt.Sprintf("%v", evaluacion[i]["trimestre3"]) != "map[]" {
+					if evaluacion[i]["trimestre3"].(map[string]interface{})["meta"].(float64) > 1 {
+						sum3 = sum3 + 1.0
+					} else {
+						sum3 = sum3 + evaluacion[i]["trimestre3"].(map[string]interface{})["meta"].(float64)
+					}
+				}
+				if fmt.Sprintf("%v", evaluacion[i]["trimestre4"]) != "map[]" {
+					if evaluacion[i]["trimestre4"].(map[string]interface{})["meta"].(float64) > 1 {
+						sum4 = sum4 + 1.0
+					} else {
+						sum4 = sum4 + evaluacion[i]["trimestre4"].(map[string]interface{})["meta"].(float64)
+					}
+				}
 			}
 
-			if eval["numero"] == evaluacion[index-1]["numero"] && size != index {
-				cont++
-			} else {
-				if size == index {
-					cont++
+			cont := len(idxs)
+			cumplActividad1 := math.Floor((sum1/float64(cont))*1000) / 1000
+			cumplActividad2 := math.Floor((sum2/float64(cont))*1000) / 1000
+			cumplActividad3 := math.Floor((sum3/float64(cont))*1000) / 1000
+			cumplActividad4 := math.Floor((sum4/float64(cont))*1000) / 1000
+
+			if cumplActividad1 > 1 {
+				cumplActividad1 = 1
+			}
+
+			if cumplActividad2 > 1 {
+				cumplActividad2 = 1
+			}
+
+			if cumplActividad3 > 1 {
+				cumplActividad3 = 1
+			}
+
+			if cumplActividad4 > 1 {
+				cumplActividad4 = 1
+			}
+
+			for _, i := range idxs {
+				if fmt.Sprintf("%v", evaluacion[i]["trimestre1"]) != "map[]" {
+					evaluacion[i]["trimestre1"].(map[string]interface{})["actividad"] = cumplActividad1
 				}
-				sum1 := 0.0
-				sum2 := 0.0
-				sum3 := 0.0
-				sum4 := 0.0
-
-				for i := ant; i < cont+ant; i++ {
-					if fmt.Sprintf("%v", evaluacion[i]["trimestre1"]) != "map[]" {
-						if evaluacion[i]["trimestre1"].(map[string]interface{})["meta"].(float64) > 1 {
-							sum1 = sum1 + 1.0
-						} else {
-							sum1 = sum1 + evaluacion[i]["trimestre1"].(map[string]interface{})["meta"].(float64)
-						}
-					}
-					if fmt.Sprintf("%v", evaluacion[i]["trimestre2"]) != "map[]" {
-						if evaluacion[i]["trimestre2"].(map[string]interface{})["meta"].(float64) > 1 {
-							sum2 = sum2 + 1.0
-						} else {
-							sum2 = sum2 + evaluacion[i]["trimestre2"].(map[string]interface{})["meta"].(float64)
-						}
-					}
-					if fmt.Sprintf("%v", evaluacion[i]["trimestre3"]) != "map[]" {
-						if evaluacion[i]["trimestre3"].(map[string]interface{})["meta"].(float64) > 1 {
-							sum3 = sum3 + 1.0
-						} else {
-							sum3 = sum3 + evaluacion[i]["trimestre3"].(map[string]interface{})["meta"].(float64)
-						}
-					}
-					if fmt.Sprintf("%v", evaluacion[i]["trimestre4"]) != "map[]" {
-						if evaluacion[i]["trimestre4"].(map[string]interface{})["meta"].(float64) > 1 {
-							sum4 = sum4 + 1.0
-						} else {
-							sum4 = sum4 + evaluacion[i]["trimestre4"].(map[string]interface{})["meta"].(float64)
-						}
-					}
+				if fmt.Sprintf("%v", evaluacion[i]["trimestre2"]) != "map[]" {
+					evaluacion[i]["trimestre2"].(map[string]interface{})["actividad"] = cumplActividad2
 				}
-
-				cumplActividad1 := math.Floor((sum1/float64(cont))*1000) / 1000
-				cumplActividad2 := math.Floor((sum2/float64(cont))*1000) / 1000
-				cumplActividad3 := math.Floor((sum3/float64(cont))*1000) / 1000
-				cumplActividad4 := math.Floor((sum4/float64(cont))*1000) / 1000
-
-				if cumplActividad1 > 1 {
-					cumplActividad1 = 1
+				if fmt.Sprintf("%v", evaluacion[i]["trimestre3"]) != "map[]" {
+					evaluacion[i]["trimestre3"].(map[string]interface{})["actividad"] = cumplActividad3
 				}
-
-				if cumplActividad2 > 1 {
-					cumplActividad2 = 1
+				if fmt.Sprintf("%v", evaluacion[i]["trimestre4"]) != "map[]" {
+					evaluacion[i]["trimestre4"].(map[string]interface{})["actividad"] = cumplActividad4
 				}
-
-				if cumplActividad3 > 1 {
-					cumplActividad3 = 1
-				}
-
-				if cumplActividad4 > 1 {
-					cumplActividad4 = 1
-				}
-
-				for i := ant; i < cont+ant; i++ {
-					if fmt.Sprintf("%v", evaluacion[i]["trimestre1"]) != "map[]" {
-						evaluacion[i]["trimestre1"].(map[string]interface{})["actividad"] = cumplActividad1
-					}
-					if fmt.Sprintf("%v", evaluacion[i]["trimestre2"]) != "map[]" {
-						evaluacion[i]["trimestre2"].(map[string]interface{})["actividad"] = cumplActividad2
-					}
-					if fmt.Sprintf("%v", evaluacion[i]["trimestre3"]) != "map[]" {
-						evaluacion[i]["trimestre3"].(map[string]interface{})["actividad"] = cumplActividad3
-					}
-					if fmt.Sprintf("%v", evaluacion[i]["trimestre4"]) != "map[]" {
-						evaluacion[i]["trimestre4"].(map[string]interface{})["actividad"] = cumplActividad4
-					}
-				}
-
-				cont = 1
-				ant = index
 			}
 		}
 
