@@ -1432,7 +1432,7 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		aux := recursos[i]
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), aux["codigo"])
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), aux["Nombre"])
-		strValor := strings.TrimLeft(aux["valor"].(string), "$")
+		strValor := strings.TrimLeft(fmt.Sprintf("%v", aux["valor"]), "$")
 		strValor = strings.ReplaceAll(strValor, ",", "")
 		arrValor := strings.Split(strValor, ".")
 		auxValor, err := strconv.Atoi(arrValor[0])
