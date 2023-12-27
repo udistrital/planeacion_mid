@@ -3495,6 +3495,21 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			trimestreVacio := map[string]interface{}{"actividad": 0.0, "acumulado": 0.0, "denominador": 0.0, "meta": 0.0, "numerador": 0.0, "periodo": 0.0, "numeradorAcumulado": 0.0, "denominadorAcumulado": 0.0, "brecha": 0.0}
 
 			switch index {
+			case 3:
+				for _, actividad := range evaluacion {
+					if len(actividad["trimestre4"].(map[string]interface{})) == 0 {
+						actividad["trimestre4"] = trimestreVacio
+					}
+					if len(actividad["trimestre3"].(map[string]interface{})) == 0 {
+						actividad["trimestre3"] = trimestreVacio
+					}
+					if len(actividad["trimestre2"].(map[string]interface{})) == 0 {
+						actividad["trimestre2"] = trimestreVacio
+					}
+					if len(actividad["trimestre1"].(map[string]interface{})) == 0 {
+						actividad["trimestre1"] = trimestreVacio
+					}
+				}
 			case 2:
 				for _, actividad := range evaluacion {
 					actividad["trimestre4"] = trimestreVacio
