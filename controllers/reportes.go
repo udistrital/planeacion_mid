@@ -2127,7 +2127,7 @@ func (c *ReportesController) Necesidades() {
 							if fmt.Sprint(reflect.TypeOf(recursos[i]["valor"])) == "int" || fmt.Sprint(reflect.TypeOf(recursos[i]["valor"])) == "flaot64" {
 								auxValor = recursos[i]["valor"].(float64)
 							} else {
-								strValor2 := strings.TrimLeft(recursos[i]["valor"].(string), "$")
+								strValor2 := strings.TrimLeft(fmt.Sprintf("%v", recursos[i]["valor"]), "$")
 								strValor2 = strings.ReplaceAll(strValor2, ",", "")
 								arrValor2 := strings.Split(strValor2, ".")
 								aux2, err := strconv.ParseFloat(arrValor2[0], 64)
