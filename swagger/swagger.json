@@ -2017,7 +2017,7 @@
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "periodo",
+                        "name": "seguimiento_id",
                         "description": "The key for staticblock",
                         "required": true,
                         "type": "string"
