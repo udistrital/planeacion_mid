@@ -44,6 +44,7 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("VinculacionTercero", c.VinculacionTercero)
 	c.Mapping("Planes", c.Planes)
 	c.Mapping("VerificarIdentificaciones", c.VerificarIdentificaciones)
+	c.Mapping("PlanesEnFormulacion", c.PlanesEnFormulacion)
 }
 
 // ClonarFormato ...
@@ -1789,5 +1790,40 @@ func (c *FormulacionController) VerificarIdentificaciones() {
 	}
 
 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": bandera}
+	c.ServeJSON()
+}
+
+// Get Planes En Formulacion ...
+// @Title GetPlanesEnFormulacion
+// @Description get Planes en formulacion
+// @Success 200 {object} models.Formulacion
+// @Failure 500 bad response
+// @router /planes_formulacion [get]
+func (c *FormulacionController) PlanesEnFormulacion() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
+	var respuestaPlan map[string]interface{}
+	var planesActivos map[string]interface{}
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=formato:true", &respuestaPlan); err == nil {
+		helpers.LimpiezaRespuestaRefactor(respuestaPlan, &planesActivos)
+		if planesActivos != nil {
+
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": planesActivos}
+		} else {
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": ""}
+
+		}
+	}
 	c.ServeJSON()
 }
