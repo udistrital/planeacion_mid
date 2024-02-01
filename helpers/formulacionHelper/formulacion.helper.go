@@ -623,7 +623,7 @@ func OrdenarVersiones(versiones []map[string]interface{}) []map[string]interface
 	var versionesOrdenadas []map[string]interface{}
 
 	for i := range versiones {
-		if versiones[i]["padre_plan_id"] == nil {
+		if versiones[i]["padre_plan_id"] == nil || versiones[i]["padre_plan_id"] == versiones[i]["_id"] {
 			versionesOrdenadas = append(versionesOrdenadas, versiones[i])
 		}
 	}
@@ -743,7 +743,7 @@ func GetIndexActividad(entrada map[string]interface{}) int {
 	return maxIndex
 }
 
-func FiltrarVersiones(data []map[string]interface{}, f func(map[string]interface{}) bool) []map[string]interface{} {
+func filtrarPlanes(data []map[string]interface{}, f func(map[string]interface{}) bool) []map[string]interface{} {
 	fltd := make([]map[string]interface{}, 0)
 	for _, v := range data {
 		if f(v) {
@@ -753,22 +753,22 @@ func FiltrarVersiones(data []map[string]interface{}, f func(map[string]interface
 	return fltd
 }
 
-func GetNumVersion(data []map[string]interface{}, f func(map[string]interface{}) bool) int {
+func getNumVersion(data []map[string]interface{}, f func(map[string]interface{}) bool) int {
 	for i, e := range data {
 		if f(e) {
 			return i + 1
 		}
 	}
-	return 0
+	return -1
 }
 
-func GetVigencias() map[string]float64 {
+func getVigencias() (map[string]float64, error) {
 	var respuestaVigencias map[string]interface{}
 	var respuesta []map[string]interface{}
 	vigencias := make(map[string]float64)
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/periodo?query=CodigoAbreviacion:VG,activo:true", &respuestaVigencias); err != nil {
-		panic(map[string]interface{}{"funcion": "GetVigencias", "err": "Error obteniendo las vigencias", "status": "500", "log": err})
+		return nil, err
 	}
 
 	helpers.LimpiezaRespuestaRefactor(respuestaVigencias, &respuesta)
@@ -777,14 +777,14 @@ func GetVigencias() map[string]float64 {
 		vigencias[idVigencia] = vigencia["Year"].(float64)
 	}
 
-	return vigencias
+	return vigencias, nil
 }
 
-func GetUnidades() map[string]string {
+func getUnidades() (map[string]string, error) {
 	unidades := make(map[string]string)
 	var respuesta []map[string]interface{}
-	if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia", &respuesta); err != nil {
-		panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error obteniendo las unidades", "status": "500", "log": err})
+	if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia?limit=0", &respuesta); err != nil {
+		return nil, err
 	}
 	for _, u := range respuesta {
 		idDependencia := strconv.FormatFloat(u["Id"].(float64), 'f', -1, 64)
@@ -794,27 +794,102 @@ func GetUnidades() map[string]string {
 			unidades[idDependencia] = u["Nombre"].(string)
 		}
 	}
-	return unidades
+	return unidades, nil
 }
 
-func ObtenerNumeroVersion(planes []map[string]interface{}, planActual map[string]interface{}) int {
-	versionesPlan := FiltrarVersiones(planes, func(plan map[string]interface{}) bool {
+func getEstados() (map[string]string, error) {
+	estados := make(map[string]string)
+	var respuestaEstados map[string]interface{}
+	var estadoFormulacion []map[string]interface{}
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-plan?query=activo:true", &respuestaEstados); err != nil {
+		return nil, err
+	}
+	helpers.LimpiezaRespuestaRefactor(respuestaEstados, &estadoFormulacion)
+
+	for _, estado := range estadoFormulacion {
+		estados[estado["_id"].(string)] = estado["nombre"].(string)
+	}
+	return estados, nil
+}
+
+func obtenerNumeroVersion(planes []map[string]interface{}, planActual map[string]interface{}) int {
+	versionesPlan := filtrarPlanes(planes, func(plan map[string]interface{}) bool {
 		return plan["dependencia_id"] == planActual["dependencia_id"] && plan["vigencia"] == planActual["vigencia"] && plan["nombre"] == planActual["nombre"]
 	})
-	if len(versionesPlan) > 0 {
-		fmt.Println("Tamaño:", len(versionesPlan))
-		fmt.Println("Id:", planActual["_id"])
-		fmt.Println("Dependencia:", planActual["dependencia_id"])
-		fmt.Println("Vigencia:", planActual["vigencia"])
-		fmt.Println("Nombre:", planActual["nombre"])
-		fmt.Println()
+	// fmt.Println("Tamaño:", len(versionesPlan))
+	// fmt.Println()
+	versionesOrdenadas := OrdenarVersiones(versionesPlan)
+
+	return getNumVersion(versionesOrdenadas, func(plan map[string]interface{}) bool {
+		return plan["_id"] == planActual["_id"]
+	})
+
+}
+
+func ObtenerPlanesFormulacion() ([]map[string]interface{}, error) {
+
+	// var respuestaTipoPlan map[string]interface{}
+	// var tipoPlanAccionFuncionamiento []map[string]interface{}
+
+	var respuestaPlanes map[string]interface{}
+
+	var planesEnFormulacion []map[string]interface{}
+
+	var resumenPlanesActivos []map[string]interface{}
+
+	// Obtener ID tipo plan "Plan de acción de funcionamiento"
+	// if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-plan?query=nombre:"+url.QueryEscape("Plan de acción de funcionamiento"), &respuestaTipoPlan); err != nil {
+	// 	return nil, err
+	// }
+	//helpers.LimpiezaRespuestaRefactor(respuestaTipoPlan, &tipoPlanAccionFuncionamiento)
+	// fmt.Print("id plan de accion:", tipoPlanAccionFuncionamiento[0]["_id"], "\n")
+
+	// Obtener estados
+	estados, errEstados := getEstados()
+	if errEstados != nil {
+		return nil, errEstados
 	}
-	if len(versionesPlan) == 1 {
-		return 1
-	} else {
-		versionesOrdenadas := OrdenarVersiones(versionesPlan)
-		return GetNumVersion(versionesOrdenadas, func(plan map[string]interface{}) bool {
-			return plan["_id"] == planActual["_id"]
-		})
+	// Obtener vigencias
+	vigencias, errVigencias := getVigencias()
+	if errVigencias != nil {
+		return nil, errVigencias
 	}
+	// Obtener Unidadaes
+	unidades, errUnidades := getUnidades()
+	if errUnidades != nil {
+		return nil, errUnidades
+	}
+
+	// Obtener planes filtrados por formato y tipo_plan, organizados por última modificacion descendentemente
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=formato:false" /*+",tipo_plan_id:"+tipoPlanAccionFuncionamiento[0]["_id"].(string)*/ +"&sortby=fecha_modificacion"+"&order=desc" /*+"&limit=100"*/, &respuestaPlanes); err != nil {
+		return nil, err
+	}
+	helpers.LimpiezaRespuestaRefactor(respuestaPlanes, &planesEnFormulacion)
+	// fmt.Print("Tamaño total en datos", len(planesEnFormulacion))
+	for _, planActual := range planesEnFormulacion {
+		if planActual["dependencia_id"] != nil && planActual["vigencia"] != nil {
+			_, errD := strconv.Atoi(planActual["dependencia_id"].(string))
+			_, errV := strconv.Atoi(planActual["vigencia"].(string))
+			if errD == nil && errV == nil {
+				// fmt.Println("Id:", planActual["_id"])
+				// fmt.Println("Dependencia:", planActual["dependencia_id"])
+				// fmt.Println("Vigencia:", planActual["vigencia"])
+				// fmt.Println("Nombre:", planActual["nombre"])
+
+				plan := make(map[string]interface{})
+				plan["id"] = planActual["_id"]
+				plan["dependencia_id"] = planActual["dependencia_id"]
+				plan["dependencia_nombre"] = unidades[planActual["dependencia_id"].(string)]
+				plan["vigencia_id"] = planActual["vigencia"]
+				plan["vigencia"] = vigencias[planActual["vigencia"].(string)]
+				plan["nombre"] = planActual["nombre"]
+				plan["version"] = obtenerNumeroVersion(planesEnFormulacion, planActual)
+				plan["estado_id"] = planActual["estado_plan_id"]
+				plan["estado"] = estados[planActual["estado_plan_id"].(string)]
+				resumenPlanesActivos = append(resumenPlanesActivos, plan)
+			}
+		}
+	}
+	return resumenPlanesActivos, nil
 }

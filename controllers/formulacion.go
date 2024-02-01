@@ -3,7 +3,6 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"math"
@@ -1809,56 +1808,17 @@ func (c *FormulacionController) PlanesEnFormulacion() {
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
 			} else {
-				c.Abort("404")
+				c.Abort("500")
 			}
 		}
 	}()
 
-	var respuestaEstadoPlan map[string]interface{}
-	var respuestaTipoPlan map[string]interface{}
-	var respuestaPlanes map[string]interface{}
+	resumenPlanesActivos, err := formulacionhelper.ObtenerPlanesFormulacion()
 
-	var estadoFormulacion []map[string]interface{}
-	var tipoPlanAccionFuncionamiento []map[string]interface{}
-	var planesEnFormulacion []map[string]interface{}
-
-	var resumenPlanesActivos []map[string]interface{}
-
-	// Obtener estado "En formulación"
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-plan?query=nombre:"+url.QueryEscape("En formulación"), &respuestaEstadoPlan); err != nil {
+	if err != nil {
 		panic(err)
 	}
-	helpers.LimpiezaRespuestaRefactor(respuestaEstadoPlan, &estadoFormulacion)
-	fmt.Print("id formulacion: ", estadoFormulacion[0]["_id"], "\n")
 
-	// Obtener ID tipo plan "Plan de acción de funcionamiento"
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-plan?query=nombre:"+url.QueryEscape("Plan de acción de funcionamiento"), &respuestaTipoPlan); err != nil {
-		panic(err)
-	}
-	helpers.LimpiezaRespuestaRefactor(respuestaTipoPlan, &tipoPlanAccionFuncionamiento)
-	fmt.Print("id plan de accion: ", tipoPlanAccionFuncionamiento[0]["_id"], "\n")
-	// Obtener vigencias
-	vigencias := formulacionhelper.GetVigencias()
-	// Obtener Unidadaes
-	unidades := formulacionhelper.GetUnidades()
-
-	// Obtener planes filtrados por estado organizados por última modificacion descendentemente
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=formato:false,estado_plan_id:"+estadoFormulacion[0]["_id"].(string)+",tipo_plan_id:"+tipoPlanAccionFuncionamiento[0]["_id"].(string)+"&sortby=fecha_modificacion"+"&order=desc" /*+"&limit=100"*/, &respuestaPlanes); err != nil {
-		panic(err)
-	}
-	helpers.LimpiezaRespuestaRefactor(respuestaPlanes, &planesEnFormulacion)
-	//formatdata.JsonPrint(planesActivos)
-	for _, planActual := range planesEnFormulacion {
-		plan := make(map[string]interface{})
-		plan["id"] = planActual["_id"]
-		plan["unidad"] = unidades[planActual["dependencia_id"].(string)]
-		plan["vigencia"] = vigencias[planActual["vigencia"].(string)]
-		plan["nombre"] = planActual["nombre"]
-		plan["version"] = formulacionhelper.ObtenerNumeroVersion(planesEnFormulacion, planActual)
-		plan["estado"] = ""
-
-		resumenPlanesActivos = append(resumenPlanesActivos, plan)
-	}
-	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": resumenPlanesActivos /*"Data2": planesEnFormulacion*/}
+	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": resumenPlanesActivos}
 	c.ServeJSON()
 }
