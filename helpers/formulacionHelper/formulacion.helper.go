@@ -806,7 +806,6 @@ func getEstados() (map[string]string, error) {
 		return nil, err
 	}
 	helpers.LimpiezaRespuestaRefactor(respuestaEstados, &estadoFormulacion)
-
 	for _, estado := range estadoFormulacion {
 		estados[estado["_id"].(string)] = estado["nombre"].(string)
 	}
@@ -817,8 +816,6 @@ func obtenerNumeroVersion(planes []map[string]interface{}, planActual map[string
 	versionesPlan := filtrarPlanes(planes, func(plan map[string]interface{}) bool {
 		return plan["dependencia_id"] == planActual["dependencia_id"] && plan["vigencia"] == planActual["vigencia"] && plan["nombre"] == planActual["nombre"]
 	})
-	// fmt.Println("Tamaño:", len(versionesPlan))
-	// fmt.Println()
 	versionesOrdenadas := OrdenarVersiones(versionesPlan)
 
 	return getNumVersion(versionesOrdenadas, func(plan map[string]interface{}) bool {
@@ -827,69 +824,70 @@ func obtenerNumeroVersion(planes []map[string]interface{}, planActual map[string
 
 }
 
-func ObtenerPlanesFormulacion() ([]map[string]interface{}, error) {
-
-	// var respuestaTipoPlan map[string]interface{}
-	// var tipoPlanAccionFuncionamiento []map[string]interface{}
-
+func getPlanesPorTipoPlan(codigoDeAbreviacion string) ([]map[string]interface{}, error) {
+	var respuestaTipoPlan map[string]interface{}
+	var tipoPlan []map[string]interface{}
 	var respuestaPlanes map[string]interface{}
+	var planes []map[string]interface{}
 
-	var planesEnFormulacion []map[string]interface{}
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-plan?query=codigo_abreviacion:"+codigoDeAbreviacion, &respuestaTipoPlan); err != nil {
+		return nil, err
+	}
+	helpers.LimpiezaRespuestaRefactor(respuestaTipoPlan, &tipoPlan)
+	// Obtener planes filtrados que sean formato y del tipo de plan especificado
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=formato:false"+",tipo_plan_id:"+tipoPlan[0]["_id"].(string) /*+"&limit=100"*/, &respuestaPlanes); err != nil {
+		return nil, err
+	}
+	helpers.LimpiezaRespuestaRefactor(respuestaPlanes, &planes)
 
-	var resumenPlanesActivos []map[string]interface{}
+	return planes, nil
+}
 
-	// Obtener ID tipo plan "Plan de acción de funcionamiento"
-	// if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-plan?query=nombre:"+url.QueryEscape("Plan de acción de funcionamiento"), &respuestaTipoPlan); err != nil {
-	// 	return nil, err
-	// }
-	//helpers.LimpiezaRespuestaRefactor(respuestaTipoPlan, &tipoPlanAccionFuncionamiento)
-	// fmt.Print("id plan de accion:", tipoPlanAccionFuncionamiento[0]["_id"], "\n")
+func ObtenerPlanesFormulacion() ([]map[string]interface{}, error) {
+	var TIPOS_PLANES = [2]string{"PL_SP", "PAF_SP"}
+	var resumenPlanes []map[string]interface{}
 
-	// Obtener estados
 	estados, errEstados := getEstados()
 	if errEstados != nil {
 		return nil, errEstados
 	}
-	// Obtener vigencias
 	vigencias, errVigencias := getVigencias()
 	if errVigencias != nil {
 		return nil, errVigencias
 	}
-	// Obtener Unidadaes
 	unidades, errUnidades := getUnidades()
 	if errUnidades != nil {
 		return nil, errUnidades
 	}
-
-	// Obtener planes filtrados por formato y tipo_plan, organizados por última modificacion descendentemente
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=formato:false" /*+",tipo_plan_id:"+tipoPlanAccionFuncionamiento[0]["_id"].(string)*/ +"&sortby=fecha_modificacion"+"&order=desc" /*+"&limit=100"*/, &respuestaPlanes); err != nil {
-		return nil, err
-	}
-	helpers.LimpiezaRespuestaRefactor(respuestaPlanes, &planesEnFormulacion)
-	// fmt.Print("Tamaño total en datos", len(planesEnFormulacion))
-	for _, planActual := range planesEnFormulacion {
-		if planActual["dependencia_id"] != nil && planActual["vigencia"] != nil {
-			_, errD := strconv.Atoi(planActual["dependencia_id"].(string))
-			_, errV := strconv.Atoi(planActual["vigencia"].(string))
-			if errD == nil && errV == nil {
-				// fmt.Println("Id:", planActual["_id"])
-				// fmt.Println("Dependencia:", planActual["dependencia_id"])
-				// fmt.Println("Vigencia:", planActual["vigencia"])
-				// fmt.Println("Nombre:", planActual["nombre"])
-
-				plan := make(map[string]interface{})
-				plan["id"] = planActual["_id"]
-				plan["dependencia_id"] = planActual["dependencia_id"]
-				plan["dependencia_nombre"] = unidades[planActual["dependencia_id"].(string)]
-				plan["vigencia_id"] = planActual["vigencia"]
-				plan["vigencia"] = vigencias[planActual["vigencia"].(string)]
-				plan["nombre"] = planActual["nombre"]
-				plan["version"] = obtenerNumeroVersion(planesEnFormulacion, planActual)
-				plan["estado_id"] = planActual["estado_plan_id"]
-				plan["estado"] = estados[planActual["estado_plan_id"].(string)]
-				resumenPlanesActivos = append(resumenPlanesActivos, plan)
+	// Obtener planes filtrados por el tipo de plan
+	for _, tipoPlan := range TIPOS_PLANES {
+		planes, err := getPlanesPorTipoPlan(tipoPlan)
+		if err != nil {
+			return nil, err
+		}
+		for _, plan := range planes {
+			if plan["dependencia_id"] != nil && plan["vigencia"] != nil {
+				_, errD := strconv.Atoi(plan["dependencia_id"].(string))
+				_, errV := strconv.Atoi(plan["vigencia"].(string))
+				if errD == nil && errV == nil {
+					planNuevo := make(map[string]interface{})
+					planNuevo["id"] = plan["_id"]
+					planNuevo["dependencia_id"] = plan["dependencia_id"]
+					planNuevo["dependencia_nombre"] = unidades[plan["dependencia_id"].(string)]
+					planNuevo["vigencia_id"] = plan["vigencia"]
+					planNuevo["vigencia"] = vigencias[plan["vigencia"].(string)]
+					planNuevo["nombre"] = plan["nombre"]
+					planNuevo["version"] = obtenerNumeroVersion(planes, plan)
+					planNuevo["estado_id"] = plan["estado_plan_id"]
+					planNuevo["estado"] = estados[plan["estado_plan_id"].(string)]
+					planNuevo["ultima_edicion"] = plan["fecha_modificacion"]
+					resumenPlanes = append(resumenPlanes, planNuevo)
+				}
 			}
 		}
 	}
-	return resumenPlanesActivos, nil
+	sort.Slice(resumenPlanes, func(i, j int) bool {
+		return resumenPlanes[i]["ultima_edicion"].(string) > resumenPlanes[j]["ultima_edicion"].(string)
+	})
+	return resumenPlanes, nil
 }

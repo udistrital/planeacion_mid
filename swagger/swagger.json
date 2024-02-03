@@ -893,6 +893,26 @@
                 }
             }
         },
+        "/formulacion/planes_formulacion": {
+            "get": {
+                "tags": [
+                    "formulacion"
+                ],
+                "description": "get Planes en formulacion",
+                "operationId": "FormulacionController.GetPlanesEnFormulacion",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Formulacion"
+                        }
+                    },
+                    "500": {
+                        "description": "bad response"
+                    }
+                }
+            }
+        },
         "/formulacion/ponderacion_actividades/{plan}": {
             "get": {
                 "tags": [
@@ -2017,7 +2037,7 @@
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "seguimiento_id",
+                        "name": "periodo",
                         "description": "The key for staticblock",
                         "required": true,
                         "type": "string"
