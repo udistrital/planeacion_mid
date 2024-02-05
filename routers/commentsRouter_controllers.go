@@ -712,7 +712,16 @@ func init() {
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"],
         beego.ControllerComments{
             Method: "VerificarActividad",
-            Router: "/verificar_actividad/:index",
+            Router: "/verificar_actividad/:plan_id/:index/:trimestre",
+            AllowHTTPMethods: []string{"put"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"],
+        beego.ControllerComments{
+            Method: "VerificarSeguimiento",
+            Router: "/verificar_seguimiento/:id",
             AllowHTTPMethods: []string{"put"},
             MethodParams: param.Make(),
             Filters: nil,
