@@ -15,6 +15,11 @@ import (
 	"github.com/udistrital/utils_oas/request"
 )
 
+const (
+	CodigoTipoPlan                  string = "PL_SP"
+	CodigoTipoPlanAccionFormulacion string = "PAF_SP"
+)
+
 var validDataT = []string{}
 
 func Limpia() {
@@ -762,13 +767,18 @@ func getNumVersion(data []map[string]interface{}, f func(map[string]interface{})
 	return -1
 }
 
-func getVigencias() (map[string]float64, error) {
+func getVigencias() map[string]float64 {
+	defer func() {
+		if err := recover(); err != nil {
+			panic(map[string]interface{}{"funcion": "getVigencias", "err": "Error obteniendo las vigencias", "status": "400", "log": err})
+		}
+	}()
 	var respuestaVigencias map[string]interface{}
 	var respuesta []map[string]interface{}
 	vigencias := make(map[string]float64)
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/periodo?query=CodigoAbreviacion:VG,activo:true", &respuestaVigencias); err != nil {
-		return nil, err
+		panic(err)
 	}
 
 	helpers.LimpiezaRespuestaRefactor(respuestaVigencias, &respuesta)
@@ -777,14 +787,19 @@ func getVigencias() (map[string]float64, error) {
 		vigencias[idVigencia] = vigencia["Year"].(float64)
 	}
 
-	return vigencias, nil
+	return vigencias
 }
 
-func getUnidades() (map[string]string, error) {
+func getUnidades() map[string]string {
+	defer func() {
+		if err := recover(); err != nil {
+			panic(map[string]interface{}{"funcion": "getUnidades", "err": "Error obteniendo las unidades", "status": "400", "log": err})
+		}
+	}()
 	unidades := make(map[string]string)
 	var respuesta []map[string]interface{}
 	if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia?limit=0", &respuesta); err != nil {
-		return nil, err
+		panic(err)
 	}
 	for _, u := range respuesta {
 		idDependencia := strconv.FormatFloat(u["Id"].(float64), 'f', -1, 64)
@@ -794,22 +809,27 @@ func getUnidades() (map[string]string, error) {
 			unidades[idDependencia] = u["Nombre"].(string)
 		}
 	}
-	return unidades, nil
+	return unidades
 }
 
-func getEstados() (map[string]string, error) {
+func getEstados() map[string]string {
+	defer func() {
+		if err := recover(); err != nil {
+			panic(map[string]interface{}{"funcion": "getEstados", "err": "Error obteniendo los estados", "status": "400", "log": err})
+		}
+	}()
 	estados := make(map[string]string)
 	var respuestaEstados map[string]interface{}
 	var estadoFormulacion []map[string]interface{}
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-plan?query=activo:true", &respuestaEstados); err != nil {
-		return nil, err
+		panic(err)
 	}
 	helpers.LimpiezaRespuestaRefactor(respuestaEstados, &estadoFormulacion)
 	for _, estado := range estadoFormulacion {
 		estados[estado["_id"].(string)] = estado["nombre"].(string)
 	}
-	return estados, nil
+	return estados
 }
 
 func obtenerNumeroVersion(planes []map[string]interface{}, planActual map[string]interface{}) int {
@@ -824,48 +844,52 @@ func obtenerNumeroVersion(planes []map[string]interface{}, planActual map[string
 
 }
 
-func getPlanesPorTipoPlan(codigoDeAbreviacion string) ([]map[string]interface{}, error) {
+func getPlanesPorTipoPlan(codigoDeAbreviacion string) []map[string]interface{} {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			panic(map[string]interface{}{"funcion": "getPlanesPorTipoPlan", "err": localError["err"], "status": "400", "log": localError["log"]})
+		}
+	}()
 	var respuestaTipoPlan map[string]interface{}
 	var tipoPlan []map[string]interface{}
 	var respuestaPlanes map[string]interface{}
 	var planes []map[string]interface{}
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-plan?query=codigo_abreviacion:"+codigoDeAbreviacion, &respuestaTipoPlan); err != nil {
-		return nil, err
+		panic(map[string]interface{}{"log": "Error obteniendo el tipo de plan " + codigoDeAbreviacion, "err": err})
 	}
 	helpers.LimpiezaRespuestaRefactor(respuestaTipoPlan, &tipoPlan)
 	// Obtener planes filtrados que sean formato y del tipo de plan especificado
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=formato:false"+",tipo_plan_id:"+tipoPlan[0]["_id"].(string) /*+"&limit=100"*/, &respuestaPlanes); err != nil {
-		return nil, err
+		panic(map[string]interface{}{"log": "Error obteniendo los planes filtrados por el tipo de plan " + codigoDeAbreviacion, "err": err})
 	}
 	helpers.LimpiezaRespuestaRefactor(respuestaPlanes, &planes)
 
-	return planes, nil
+	return planes
 }
 
-func ObtenerPlanesFormulacion() ([]map[string]interface{}, error) {
-	// todo: cambiar a utils
-	var TIPOS_PLANES = [2]string{"PL_SP", "PAF_SP"}
+func ObtenerPlanesFormulacion() []map[string]interface{} {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			beego.Debug(localError["err"])
+			panic(map[string]interface{}{
+				"funcion": "ObtenerPlanesFormulacion/" + localError["funcion"].(string),
+				"err":     localError["err"],
+				"status":  localError["status"],
+			})
+		}
+	}()
+	tiposPlanes := []string{CodigoTipoPlan, CodigoTipoPlanAccionFormulacion}
 	var resumenPlanes []map[string]interface{}
 
-	estados, errEstados := getEstados()
-	if errEstados != nil {
-		return nil, errEstados
-	}
-	vigencias, errVigencias := getVigencias()
-	if errVigencias != nil {
-		return nil, errVigencias
-	}
-	unidades, errUnidades := getUnidades()
-	if errUnidades != nil {
-		return nil, errUnidades
-	}
+	estados := getEstados()
+	vigencias := getVigencias()
+	unidades := getUnidades()
 	// Obtener planes filtrados por el tipo de plan
-	for _, tipoPlan := range TIPOS_PLANES {
-		planes, err := getPlanesPorTipoPlan(tipoPlan)
-		if err != nil {
-			return nil, err
-		}
+	for _, tipoPlan := range tiposPlanes {
+		planes := getPlanesPorTipoPlan(tipoPlan)
 		for _, plan := range planes {
 			if plan["dependencia_id"] != nil && plan["vigencia"] != nil {
 				_, errD := strconv.Atoi(plan["dependencia_id"].(string))
@@ -890,5 +914,5 @@ func ObtenerPlanesFormulacion() ([]map[string]interface{}, error) {
 	sort.Slice(resumenPlanes, func(i, j int) bool {
 		return resumenPlanes[i]["ultima_modificacion"].(string) > resumenPlanes[j]["ultima_modificacion"].(string)
 	})
-	return resumenPlanes, nil
+	return resumenPlanes
 }
