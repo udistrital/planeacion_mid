@@ -844,6 +844,7 @@ func getPlanesPorTipoPlan(codigoDeAbreviacion string) ([]map[string]interface{},
 }
 
 func ObtenerPlanesFormulacion() ([]map[string]interface{}, error) {
+	// todo: cambiar a utils
 	var TIPOS_PLANES = [2]string{"PL_SP", "PAF_SP"}
 	var resumenPlanes []map[string]interface{}
 
@@ -880,14 +881,14 @@ func ObtenerPlanesFormulacion() ([]map[string]interface{}, error) {
 					planNuevo["version"] = obtenerNumeroVersion(planes, plan)
 					planNuevo["estado_id"] = plan["estado_plan_id"]
 					planNuevo["estado"] = estados[plan["estado_plan_id"].(string)]
-					planNuevo["ultima_edicion"] = plan["fecha_modificacion"]
+					planNuevo["ultima_modificacion"] = plan["fecha_modificacion"]
 					resumenPlanes = append(resumenPlanes, planNuevo)
 				}
 			}
 		}
 	}
 	sort.Slice(resumenPlanes, func(i, j int) bool {
-		return resumenPlanes[i]["ultima_edicion"].(string) > resumenPlanes[j]["ultima_edicion"].(string)
+		return resumenPlanes[i]["ultima_modificacion"].(string) > resumenPlanes[j]["ultima_modificacion"].(string)
 	})
 	return resumenPlanes, nil
 }
