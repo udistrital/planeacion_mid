@@ -1049,7 +1049,7 @@ func (c *SeguimientoController) GuardarCualitativo() {
 					if observacion {
 						codigo_abreviacion = "CO"
 					} else {
-						codigo_abreviacion = "AR"
+						codigo_abreviacion = "AAV" /*AR*/
 					}
 
 					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:"+codigo_abreviacion, &resEstado); err == nil {
@@ -1172,7 +1172,7 @@ func (c *SeguimientoController) GuardarCuantitativo() {
 					if observacion {
 						codigo_abreviacion = "CO"
 					} else {
-						codigo_abreviacion = "AR"
+						codigo_abreviacion = "AAV" /*AR*/
 					}
 
 					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:"+codigo_abreviacion, &resEstado); err == nil {
@@ -1678,6 +1678,7 @@ func (c *SeguimientoController) MigrarInformacion() {
 	c.ServeJSON()
 }
 
+/*
 // VerificarActividad ...
 // @Title VerificarActividad
 // @Description put Seguimiento by id
@@ -1784,55 +1785,45 @@ func (c *SeguimientoController) VerificarActividad() {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 	}
 	c.ServeJSON()
-}
+}*/
 
 // VerificarSeguimiento ...
 // @Title VerificarSeguimiento
 // @Description put Seguimiento by id
 // @Param	id		path 	string	true		"The key for staticblock"
+// @Param	body		body 	{}	true		"body for Plan content"
 // @Success 200 {object} models.Seguimiento
-// @Failure 403 :id is empty
+// @Failure 403
 // @router /verificar_seguimiento/:id [put]
 func (c *SeguimientoController) VerificarSeguimiento() {
-	seguimientoId := c.Ctx.Input.Param(":id")
+	idSeguimiento := c.Ctx.Input.Param(":id")
 
 	var respuesta map[string]interface{}
 	var seguimiento map[string]interface{}
 	var resEstado map[string]interface{}
-	dato := make(map[string]interface{})
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,_id:"+seguimientoId, &respuesta); err == nil {
-		aux := make([]map[string]interface{}, 1)
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+idSeguimiento, &respuesta); err == nil {
+		aux := make(map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
-
-		seguimiento = aux[0]
-		datoStr := seguimiento["dato"].(string)
-		json.Unmarshal([]byte(datoStr), &dato)
-
-		avalado, observacion, mensaje := seguimientohelper.SeguimientoAvalable(seguimiento)
-
-		if avalado || observacion {
-			var codigo_abreviacion = "RV"
-
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:"+codigo_abreviacion, &resEstado); err == nil {
-				estado := map[string]interface{}{
-					"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
-					"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
-				}
-				seguimiento["estado_seguimiento_id"] = estado["id"]
+		seguimiento = aux
+		reportable, mensaje := seguimientohelper.SeguimientoReportable(seguimiento)
+		if reportable {
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:RV", &resEstado); err == nil {
+				seguimiento["estado_seguimiento_id"] = resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"]
 			}
 
 			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
-				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
+				panic(map[string]interface{}{"funcion": "GuardarCuantitativo", "err": "Error actualizando componente cuantitativo de seguimiento \"seguimiento[\"_id\"].(string)\"", "status": "400", "log": err})
 			}
 
-			data := respuesta["Data"].(map[string]interface{})
-			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": data}
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": seguimiento}
 		} else {
 			c.Data["json"] = map[string]interface{}{"Success": false, "Status": "400", "Message": "Error", "Data": mensaje}
 		}
+
 	} else {
 		c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 	}
+
 	c.ServeJSON()
 }
