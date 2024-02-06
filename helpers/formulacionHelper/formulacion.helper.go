@@ -748,13 +748,13 @@ func GetIndexActividad(entrada map[string]interface{}) int {
 // Calculos para la Identificación de Docentes
 func GetCalculos(data map[string]interface{}) map[string]interface{} {
 	response := map[string]interface{}{
-		"TotalHoras":                      GetTotalHoras(data),
-		"TotalHorasIndividual":            math.Ceil(GetTotalHoras(data) / data["cantidad"].(float64)),
+		"TotalHoras":                      GetTotalHoras(data, false),
+		"TotalHorasIndividual":            GetTotalHoras(data, true),
 		"Meses":                           GetMeses(data),
-		"SueldoBasico":                    GetSueldoBasico(data),
-		"SueldoBasicoIndividual":          math.Ceil(GetSueldoBasico(data) / data["cantidad"].(float64)),
-		"SueldoMensual":                   GetSueldoMensual(data),
-		"SueldoMensualIndividual":         math.Ceil(GetSueldoMensual(data) / data["cantidad"].(float64)),
+		"SueldoBasico":                    GetSueldoBasico(data, false),
+		"SueldoBasicoIndividual":          GetSueldoBasico(data, true),
+		"SueldoMensual":                   GetSueldoMensual(data, false),
+		"SueldoMensualIndividual":         GetSueldoMensual(data, true),
 		"PrimaServicios":                  GetPrimaServicios(data),
 		"PrimaNavidad":                    GetPrimaNavidad(data),
 		"PrimaVacaciones":                 GetPrimaVacaciones(data),
@@ -762,22 +762,22 @@ func GetCalculos(data map[string]interface{}) map[string]interface{} {
 		"BonificacionServicios":           GetBonificacionServicios(data),
 		"InteresesCesantias":              GetInteresesCesantias(data),
 		"Cesantias":                       GetCesantias(data),
-		"TotalAportesCesantias":           GetTotalAportesCesantias(data),
-		"TotalAportesCesantiasIndividual": math.Ceil(GetTotalAportesCesantias(data) / data["cantidad"].(float64)),
-		"TotalAporteSalud":                GetTotalAporteSalud(data),
-		"TotalAporteSaludIndividual":      math.Ceil(GetTotalAporteSalud(data) / data["cantidad"].(float64)),
-		"TotalAportePension":              GetTotalAportePension(data),
-		"TotalAportePensionIndividual":    math.Ceil(GetTotalAportePension(data) / data["cantidad"].(float64)),
-		"TotalArl":                        GetTotalArl(data),
-		"TotalArlIndividual":              math.Ceil(GetTotalArl(data) / data["cantidad"].(float64)),
+		"TotalAportesCesantias":           GetTotalAportesCesantias(data, false),
+		"TotalAportesCesantiasIndividual": GetTotalAportesCesantias(data, true),
+		"TotalAporteSalud":                GetTotalAporteSalud(data, false),
+		"TotalAporteSaludIndividual":      GetTotalAporteSalud(data, true),
+		"TotalAportePension":              GetTotalAportePension(data, false),
+		"TotalAportePensionIndividual":    GetTotalAportePension(data, true),
+		"TotalArl":                        GetTotalArl(data, false),
+		"TotalArlIndividual":              GetTotalArl(data, true),
 		"CajaCompensacion":                GetCajaCompensacion(data),
 		"Icbf":                            GetIcbf(data),
-		"TotalSueldoBasico":               GetTotalSueldoBasico(data),
-		"TotalSueldoBasicoIndividual":     math.Ceil(GetTotalSueldoBasico(data) / data["cantidad"].(float64)),
-		"TotalAportes":                    GetTotalAportes(data),
-		"TotalAportesIndividual":          math.Ceil(GetTotalAportes(data) / data["cantidad"].(float64)),
-		"TotalRecurso":                    GetTotalRecurso(data),
-		"TotalRecursoIndividual":          math.Ceil(GetTotalRecurso(data) / data["cantidad"].(float64)),
+		"TotalSueldoBasico":               GetTotalSueldoBasico(data, false),
+		"TotalSueldoBasicoIndividual":     GetTotalSueldoBasico(data, true),
+		"TotalAportes":                    GetTotalAportes(data, false),
+		"TotalAportesIndividual":          GetTotalAportes(data, true),
+		"TotalRecurso":                    GetTotalRecurso(data, false),
+		"TotalRecursoIndividual":          GetTotalRecurso(data, true),
 	}
 	return response
 }
@@ -815,7 +815,7 @@ func ConstruirCuerpoRD(data map[string]interface{}) []map[string]interface{} {
 	return bodyResolucionesDocente
 }
 
-func GetTotalHoras(data map[string]interface{}) float64 {
+func GetTotalHoras(data map[string]interface{}, ind bool) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
 	cantidad, cantidadOk := data["cantidad"].(float64)
@@ -825,18 +825,24 @@ func GetTotalHoras(data map[string]interface{}) float64 {
 	if semanasOk && horasOk && cantidadOk {
 		resultado = cantidad * semanas * horas
 	}
-	return math.Ceil(resultado)
-}
-
-func GetMeses(data map[string]interface{}) float64 {
-	semanas, semanasOk := data["semanas"].(float64)
-	if semanasOk {
-		return semanas / 4
+	if ind {
+		return strconv.FormatFloat(math.Round(resultado/cantidad), 'f', 0, 64)
 	}
-	return 0
+	return strconv.FormatFloat(math.Round(resultado), 'f', 0, 64)
 }
 
-func GetSueldoBasico(data map[string]interface{}) float64 {
+func GetMeses(data map[string]interface{}) string {
+	semanas, semanasOk := data["semanas"].(float64)
+
+	var resultado float64
+
+	if semanasOk {
+		resultado = semanas / 4
+	}
+	return strconv.FormatFloat(resultado, 'f', 2, 64)
+}
+
+func GetSueldoBasico(data map[string]interface{}, ind bool) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
 	cantidad, cantidadOk := data["cantidad"].(float64)
@@ -849,22 +855,33 @@ func GetSueldoBasico(data map[string]interface{}) float64 {
 		salarioBasico := resolucionDocente["salarioBasico"].(float64)
 		sueldoBasico = cantidad * (salarioBasico * horas) * semanas * (1 + incremento)
 	}
-	return math.Ceil(sueldoBasico)
+	if ind {
+		return strconv.FormatFloat(math.Round(sueldoBasico/cantidad), 'f', 0, 64)
+	}
+	return strconv.FormatFloat(math.Round(sueldoBasico), 'f', 0, 64)
 }
 
-func GetSueldoMensual(data map[string]interface{}) float64 {
+func GetSueldoMensual(data map[string]interface{}, ind bool) string {
 	cantidad, cantidadOk := data["cantidad"].(float64)
 
 	var sueldoMensual float64
+
 	if cantidadOk {
-		sueldoBasicoIndivudial := GetSueldoBasico(data) / data["cantidad"].(float64)
-		meses := GetMeses(data)
+		sueldoBasico, errSB := strconv.ParseFloat(GetSueldoBasico(data, false), 64)
+		meses, errM := strconv.ParseFloat(GetMeses(data), 64)
+		if errSB != nil || errM != nil {
+			return ""
+		}
+		sueldoBasicoIndivudial := sueldoBasico / data["cantidad"].(float64)
 		sueldoMensual = sueldoBasicoIndivudial / meses * cantidad
 	}
-	return math.Ceil(sueldoMensual)
+	if ind {
+		return strconv.FormatFloat(math.Round(sueldoMensual/cantidad), 'f', 0, 64)
+	}
+	return strconv.FormatFloat(math.Round(sueldoMensual), 'f', 0, 64)
 }
 
-func GetPrimaServicios(data map[string]interface{}) float64 {
+func GetPrimaServicios(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
 	incremento, incrementoOk := data["incremento"].(float64)
@@ -876,22 +893,27 @@ func GetPrimaServicios(data map[string]interface{}) float64 {
 		dedicacion := resolucionDocente["Dedicacion"].(string)
 
 		if dedicacion == "HCH" {
-			return -1
+			return "N/A"
 		}
 		if dedicacion == "MTO" || dedicacion == "TCO" || dedicacion == "HCP" {
-			meses := GetMeses(data)
-			if meses < 6 {
-				return 0
+			meses, err := strconv.ParseFloat(GetMeses(data), 64)
+			if err != nil {
+				return ""
 			}
-
+			if meses < 6 {
+				return "0"
+			}
 		}
-		prima_servicios := resolucionDocente["prima_servicios"].(int)
-		primaServicios = (float64(prima_servicios) * horas) * semanas * (1 + incremento)
+		prima_servicios, primaServiciosOk := resolucionDocente["prima_servicios"].(float64)
+		if !primaServiciosOk {
+			return ""
+		}
+		primaServicios = (prima_servicios * horas) * semanas * (1 + incremento)
 	}
-	return math.Ceil(primaServicios)
+	return strconv.FormatFloat(math.Round(primaServicios), 'f', 0, 64)
 }
 
-func GetPrimaNavidad(data map[string]interface{}) float64 {
+func GetPrimaNavidad(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
 	incremento, incrementoOk := data["incremento"].(float64)
@@ -903,15 +925,18 @@ func GetPrimaNavidad(data map[string]interface{}) float64 {
 		dedicacion := resolucionDocente["Dedicacion"].(string)
 
 		if dedicacion == "HCH" {
-			return -1
+			return "N/A"
 		}
-		prima_navidad := resolucionDocente["primaNavidad"].(int)
-		primaNavidad = (float64(prima_navidad) * horas) * semanas * (1 + incremento)
+		prima_navidad, prima_navidadOk := resolucionDocente["primaNavidad"].(float64)
+		if !prima_navidadOk {
+			return ""
+		}
+		primaNavidad = (prima_navidad * horas) * semanas * (1 + incremento)
 	}
-	return math.Ceil(primaNavidad)
+	return strconv.FormatFloat(math.Round(primaNavidad), 'f', 0, 64)
 }
 
-func GetPrimaVacaciones(data map[string]interface{}) float64 {
+func GetPrimaVacaciones(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
 	incremento, incrementoOk := data["incremento"].(float64)
@@ -923,15 +948,18 @@ func GetPrimaVacaciones(data map[string]interface{}) float64 {
 		dedicacion := resolucionDocente["Dedicacion"].(string)
 
 		if dedicacion == "HCH" {
-			return -1
+			return "N/A"
 		}
-		prima_vacaciones := resolucionDocente["primaVacaciones"].(int)
-		primaVacaciones = (float64(prima_vacaciones) * horas) * semanas * (1 + incremento)
+		prima_vacaciones, primaVacacionesOk := resolucionDocente["primaVacaciones"].(float64)
+		if !primaVacacionesOk {
+			return ""
+		}
+		primaVacaciones = (prima_vacaciones * horas) * semanas * (1 + incremento)
 	}
-	return math.Ceil(primaVacaciones)
+	return strconv.FormatFloat(math.Round(primaVacaciones), 'f', 0, 64)
 }
 
-func GetVacacionesProyeccion(data map[string]interface{}) float64 {
+func GetVacacionesProyeccion(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
 	incremento, incrementoOk := data["incremento"].(float64)
@@ -943,21 +971,32 @@ func GetVacacionesProyeccion(data map[string]interface{}) float64 {
 		dedicacion := resolucionDocente["Dedicacion"].(string)
 
 		if dedicacion == "HCH" {
-			return -1
+			return "N/A"
 		}
 
-		vacaciones := resolucionDocente["vacaciones"].(int)
-		vacacionesProyeccion = (float64(vacaciones) * horas) * semanas * (1 + incremento)
+		vacaciones, vacacionesOk := resolucionDocente["vacaciones"].(float64)
+		if !vacacionesOk {
+			return ""
+		}
+		vacacionesProyeccion = (vacaciones * horas) * semanas * (1 + incremento)
 	}
-	return math.Ceil(vacacionesProyeccion)
+	return strconv.FormatFloat(math.Round(vacacionesProyeccion), 'f', 0, 64)
 }
 
-func GetBonificacionServicios(data map[string]interface{}) float64 {
-	resultado := (GetSueldoBasico(data) * 0.35) * GetMeses(data)
-	return math.Ceil(resultado)
+func GetBonificacionServicios(data map[string]interface{}) string {
+	sueldoBasico, errSB := strconv.ParseFloat(GetSueldoBasico(data, true), 64)
+	meses, errM := strconv.ParseFloat(GetMeses(data), 64)
+
+	var resultado float64
+
+	if errSB != nil || errM != nil {
+		return ""
+	}
+	resultado = (sueldoBasico * 0.35) / meses
+	return strconv.FormatFloat(math.Round(resultado), 'f', 0, 64)
 }
 
-func GetInteresesCesantias(data map[string]interface{}) float64 {
+func GetInteresesCesantias(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
 	incremento, incrementoOk := data["incremento"].(float64)
@@ -969,15 +1008,18 @@ func GetInteresesCesantias(data map[string]interface{}) float64 {
 		dedicacion := resolucionDocente["Dedicacion"].(string)
 
 		if dedicacion == "HCH" {
-			return -1
+			return "N/A"
 		}
-		intereses_cesantias := resolucionDocente["interesCesantias"].(int)
-		interesesCesantias = (float64(intereses_cesantias) * horas) * semanas * (1 + incremento)
+		interes_cesantias, interes_cesantiasOk := resolucionDocente["interesCesantias"].(float64)
+		if !interes_cesantiasOk {
+			return ""
+		}
+		interesesCesantias = (float64(interes_cesantias) * horas) * semanas * (1 + incremento)
 	}
-	return math.Ceil(interesesCesantias)
+	return strconv.FormatFloat(math.Round(interesesCesantias), 'f', 0, 64)
 }
 
-func GetCesantias(data map[string]interface{}) float64 {
+func GetCesantias(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
 	incremento, incrementoOk := data["incremento"].(float64)
@@ -989,15 +1031,19 @@ func GetCesantias(data map[string]interface{}) float64 {
 		dedicacion := resolucionDocente["Dedicacion"].(string)
 
 		if dedicacion == "HCH" {
-			return -1 // Cesantias, CesantiasPrivado y CesantiasPublico
+			return "N/A" // Cesantias, CesantiasPrivado y CesantiasPublico
 		}
-		cesantias_ := resolucionDocente["cesantias"].(int)
-		cesantias = (float64(cesantias_) * horas) * semanas * (1 + incremento)
+
+		cesantias_, cesantiasOk := resolucionDocente["cesantias"].(float64)
+		if !cesantiasOk {
+			return ""
+		}
+		cesantias = (cesantias_ * horas) * semanas * (1 + incremento)
 	}
-	return math.Ceil(cesantias)
+	return strconv.FormatFloat(math.Round(cesantias), 'f', 0, 64)
 }
 
-func GetTotalAportesCesantias(data map[string]interface{}) float64 {
+func GetTotalAportesCesantias(data map[string]interface{}, ind bool) string {
 	cantidad, cantidadOk := data["cantidad"].(float64)
 
 	var totalAportesCesantias float64
@@ -1007,13 +1053,20 @@ func GetTotalAportesCesantias(data map[string]interface{}) float64 {
 		dedicacion := resolucionDocente["Dedicacion"].(string)
 
 		if dedicacion == "HCH" {
-			return -1
+			return "N/A"
 		}
-		interesesC := GetInteresesCesantias(data)
-		cesantiasC := GetCesantias(data)
-		totalAportesCesantias = cantidad * (interesesC + cesantiasC)
+
+		intereses, errI := strconv.ParseFloat(GetInteresesCesantias(data), 64)
+		cesantias, errC := strconv.ParseFloat(GetCesantias(data), 64)
+		if errI != nil || errC != nil {
+			return ""
+		}
+		totalAportesCesantias = cantidad * (intereses + cesantias)
 	}
-	return math.Ceil(totalAportesCesantias)
+	if ind {
+		return strconv.FormatFloat(math.Round(totalAportesCesantias/cantidad), 'f', 0, 64)
+	}
+	return strconv.FormatFloat(math.Round(totalAportesCesantias), 'f', 0, 64)
 }
 
 func evaluarSaludPrestacional(infoPrestacional map[string]interface{}, data map[string]interface{}) float64 {
@@ -1034,7 +1087,7 @@ func evaluarSaludPrestacional(infoPrestacional map[string]interface{}, data map[
 	return resultado
 }
 
-func GetTotalAporteSalud(data map[string]interface{}) float64 {
+func GetTotalAporteSalud(data map[string]interface{}, ind bool) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
 	cantidad, cantidadOk := data["cantidad"].(float64)
@@ -1047,7 +1100,7 @@ func GetTotalAporteSalud(data map[string]interface{}) float64 {
 		dedicacion := resolucionDocente["Dedicacion"].(string)
 
 		if dedicacion == "HCH" {
-			return -1
+			return "N/A"
 		}
 		if dedicacion == "HCP" {
 			totalAporteSalud = cantidad * evaluarSaludPrestacional(resolucionDocente, data) * (1 + incremento)
@@ -1056,7 +1109,10 @@ func GetTotalAporteSalud(data map[string]interface{}) float64 {
 			totalAporteSalud = cantidad * (((salarioBasico * horas) * semanas) * 0.085) * (1 + incremento)
 		}
 	}
-	return math.Ceil(totalAporteSalud)
+	if ind {
+		return strconv.FormatFloat(math.Round(totalAporteSalud/cantidad), 'f', 0, 64)
+	}
+	return strconv.FormatFloat(math.Round(totalAporteSalud), 'f', 0, 64)
 }
 
 func evaluarPensionPrestacional(infoPrestacional map[string]interface{}, data map[string]interface{}) float64 {
@@ -1078,7 +1134,7 @@ func evaluarPensionPrestacional(infoPrestacional map[string]interface{}, data ma
 	return resultado
 }
 
-func GetTotalAportePension(data map[string]interface{}) float64 {
+func GetTotalAportePension(data map[string]interface{}, ind bool) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
 	cantidad, cantidadOk := data["cantidad"].(float64)
@@ -1091,16 +1147,20 @@ func GetTotalAportePension(data map[string]interface{}) float64 {
 		dedicacion := resolucionDocente["Dedicacion"].(string)
 
 		if dedicacion == "HCH" {
-			return -1 // Pensiones, PensionesPrivado y PensionesPublico
+			return "N/A" // Pensiones, PensionesPrivado y PensionesPublico
 		}
+
 		if dedicacion == "HCP" {
 			totalAportePension = cantidad * evaluarPensionPrestacional(resolucionDocente, data) * (1 + incremento)
 		} else {
-			pension := resolucionDocente["pension"].(int)
-			totalAportePension = cantidad * ((((float64(pension) * horas) * semanas) * 0.12) / 0.16) * (1 + incremento)
+			pension := resolucionDocente["pension"].(float64)
+			totalAportePension = cantidad * ((((pension * horas) * semanas) * 0.12) / 0.16) * (1 + incremento)
 		}
 	}
-	return math.Ceil(totalAportePension)
+	if ind {
+		return strconv.FormatFloat(math.Round(totalAportePension/cantidad), 'f', 0, 64)
+	}
+	return strconv.FormatFloat(math.Round(totalAportePension), 'f', 0, 64)
 }
 
 func evaluarArlPrestacional(infoPrestacional map[string]interface{}, data map[string]interface{}) float64 {
@@ -1118,10 +1178,10 @@ func evaluarArlPrestacional(infoPrestacional map[string]interface{}, data map[st
 			resultado = salarioMinimo * (semanas / 4) * 0.00522
 		}
 	}
-	return math.Ceil(resultado)
+	return resultado
 }
 
-func GetTotalArl(data map[string]interface{}) float64 {
+func GetTotalArl(data map[string]interface{}, ind bool) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
 	cantidad, cantidadOk := data["cantidad"].(float64)
@@ -1134,7 +1194,7 @@ func GetTotalArl(data map[string]interface{}) float64 {
 		dedicacion := resolucionDocente["Dedicacion"].(string)
 
 		if dedicacion == "HCH" {
-			return -1
+			return "N/A"
 		}
 		if dedicacion == "HCP" {
 			totalArl = cantidad * evaluarArlPrestacional(resolucionDocente, data) * (1 + incremento)
@@ -1143,7 +1203,10 @@ func GetTotalArl(data map[string]interface{}) float64 {
 			totalArl = cantidad * (salarioBasico * horas) * semanas * 0.00522 * (1 + incremento)
 		}
 	}
-	return math.Ceil(totalArl)
+	if ind {
+		return strconv.FormatFloat(math.Round(totalArl/cantidad), 'f', 0, 64)
+	}
+	return strconv.FormatFloat(math.Round(totalArl), 'f', 0, 64)
 }
 
 func evaluarCajaPrestacional(infoPrestacional map[string]interface{}, data map[string]interface{}) float64 {
@@ -1165,7 +1228,7 @@ func evaluarCajaPrestacional(infoPrestacional map[string]interface{}, data map[s
 	return resultado
 }
 
-func GetCajaCompensacion(data map[string]interface{}) float64 {
+func GetCajaCompensacion(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
 	incremento, incrementoOk := data["incremento"].(float64)
@@ -1177,17 +1240,20 @@ func GetCajaCompensacion(data map[string]interface{}) float64 {
 		dedicacion := resolucionDocente["Dedicacion"].(string)
 
 		if dedicacion == "HCH" {
-			return -1
+			return "N/A"
+		}
+		salarioBasico := resolucionDocente["salarioBasico"].(float64)
+		primaVacaciones, primaVacacionesOk := resolucionDocente["primaVacaciones"].(float64)
+		if !primaVacacionesOk {
+			return ""
 		}
 		if dedicacion == "HCP" {
 			cajaCompensacion = evaluarCajaPrestacional(resolucionDocente, data) * (1 + incremento)
 		} else {
-			salarioBasico := resolucionDocente["salarioBasico"].(float64)
-			primaVacaciones := resolucionDocente["primaVacaciones"].(int)
 			cajaCompensacion = (((salarioBasico + float64(primaVacaciones)) * horas) * semanas) * 0.04 * (1 + incremento)
 		}
 	}
-	return math.Ceil(cajaCompensacion)
+	return strconv.FormatFloat(math.Round(cajaCompensacion), 'f', 0, 64)
 }
 
 func evaluarIcbfPrestacional(infoPrestacional map[string]interface{}, data map[string]interface{}) float64 {
@@ -1195,12 +1261,15 @@ func evaluarIcbfPrestacional(infoPrestacional map[string]interface{}, data map[s
 	horas, horasOk := data["horas"].(float64)
 	salarioMinimo, salarioMinimoOk := data["salarioMinimo"].(float64)
 	salarioBasico, salarioBasicoOk := infoPrestacional["salarioBasico"].(float64)
-	primaVacaciones, primaVacacionesOk := infoPrestacional["primaVacaciones"].(float64)
 
 	var resultado float64
 
-	if semanasOk && horasOk && salarioMinimoOk && salarioBasicoOk && primaVacacionesOk {
+	if semanasOk && horasOk && salarioMinimoOk && salarioBasicoOk {
 		if (salarioBasico * horas * 4) >= salarioMinimo {
+			primaVacaciones, primaVacacionesOk := infoPrestacional["primaVacaciones"].(float64)
+			if !primaVacacionesOk {
+				return -1
+			}
 			resultado = (salarioBasico + primaVacaciones) * horas * semanas * 0.03
 		} else {
 			resultado = salarioMinimo * (semanas / 4) * 0.03
@@ -1209,7 +1278,7 @@ func evaluarIcbfPrestacional(infoPrestacional map[string]interface{}, data map[s
 	return resultado
 }
 
-func GetIcbf(data map[string]interface{}) float64 {
+func GetIcbf(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
 	incremento, incrementoOk := data["incremento"].(float64)
@@ -1221,33 +1290,37 @@ func GetIcbf(data map[string]interface{}) float64 {
 		dedicacion := resolucionDocente["Dedicacion"].(string)
 
 		if dedicacion == "HCH" {
-			return -1
+			return "N/A"
 		}
+
 		if dedicacion == "HCP" {
-			icbf = evaluarIcbfPrestacional(resolucionDocente, data) * (1 + incremento)
+			if evaluarIcbfPrestacional(resolucionDocente, data) == -1 {
+				return ""
+			} else {
+				icbf = evaluarIcbfPrestacional(resolucionDocente, data) * (1 + incremento)
+			}
 		} else {
-			resolucionDocente := data["resolucionDocente"].(map[string]interface{})
 			salarioBasico := resolucionDocente["salarioBasico"].(float64)
-			primaVacaciones := resolucionDocente["primaVacaciones"].(int)
+			primaVacaciones, primaVacacionesOk := resolucionDocente["primaVacaciones"].(float64)
+			if !primaVacacionesOk {
+				return ""
+			}
 			icbf = (((salarioBasico + float64(primaVacaciones)) * horas) * semanas) * 0.03 * (1 + incremento)
 		}
 	}
-	return math.Ceil(icbf)
+	return strconv.FormatFloat(math.Round(icbf), 'f', 0, 64)
 }
 
-func GetTotalSueldoBasico(data map[string]interface{}) float64 {
+func GetTotalSueldoBasico(data map[string]interface{}, ind bool) string {
 	cantidad, cantidadOk := data["cantidad"].(float64)
 
 	var resultado float64
 
 	if cantidadOk {
-		sueldoBasico := GetSueldoBasico(data)
-		primaServicios := GetPrimaServicios(data)
-		primaNavidad := GetPrimaNavidad(data)
-		primaVacaciones := GetPrimaVacaciones(data)
-		totalCesantias := GetTotalAportesCesantias(data) / cantidad
-		vacaciones := GetVacacionesProyeccion(data)
-		bonificacion := GetBonificacionServicios(data)
+		sueldoBasico, errSB := strconv.ParseFloat(GetSueldoBasico(data, true), 64)
+		if errSB != nil {
+			return ""
+		}
 
 		resolucionDocente := data["resolucionDocente"].(map[string]interface{})
 		dedicacion := resolucionDocente["Dedicacion"].(string)
@@ -1256,28 +1329,40 @@ func GetTotalSueldoBasico(data map[string]interface{}) float64 {
 		if dedicacion == "HCH" {
 			totalBasico = sueldoBasico
 		} else {
-			if bonificacion == 0 || bonificacion == -1 {
-				bonificacion = 0
+			var bonificacionF float64
+			if GetBonificacionServicios(data) != "" || GetBonificacionServicios(data) != "N/A" {
+				bonificacion, errB := strconv.ParseFloat(GetBonificacionServicios(data), 64)
+				if errB != nil {
+					return ""
+				}
+				bonificacionF = bonificacion
 			}
-			totalBasico = sueldoBasico + primaServicios + primaNavidad + primaVacaciones + bonificacion + totalCesantias + vacaciones
+
+			primaServicios, errPS := strconv.ParseFloat(GetPrimaServicios(data), 64)
+			primaNavidad, errPN := strconv.ParseFloat(GetPrimaNavidad(data), 64)
+			primaVacaciones, errPV := strconv.ParseFloat(GetPrimaVacaciones(data), 64)
+			aportesCesantias, errAC := strconv.ParseFloat(GetTotalAportesCesantias(data, true), 64)
+			vacaciones, errV := strconv.ParseFloat(GetVacacionesProyeccion(data), 64)
+
+			if errPS != nil || errPN != nil || errPV != nil || errAC != nil || errV != nil {
+				return ""
+			}
+			totalBasico = sueldoBasico + primaServicios + primaNavidad + primaVacaciones + bonificacionF + aportesCesantias + vacaciones
 		}
 		resultado = cantidad * totalBasico
 	}
-	return math.Ceil(resultado)
+	if ind {
+		return strconv.FormatFloat(math.Round(resultado/cantidad), 'f', 0, 64)
+	}
+	return strconv.FormatFloat(math.Round(resultado), 'f', 0, 64)
 }
 
-func GetTotalAportes(data map[string]interface{}) float64 {
+func GetTotalAportes(data map[string]interface{}, ind bool) string {
 	cantidad, cantidadOk := data["cantidad"].(float64)
 
 	var resultado float64
 
 	if cantidadOk {
-		totalSalud := GetTotalAporteSalud(data)
-		totalPension := GetTotalAportePension(data)
-		totalArl := GetTotalArl(data)
-		caja := GetCajaCompensacion(data)
-		icbf := GetIcbf(data) / cantidad
-
 		resolucionDocente := data["resolucionDocente"].(map[string]interface{})
 		dedicacion := resolucionDocente["Dedicacion"].(string)
 
@@ -1285,45 +1370,72 @@ func GetTotalAportes(data map[string]interface{}) float64 {
 		if dedicacion == "HCH" {
 			totalAportes = 0
 		} else {
+			totalSalud, errTS := strconv.ParseFloat(GetTotalAporteSalud(data, true), 64)
+			totalPension, errTP := strconv.ParseFloat(GetTotalAportePension(data, true), 64)
+			totalArl, errTA := strconv.ParseFloat(GetTotalArl(data, true), 64)
+			caja, errC := strconv.ParseFloat(GetCajaCompensacion(data), 64)
+			icbf, errICBF := strconv.ParseFloat(GetIcbf(data), 64)
+
+			if errTS != nil || errTP != nil || errTA != nil || errC != nil || errICBF != nil {
+				return ""
+			}
 			totalAportes = totalSalud + totalPension + totalArl + caja + icbf
 		}
 		resultado = cantidad * totalAportes
-
 	}
-	return math.Ceil(resultado)
+	if ind {
+		return strconv.FormatFloat(math.Round(resultado/cantidad), 'f', 0, 64)
+	}
+	return strconv.FormatFloat(math.Round(resultado), 'f', 0, 64)
 }
 
-func GetTotalRecurso(data map[string]interface{}) float64 {
+func GetTotalRecurso(data map[string]interface{}, ind bool) string {
 	cantidad, cantidadOk := data["cantidad"].(float64)
 
-	var total float64
+	var resultado float64
 
 	if cantidadOk {
-		sueldoBasico := GetSueldoBasico(data)
-		primaServicios := GetPrimaServicios(data)
-		primaNavidad := GetPrimaNavidad(data)
-		primaVacaciones := GetPrimaVacaciones(data)
-		vacaciones := GetVacacionesProyeccion(data)
-		totalCesantias := GetTotalAportesCesantias(data) / cantidad
-		bonificacion := GetBonificacionServicios(data)
-		totalSalud := GetTotalAporteSalud(data) / cantidad
-		totalPension := GetTotalAportePension(data) / cantidad
-		totalArl := GetTotalArl(data) / cantidad
-		caja := GetCajaCompensacion(data)
-		icbf := GetIcbf(data)
+		var bonificacionF float64
+		if GetBonificacionServicios(data) != "" && GetBonificacionServicios(data) != "N/A" {
+			bonificacion, errB := strconv.ParseFloat(GetBonificacionServicios(data), 64)
+			if errB != nil {
+				return ""
+			}
+			bonificacionF = bonificacion
+		}
 
-		if bonificacion == 0 || bonificacion == -1 {
-			bonificacion = 0
+		sueldoBasico, errSB := strconv.ParseFloat(GetSueldoBasico(data, true), 64)
+		if errSB != nil {
+			return ""
 		}
 
 		resolucionDocente := data["resolucionDocente"].(map[string]interface{})
 		dedicacion := resolucionDocente["Dedicacion"].(string)
 
+		var total float64
 		if dedicacion == "HCH" {
 			total = sueldoBasico
 		} else {
-			total = sueldoBasico + primaServicios + primaNavidad + primaVacaciones + bonificacion + totalCesantias + totalSalud + totalArl + caja + icbf + vacaciones + totalPension
+			aportesCesantias, errAC := strconv.ParseFloat(GetTotalAportesCesantias(data, true), 64)
+			primaServicios, errPS := strconv.ParseFloat(GetPrimaServicios(data), 64)
+			primaNavidad, errPN := strconv.ParseFloat(GetPrimaNavidad(data), 64)
+			primaVacaciones, errPV := strconv.ParseFloat(GetPrimaVacaciones(data), 64)
+			vacaciones, errV := strconv.ParseFloat(GetVacacionesProyeccion(data), 64)
+			totalSalud, errTS := strconv.ParseFloat(GetTotalAporteSalud(data, true), 64)
+			totalPension, errTP := strconv.ParseFloat(GetTotalAportePension(data, true), 64)
+			totalArl, errTA := strconv.ParseFloat(GetTotalArl(data, true), 64)
+			caja, errC := strconv.ParseFloat(GetCajaCompensacion(data), 64)
+			icbf, errICBF := strconv.ParseFloat(GetIcbf(data), 64)
+
+			if errPS != nil || errPN != nil || errPV != nil || errAC != nil || errV != nil || errTS != nil || errTP != nil || errTA != nil || errC != nil || errICBF != nil {
+				return ""
+			}
+			total = sueldoBasico + primaServicios + primaNavidad + primaVacaciones + bonificacionF + aportesCesantias + totalSalud + totalArl + caja + icbf + vacaciones + totalPension
 		}
+		resultado = cantidad * total
 	}
-	return math.Ceil(total)
+	if ind {
+		return strconv.FormatFloat(math.Round(resultado/cantidad), 'f', 0, 64)
+	}
+	return strconv.FormatFloat(math.Round(resultado), 'f', 0, 64)
 }

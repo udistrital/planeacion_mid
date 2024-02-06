@@ -126,6 +126,15 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"],
         beego.ControllerComments{
+            Method: "CalculosDocentes",
+            Router: "/calculos_docentes",
+            AllowHTTPMethods: []string{"post"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"],
+        beego.ControllerComments{
             Method: "ClonarFormato",
             Router: "/clonar_formato/:id",
             AllowHTTPMethods: []string{"post"},
@@ -173,15 +182,6 @@ func init() {
         beego.ControllerComments{
             Method: "GetArbolArmonizacion",
             Router: "/get_arbol_armonizacion/:id/",
-            AllowHTTPMethods: []string{"post"},
-            MethodParams: param.Make(),
-            Filters: nil,
-            Params: nil})
-
-    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"],
-        beego.ControllerComments{
-            Method: "GetCalculosDocentes",
-            Router: "/get_calculos_docentes",
             AllowHTTPMethods: []string{"post"},
             MethodParams: param.Make(),
             Filters: nil,

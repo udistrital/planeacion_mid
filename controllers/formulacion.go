@@ -45,7 +45,7 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("VinculacionTercero", c.VinculacionTercero)
 	c.Mapping("Planes", c.Planes)
 	c.Mapping("VerificarIdentificaciones", c.VerificarIdentificaciones)
-	c.Mapping("GetCalculosDocentes", c.GetCalculosDocentes)
+	c.Mapping("CalculosDocentes", c.CalculosDocentes)
 }
 
 // ClonarFormato ...
@@ -1794,14 +1794,14 @@ func (c *FormulacionController) VerificarIdentificaciones() {
 	c.ServeJSON()
 }
 
-// GetCalculosIdDocente ...
-// @Title GetCalculosIdDocente
+// CalculosDocentes ...
+// @Title CalculosDocentes
 // @Description post Formulacion
 // @Param	body		body 	{}	true		"body for Plan content"
 // @Success 200 {object} models.Formulacion
 // @Failure 403 :id is empty
-// @router /get_calculos_docentes [post]
-func (c *FormulacionController) GetCalculosDocentes() {
+// @router /calculos_docentes [post]
+func (c *FormulacionController) CalculosDocentes() {
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -1820,43 +1820,57 @@ func (c *FormulacionController) GetCalculosDocentes() {
 	var body map[string]interface{}
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
-	//Variables manejo de información
-	var data map[string]interface{}
+	// Contruir el Cuerpo que necesita la petición hacia Resoluciones Docente
+	body["vigencia"] = body["vigencia"].(float64) - 1
+	bodyResolucionesDocente := formulacionhelper.ConstruirCuerpoRD(body)
+
+	//Peticion POST hacia Resoluciones Docentes
 	var respuestaPost map[string]interface{}
 	var result []interface{}
 
-	// Contruir el Cuerpo que necesita la petición hacia Resoluciones Docente
-	bodyResolucionesDocente := formulacionhelper.ConstruirCuerpoRD(body)
-
-	//Peticion POST hacia Resoluciones Docente
-	if err := helpers.SendJson("http://"+beego.AppConfig.String("ResolucionesDocentes")+"/services/desagregado_planeacion", "POST", &respuestaPost, bodyResolucionesDocente); err != nil {
-		panic(map[string]interface{}{"funcion": "GetCalculosIdentDocenteRFH", "err": "Error al obtener desagregado", "status": "400", "log": err})
+	err := helpers.SendJson("http://"+beego.AppConfig.String("ResolucionesDocentes")+"/services/desagregado_planeacion", "POST", &respuestaPost, bodyResolucionesDocente)
+	if err != nil || !respuestaPost["Success"].(bool) {
+		panic(map[string]interface{}{"funcion": "CalculosDocentes", "err": "Error al obtener desagregado", "status": "400", "log": err})
 	}
 	result = respuestaPost["Data"].([]interface{})
-	fmt.Println(result)
+
+	//Peticion GET hacia Parametros Service
+	var resPeriodo map[string]interface{}
+	var periodo []map[string]interface{}
+	var resParametro map[string]interface{}
+	var parametro []map[string]interface{}
+	vigenciaStr := strconv.FormatFloat(body["vigencia"].(float64), 'f', 0, 64)
+	if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+`/periodo?query=Nombre:`+vigenciaStr, &resPeriodo); err == nil {
+		helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
+
+		vigenciaId := resPeriodo["Data"].([]interface{})[0].(map[string]interface{})["Id"].(float64)
+		vigenciaIdStr := strconv.FormatFloat(vigenciaId, 'f', 0, 64)
+		fmt.Println(vigenciaId)
+		if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Activo:true,ParametroId:1,PeriodoId:"+vigenciaIdStr+"&limit=1", &resParametro); err == nil {
+			helpers.LimpiezaRespuestaRefactor(resParametro, &parametro)
+		}
+	}
+
+	// Obtener el valor de la clave "Valor" del mapa resParametro
+	valorParametro, valorParametroOk := resParametro["Data"].([]interface{})
+	primerElemento, primerElementoOk := valorParametro[0].(map[string]interface{})
+	salarioMinimo, salarioMinimoOk := primerElemento["Valor"].(string)
+
+	if !valorParametroOk || len(valorParametro) == 0 || !primerElementoOk || !salarioMinimoOk {
+		panic(map[string]interface{}{"funcion": "CalculosDocentes", "err": "Error al obtener salario minimo", "status": "400", "log": "err"})
+	}
+
+	var valorSalarioMinimo map[string]interface{}
+	// Deserializar la cadena JSON en el mapa
+	if err := json.Unmarshal([]byte(salarioMinimo), &valorSalarioMinimo); err != nil {
+		panic(map[string]interface{}{"funcion": "CalculosDocentes", "err": "Error al obtener salario minimo", "status": "400", "log": err})
+	}
 
 	//Objeto para hacer los calulos necesarios
+	var data map[string]interface{}
 	data = body
-	// data["resolucionDocente"] = result[0].(map[string]interface{})
-	data["resolucionDocente"] = map[string]interface{}{
-		"Categoria":        "Titular",
-		"Dedicacion":       "MTO",
-		"EsDePlanta":       false,
-		"NivelAcademico":   "PREGRADO",
-		"Vigencia":         2023,
-		"arl":              1988,
-		"caja":             1988,
-		"cesantias":        4142,
-		"icbf":             1491,
-		"interesCesantias": 497,
-		"pension":          7953,
-		"primaNavidad":     3682,
-		"primaVacaciones":  2062,
-		"prima_servicios":  3682,
-		"salarioBasico":    49703.6875,
-		"salud":            1988,
-		"vacaciones":       2062,
-	}
+	data["resolucionDocente"] = result[0].(map[string]interface{})
+	data["salarioMinimo"] = valorSalarioMinimo["Valor"]
 	delete(data, "vigencia")
 	delete(data, "categoria")
 	delete(data, "tipo")
