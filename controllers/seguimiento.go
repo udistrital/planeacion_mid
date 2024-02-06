@@ -76,7 +76,8 @@ func (c *SeguimientoController) HabilitarReportes() {
 			element["activo"] = true
 			element["fecha_inicio"] = entrada["fecha_inicio"]
 			element["fecha_fin"] = entrada["fecha_fin"]
-			element["unidades_interes"] = "[]"
+			element["unidades_interes"] = entrada["unidades_interes"]
+			element["planes_interes"] = entrada["planes_interes"]
 			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/"+element["_id"].(string), "PUT", &resPut, element); err != nil {
 				panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
 			}
@@ -87,7 +88,8 @@ func (c *SeguimientoController) HabilitarReportes() {
 				"fecha_inicio":        entrada["fecha_inicio"],
 				"fecha_fin":           entrada["fecha_fin"],
 				"periodo_id":          entrada["periodo_id"],
-				"unidades_interes":    "[]",
+				"unidades_interes":    entrada["unidades_interes"],
+				"planes_interes":      entrada["planes_interes"],
 			}
 
 			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento", "POST", &resPut, element); err != nil {
@@ -290,7 +292,7 @@ func (c *SeguimientoController) CrearReportes() {
 // GetPeriodos ...
 // @Title GetPeriodos
 // @Description get Seguimiento
-// @Param	periodo 	path 	string	true		"The key for staticblock"
+// @Param	vigencia 	path 	string	true		"The key for staticblock"
 // @Success 200
 // @Failure 404
 // @router /get_periodos/:vigencia [get]
@@ -298,7 +300,7 @@ func (c *SeguimientoController) GetPeriodos() {
 	defer func() {
 		if err := recover(); err != nil {
 			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SeguimientoController" + "/" + (localError["funcion"]).(string))
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "SeguimientoController" + "/" + (localError["funcion"]).(string))
 			c.Data["data"] = (localError["err"])
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
@@ -325,7 +327,7 @@ func (c *SeguimientoController) GetPeriodos() {
 // GetActividadesGenerales ...
 // @Title GetActividadeGenerales
 // @Description get Seguimiento
-// @Param	periodo 	path 	string	true		"The key for staticblock"
+// @Param	seguimiento_id 	path 	string	true		"The key for staticblock"
 // @Success 200
 // @Failure 403
 // @router /get_actividades/:seguimiento_id [get]

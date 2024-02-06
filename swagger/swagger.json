@@ -2149,7 +2149,7 @@
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "periodo",
+                        "name": "vigencia",
                         "description": "The key for staticblock",
                         "required": true,
                         "type": "string"
