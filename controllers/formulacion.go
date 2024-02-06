@@ -1857,7 +1857,7 @@ func (c *FormulacionController) CalculosDocentes() {
 	salarioMinimo, salarioMinimoOk := primerElemento["Valor"].(string)
 
 	if !valorParametroOk || len(valorParametro) == 0 || !primerElementoOk || !salarioMinimoOk {
-		panic(map[string]interface{}{"funcion": "CalculosDocentes", "err": "Error al obtener salario minimo", "status": "400", "log": "err"})
+		panic(map[string]interface{}{"funcion": "CalculosDocentes", "err": "Error al obtener salario minimo", "status": "400", "log": "Error al obtener salario minimo"})
 	}
 
 	var valorSalarioMinimo map[string]interface{}
