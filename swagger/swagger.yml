@@ -293,6 +293,26 @@ paths:
             $ref: '#/definitions/models.Formulacion'
         "403":
           description: :id is empty
+  /formulacion/calculos_docentes:
+    post:
+      tags:
+      - formulacion
+      description: post Formulacion
+      operationId: FormulacionController.CalculosDocentes
+      parameters:
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
   /formulacion/clonar_formato/{id}:
     post:
       tags:
@@ -1344,7 +1364,7 @@ paths:
       operationId: SeguimientoController.GetActividadeGenerales
       parameters:
       - in: path
-        name: periodo
+        name: seguimiento_id
         description: The key for staticblock
         required: true
         type: string
