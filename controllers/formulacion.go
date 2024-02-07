@@ -1872,11 +1872,17 @@ func (c *FormulacionController) CalculosDocentes() {
 	delete(body, "categoria")
 	delete(body, "tipo")
 
+	// Realizar los calculos
+	dataFinal, err := formulacionhelper.GetCalculos(data)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "CalculosDocentes", "err": "Error al intentar realizar los calculos", "status": "400", "log": err})
+	}
+
 	c.Data["json"] = map[string]interface{}{
 		"Success": true,
 		"Status":  "200",
 		"Message": "Successful",
-		"Data":    formulacionhelper.GetCalculos(data),
+		"Data":    dataFinal,
 	}
 	c.ServeJSON()
 }

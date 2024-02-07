@@ -930,7 +930,7 @@ func ObtenerPlanesFormulacion() []map[string]interface{} {
 // Función para realizar la petición POST hacia Resoluciones Docentes
 func GetDesagregado(bodyResolucionesDocente []map[string]interface{}) (map[string]interface{}, error) {
 	var respuestaPost map[string]interface{}
-	err := helpers.SendJson("http://"+beego.AppConfig.String("ResolucionesDocentes")+"/services/desagregado_planeacion", "POST", &respuestaPost, bodyResolucionesDocente)
+	err := request.SendJson("http://"+beego.AppConfig.String("ResolucionesDocentes")+"/services/desagregado_planeacion", "POST", &respuestaPost, bodyResolucionesDocente)
 	if err != nil || !respuestaPost["Success"].(bool) {
 		return nil, err
 	}
@@ -969,7 +969,11 @@ func GetSalarioMinimo(vigenciaStr string) (map[string]interface{}, error) {
 }
 
 // Calculos para la Identificación de Docentes
-func GetCalculos(data map[string]interface{}) map[string]interface{} {
+func GetCalculos(data map[string]interface{}) (map[string]interface{}, error) {
+	if data == nil || len(data) == 0 {
+		return nil, fmt.Errorf("los datos de entrada están vacíos")
+	}
+
 	response := map[string]interface{}{
 		"totalHoras":               DataFinal(GetTotalHoras(data, false)),
 		"totalHorasIndividual":     DataFinal(GetTotalHoras(data, true)),
@@ -1002,7 +1006,7 @@ func GetCalculos(data map[string]interface{}) map[string]interface{} {
 		"total":                    DataFinal(GetTotalRecurso(data, false)),
 		"totalIndividual":          DataFinal(GetTotalRecurso(data, true)),
 	}
-	return response
+	return response, nil
 }
 
 func ConstruirCuerpoRD(data map[string]interface{}) []map[string]interface{} {
