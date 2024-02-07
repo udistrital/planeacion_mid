@@ -2659,6 +2659,44 @@
                     }
                 }
             }
+        },
+        "/seguimiento/verificar_seguimiento/{id}": {
+            "put": {
+                "tags": [
+                    "seguimiento"
+                ],
+                "description": "put Seguimiento by id",
+                "operationId": "SeguimientoController.VerificarSeguimiento",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Seguimiento"
+                        }
+                    },
+                    "403": {
+                        "description": ""
+                    }
+                }
+            }
         }
     },
     "definitions": {
