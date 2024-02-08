@@ -1006,6 +1006,15 @@ func GetCalculos(data map[string]interface{}) (map[string]interface{}, error) {
 		"total":                    DataFinal(GetTotalRecurso(data, false)),
 		"totalIndividual":          DataFinal(GetTotalRecurso(data, true)),
 	}
+
+	if response["cesantias"] == NoAplica {
+		response["cesantiasPrivado"] = NoAplica
+		response["cesantiasPublico"] = NoAplica
+	}
+	if response["totalPensiones"] == NoAplica {
+		response["pensionesPrivado"] = NoAplica
+		response["pensionesPublico"] = NoAplica
+	}
 	return response, nil
 }
 
@@ -1229,6 +1238,9 @@ func GetBonificacionServicios(data map[string]interface{}) string {
 
 	if errSB != nil || errM != nil {
 		return ""
+	}
+	if meses < 12 {
+		return NoAplica
 	}
 	resultado = (sueldoBasico * 0.35) / meses
 	return strconv.FormatFloat(resultado, 'f', -1, 64)
@@ -1499,12 +1511,15 @@ func evaluarIcbfPrestacional(infoPrestacional map[string]interface{}, data map[s
 	horas, horasOk := data["horas"].(float64)
 	salarioMinimo, salarioMinimoOk := data["salarioMinimo"].(float64)
 	salarioBasico, salarioBasicoOk := infoPrestacional["salarioBasico"].(float64)
-	primaVacaciones, primaVacacionesOk := infoPrestacional["primaVacaciones"].(float64)
 
 	var resultado float64
 
-	if semanasOk && horasOk && salarioMinimoOk && salarioBasicoOk && primaVacacionesOk {
+	if semanasOk && horasOk && salarioMinimoOk && salarioBasicoOk {
 		if (salarioBasico * horas * 4) >= salarioMinimo {
+			primaVacaciones, primaVacacionesOk := infoPrestacional["primaVacaciones"].(float64)
+			if !primaVacacionesOk {
+				return -1
+			}
 			resultado = (salarioBasico + primaVacaciones) * horas * semanas * 0.03
 		} else {
 			resultado = salarioMinimo * (semanas / 4) * 0.03
@@ -1528,14 +1543,18 @@ func GetIcbf(data map[string]interface{}) string {
 			return NoAplica
 		}
 
-		salarioBasico := resolucionDocente["salarioBasico"].(float64)
-		primaVacaciones, primaVacacionesOk := resolucionDocente["primaVacaciones"].(float64)
-		if !primaVacacionesOk {
-			return ""
-		}
 		if dedicacion == HCatedraPrestacional {
-			icbf = evaluarIcbfPrestacional(resolucionDocente, data) * (1 + incremento)
+			resultado := evaluarIcbfPrestacional(resolucionDocente, data)
+			if resultado == -1 {
+				return ""
+			}
+			icbf = resultado * (1 + incremento)
 		} else {
+			salarioBasico := resolucionDocente["salarioBasico"].(float64)
+			primaVacaciones, primaVacacionesOk := resolucionDocente["primaVacaciones"].(float64)
+			if !primaVacacionesOk {
+				return ""
+			}
 			icbf = (((salarioBasico + primaVacaciones) * horas) * semanas) * 0.03 * (1 + incremento)
 		}
 	}
