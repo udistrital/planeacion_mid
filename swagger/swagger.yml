@@ -1412,6 +1412,25 @@ paths:
           description: ""
         "404":
           description: not found resource
+  /seguimiento/get_estado_trimestres/{plan_id}:
+    get:
+      tags:
+      - seguimiento
+      description: get Seguimiento de los trimestres correspondientes
+      operationId: SeguimientoController.GetEstadoTrimestres
+      parameters:
+      - in: path
+        name: periodo
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+        "403":
+          description: ""
+        "404":
+          description: not found resource
   /seguimiento/get_indicadores/{plan_id}:
     get:
       tags:
