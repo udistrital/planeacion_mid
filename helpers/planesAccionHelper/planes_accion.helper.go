@@ -43,10 +43,9 @@ func ObtenerPlanesAccion() (resumenPlanes []map[string]interface{}, outputError 
 	defer func() {
 		if err := recover(); err != nil {
 			localError := err.(map[string]interface{})
-			beego.Debug(localError["err"])
 			outputError = map[string]interface{}{
 				"funcion": "ObtenerPlanesAccion/" + localError["funcion"].(string),
-				"err":     localError["err"],
+				"err":     localError["err"].(error),
 				"status":  localError["status"],
 			}
 			panic(outputError)
@@ -95,7 +94,7 @@ func ObtenerPlanesAccion() (resumenPlanes []map[string]interface{}, outputError 
 	sort.Slice(resumenPlanes, func(i, j int) bool {
 		return resumenPlanes[i]["ultima_modificacion"].(string) > resumenPlanes[j]["ultima_modificacion"].(string)
 	})
-	return resumenPlanes, nil
+	return resumenPlanes, outputError
 	// Revisar paginación
 	// Multiples consultas teniendo en cuenta la paginación, desde el cliente
 	// Ejemplo resoluciones mid

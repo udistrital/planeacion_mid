@@ -1800,13 +1800,13 @@ func (c *FormulacionController) VerificarIdentificaciones() {
 // @Failure 400 bad response
 // @router /planes_formulacion [get]
 func (c *FormulacionController) PlanesEnFormulacion() {
-	defer helpers.ErrorController(c.Controller, "PlanesAccionController")
+	defer helpers.ErrorController(c.Controller, "PlanesFormulacionController")
 
-	resumenPlanesActivos, err := formulacionhelper.ObtenerPlanesFormulacion()
-	if err != nil {
+	if resumenPlanesActivos, err := formulacionhelper.ObtenerPlanesFormulacion(); err != nil {
 		panic(map[string]interface{}{"funcion": "GetContratosDocente", "err": err, "status": "400"})
+	} else {
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": resumenPlanesActivos}
 	}
 
-	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": resumenPlanesActivos}
 	c.ServeJSON()
 }
