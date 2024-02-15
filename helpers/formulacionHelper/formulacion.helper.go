@@ -1124,13 +1124,12 @@ func GetSueldoMensual(data map[string]interface{}, ind bool) string {
 	var sueldoMensual float64
 
 	if cantidadOk {
-		sueldoBasico, errSB := strconv.ParseFloat(DataFinal(GetSueldoBasico(data, false)), 64)
+		sueldoBasico, errSB := strconv.ParseFloat(DataFinal(GetSueldoBasico(data, true)), 64)
 		meses, errM := strconv.ParseFloat(GetMeses(data), 64)
 		if errSB != nil || errM != nil {
 			return ""
 		}
-		sueldoBasicoIndivudial := sueldoBasico / data["cantidad"].(float64)
-		sueldoMensual = sueldoBasicoIndivudial / meses * cantidad
+		sueldoMensual = sueldoBasico / meses * cantidad
 	}
 	if ind {
 		return strconv.FormatFloat(sueldoMensual/cantidad, 'f', -1, 64)
@@ -1244,7 +1243,7 @@ func GetVacacionesProyeccion(data map[string]interface{}) string {
 
 //Calcular bonificación por servicios
 func GetBonificacionServicios(data map[string]interface{}) string {
-	sueldoBasico, errSB := strconv.ParseFloat(GetSueldoBasico(data, true), 64)
+	sueldoBasico, errSB := strconv.ParseFloat(DataFinal(GetSueldoBasico(data, true)), 64)
 	meses, errM := strconv.ParseFloat(GetMeses(data), 64)
 
 	var resultado float64
@@ -1322,8 +1321,8 @@ func GetTotalAportesCesantias(data map[string]interface{}, ind bool) string {
 			return NoAplica
 		}
 
-		intereses, errI := strconv.ParseFloat(GetInteresesCesantias(data), 64)
-		cesantias, errC := strconv.ParseFloat(GetCesantias(data), 64)
+		intereses, errI := strconv.ParseFloat(DataFinal(GetInteresesCesantias(data)), 64)
+		cesantias, errC := strconv.ParseFloat(DataFinal(GetCesantias(data)), 64)
 		if errI != nil || errC != nil {
 			return ""
 		}
@@ -1589,7 +1588,7 @@ func GetTotalSueldoBasico(data map[string]interface{}, ind bool) string {
 	var resultado float64
 
 	if cantidadOk {
-		sueldoBasico, errSB := strconv.ParseFloat(GetSueldoBasico(data, true), 64)
+		sueldoBasico, errSB := strconv.ParseFloat(DataFinal(GetSueldoBasico(data, true)), 64)
 		if errSB != nil {
 			return ""
 		}
@@ -1602,7 +1601,7 @@ func GetTotalSueldoBasico(data map[string]interface{}, ind bool) string {
 			totalBasico = sueldoBasico
 		} else {
 			var bonificacionF float64
-			if GetBonificacionServicios(data) != "" || GetBonificacionServicios(data) != NoAplica {
+			if GetBonificacionServicios(data) != "" && GetBonificacionServicios(data) != NoAplica {
 				bonificacion, errB := strconv.ParseFloat(DataFinal(GetBonificacionServicios(data)), 64)
 				if errB != nil {
 					return ""
@@ -1610,18 +1609,19 @@ func GetTotalSueldoBasico(data map[string]interface{}, ind bool) string {
 				bonificacionF = bonificacion
 			}
 
-			primaServicios, errPS := strconv.ParseFloat(GetPrimaServicios(data), 64)
-			primaNavidad, errPN := strconv.ParseFloat(GetPrimaNavidad(data), 64)
-			primaVacaciones, errPV := strconv.ParseFloat(GetPrimaVacaciones(data), 64)
-			aportesCesantias, errAC := strconv.ParseFloat(GetTotalAportesCesantias(data, true), 64)
-			vacaciones, errV := strconv.ParseFloat(GetVacacionesProyeccion(data), 64)
-
+			primaServicios, errPS := strconv.ParseFloat(DataFinal(GetPrimaServicios(data)), 64)
+			primaNavidad, errPN := strconv.ParseFloat(DataFinal(GetPrimaNavidad(data)), 64)
+			primaVacaciones, errPV := strconv.ParseFloat(DataFinal(GetPrimaVacaciones(data)), 64)
+			aportesCesantias, errAC := strconv.ParseFloat(DataFinal(GetTotalAportesCesantias(data, false)), 64)
+			vacaciones, errV := strconv.ParseFloat(DataFinal(GetVacacionesProyeccion(data)), 64)
 			if errPS != nil || errPN != nil || errPV != nil || errAC != nil || errV != nil {
 				return ""
 			}
-			totalBasico = sueldoBasico + primaServicios + primaNavidad + primaVacaciones + bonificacionF + aportesCesantias + vacaciones
+
+			aportesCesantiasF := aportesCesantias / data["cantidad"].(float64)
+			totalBasico = sueldoBasico + primaServicios + primaNavidad + primaVacaciones + bonificacionF + aportesCesantiasF + vacaciones
 		}
-		resultado = cantidad * totalBasico
+		resultado = cantidad * math.Round(totalBasico)
 	}
 	if ind {
 		return strconv.FormatFloat(resultado/cantidad, 'f', -1, 64)
@@ -1643,18 +1643,21 @@ func GetTotalAportes(data map[string]interface{}, ind bool) string {
 		if dedicacion == HCatedraHonorarios {
 			totalAportes = 0
 		} else {
-			totalSalud, errTS := strconv.ParseFloat(GetTotalAporteSalud(data, true), 64)
-			totalPension, errTP := strconv.ParseFloat(GetTotalAportePension(data, true), 64)
-			totalArl, errTA := strconv.ParseFloat(GetTotalArl(data, true), 64)
-			caja, errC := strconv.ParseFloat(GetCajaCompensacion(data), 64)
-			icbf, errICBF := strconv.ParseFloat(GetIcbf(data), 64)
-
+			totalSalud, errTS := strconv.ParseFloat(DataFinal(GetTotalAporteSalud(data, false)), 64)
+			totalPension, errTP := strconv.ParseFloat(DataFinal(GetTotalAportePension(data, false)), 64)
+			totalArl, errTA := strconv.ParseFloat(DataFinal(GetTotalArl(data, false)), 64)
+			caja, errC := strconv.ParseFloat(DataFinal(GetCajaCompensacion(data)), 64)
+			icbf, errICBF := strconv.ParseFloat(DataFinal(GetIcbf(data)), 64)
 			if errTS != nil || errTP != nil || errTA != nil || errC != nil || errICBF != nil {
 				return ""
 			}
-			totalAportes = totalSalud + totalPension + totalArl + caja + icbf
+
+			totalSaludF := totalSalud / data["cantidad"].(float64)
+			totalPensionF := totalPension / data["cantidad"].(float64)
+			totalArlF := totalArl / data["cantidad"].(float64)
+			totalAportes = totalSaludF + totalPensionF + totalArlF + caja + icbf
 		}
-		resultado = cantidad * totalAportes
+		resultado = cantidad * math.Round(totalAportes)
 	}
 	if ind {
 		return strconv.FormatFloat(resultado/cantidad, 'f', -1, 64)
@@ -1678,7 +1681,7 @@ func GetTotalRecurso(data map[string]interface{}, ind bool) string {
 			bonificacionF = bonificacion
 		}
 
-		sueldoBasico, errSB := strconv.ParseFloat(GetSueldoBasico(data, true), 64)
+		sueldoBasico, errSB := strconv.ParseFloat(DataFinal(GetSueldoBasico(data, true)), 64)
 		if errSB != nil {
 			return ""
 		}
@@ -1690,23 +1693,29 @@ func GetTotalRecurso(data map[string]interface{}, ind bool) string {
 		if dedicacion == HCatedraHonorarios {
 			total = sueldoBasico
 		} else {
-			aportesCesantias, errAC := strconv.ParseFloat(GetTotalAportesCesantias(data, true), 64)
-			primaServicios, errPS := strconv.ParseFloat(GetPrimaServicios(data), 64)
-			primaNavidad, errPN := strconv.ParseFloat(GetPrimaNavidad(data), 64)
-			primaVacaciones, errPV := strconv.ParseFloat(GetPrimaVacaciones(data), 64)
-			vacaciones, errV := strconv.ParseFloat(GetVacacionesProyeccion(data), 64)
-			totalSalud, errTS := strconv.ParseFloat(GetTotalAporteSalud(data, true), 64)
-			totalPension, errTP := strconv.ParseFloat(GetTotalAportePension(data, true), 64)
-			totalArl, errTA := strconv.ParseFloat(GetTotalArl(data, true), 64)
-			caja, errC := strconv.ParseFloat(GetCajaCompensacion(data), 64)
-			icbf, errICBF := strconv.ParseFloat(GetIcbf(data), 64)
+			aportesCesantias, errAC := strconv.ParseFloat(DataFinal(GetTotalAportesCesantias(data, false)), 64)
+			primaServicios, errPS := strconv.ParseFloat(DataFinal(GetPrimaServicios(data)), 64)
+			primaNavidad, errPN := strconv.ParseFloat(DataFinal(GetPrimaNavidad(data)), 64)
+			primaVacaciones, errPV := strconv.ParseFloat(DataFinal(GetPrimaVacaciones(data)), 64)
+			vacaciones, errV := strconv.ParseFloat(DataFinal(GetVacacionesProyeccion(data)), 64)
+			totalSalud, errTS := strconv.ParseFloat(DataFinal(GetTotalAporteSalud(data, false)), 64)
+			totalPension, errTP := strconv.ParseFloat(DataFinal(GetTotalAportePension(data, false)), 64)
+			totalArl, errTA := strconv.ParseFloat(DataFinal(GetTotalArl(data, false)), 64)
+			caja, errC := strconv.ParseFloat(DataFinal(GetCajaCompensacion(data)), 64)
+			icbf, errICBF := strconv.ParseFloat(DataFinal(GetIcbf(data)), 64)
 
 			if errPS != nil || errPN != nil || errPV != nil || errAC != nil || errV != nil || errTS != nil || errTP != nil || errTA != nil || errC != nil || errICBF != nil {
 				return ""
 			}
-			total = sueldoBasico + primaServicios + primaNavidad + primaVacaciones + bonificacionF + aportesCesantias + totalSalud + totalArl + caja + icbf + vacaciones + totalPension
+
+			aportesCesantiasF := aportesCesantias / data["cantidad"].(float64)
+			totalSaludF := totalSalud / data["cantidad"].(float64)
+			totalPensionF := totalPension / data["cantidad"].(float64)
+			totalArlF := totalArl / data["cantidad"].(float64)
+
+			total = sueldoBasico + primaServicios + primaNavidad + primaVacaciones + bonificacionF + aportesCesantiasF + totalSaludF + totalArlF + caja + icbf + vacaciones + totalPensionF
 		}
-		resultado = cantidad * total
+		resultado = cantidad * math.Round(total)
 	}
 	if ind {
 		return strconv.FormatFloat(resultado/cantidad, 'f', -1, 64)
