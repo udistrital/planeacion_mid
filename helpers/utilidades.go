@@ -18,6 +18,7 @@ import (
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/administrativa_mid_api/models"
 	seguimientomodels "github.com/udistrital/planeacion_mid/models"
+	"github.com/udistrital/utils_oas/xray"
 )
 
 func SendJson(url string, trequest string, target interface{}, datajson interface{}) error {
@@ -363,7 +364,7 @@ func GuardarDocumento(documentos []interface{}) []interface{} {
 	return resDocs
 }
 
-func SortSlice(slice *[]map[string]interface{}, parameter string)  {
+func SortSlice(slice *[]map[string]interface{}, parameter string) {
 	sort.SliceStable(*slice, func(i, j int) bool {
 		var a int
 		var b int
@@ -380,4 +381,20 @@ func SortSlice(slice *[]map[string]interface{}, parameter string)  {
 		}
 		return a < b
 	})
+}
+
+// Manejo único de errores para controladores sin repetir código
+func ErrorController(c beego.Controller, controller string) {
+	if err := recover(); err != nil {
+		logs.Error(err)
+		localError := err.(map[string]interface{})
+		c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + controller + "/" + (localError["funcion"]).(string))
+		c.Data["data"] = (localError["err"])
+		xray.EndSegmentErr(http.StatusBadRequest, localError["err"])
+		if status, ok := localError["status"]; ok {
+			c.Abort(status.(string))
+		} else {
+			c.Abort("500")
+		}
+	}
 }

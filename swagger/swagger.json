@@ -907,7 +907,7 @@
                             "$ref": "#/definitions/models.Formulacion"
                         }
                     },
-                    "500": {
+                    "400": {
                         "description": "bad response"
                     }
                 }
@@ -1786,6 +1786,26 @@
                     },
                     "403": {
                         "description": ":id is empty"
+                    }
+                }
+            }
+        },
+        "/planes_accion/": {
+            "get": {
+                "tags": [
+                    "planes_accion"
+                ],
+                "description": "get Planes de Acción",
+                "operationId": "PlanesAccionController.GetPlanesDeAccion",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Formulacion"
+                        }
+                    },
+                    "400": {
+                        "description": "bad response"
                     }
                 }
             }

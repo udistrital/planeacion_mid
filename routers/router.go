@@ -49,11 +49,15 @@ func init() {
 		),
 
 		beego.NSNamespace("/evaluacion",
-		beego.NSInclude(
-			&controllers.EvaluacionController{},
+			beego.NSInclude(
+				&controllers.EvaluacionController{},
+			),
 		),
-	),
-
+		beego.NSNamespace("/planes_accion",
+			beego.NSInclude(
+				&controllers.PlanesAccionController{},
+			),
+		),
 	)
 	beego.AddNamespace(ns)
 }

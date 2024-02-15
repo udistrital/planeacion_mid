@@ -767,15 +767,16 @@ func getNumVersion(data []map[string]interface{}, f func(map[string]interface{})
 	return -1
 }
 
-func getVigencias() map[string]float64 {
+func getVigencias() (vigencias map[string]float64, outputError map[string]interface{}) {
 	defer func() {
 		if err := recover(); err != nil {
-			panic(map[string]interface{}{"funcion": "getVigencias", "err": "Error obteniendo las vigencias", "status": "400", "log": err})
+			outputError = map[string]interface{}{"funcion": "getVigencias", "err": "Error obteniendo las vigencias", "status": "400", "log": err}
+			panic(outputError)
 		}
 	}()
 	var respuestaVigencias map[string]interface{}
 	var respuesta []map[string]interface{}
-	vigencias := make(map[string]float64)
+	vigencias = make(map[string]float64)
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/periodo?query=CodigoAbreviacion:VG,activo:true", &respuestaVigencias); err != nil {
 		panic(err)
@@ -787,16 +788,17 @@ func getVigencias() map[string]float64 {
 		vigencias[idVigencia] = vigencia["Year"].(float64)
 	}
 
-	return vigencias
+	return vigencias, nil
 }
 
-func getUnidades() map[string]string {
+func getUnidades() (unidades map[string]string, outputError map[string]interface{}) {
 	defer func() {
 		if err := recover(); err != nil {
-			panic(map[string]interface{}{"funcion": "getUnidades", "err": "Error obteniendo las unidades", "status": "400", "log": err})
+			outputError = map[string]interface{}{"funcion": "getUnidades", "err": "Error obteniendo las unidades", "status": "400", "log": err}
+			panic(outputError)
 		}
 	}()
-	unidades := make(map[string]string)
+	unidades = make(map[string]string)
 	var respuesta []map[string]interface{}
 	if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia?limit=0", &respuesta); err != nil {
 		panic(err)
@@ -809,18 +811,19 @@ func getUnidades() map[string]string {
 			unidades[idDependencia] = u["Nombre"].(string)
 		}
 	}
-	return unidades
+	return unidades, nil
 }
 
-func getEstados() map[string]string {
+func getEstados() (estados map[string]string, outputError map[string]interface{}) {
 	defer func() {
 		if err := recover(); err != nil {
-			panic(map[string]interface{}{"funcion": "getEstados", "err": "Error obteniendo los estados", "status": "400", "log": err})
+			outputError = map[string]interface{}{"funcion": "getEstados", "err": "Error obteniendo los estados", "status": "400", "log": err}
+			panic(outputError)
 		}
 	}()
-	estados := make(map[string]string)
 	var respuestaEstados map[string]interface{}
 	var estadoFormulacion []map[string]interface{}
+	estados = make(map[string]string)
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-plan?query=activo:true", &respuestaEstados); err != nil {
 		panic(err)
@@ -829,7 +832,7 @@ func getEstados() map[string]string {
 	for _, estado := range estadoFormulacion {
 		estados[estado["_id"].(string)] = estado["nombre"].(string)
 	}
-	return estados
+	return estados, nil
 }
 
 func obtenerNumeroVersion(planes []map[string]interface{}, planActual map[string]interface{}) int {
@@ -869,24 +872,35 @@ func getPlanesPorTipoPlan(codigoDeAbreviacion string) []map[string]interface{} {
 	return planes
 }
 
-func ObtenerPlanesFormulacion() []map[string]interface{} {
+func ObtenerPlanesFormulacion() (resumenPlanes []map[string]interface{}, outputError map[string]interface{}) {
 	defer func() {
 		if err := recover(); err != nil {
 			localError := err.(map[string]interface{})
 			beego.Debug(localError["err"])
-			panic(map[string]interface{}{
+			outputError = map[string]interface{}{
 				"funcion": "ObtenerPlanesFormulacion/" + localError["funcion"].(string),
 				"err":     localError["err"],
 				"status":  localError["status"],
-			})
+			}
+			panic(outputError)
 		}
 	}()
 	tiposPlanes := []string{CodigoTipoPlan, CodigoTipoPlanAccionFormulacion}
-	var resumenPlanes []map[string]interface{}
 
-	estados := getEstados()
-	vigencias := getVigencias()
-	unidades := getUnidades()
+	estados, errEstados := getEstados()
+	if errEstados != nil {
+		panic(errEstados)
+	}
+
+	vigencias, errVigencias := getVigencias()
+	if errVigencias != nil {
+		panic(errVigencias)
+	}
+
+	unidades, errUnidades := getUnidades()
+	if errUnidades != nil {
+		panic(errUnidades)
+	}
 	// Obtener planes filtrados por el tipo de plan
 	for _, tipoPlan := range tiposPlanes {
 		planes := getPlanesPorTipoPlan(tipoPlan)
@@ -914,5 +928,5 @@ func ObtenerPlanesFormulacion() []map[string]interface{} {
 	sort.Slice(resumenPlanes, func(i, j int) bool {
 		return resumenPlanes[i]["ultima_modificacion"].(string) > resumenPlanes[j]["ultima_modificacion"].(string)
 	})
-	return resumenPlanes
+	return resumenPlanes, nil
 }
