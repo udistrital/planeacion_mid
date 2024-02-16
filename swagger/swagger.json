@@ -1810,6 +1810,35 @@
                 }
             }
         },
+        "/planes_accion/{unidad_id}": {
+            "get": {
+                "tags": [
+                    "planes_accion"
+                ],
+                "description": "get Tabla Resumen filtrando por el id de la unidad",
+                "operationId": "PlanesAccionController.GetTablaResumenUnidad",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Formulacion"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
         "/reportes/desagregado": {
             "post": {
                 "tags": [

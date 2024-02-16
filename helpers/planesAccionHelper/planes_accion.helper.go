@@ -87,6 +87,7 @@ func ObtenerPlanesAccion() (resumenPlanes []map[string]interface{}, outputError 
 				planNuevo["estado_id"] = planSeguimiento["estado_seguimiento_id"]
 				planNuevo["estado"] = estadosSeguimiento[planSeguimiento["estado_seguimiento_id"].(string)]
 				planNuevo["ultima_modificacion"] = planSeguimiento["fecha_modificacion"]
+				// La versión solo se devolverá en caso de que exista, esto solo aplicla en los planes en formulación, por tanto, se debé manejar esto en el cliente
 				resumenPlanes = append(resumenPlanes, planNuevo)
 			}
 		}
@@ -98,4 +99,28 @@ func ObtenerPlanesAccion() (resumenPlanes []map[string]interface{}, outputError 
 	// Revisar paginación
 	// Multiples consultas teniendo en cuenta la paginación, desde el cliente
 	// Ejemplo resoluciones mid
+}
+
+func ObtenerPlanesDeAccionPorUnidad(unidadID string) (planes []map[string]interface{}, outputError map[string]interface{}) {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			outputError = map[string]interface{}{
+				"funcion": "ObtenerPlanesAccion/" + localError["funcion"].(string),
+				"err":     localError["err"].(error),
+				"status":  localError["status"],
+			}
+			panic(outputError)
+		}
+	}()
+
+	if planesAccion, err := ObtenerPlanesAccion(); err == nil {
+		for _, plan := range planesAccion {
+			if plan["dependencia_id"] == unidadID {
+				planes = append(planes, plan)
+			}
+		}
+	}
+
+	return planes, outputError
 }

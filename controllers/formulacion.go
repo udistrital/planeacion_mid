@@ -1803,7 +1803,7 @@ func (c *FormulacionController) PlanesEnFormulacion() {
 	defer helpers.ErrorController(c.Controller, "PlanesFormulacionController")
 
 	if resumenPlanesActivos, err := formulacionhelper.ObtenerPlanesFormulacion(); err != nil {
-		panic(map[string]interface{}{"funcion": "GetContratosDocente", "err": err, "status": "400"})
+		panic(map[string]interface{}{"funcion": "PlanesEnFormulacion", "err": err, "status": "400"})
 	} else {
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": resumenPlanesActivos}
 	}

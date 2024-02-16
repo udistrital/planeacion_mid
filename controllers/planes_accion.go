@@ -29,3 +29,22 @@ func (c *PlanesAccionController) PlanesDeAccion() {
 	}
 	c.ServeJSON()
 }
+
+// Get Tabla resumen por unidad...
+// @Title GetTablaResumenUnidad
+// @Description get Tabla Resumen filtrando por el id de la unidad
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /:unidad_id [get]
+func (c *PlanesAccionController) PlanesDeAccionPorUnidad() {
+	defer helpers.ErrorController(c.Controller, "PlanesAccionController")
+
+	id := c.Ctx.Input.Param(":unidad_id")
+	if datos, err := formulacioPlanAccionnHelper.ObtenerPlanesDeAccionPorUnidad(id); err == nil {
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": datos}
+	} else {
+		panic(map[string]interface{}{"funcion": "PlanesDeAccionPorUnidad", "err": err, "status": "400", "message": "Error obteniendo los datos"})
+	}
+	c.ServeJSON()
+}
