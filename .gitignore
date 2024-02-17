@@ -7,7 +7,6 @@ go.sum
 main
 .scannerwork/
 *.env
-!.env
 swagger/**
 !swagger/*.json
 !swagger/*.yml

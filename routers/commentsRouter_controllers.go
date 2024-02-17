@@ -126,6 +126,15 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"],
         beego.ControllerComments{
+            Method: "CalculosDocentes",
+            Router: "/calculos_docentes",
+            AllowHTTPMethods: []string{"post"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"],
+        beego.ControllerComments{
             Method: "ClonarFormato",
             Router: "/clonar_formato/:id",
             AllowHTTPMethods: []string{"post"},
@@ -236,6 +245,15 @@ func init() {
         beego.ControllerComments{
             Method: "Planes",
             Router: "/planes",
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"],
+        beego.ControllerComments{
+            Method: "PlanesEnFormulacion",
+            Router: "/planes_formulacion",
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
             Filters: nil,
@@ -704,6 +722,15 @@ func init() {
         beego.ControllerComments{
             Method: "RevisarSeguimiento",
             Router: "/revision_seguimiento/:id",
+            AllowHTTPMethods: []string{"put"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"],
+        beego.ControllerComments{
+            Method: "VerificarSeguimiento",
+            Router: "/verificar_seguimiento/:id",
             AllowHTTPMethods: []string{"put"},
             MethodParams: param.Make(),
             Filters: nil,
