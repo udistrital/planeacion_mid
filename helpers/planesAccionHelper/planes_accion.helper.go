@@ -61,6 +61,7 @@ func ObtenerPlanesAccion() (resumenPlanes []map[string]interface{}, outputError 
 	}
 
 	for _, plan := range planesFormulacion {
+		plan["estado_plan_accion"] = "Formulación"
 		if plan["estado"] == "Aval" {
 			planesAvalados[plan["id"].(string)] = plan
 		}
@@ -87,6 +88,7 @@ func ObtenerPlanesAccion() (resumenPlanes []map[string]interface{}, outputError 
 				planNuevo["estado_id"] = planSeguimiento["estado_seguimiento_id"]
 				planNuevo["estado"] = estadosSeguimiento[planSeguimiento["estado_seguimiento_id"].(string)]
 				planNuevo["ultima_modificacion"] = planSeguimiento["fecha_modificacion"]
+				planNuevo["estado_plan_accion"] = "Seguimiento"
 				// La versión solo se devolverá en caso de que exista, esto solo aplicla en los planes en formulación, por tanto, se debé manejar esto en el cliente
 				resumenPlanes = append(resumenPlanes, planNuevo)
 			}
