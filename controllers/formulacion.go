@@ -3,6 +3,7 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"math"
@@ -46,6 +47,7 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("VerificarIdentificaciones", c.VerificarIdentificaciones)
 	c.Mapping("PlanesEnFormulacion", c.PlanesEnFormulacion)
 	c.Mapping("CalculosDocentes", c.CalculosDocentes)
+	c.Mapping("ActualizarEstructuraPlanes", c.ActualizarEstructuraPlanes)
 }
 
 // ClonarFormato ...
@@ -1884,5 +1886,159 @@ func (c *FormulacionController) CalculosDocentes() {
 		"Message": "Successful",
 		"Data":    dataFinal,
 	}
+	c.ServeJSON()
+}
+
+type Campo struct {
+	ID       string  `json:"id"`
+	Nombre   string  `json:"nombre"`
+	Required string  `json:"required"`
+	Sub      []Campo `json:"sub"`
+	Type     string  `json:"type"`
+}
+
+// ActualizarEstructuraPlanes ...
+// @Title ActualizarEstructuraPlanes
+// @Description put Formulacion by id
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /actualizar_estructura_planes/:id [put]
+func (c *FormulacionController) ActualizarEstructuraPlanes() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+	id := c.Ctx.Input.Param(":id")
+
+	//Obtener plantilla por id
+	plantilla, err := formulacionhelper.GetPlantilla(id)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "ActualizarEstructuraPlanes", "err": "Error al obtener plantilla", "status": "400", "log": err})
+	}
+
+	// //Obtener los planes con el nombre de la plantilla (formato:false), que esten en estado "En formulacion"
+	planes, err := formulacionhelper.GetPlanesPorNombre(plantilla["nombre"].(string))
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "ActualizarEstructuraPlanes", "err": "Error al obtener planes por nombre", "status": "400", "log": err})
+	}
+
+	//Obtener el formato de la plantilla
+	formatoPLantilla, err := formulacionhelper.GetFormato(id)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "ActualizarEstructuraPlanes", "err": "Error al obtener formato", "status": "400", "log": err})
+	}
+
+	fmt.Println(planes, formatoPLantilla)
+
+	//65cbf8b26141e65200c3058b
+
+	// Obtener el formato del plan (son varios)
+	// formatoPlan, err := formulacionhelper.GetFormato("61305c7edf020f065956ba26")
+	// if err != nil {
+	// 	panic(map[string]interface{}{"funcion": "ActualizarEstructuraPlanes", "err": "Error al obtener formato", "status": "400", "log": err})
+	// }
+
+	// listaformatoPLantilla := formulacionhelper.ConvertirAListaPlana(formatoPLantilla[0], id)
+	// listaformatoPLan := formulacionhelper.ConvFormatoAListaPlana(formatoPlan[0], "65cbf8b26141e65200c3058b")
+
+	// lista1 := []map[string]interface{}{
+	// 	{
+	// 		"id":       "65cbc5693f5b18c0718b1f8a",
+	// 		"nombre":   "Campo inicial v1",
+	// 		"padre":    "65cbc53f3f5b1803a48b1ed5",
+	// 		"required": "true",
+	// 		"type":     "numeric",
+	// 	},
+	// 	{
+	// 		"id":       "65cbe5726141e65200c2f5fb",
+	// 		"nombre":   "campo n2",
+	// 		"padre":    "65cbc5693f5b18c0718b1f8a",
+	// 		"required": "true",
+	// 		"type":     "input",
+	// 	},
+	// 	{
+	// 		"id":       "1",
+	// 		"nombre":   "campo n2 n2",
+	// 		"padre":    "65cbc5693f5b18c0718b1f8a",
+	// 		"required": "true",
+	// 		"type":     "input",
+	// 	},
+	// 	{
+	// 		"id":       "65cbf8236141e65200c30140",
+	// 		"nombre":   "Campo 2 nv1",
+	// 		"padre":    "65cbc53f3f5b1803a48b1ed5",
+	// 		"required": "true",
+	// 		"type":     "input",
+	// 	},
+	// 	{
+	// 		"id":       "65ccd769748838179e418a41",
+	// 		"nombre":   "Campo 2 nv2",
+	// 		"padre":    "65cbf8236141e65200c30140",
+	// 		"required": "true",
+	// 		"type":     "input",
+	// 	},
+	// 	{
+	// 		"id":       "65ccf753f29f4d303532134d",
+	// 		"nombre":   "PRUEBA N2 - 2",
+	// 		"padre":    "65cbf8236141e65200c30140",
+	// 		"required": "true",
+	// 		"type":     "numeric",
+	// 	},
+	// }
+
+	// objeto, id := formulacionhelper.BuscarPadreFormato(lista1, "65cbf8236141e65200c30140")
+	// fmt.Println("*************************")
+	// fmt.Println(objeto)
+	// fmt.Println(id)
+	// fmt.Println("*************************")
+
+	// lista2 := []map[string]interface{}{
+	// 	{
+	// 		"id":       "65cbf8b36141e65200c30592",
+	// 		"nombre":   "Campo inicial v1",
+	// 		"padre":    "65cbf8b26141e65200c3058b",
+	// 		"required": "true",
+	// 		"type":     "numeric",
+	// 	},
+	// 	{
+	// 		"id":       "65cbf8b36141e65200c305a3",
+	// 		"nombre":   "campo n2",
+	// 		"padre":    "65cbf8b36141e65200c30592",
+	// 		"required": "true",
+	// 		"type":     "input",
+	// 	},
+	// 	{
+	// 		"id":       "65cbf8b46141e65200c305bd",
+	// 		"nombre":   "Campo 2 nv1",
+	// 		"padre":    "65cbf8b26141e65200c3058b",
+	// 		"required": "true",
+	// 		"type":     "input",
+	// 	},
+	// 	{
+	// 		"id":       "65cead0e08ba332cdaa39ddf",
+	// 		"nombre":   "Campo 2 nv2",
+	// 		"padre":    "65cbf8b46141e65200c305bd",
+	// 		"required": "true",
+	// 		"type":     "input",
+	// 	},
+	// }
+
+	//Comparar el formato del plan con el formato de la plantilla
+	// formulacionhelper.CompararFormatos(lista1, lista2)
+
+	//Como ya sabemos las comparaciones
+	//Realizar la petición a registrar_nodo, a subgrupo y a subgrupo_detalle (POST o PUT)
+
+	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": formatoPLantilla}
 	c.ServeJSON()
 }

@@ -8,18 +8,22 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
+	"github.com/udistrital/planeacion_mid/helpers/formatoHelper"
+	"github.com/udistrital/planeacion_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
 
 const (
 	CodigoTipoPlan                  string = "PL_SP"
 	CodigoTipoPlanAccionFormulacion string = "PAF_SP"
+	CodigoPlanEnFormulacion         string = "EF"
 	Pregrado                        string = "PREGRADO"
 	Posgrado                        string = "POSGRADO"
 	RHVPosgrado                     string = "RHVPOS"
@@ -1721,4 +1725,277 @@ func GetTotalRecurso(data map[string]interface{}, ind bool) string {
 		return strconv.FormatFloat(resultado/cantidad, 'f', -1, 64)
 	}
 	return strconv.FormatFloat(resultado, 'f', -1, 64)
+}
+
+// Función para obetener el cuerpo de una plantilla por id
+func GetPlantilla(id string) (map[string]interface{}, error) {
+	var resPlantilla map[string]interface{}
+	var plantilla map[string]interface{}
+	err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &resPlantilla)
+	if err != nil {
+		return nil, err
+	}
+	helpers.LimpiezaRespuestaRefactor(resPlantilla, &plantilla)
+	return plantilla, nil
+}
+
+// Función para obtener el id de acuerdo al estado "En formulación" por codigo de abreviación
+func GetEstadoPlanFormulacion() (map[string]interface{}, error) {
+	var resEstado map[string]interface{}
+	var estado []map[string]interface{}
+	err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-plan?query=activo:true,codigo_abreviacion:"+CodigoPlanEnFormulacion, &resEstado)
+	if err != nil {
+		return nil, err
+	}
+	helpers.LimpiezaRespuestaRefactor(resEstado, &estado)
+	return estado[0], nil
+}
+
+// Función para obtener los planes en estado "En formulación" en base al nombre de una plantilla
+func GetPlanesPorNombre(nombre string) ([]map[string]interface{}, error) {
+	var resPlanes map[string]interface{}
+	var planes []map[string]interface{}
+	estado, err1 := GetEstadoPlanFormulacion()
+	if err1 != nil {
+		return nil, err1
+	}
+	err2 := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=formato:false,nombre:"+url.QueryEscape(nombre)+",estado_plan_id:"+estado["_id"].(string), &resPlanes)
+	if err2 != nil {
+		return nil, err2
+	}
+	helpers.LimpiezaRespuestaRefactor(resPlanes, &planes)
+	return planes, nil
+}
+
+//Obtener el formato de una plantilla o un plan
+func GetFormato(id string) ([][]map[string]interface{}, error) {
+	var res map[string]interface{}
+	var hijos []models.Nodo
+	var plan map[string]interface{}
+	var hijosID []map[string]interface{}
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
+		helpers.LimpiezaRespuestaRefactor(res, &hijos)
+		helpers.LimpiezaRespuestaRefactor(res, &hijosID)
+		err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &res)
+		if err != nil {
+			return nil, err
+		}
+		helpers.LimpiezaRespuestaRefactor(res, &plan)
+		formatoHelper.Limpia(plan)
+		tree := formatoHelper.BuildTreeFa(hijos, hijosID)
+		return tree, nil
+	} else {
+		return nil, err
+	}
+}
+
+//Funcion para obtener la información en un subgrupo por id
+func ObtenerSubgrupo(id string) (map[string]interface{}, error) {
+	var resSubgrupo map[string]interface{}
+	var subgrupo map[string]interface{}
+	err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+id, &resSubgrupo)
+	if err != nil {
+		return nil, err
+	}
+	helpers.LimpiezaRespuestaRefactor(resSubgrupo, &subgrupo)
+	return subgrupo, nil
+}
+
+//Función para crear un subgrupo (registar_nodo)
+func CrearSubgrupo(bodySubgrupo []map[string]interface{}) (map[string]interface{}, error) {
+	var resSubgrupo map[string]interface{}
+	err := request.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/registrar_nodo", "POST", &resSubgrupo, bodySubgrupo)
+	if err != nil || !resSubgrupo["Success"].(bool) {
+		return nil, err
+	}
+	return resSubgrupo, nil
+}
+
+//Función para actualizar un subgrupo
+func ActualizarSubgrupo(bodySubgrupo map[string]interface{}, id string) (map[string]interface{}, error) {
+	var resSubgrupo map[string]interface{}
+	err := request.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+id, "PUT", &resSubgrupo, bodySubgrupo)
+	if err != nil {
+		return nil, err
+	}
+	return resSubgrupo, nil
+}
+
+//Funcion para obtener la información de un subgrupo-detalle, consulta por id
+func ObtenerSubgrupoDetalle(id string) (map[string]interface{}, error) {
+	var resSubgrupoDetalle map[string]interface{}
+	var subgrupoDetalle map[string]interface{}
+	err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=subgrupo_id:"+id, &resSubgrupoDetalle)
+	if err != nil {
+		return nil, err
+	}
+	helpers.LimpiezaRespuestaRefactor(resSubgrupoDetalle, &subgrupoDetalle)
+	return subgrupoDetalle, nil
+}
+
+//Función para crear el detalle de un subgrupo
+func CrearSubgrupoDetalle(bodySubgrupoDetalle []map[string]interface{}) (map[string]interface{}, error) {
+	var resSubgrupoDetalle map[string]interface{}
+	err := request.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/", "POST", &resSubgrupoDetalle, bodySubgrupoDetalle)
+	if err != nil || !resSubgrupoDetalle["Success"].(bool) {
+		return nil, err
+	}
+	return resSubgrupoDetalle, nil
+}
+
+//Función para actualizar el detalle de un subgrupo
+func ActualizarSubgrupoDetalle(bodySubgrupoDetalle map[string]interface{}, id string) (map[string]interface{}, error) {
+	var resSubgrupoDetalle map[string]interface{}
+	err := request.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+id, "PUT", &resSubgrupoDetalle, bodySubgrupoDetalle)
+	if err != nil {
+		return nil, err
+	}
+	return resSubgrupoDetalle, nil
+}
+
+func ConvFormatoAListaPlana(lista []map[string]interface{}, id string) []map[string]interface{} {
+	var listaPlana []map[string]interface{}
+	for _, objeto := range lista {
+		nuevoMapa := map[string]interface{}{
+			"id":       objeto["id"],
+			"nombre":   objeto["nombre"],
+			"required": objeto["required"],
+			"type":     objeto["type"],
+			"padre":    id,
+		}
+		if objeto["type"] == "select" {
+			nuevoMapa["options"] = objeto["options"]
+		}
+		listaPlana = append(listaPlana, nuevoMapa)
+
+		if sub, ok := objeto["sub"].([]map[string]interface{}); ok && len(sub) > 0 {
+			subListaPlana := ConvFormatoAListaPlana(sub, objeto["id"].(string))
+			listaPlana = append(listaPlana, subListaPlana...)
+		}
+	}
+	return listaPlana
+}
+
+//Función para encontrar el padre para el formato de un plan o plantilla
+func BuscarPadreFormato(lista []map[string]interface{}, idPadre string) (map[string]interface{}, int) {
+	for i, objeto := range lista {
+		if idPadre == objeto["id"].(string) {
+			return objeto, i
+		}
+	}
+	return make(map[string]interface{}), -1
+}
+
+//Función para encontrar el id del padre de un nodo
+func BuscarIdPadrePlan(lista []map[string]interface{}, objeto map[string]interface{}, indice int) string {
+	if indice == -1 {
+		return lista[0]["id"].(string)
+	}
+	nodo := lista[indice]
+	if CompararObjetosFormatos(nodo, objeto) {
+		return nodo["id"].(string)
+	}
+	return ""
+}
+
+//Función para comparar formatos
+func CompararFormatos(lista1, lista2 []map[string]interface{}) (bool, error) {
+	//Comparar los campos i con i
+	for i := 0; i < len(lista1); i++ {
+		if i < len(lista1) && i < len(lista2) {
+			//objetos que no son iguales (se actualizó)
+			if !CompararObjetosFormatos(lista1[i], lista2[i]) {
+				fmt.Println("No son iguales: ", lista1[i]["nombre"].(string)+"-"+lista2[i]["nombre"].(string))
+				//Parte1 actualización (hacia subgrupo-detalle)
+				subgrupoDetalle1, err1 := ObtenerSubgrupoDetalle(lista1[i]["id"].(string))
+				subgrupoDetalle2, err2 := ObtenerSubgrupoDetalle(lista2[i]["id"].(string))
+				if err1 != nil {
+					return false, err1
+				}
+				if err2 != nil {
+					return false, err2
+				}
+				nuevoMapa1 := map[string]interface{}{
+					"dato":           subgrupoDetalle1["dato"],
+					"fecha_creacion": subgrupoDetalle2["fecha_creacion"],
+					"subgrupo_id":    subgrupoDetalle2["subgrupo_id"],
+					"activo":         subgrupoDetalle1["activo"],
+					"descripcion":    subgrupoDetalle1["descripcion"],
+					"nombre":         subgrupoDetalle1["nombre"],
+				}
+				idSubgrupoDetalle := subgrupoDetalle2["_id"].(string)
+				ActualizarSubgrupoDetalle(nuevoMapa1, idSubgrupoDetalle)
+
+				//Parte2 actualización (hacia subgrupo)
+				subgrupo1, err1 := ObtenerSubgrupo(lista1[i]["id"].(string))
+				subgrupo2, err2 := ObtenerSubgrupo(lista2[i]["id"].(string))
+				if err1 != nil {
+					return false, err1
+				}
+				if err2 != nil {
+					return false, err2
+				}
+				nuevoMapa2 := map[string]interface{}{
+					"nombre":         subgrupo1["nombre"],
+					"descripcion":    subgrupo1["descripcion"],
+					"activo":         subgrupo1["activo"],
+					"bandera_tabla":  "true",
+					"padre":          "nose",
+					"fecha_creacion": subgrupo2["fecha_creacion"],
+				}
+				idSubgrupo := subgrupo2["_id"].(string)
+				ActualizarSubgrupo(nuevoMapa2, idSubgrupo)
+
+			}
+		} else {
+			// objetos faltantes en la lista 2 (creo un nivel)
+			fmt.Println("falto en lista 2: ", lista1[i]["nombre"].(string))
+			//hacer post a ¿registrar_nodo? y subgrupo
+		}
+	}
+
+	//El cuerpo hacia regitrar_nodo se obtiene consultando el id de /subgrupo del formato plantilla
+	//El cuerpo hace subgrupo se obtiene consultando el id de /subgrupo-detalle del formato plantilla
+	return true, nil
+}
+
+//Función para comparar dos listas para las opciones de una plantilla
+func CompararOptions(lista1, lista2 []map[string]string) bool {
+	if len(lista1) != len(lista2) {
+		return false
+	}
+	for i, elem1 := range lista1 {
+		elem2 := lista2[i]
+		jsonElem1, _ := json.Marshal(elem1)
+		jsonElem2, _ := json.Marshal(elem2)
+		if string(jsonElem1) != string(jsonElem2) {
+			return false
+		}
+	}
+	return true
+}
+
+//Función para verficar los objetos de dos formatos
+func CompararObjetosFormatos(lista1, lista2 map[string]interface{}) bool {
+	if lista1["nombre"] != lista2["nombre"] {
+		return false
+	}
+	if lista1["required"] != lista2["required"] {
+		return false
+	}
+	if lista1["type"] != lista2["type"] {
+		return false
+	}
+	if lista1["type"] == "select" {
+		optionsLista1, ok1 := lista1["options"].([]map[string]string)
+		optionsLista2, ok2 := lista2["options"].([]map[string]string)
+		if !ok1 || !ok2 {
+			return false
+		}
+		if !CompararOptions(optionsLista1, optionsLista2) {
+			return false
+		}
+	}
+	return true
 }
