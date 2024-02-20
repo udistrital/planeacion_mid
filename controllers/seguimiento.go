@@ -1830,15 +1830,15 @@ func (c *SeguimientoController) VerificarSeguimiento() {
 	c.ServeJSON()
 }
 
-// GetEstadoTrimestres ...
-// @Title GetEstadoTrimestres
+// EstadoTrimestres ...
+// @Title EstadoTrimestres
 // @Description get Seguimiento de los trimestres correspondientes
 // @Param	periodo 	path 	string	true		"The key for staticblock"
 // @Success 200
 // @Failure 403
 // @Failure 404 not found resource
-// @router /get_estado_trimestres/:plan_id [get]
-func (c *SeguimientoController) GetEstadoTrimestres() {
+// @router /estado_trimestres/:plan_id [get]
+func (c *SeguimientoController) EstadoTrimestres() {
 	defer func() {
 		if err := recover(); err != nil {
 			localError := err.(map[string]interface{})
