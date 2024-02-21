@@ -3,7 +3,7 @@ package controllers
 import (
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
-	formulacioPlanAccionnHelper "github.com/udistrital/planeacion_mid/helpers/planesAccionHelper"
+	formulacioPlanAccionHelper "github.com/udistrital/planeacion_mid/helpers/planesAccionHelper"
 )
 
 type PlanesAccionController struct {
@@ -22,7 +22,7 @@ func (c *PlanesAccionController) URLMapping() {
 // @router / [get]
 func (c *PlanesAccionController) PlanesDeAccion() {
 	defer helpers.ErrorController(c.Controller, "PlanesAccionController")
-	if datos, err := formulacioPlanAccionnHelper.ObtenerPlanesAccion(); err == nil {
+	if datos, err := formulacioPlanAccionHelper.ObtenerPlanesAccion(); err == nil {
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": datos}
 	} else {
 		panic(map[string]interface{}{"funcion": "PlanesDeAccion", "err": err, "status": "400", "message": "Error obteniendo los datos"})
@@ -41,7 +41,7 @@ func (c *PlanesAccionController) PlanesDeAccionPorUnidad() {
 	defer helpers.ErrorController(c.Controller, "PlanesAccionController")
 
 	id := c.Ctx.Input.Param(":unidad_id")
-	if datos, err := formulacioPlanAccionnHelper.ObtenerPlanesDeAccionPorUnidad(id); err == nil {
+	if datos, err := formulacioPlanAccionHelper.ObtenerPlanesDeAccionPorUnidad(id); err == nil {
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": datos}
 	} else {
 		panic(map[string]interface{}{"funcion": "PlanesDeAccionPorUnidad", "err": err, "status": "400", "message": "Error obteniendo los datos"})

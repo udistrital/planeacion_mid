@@ -45,7 +45,7 @@ func ObtenerPlanesAccion() (resumenPlanes []map[string]interface{}, outputError 
 			localError := err.(map[string]interface{})
 			outputError = map[string]interface{}{
 				"funcion": "ObtenerPlanesAccion/" + localError["funcion"].(string),
-				"err":     localError["err"].(error),
+				"err":     localError["err"],
 				"status":  localError["status"],
 			}
 			panic(outputError)
@@ -98,9 +98,6 @@ func ObtenerPlanesAccion() (resumenPlanes []map[string]interface{}, outputError 
 		return resumenPlanes[i]["ultima_modificacion"].(string) > resumenPlanes[j]["ultima_modificacion"].(string)
 	})
 	return resumenPlanes, outputError
-	// Revisar paginación
-	// Multiples consultas teniendo en cuenta la paginación, desde el cliente
-	// Ejemplo resoluciones mid
 }
 
 func ObtenerPlanesDeAccionPorUnidad(unidadID string) (planes []map[string]interface{}, outputError map[string]interface{}) {
@@ -109,20 +106,21 @@ func ObtenerPlanesDeAccionPorUnidad(unidadID string) (planes []map[string]interf
 			localError := err.(map[string]interface{})
 			outputError = map[string]interface{}{
 				"funcion": "ObtenerPlanesAccion/" + localError["funcion"].(string),
-				"err":     localError["err"].(error),
+				"err":     localError["err"],
 				"status":  localError["status"],
 			}
 			panic(outputError)
 		}
 	}()
 
-	if planesAccion, err := ObtenerPlanesAccion(); err == nil {
+	if planesAccion, err := ObtenerPlanesAccion(); err != nil {
+		panic(err)
+	} else {
 		for _, plan := range planesAccion {
 			if plan["dependencia_id"] == unidadID {
 				planes = append(planes, plan)
 			}
 		}
 	}
-
 	return planes, outputError
 }
