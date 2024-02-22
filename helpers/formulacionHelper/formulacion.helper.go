@@ -780,7 +780,12 @@ func getNumVersion(data []map[string]interface{}, f func(map[string]interface{})
 func getVigencias() map[string]float64 {
 	defer func() {
 		if err := recover(); err != nil {
-			panic(map[string]interface{}{"funcion": "getVigencias", "err": "Error obteniendo las vigencias", "status": "400", "log": err})
+			outputError := map[string]interface{}{
+				"funcion": "getVigencias",
+				"error":   err,
+				"mensaje": "No se lograron obtener las vigencias",
+			}
+			panic(outputError)
 		}
 	}()
 	var respuestaVigencias map[string]interface{}
@@ -803,7 +808,12 @@ func getVigencias() map[string]float64 {
 func getUnidades() map[string]string {
 	defer func() {
 		if err := recover(); err != nil {
-			panic(map[string]interface{}{"funcion": "getUnidades", "err": "Error obteniendo las unidades", "status": "400", "log": err})
+			outputError := map[string]interface{}{
+				"funcion": "getUnidades",
+				"error":   err,
+				"mensaje": "No se lograron obtener las unidades",
+			}
+			panic(outputError)
 		}
 	}()
 	unidades := make(map[string]string)
@@ -825,14 +835,20 @@ func getUnidades() map[string]string {
 func getEstados() map[string]string {
 	defer func() {
 		if err := recover(); err != nil {
-			panic(map[string]interface{}{"funcion": "getEstados", "err": "Error obteniendo los estados", "status": "400", "log": err})
+			outputError := map[string]interface{}{
+				"funcion": "getEstados",
+				"error":   err,
+				"mensaje": "No se lograron obtener los estados",
+			}
+			panic(outputError)
 		}
 	}()
-	estados := make(map[string]string)
 	var respuestaEstados map[string]interface{}
 	var estadoFormulacion []map[string]interface{}
+	estados := make(map[string]string)
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-plan?query=activo:true", &respuestaEstados); err != nil {
+		// Mal manejo de error en la funcion de request.GetJson()
 		panic(err)
 	}
 	helpers.LimpiezaRespuestaRefactor(respuestaEstados, &estadoFormulacion)
@@ -857,8 +873,12 @@ func obtenerNumeroVersion(planes []map[string]interface{}, planActual map[string
 func getPlanesPorTipoPlan(codigoDeAbreviacion string) []map[string]interface{} {
 	defer func() {
 		if err := recover(); err != nil {
-			localError := err.(map[string]interface{})
-			panic(map[string]interface{}{"funcion": "getPlanesPorTipoPlan", "err": localError["err"], "status": "400", "log": localError["log"]})
+			outputError := map[string]interface{}{
+				"funcion": "getPlanesPorTipoPlan",
+				"error":   err,
+				"mensaje": "No se lograron obtener los planes filtrados por el tipo de plan " + codigoDeAbreviacion,
+			}
+			panic(outputError)
 		}
 	}()
 	var respuestaTipoPlan map[string]interface{}
@@ -867,33 +887,47 @@ func getPlanesPorTipoPlan(codigoDeAbreviacion string) []map[string]interface{} {
 	var planes []map[string]interface{}
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-plan?query=codigo_abreviacion:"+codigoDeAbreviacion, &respuestaTipoPlan); err != nil {
-		panic(map[string]interface{}{"log": "Error obteniendo el tipo de plan " + codigoDeAbreviacion, "err": err})
+		panic(err)
 	}
 	helpers.LimpiezaRespuestaRefactor(respuestaTipoPlan, &tipoPlan)
 	// Obtener planes filtrados que sean formato y del tipo de plan especificado
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=formato:false"+",tipo_plan_id:"+tipoPlan[0]["_id"].(string) /*+"&limit=100"*/, &respuestaPlanes); err != nil {
-		panic(map[string]interface{}{"log": "Error obteniendo los planes filtrados por el tipo de plan " + codigoDeAbreviacion, "err": err})
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=formato:false"+",tipo_plan_id:"+tipoPlan[0]["_id"].(string), &respuestaPlanes); err != nil {
+		panic(err)
 	}
 	helpers.LimpiezaRespuestaRefactor(respuestaPlanes, &planes)
 
 	return planes
 }
 
-func ObtenerPlanesFormulacion() []map[string]interface{} {
+func ObtenerPlanesFormulacion() (resumenPlanes []map[string]interface{}, outputError map[string]interface{}) {
 	defer func() {
+		var funcionDelError string
+		var codigoEstado string
 		if err := recover(); err != nil {
+
 			localError := err.(map[string]interface{})
-			beego.Debug(localError["err"])
-			panic(map[string]interface{}{
-				"funcion": "ObtenerPlanesFormulacion/" + localError["funcion"].(string),
-				"err":     localError["err"],
-				"status":  localError["status"],
-			})
+			_, existeFuncion := localError["funcion"]
+			if existeFuncion {
+				funcionDelError = "/" + localError["funcion"].(string)
+			} else {
+				funcionDelError = ""
+			}
+
+			_, existeCodigo := localError["status"]
+			if existeCodigo {
+				codigoEstado = localError["status"].(string)
+			} else {
+				codigoEstado = "400"
+			}
+			outputError := map[string]interface{}{
+				"funcion": "ObtenerPlanesFormulacion" + funcionDelError,
+				"err":     err,
+				"status":  codigoEstado,
+			}
+			panic(outputError)
 		}
 	}()
 	tiposPlanes := []string{CodigoTipoPlan, CodigoTipoPlanAccionFormulacion}
-	var resumenPlanes []map[string]interface{}
-
 	estados := getEstados()
 	vigencias := getVigencias()
 	unidades := getUnidades()
@@ -924,7 +958,7 @@ func ObtenerPlanesFormulacion() []map[string]interface{} {
 	sort.Slice(resumenPlanes, func(i, j int) bool {
 		return resumenPlanes[i]["ultima_modificacion"].(string) > resumenPlanes[j]["ultima_modificacion"].(string)
 	})
-	return resumenPlanes
+	return resumenPlanes, outputError
 }
 
 // Función para realizar la petición POST hacia Resoluciones Docentes

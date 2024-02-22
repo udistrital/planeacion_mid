@@ -938,7 +938,7 @@
                             "$ref": "#/definitions/models.Formulacion"
                         }
                     },
-                    "500": {
+                    "400": {
                         "description": "bad response"
                     }
                 }
@@ -1814,6 +1814,55 @@
                 "responses": {
                     "200": {
                         "description": ""
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
+        "/planes_accion/": {
+            "get": {
+                "tags": [
+                    "planes_accion"
+                ],
+                "description": "get Planes de Acción",
+                "operationId": "PlanesAccionController.GetPlanesDeAccion",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Formulacion"
+                        }
+                    },
+                    "400": {
+                        "description": "bad response"
+                    }
+                }
+            }
+        },
+        "/planes_accion/{unidad_id}": {
+            "get": {
+                "tags": [
+                    "planes_accion"
+                ],
+                "description": "get Tabla Resumen filtrando por el id de la unidad",
+                "operationId": "PlanesAccionController.GetTablaResumenUnidad",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Formulacion"
+                        }
                     },
                     "403": {
                         "description": ":id is empty"

@@ -1798,25 +1798,17 @@ func (c *FormulacionController) VerificarIdentificaciones() {
 // @Title GetPlanesEnFormulacion
 // @Description get Planes en formulacion
 // @Success 200 {object} models.Formulacion
-// @Failure 500 bad response
+// @Failure 400 bad response
 // @router /planes_formulacion [get]
 func (c *FormulacionController) PlanesEnFormulacion() {
-	defer func() {
-		if err := recover(); err != nil {
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/FormulacionController/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("500")
-			}
-		}
-	}()
+	defer helpers.ErrorController(c.Controller, "PlanesFormulacionController")
 
-	resumenPlanesActivos := formulacionhelper.ObtenerPlanesFormulacion()
+	if resumenPlanesActivos, err := formulacionhelper.ObtenerPlanesFormulacion(); err != nil {
+		panic(map[string]interface{}{"funcion": "PlanesEnFormulacion", "err": err, "status": "400"})
+	} else {
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": resumenPlanesActivos}
+	}
 
-	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": resumenPlanesActivos}
 	c.ServeJSON()
 }
 
