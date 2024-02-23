@@ -780,7 +780,12 @@ func getNumVersion(data []map[string]interface{}, f func(map[string]interface{})
 func getVigencias() map[string]float64 {
 	defer func() {
 		if err := recover(); err != nil {
-			panic(map[string]interface{}{"funcion": "getVigencias", "err": "Error obteniendo las vigencias", "status": "400", "log": err})
+			outputError := map[string]interface{}{
+				"funcion": "getVigencias",
+				"error":   err,
+				"mensaje": "No se lograron obtener las vigencias",
+			}
+			panic(outputError)
 		}
 	}()
 	var respuestaVigencias map[string]interface{}
@@ -803,7 +808,12 @@ func getVigencias() map[string]float64 {
 func getUnidades() map[string]string {
 	defer func() {
 		if err := recover(); err != nil {
-			panic(map[string]interface{}{"funcion": "getUnidades", "err": "Error obteniendo las unidades", "status": "400", "log": err})
+			outputError := map[string]interface{}{
+				"funcion": "getUnidades",
+				"error":   err,
+				"mensaje": "No se lograron obtener las unidades",
+			}
+			panic(outputError)
 		}
 	}()
 	unidades := make(map[string]string)
@@ -825,14 +835,20 @@ func getUnidades() map[string]string {
 func getEstados() map[string]string {
 	defer func() {
 		if err := recover(); err != nil {
-			panic(map[string]interface{}{"funcion": "getEstados", "err": "Error obteniendo los estados", "status": "400", "log": err})
+			outputError := map[string]interface{}{
+				"funcion": "getEstados",
+				"error":   err,
+				"mensaje": "No se lograron obtener los estados",
+			}
+			panic(outputError)
 		}
 	}()
-	estados := make(map[string]string)
 	var respuestaEstados map[string]interface{}
 	var estadoFormulacion []map[string]interface{}
+	estados := make(map[string]string)
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-plan?query=activo:true", &respuestaEstados); err != nil {
+		// Mal manejo de error en la funcion de request.GetJson()
 		panic(err)
 	}
 	helpers.LimpiezaRespuestaRefactor(respuestaEstados, &estadoFormulacion)
@@ -857,8 +873,12 @@ func obtenerNumeroVersion(planes []map[string]interface{}, planActual map[string
 func getPlanesPorTipoPlan(codigoDeAbreviacion string) []map[string]interface{} {
 	defer func() {
 		if err := recover(); err != nil {
-			localError := err.(map[string]interface{})
-			panic(map[string]interface{}{"funcion": "getPlanesPorTipoPlan", "err": localError["err"], "status": "400", "log": localError["log"]})
+			outputError := map[string]interface{}{
+				"funcion": "getPlanesPorTipoPlan",
+				"error":   err,
+				"mensaje": "No se lograron obtener los planes filtrados por el tipo de plan " + codigoDeAbreviacion,
+			}
+			panic(outputError)
 		}
 	}()
 	var respuestaTipoPlan map[string]interface{}
@@ -867,33 +887,47 @@ func getPlanesPorTipoPlan(codigoDeAbreviacion string) []map[string]interface{} {
 	var planes []map[string]interface{}
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-plan?query=codigo_abreviacion:"+codigoDeAbreviacion, &respuestaTipoPlan); err != nil {
-		panic(map[string]interface{}{"log": "Error obteniendo el tipo de plan " + codigoDeAbreviacion, "err": err})
+		panic(err)
 	}
 	helpers.LimpiezaRespuestaRefactor(respuestaTipoPlan, &tipoPlan)
 	// Obtener planes filtrados que sean formato y del tipo de plan especificado
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=formato:false"+",tipo_plan_id:"+tipoPlan[0]["_id"].(string) /*+"&limit=100"*/, &respuestaPlanes); err != nil {
-		panic(map[string]interface{}{"log": "Error obteniendo los planes filtrados por el tipo de plan " + codigoDeAbreviacion, "err": err})
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=formato:false"+",tipo_plan_id:"+tipoPlan[0]["_id"].(string), &respuestaPlanes); err != nil {
+		panic(err)
 	}
 	helpers.LimpiezaRespuestaRefactor(respuestaPlanes, &planes)
 
 	return planes
 }
 
-func ObtenerPlanesFormulacion() []map[string]interface{} {
+func ObtenerPlanesFormulacion() (resumenPlanes []map[string]interface{}, outputError map[string]interface{}) {
 	defer func() {
+		var funcionDelError string
+		var codigoEstado string
 		if err := recover(); err != nil {
+
 			localError := err.(map[string]interface{})
-			beego.Debug(localError["err"])
-			panic(map[string]interface{}{
-				"funcion": "ObtenerPlanesFormulacion/" + localError["funcion"].(string),
-				"err":     localError["err"],
-				"status":  localError["status"],
-			})
+			_, existeFuncion := localError["funcion"]
+			if existeFuncion {
+				funcionDelError = "/" + localError["funcion"].(string)
+			} else {
+				funcionDelError = ""
+			}
+
+			_, existeCodigo := localError["status"]
+			if existeCodigo {
+				codigoEstado = localError["status"].(string)
+			} else {
+				codigoEstado = "400"
+			}
+			outputError := map[string]interface{}{
+				"funcion": "ObtenerPlanesFormulacion" + funcionDelError,
+				"err":     err,
+				"status":  codigoEstado,
+			}
+			panic(outputError)
 		}
 	}()
 	tiposPlanes := []string{CodigoTipoPlan, CodigoTipoPlanAccionFormulacion}
-	var resumenPlanes []map[string]interface{}
-
 	estados := getEstados()
 	vigencias := getVigencias()
 	unidades := getUnidades()
@@ -916,6 +950,11 @@ func ObtenerPlanesFormulacion() []map[string]interface{} {
 					planNuevo["estado_id"] = plan["estado_plan_id"]
 					planNuevo["estado"] = estados[plan["estado_plan_id"].(string)]
 					planNuevo["ultima_modificacion"] = plan["fecha_modificacion"]
+					planNuevo["fecha_creacion"] = plan["fecha_creacion"]
+					planNuevo["activo"] = plan["activo"]
+					planNuevo["aplicativo_id"] = plan["aplicativo_id"]
+					planNuevo["tipo_plan_id"] = plan["tipo_plan_id"]
+					planNuevo["descripcion"] = plan["descripcion"]
 					resumenPlanes = append(resumenPlanes, planNuevo)
 				}
 			}
@@ -924,7 +963,7 @@ func ObtenerPlanesFormulacion() []map[string]interface{} {
 	sort.Slice(resumenPlanes, func(i, j int) bool {
 		return resumenPlanes[i]["ultima_modificacion"].(string) > resumenPlanes[j]["ultima_modificacion"].(string)
 	})
-	return resumenPlanes
+	return resumenPlanes, outputError
 }
 
 // Función para realizar la petición POST hacia Resoluciones Docentes
@@ -1054,7 +1093,7 @@ func ConstruirCuerpoRD(data map[string]interface{}) []map[string]interface{} {
 	return bodyResolucionesDocente
 }
 
-//Redondear valores de los calculos
+// Redondear valores de los calculos
 func DataFinal(numeroStr string) string {
 	if numeroStr != NoAplica {
 		numeroDecimal, err := strconv.ParseFloat(numeroStr, 64)
@@ -1068,7 +1107,7 @@ func DataFinal(numeroStr string) string {
 	return numeroStr
 }
 
-//Calcular el total de horas
+// Calcular el total de horas
 func GetTotalHoras(data map[string]interface{}, ind bool) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1085,7 +1124,7 @@ func GetTotalHoras(data map[string]interface{}, ind bool) string {
 	return strconv.FormatFloat(resultado, 'f', -1, 64)
 }
 
-//Calcular el total de meses
+// Calcular el total de meses
 func GetMeses(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 
@@ -1097,7 +1136,7 @@ func GetMeses(data map[string]interface{}) string {
 	return strconv.FormatFloat(resultado, 'f', 2, 64)
 }
 
-//Calcular sueldo básico
+// Calcular sueldo básico
 func GetSueldoBasico(data map[string]interface{}, ind bool) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1117,7 +1156,7 @@ func GetSueldoBasico(data map[string]interface{}, ind bool) string {
 	return strconv.FormatFloat(sueldoBasico, 'f', -1, 64)
 }
 
-//Calcular sueldo mensual
+// Calcular sueldo mensual
 func GetSueldoMensual(data map[string]interface{}, ind bool) string {
 	cantidad, cantidadOk := data["cantidad"].(float64)
 
@@ -1137,7 +1176,7 @@ func GetSueldoMensual(data map[string]interface{}, ind bool) string {
 	return strconv.FormatFloat(sueldoMensual, 'f', -1, 64)
 }
 
-//Calcular prima de servicios
+// Calcular prima de servicios
 func GetPrimaServicios(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1168,7 +1207,7 @@ func GetPrimaServicios(data map[string]interface{}) string {
 	return strconv.FormatFloat(primaServicios, 'f', -1, 64)
 }
 
-//Calcular prima de navidad
+// Calcular prima de navidad
 func GetPrimaNavidad(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1192,7 +1231,7 @@ func GetPrimaNavidad(data map[string]interface{}) string {
 	return strconv.FormatFloat(primaNavidad, 'f', -1, 64)
 }
 
-//Calcular prima de vacaciones
+// Calcular prima de vacaciones
 func GetPrimaVacaciones(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1216,7 +1255,7 @@ func GetPrimaVacaciones(data map[string]interface{}) string {
 	return strconv.FormatFloat(primaVacaciones, 'f', -1, 64)
 }
 
-//Calcular vacaciones proyección
+// Calcular vacaciones proyección
 func GetVacacionesProyeccion(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1241,7 +1280,7 @@ func GetVacacionesProyeccion(data map[string]interface{}) string {
 	return strconv.FormatFloat(vacacionesProyeccion, 'f', -1, 64)
 }
 
-//Calcular bonificación por servicios
+// Calcular bonificación por servicios
 func GetBonificacionServicios(data map[string]interface{}) string {
 	sueldoBasico, errSB := strconv.ParseFloat(DataFinal(GetSueldoBasico(data, true)), 64)
 	meses, errM := strconv.ParseFloat(GetMeses(data), 64)
@@ -1258,7 +1297,7 @@ func GetBonificacionServicios(data map[string]interface{}) string {
 	return strconv.FormatFloat(resultado, 'f', -1, 64)
 }
 
-//Calcular intereses cesantias
+// Calcular intereses cesantias
 func GetInteresesCesantias(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1282,7 +1321,7 @@ func GetInteresesCesantias(data map[string]interface{}) string {
 	return strconv.FormatFloat(interesesCesantias, 'f', -1, 64)
 }
 
-//Calcular cesantias
+// Calcular cesantias
 func GetCesantias(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1307,7 +1346,7 @@ func GetCesantias(data map[string]interface{}) string {
 	return strconv.FormatFloat(cesantias, 'f', -1, 64)
 }
 
-//Calcular total aportes a cesantias
+// Calcular total aportes a cesantias
 func GetTotalAportesCesantias(data map[string]interface{}, ind bool) string {
 	cantidad, cantidadOk := data["cantidad"].(float64)
 
@@ -1352,7 +1391,7 @@ func evaluarSaludPrestacional(infoPrestacional map[string]interface{}, data map[
 	return resultado
 }
 
-//Calcular total aporte salud
+// Calcular total aporte salud
 func GetTotalAporteSalud(data map[string]interface{}, ind bool) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1400,7 +1439,7 @@ func evaluarPensionPrestacional(infoPrestacional map[string]interface{}, data ma
 	return resultado
 }
 
-//Calcular total aporte pensión
+// Calcular total aporte pensión
 func GetTotalAportePension(data map[string]interface{}, ind bool) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1448,7 +1487,7 @@ func evaluarArlPrestacional(infoPrestacional map[string]interface{}, data map[st
 	return resultado
 }
 
-//Calcular total ARL
+// Calcular total ARL
 func GetTotalArl(data map[string]interface{}, ind bool) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1496,7 +1535,7 @@ func evaluarCajaPrestacional(infoPrestacional map[string]interface{}, data map[s
 	return resultado
 }
 
-//Calcular caja de compensación
+// Calcular caja de compensación
 func GetCajaCompensacion(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1547,7 +1586,7 @@ func evaluarIcbfPrestacional(infoPrestacional map[string]interface{}, data map[s
 	return resultado
 }
 
-//Calcular ICBF
+// Calcular ICBF
 func GetIcbf(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1581,7 +1620,7 @@ func GetIcbf(data map[string]interface{}) string {
 	return strconv.FormatFloat(icbf, 'f', -1, 64)
 }
 
-//Calcular total sueldo básico
+// Calcular total sueldo básico
 func GetTotalSueldoBasico(data map[string]interface{}, ind bool) string {
 	cantidad, cantidadOk := data["cantidad"].(float64)
 
@@ -1629,7 +1668,7 @@ func GetTotalSueldoBasico(data map[string]interface{}, ind bool) string {
 	return strconv.FormatFloat(resultado, 'f', -1, 64)
 }
 
-//Calcular total aportes
+// Calcular total aportes
 func GetTotalAportes(data map[string]interface{}, ind bool) string {
 	cantidad, cantidadOk := data["cantidad"].(float64)
 
@@ -1665,7 +1704,7 @@ func GetTotalAportes(data map[string]interface{}, ind bool) string {
 	return strconv.FormatFloat(resultado, 'f', -1, 64)
 }
 
-//Calcular total recurso
+// Calcular total recurso
 func GetTotalRecurso(data map[string]interface{}, ind bool) string {
 	cantidad, cantidadOk := data["cantidad"].(float64)
 

@@ -511,6 +511,24 @@ func init() {
             Filters: nil,
             Params: nil})
 
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:PlanesAccionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:PlanesAccionController"],
+        beego.ControllerComments{
+            Method: "PlanesDeAccion",
+            Router: "/",
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:PlanesAccionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:PlanesAccionController"],
+        beego.ControllerComments{
+            Method: "PlanesDeAccionPorUnidad",
+            Router: "/:unidad_id",
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:ReportesController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:ReportesController"],
         beego.ControllerComments{
             Method: "Desagregado",
@@ -570,6 +588,15 @@ func init() {
             Method: "CrearReportes",
             Router: "/crear_reportes/:plan/:tipo",
             AllowHTTPMethods: []string{"post"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"],
+        beego.ControllerComments{
+            Method: "EstadoTrimestres",
+            Router: "/estado_trimestres/:plan_id",
+            AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
             Filters: nil,
             Params: nil})
