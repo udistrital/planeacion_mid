@@ -950,6 +950,11 @@ func ObtenerPlanesFormulacion() (resumenPlanes []map[string]interface{}, outputE
 					planNuevo["estado_id"] = plan["estado_plan_id"]
 					planNuevo["estado"] = estados[plan["estado_plan_id"].(string)]
 					planNuevo["ultima_modificacion"] = plan["fecha_modificacion"]
+					planNuevo["fecha_creacion"] = plan["fecha_creacion"]
+					planNuevo["activo"] = plan["activo"]
+					planNuevo["aplicativo_id"] = plan["aplicativo_id"]
+					planNuevo["tipo_plan_id"] = plan["tipo_plan_id"]
+					planNuevo["descripcion"] = plan["descripcion"]
 					resumenPlanes = append(resumenPlanes, planNuevo)
 				}
 			}
@@ -1088,7 +1093,7 @@ func ConstruirCuerpoRD(data map[string]interface{}) []map[string]interface{} {
 	return bodyResolucionesDocente
 }
 
-//Redondear valores de los calculos
+// Redondear valores de los calculos
 func DataFinal(numeroStr string) string {
 	if numeroStr != NoAplica {
 		numeroDecimal, err := strconv.ParseFloat(numeroStr, 64)
@@ -1102,7 +1107,7 @@ func DataFinal(numeroStr string) string {
 	return numeroStr
 }
 
-//Calcular el total de horas
+// Calcular el total de horas
 func GetTotalHoras(data map[string]interface{}, ind bool) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1119,7 +1124,7 @@ func GetTotalHoras(data map[string]interface{}, ind bool) string {
 	return strconv.FormatFloat(resultado, 'f', -1, 64)
 }
 
-//Calcular el total de meses
+// Calcular el total de meses
 func GetMeses(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 
@@ -1131,7 +1136,7 @@ func GetMeses(data map[string]interface{}) string {
 	return strconv.FormatFloat(resultado, 'f', 2, 64)
 }
 
-//Calcular sueldo básico
+// Calcular sueldo básico
 func GetSueldoBasico(data map[string]interface{}, ind bool) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1151,7 +1156,7 @@ func GetSueldoBasico(data map[string]interface{}, ind bool) string {
 	return strconv.FormatFloat(sueldoBasico, 'f', -1, 64)
 }
 
-//Calcular sueldo mensual
+// Calcular sueldo mensual
 func GetSueldoMensual(data map[string]interface{}, ind bool) string {
 	cantidad, cantidadOk := data["cantidad"].(float64)
 
@@ -1171,7 +1176,7 @@ func GetSueldoMensual(data map[string]interface{}, ind bool) string {
 	return strconv.FormatFloat(sueldoMensual, 'f', -1, 64)
 }
 
-//Calcular prima de servicios
+// Calcular prima de servicios
 func GetPrimaServicios(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1202,7 +1207,7 @@ func GetPrimaServicios(data map[string]interface{}) string {
 	return strconv.FormatFloat(primaServicios, 'f', -1, 64)
 }
 
-//Calcular prima de navidad
+// Calcular prima de navidad
 func GetPrimaNavidad(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1226,7 +1231,7 @@ func GetPrimaNavidad(data map[string]interface{}) string {
 	return strconv.FormatFloat(primaNavidad, 'f', -1, 64)
 }
 
-//Calcular prima de vacaciones
+// Calcular prima de vacaciones
 func GetPrimaVacaciones(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1250,7 +1255,7 @@ func GetPrimaVacaciones(data map[string]interface{}) string {
 	return strconv.FormatFloat(primaVacaciones, 'f', -1, 64)
 }
 
-//Calcular vacaciones proyección
+// Calcular vacaciones proyección
 func GetVacacionesProyeccion(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1275,7 +1280,7 @@ func GetVacacionesProyeccion(data map[string]interface{}) string {
 	return strconv.FormatFloat(vacacionesProyeccion, 'f', -1, 64)
 }
 
-//Calcular bonificación por servicios
+// Calcular bonificación por servicios
 func GetBonificacionServicios(data map[string]interface{}) string {
 	sueldoBasico, errSB := strconv.ParseFloat(DataFinal(GetSueldoBasico(data, true)), 64)
 	meses, errM := strconv.ParseFloat(GetMeses(data), 64)
@@ -1292,7 +1297,7 @@ func GetBonificacionServicios(data map[string]interface{}) string {
 	return strconv.FormatFloat(resultado, 'f', -1, 64)
 }
 
-//Calcular intereses cesantias
+// Calcular intereses cesantias
 func GetInteresesCesantias(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1316,7 +1321,7 @@ func GetInteresesCesantias(data map[string]interface{}) string {
 	return strconv.FormatFloat(interesesCesantias, 'f', -1, 64)
 }
 
-//Calcular cesantias
+// Calcular cesantias
 func GetCesantias(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1341,7 +1346,7 @@ func GetCesantias(data map[string]interface{}) string {
 	return strconv.FormatFloat(cesantias, 'f', -1, 64)
 }
 
-//Calcular total aportes a cesantias
+// Calcular total aportes a cesantias
 func GetTotalAportesCesantias(data map[string]interface{}, ind bool) string {
 	cantidad, cantidadOk := data["cantidad"].(float64)
 
@@ -1386,7 +1391,7 @@ func evaluarSaludPrestacional(infoPrestacional map[string]interface{}, data map[
 	return resultado
 }
 
-//Calcular total aporte salud
+// Calcular total aporte salud
 func GetTotalAporteSalud(data map[string]interface{}, ind bool) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1434,7 +1439,7 @@ func evaluarPensionPrestacional(infoPrestacional map[string]interface{}, data ma
 	return resultado
 }
 
-//Calcular total aporte pensión
+// Calcular total aporte pensión
 func GetTotalAportePension(data map[string]interface{}, ind bool) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1482,7 +1487,7 @@ func evaluarArlPrestacional(infoPrestacional map[string]interface{}, data map[st
 	return resultado
 }
 
-//Calcular total ARL
+// Calcular total ARL
 func GetTotalArl(data map[string]interface{}, ind bool) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1530,7 +1535,7 @@ func evaluarCajaPrestacional(infoPrestacional map[string]interface{}, data map[s
 	return resultado
 }
 
-//Calcular caja de compensación
+// Calcular caja de compensación
 func GetCajaCompensacion(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1581,7 +1586,7 @@ func evaluarIcbfPrestacional(infoPrestacional map[string]interface{}, data map[s
 	return resultado
 }
 
-//Calcular ICBF
+// Calcular ICBF
 func GetIcbf(data map[string]interface{}) string {
 	semanas, semanasOk := data["semanas"].(float64)
 	horas, horasOk := data["horas"].(float64)
@@ -1615,7 +1620,7 @@ func GetIcbf(data map[string]interface{}) string {
 	return strconv.FormatFloat(icbf, 'f', -1, 64)
 }
 
-//Calcular total sueldo básico
+// Calcular total sueldo básico
 func GetTotalSueldoBasico(data map[string]interface{}, ind bool) string {
 	cantidad, cantidadOk := data["cantidad"].(float64)
 
@@ -1663,7 +1668,7 @@ func GetTotalSueldoBasico(data map[string]interface{}, ind bool) string {
 	return strconv.FormatFloat(resultado, 'f', -1, 64)
 }
 
-//Calcular total aportes
+// Calcular total aportes
 func GetTotalAportes(data map[string]interface{}, ind bool) string {
 	cantidad, cantidadOk := data["cantidad"].(float64)
 
@@ -1699,7 +1704,7 @@ func GetTotalAportes(data map[string]interface{}, ind bool) string {
 	return strconv.FormatFloat(resultado, 'f', -1, 64)
 }
 
-//Calcular total recurso
+// Calcular total recurso
 func GetTotalRecurso(data map[string]interface{}, ind bool) string {
 	cantidad, cantidadOk := data["cantidad"].(float64)
 
