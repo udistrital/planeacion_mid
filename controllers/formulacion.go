@@ -1900,7 +1900,6 @@ type Campo struct {
 // @Title ActualizarEstructuraPlanes
 // @Description put Formulacion by id
 // @Param	id		path 	string	true		"The key for staticblock"
-// @Param	body		body 	{}	true		"body for Plan content"
 // @Success 200 {object} models.Formulacion
 // @Failure 403 :id is empty
 // @router /actualizar_estructura_planes/:id [put]
@@ -1920,35 +1919,37 @@ func (c *FormulacionController) ActualizarEstructuraPlanes() {
 	id := c.Ctx.Input.Param(":id")
 
 	//Obtener plantilla por id
-	// plantilla, err := formulacionhelper.GetPlantilla(id)
-	// if err != nil {
-	// 	panic(map[string]interface{}{"funcion": "ActualizarEstructuraPlanes", "err": "Error al obtener plantilla", "status": "400", "log": err})
-	// }
+	plantilla, err := formulacionhelper.GetPlantilla(id)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "ActualizarEstructuraPlanes", "err": "Error al obtener plantilla", "status": "400", "log": err})
+	}
 
-	// //Obtener los planes con el nombre de la plantilla (formato:false), que esten en estado "En formulacion"
-	// planes, err := formulacionhelper.GetPlanesPorNombre(plantilla["nombre"].(string))
-	// if err != nil {
-	// 	panic(map[string]interface{}{"funcion": "ActualizarEstructuraPlanes", "err": "Error al obtener planes por nombre", "status": "400", "log": err})
-	// }
+	//Obtener los planes en estado "En formulacion" asociados a la plantilla
+	planes, err := formulacionhelper.GetPlanesPorNombre(plantilla["nombre"].(string))
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "ActualizarEstructuraPlanes", "err": "Error al obtener planes asociados a plantilla", "status": "400", "log": err})
+	}
 
 	//Obtener el formato de la plantilla
 	formatoPLantilla, err := formulacionhelper.GetFormato(id)
 	if err != nil {
-		panic(map[string]interface{}{"funcion": "ActualizarEstructuraPlanes", "err": "Error al obtener formato", "status": "400", "log": err})
+		panic(map[string]interface{}{"funcion": "ActualizarEstructuraPlanes", "err": "Error al obtener formato de plantilla", "status": "400", "log": err})
 	}
 
-	// Obtener el formato del plan (son varios)
-	formatoPlan, err := formulacionhelper.GetFormato("65d69f042f60af3590d6dff2")
-	if err != nil {
-		panic(map[string]interface{}{"funcion": "ActualizarEstructuraPlanes", "err": "Error al obtener formato", "status": "400", "log": err})
+	//Obtener lista plana del formato
+	listaPlantilla := formulacionhelper.ConvArbolAListaPlana(formatoPLantilla[0], id)
+
+	//Obtener los formatos de los planes y comparar con el formato de la plantilla
+	for _, plan := range planes {
+		planId := plan["_id"].(string)
+		formatoPlan, err := formulacionhelper.GetFormato(planId)
+		if err != nil {
+			panic(map[string]interface{}{"funcion": "ActualizarEstructuraPlanes", "err": "Error al obtener formato de plan", "status": "400", "log": err})
+		}
+		listaPlan := formulacionhelper.ConvArbolAListaPlana(formatoPlan[0], planId)
+		formulacionhelper.ActualizarEstructuraPlan(listaPlantilla, listaPlan, planId)
 	}
 
-	// Obtener listas planas para mejorar el manejo de la información
-	listaPlantilla := formulacionhelper.ConvFormatoAListaPlana(formatoPLantilla[0], id)
-	listaPlan := formulacionhelper.ConvFormatoAListaPlana(formatoPlan[0], "65d69f042f60af3590d6dff2")
-
-	formulacionhelper.CompararFormatos(listaPlantilla, listaPlan, "65d69f042f60af3590d6dff2")
-
-	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": listaPlan}
+	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "Ok"}
 	c.ServeJSON()
 }

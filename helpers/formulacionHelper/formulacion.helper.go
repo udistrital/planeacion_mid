@@ -9,7 +9,6 @@ import (
 	"math"
 	"net/http"
 	"net/url"
-	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -1729,47 +1728,40 @@ func GetTotalRecurso(data map[string]interface{}, ind bool) string {
 	return strconv.FormatFloat(resultado, 'f', -1, 64)
 }
 
-// DESDE ACÁ
-// DESDE ACÁ
-// DESDE ACÁ
-// DESDE ACÁ
-// DESDE ACÁ
-// DESDE ACÁ
-// DESDE ACÁ
-
-// Función para obetener el cuerpo de una plantilla por id
+//Obtener una plantilla por id
 func GetPlantilla(id string) (map[string]interface{}, error) {
 	var resPlantilla map[string]interface{}
-	var plantilla map[string]interface{}
-	err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &resPlantilla)
+	var plantilla []map[string]interface{}
+
+	err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,formato:true,_id:"+id, &resPlantilla)
 	if err != nil {
 		return nil, err
 	}
 	helpers.LimpiezaRespuestaRefactor(resPlantilla, &plantilla)
-	return plantilla, nil
+	return plantilla[0], nil
 }
 
-// Función para obtener el id de acuerdo al estado "En formulación" por codigo de abreviación
-func GetEstadoPlanFormulacion() (map[string]interface{}, error) {
+//Obtener el id de acuerdo al estado:"En formulación" por codigo de abreviación
+func getIdEstadoEnFormulacion() (string, error) {
 	var resEstado map[string]interface{}
 	var estado []map[string]interface{}
 	err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-plan?query=activo:true,codigo_abreviacion:"+CodigoPlanEnFormulacion, &resEstado)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	helpers.LimpiezaRespuestaRefactor(resEstado, &estado)
-	return estado[0], nil
+	return estado[0]["_id"].(string), nil
 }
 
-// Función para obtener los planes en estado "En formulación" en base al nombre de una plantilla
+//Obtener los planes en estado:"En formulación" por nombre de plantilla
 func GetPlanesPorNombre(nombre string) ([]map[string]interface{}, error) {
 	var resPlanes map[string]interface{}
 	var planes []map[string]interface{}
-	estado, err1 := GetEstadoPlanFormulacion()
+	idEstado, err1 := getIdEstadoEnFormulacion()
 	if err1 != nil {
 		return nil, err1
 	}
-	err2 := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=formato:false,nombre:"+url.QueryEscape(nombre)+",estado_plan_id:"+estado["_id"].(string), &resPlanes)
+	err2 := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=formato:false,nombre:"+url.QueryEscape(nombre)+",estado_plan_id:"+idEstado, &resPlanes)
 	if err2 != nil {
 		return nil, err2
 	}
@@ -1800,8 +1792,8 @@ func GetFormato(id string) ([][]map[string]interface{}, error) {
 	}
 }
 
-//Funcion para obtener la información en un subgrupo por id
-func ObtenerSubgrupo(id string) (map[string]interface{}, error) {
+//Obtener un subgrupo por id
+func getSubgrupo(id string) (map[string]interface{}, error) {
 	var resSubgrupo map[string]interface{}
 	var subgrupo map[string]interface{}
 	err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+id, &resSubgrupo)
@@ -1812,8 +1804,8 @@ func ObtenerSubgrupo(id string) (map[string]interface{}, error) {
 	return subgrupo, nil
 }
 
-//Función para crear un subgrupo (registar_nodo)
-func CrearSubgrupo(bodySubgrupo map[string]interface{}) (map[string]interface{}, error) {
+//Crear un subgrupo (registar_nodo)
+func crearSubgrupo(bodySubgrupo map[string]interface{}) (map[string]interface{}, error) {
 	var resSubgrupo map[string]interface{}
 	err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/registrar_nodo", "POST", &resSubgrupo, bodySubgrupo)
 	if err != nil || !resSubgrupo["Success"].(bool) {
@@ -1822,18 +1814,18 @@ func CrearSubgrupo(bodySubgrupo map[string]interface{}) (map[string]interface{},
 	return resSubgrupo, nil
 }
 
-//Función para actualizar un subgrupo
-func ActualizarSubgrupo(bodySubgrupo map[string]interface{}, id string) (map[string]interface{}, error) {
+//Actualizar un subgrupo
+func actualizarSubgrupo(bodySubgrupo map[string]interface{}, id string) (map[string]interface{}, error) {
 	var resSubgrupo map[string]interface{}
-	err := request.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+id, "PUT", &resSubgrupo, bodySubgrupo)
+	err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+id, "PUT", &resSubgrupo, bodySubgrupo)
 	if err != nil {
 		return nil, err
 	}
 	return resSubgrupo, nil
 }
 
-//Funcion para obtener la información de un subgrupo-detalle, consulta por id
-func ObtenerSubgrupoDetalle(id string) (map[string]interface{}, error) {
+//Obtener el detalle de un subgrupo por id
+func getSubgrupoDetalle(id string) (map[string]interface{}, error) {
 	var resSubgrupoDetalle map[string]interface{}
 	var subgrupoDetalle []map[string]interface{}
 	err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle?query=subgrupo_id:"+id, &resSubgrupoDetalle)
@@ -1844,8 +1836,8 @@ func ObtenerSubgrupoDetalle(id string) (map[string]interface{}, error) {
 	return subgrupoDetalle[0], nil
 }
 
-//Función para crear el detalle de un subgrupo
-func CrearSubgrupoDetalle(bodySubgrupoDetalle map[string]interface{}) (map[string]interface{}, error) {
+//Crear el detalle de un subgrupo
+func crearSubgrupoDetalle(bodySubgrupoDetalle map[string]interface{}) (map[string]interface{}, error) {
 	var resSubgrupoDetalle map[string]interface{}
 	err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/", "POST", &resSubgrupoDetalle, bodySubgrupoDetalle)
 	if err != nil || !resSubgrupoDetalle["Success"].(bool) {
@@ -1854,17 +1846,18 @@ func CrearSubgrupoDetalle(bodySubgrupoDetalle map[string]interface{}) (map[strin
 	return resSubgrupoDetalle, nil
 }
 
-//Función para actualizar el detalle de un subgrupo
-func ActualizarSubgrupoDetalle(bodySubgrupoDetalle map[string]interface{}, id string) (map[string]interface{}, error) {
+//Actualizar el detalle de un subgrupo
+func actualizarSubgrupoDetalle(bodySubgrupoDetalle map[string]interface{}, id string) (map[string]interface{}, error) {
 	var resSubgrupoDetalle map[string]interface{}
-	err := request.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+id, "PUT", &resSubgrupoDetalle, bodySubgrupoDetalle)
+	err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+id, "PUT", &resSubgrupoDetalle, bodySubgrupoDetalle)
 	if err != nil {
 		return nil, err
 	}
 	return resSubgrupoDetalle, nil
 }
 
-func ConvFormatoAListaPlana(lista []map[string]interface{}, id string) []map[string]interface{} {
+//Convertir arbol a lista plana
+func ConvArbolAListaPlana(lista []map[string]interface{}, id string) []map[string]interface{} {
 	var listaPlana []map[string]interface{}
 	for _, objeto := range lista {
 		nuevoMapa := map[string]interface{}{
@@ -1881,21 +1874,16 @@ func ConvFormatoAListaPlana(lista []map[string]interface{}, id string) []map[str
 		listaPlana = append(listaPlana, nuevoMapa)
 
 		if sub, ok := objeto["sub"].([]map[string]interface{}); ok && len(sub) > 0 {
-			subListaPlana := ConvFormatoAListaPlana(sub, objeto["id"].(string))
+			subListaPlana := ConvArbolAListaPlana(sub, objeto["id"].(string))
 			listaPlana = append(listaPlana, subListaPlana...)
 		}
 	}
 	return listaPlana
 }
 
-//Función para comparar formatos
-func CompararFormatos(listaFormato, listaPlan []map[string]interface{}, idPlan string) error {
-
-	fmt.Println("LISTA FORMATO:", listaPlan)
-	fmt.Println("LISTA PLAN:", listaPlan)
-	fmt.Println()
-	fmt.Println()
-
+//Actualizar la estructura de los planes en base a una plantilla
+//Comparando los formatos de la plantilla y el plan
+func ActualizarEstructuraPlan(listaFormato, listaPlan []map[string]interface{}, idPlan string) error {
 	for _, objeto1 := range listaFormato {
 		var auxObjeto map[string]interface{}
 		encontrado1 := false
@@ -1909,20 +1897,57 @@ func CompararFormatos(listaFormato, listaPlan []map[string]interface{}, idPlan s
 		}
 
 		if encontrado1 {
-			fmt.Println(objeto1["id"], "fue encontrado")
+			idNodoPlantilla := objeto1["id"].(string)
+			idNodoPlan := auxObjeto["id"].(string)
 
-			if !CompararObjetosFormatos(objeto1, auxObjeto) {
-				fmt.Println("Son diferentes, hay que actualizar", auxObjeto)
-				//Toca hacer una petición a get hacia /subgrupo de la plantilla
-				//Toca hacer una petición a get hacia /subgrupo-detalle de la plantilla
-				//Toca hacer una petición a get hacia /subgrupo del plan
-				//Toca hacer una petición a get hacia /subgrupo-detalle del plan
-				//Comparar /subgrupo y /subgrupo-detalle de la plantilla con el plan
-				//Si no son iguales
-				//Actualizar
-				//Toca hacer una petición put hacia /subgrupo
-				//Toca hacer una petición put hacia /subgrupo-detalle
-				//Limpiar el dato_plan de subgrupo
+			//Obtener subgrupo de la plantilla y el plan
+			subgFormato, err := getSubgrupo(idNodoPlantilla)
+			if err != nil {
+				return err
+			}
+			subgPlan, err := getSubgrupo(idNodoPlan)
+			if err != nil {
+				return err
+			}
+			if !compararSubgrupos(subgFormato, subgPlan) {
+				actSubgrupo := map[string]interface{}{
+					"nombre":         subgFormato["nombre"],
+					"descripcion":    subgFormato["descripcion"],
+					"activo":         subgFormato["activo"],
+					"bandera_tabla":  subgFormato["bandera_tabla"],
+					"padre":          subgPlan["padre"],
+					"ref":            subgPlan["ref"],
+					"fecha_creacion": subgPlan["fecha_creacion"],
+				}
+				_, err := actualizarSubgrupo(actSubgrupo, idNodoPlan)
+				if err != nil {
+					return err
+				}
+			}
+
+			//Obtener subgrupo-detalle de la plantilla y el plan
+			subDetaFormato, err := getSubgrupoDetalle(idNodoPlantilla)
+			if err != nil {
+				return err
+			}
+			subDetaPlan, err := getSubgrupoDetalle(idNodoPlan)
+			if err != nil {
+				return err
+			}
+			if !compararSubgruposDetalle(subDetaFormato, subDetaPlan) {
+				actSubgrupoDetalle := map[string]interface{}{
+					"dato":           subDetaFormato["dato"],
+					"fecha_creacion": subDetaPlan["fecha_creacion"],
+					"subgrupo_id":    subDetaPlan["subgrupo_id"],
+					"activo":         subDetaFormato["activo"],
+					"descripcion":    subDetaFormato["descripcion"],
+					"nombre":         subDetaFormato["nombre"],
+					"dato_plan":      "",
+				}
+				_, err := actualizarSubgrupoDetalle(actSubgrupoDetalle, subDetaPlan["_id"].(string))
+				if err != nil {
+					return err
+				}
 			}
 		} else {
 			var padreID string
@@ -1941,7 +1966,7 @@ func CompararFormatos(listaFormato, listaPlan []map[string]interface{}, idPlan s
 			}
 
 			// Realizar una copia del subgrupo del formato para el plan
-			subFormato, err1 := ObtenerSubgrupo(objeto1["id"].(string))
+			subFormato, err1 := getSubgrupo(objeto1["id"].(string))
 			if err1 != nil {
 				return err1
 			}
@@ -1953,14 +1978,14 @@ func CompararFormatos(listaFormato, listaPlan []map[string]interface{}, idPlan s
 				"bandera_tabla": subFormato["bandera_tabla"],
 				"ref":           subFormato["_id"],
 			}
-			resSubgrupo, err2 := CrearSubgrupo(nuevoSubgrupo)
+			resSubgrupo, err2 := crearSubgrupo(nuevoSubgrupo)
 			if err2 != nil {
 				return err2
 			}
 			resSubgrupoData := resSubgrupo["Data"].(map[string]interface{})
 
 			// Realizar una copia del subgrupo-detalle del formato para el plan
-			subDetFormato, err3 := ObtenerSubgrupoDetalle(objeto1["id"].(string))
+			subDetFormato, err3 := getSubgrupoDetalle(objeto1["id"].(string))
 			if err3 != nil {
 				return err3
 			}
@@ -1971,7 +1996,7 @@ func CompararFormatos(listaFormato, listaPlan []map[string]interface{}, idPlan s
 				"dato":        subDetFormato["dato"],
 				"activo":      subDetFormato["activo"],
 			}
-			_, err4 := CrearSubgrupoDetalle(nuevoSubgrupoDetalle)
+			_, err4 := crearSubgrupoDetalle(nuevoSubgrupoDetalle)
 			if err4 != nil {
 				return err4
 			}
@@ -1980,44 +2005,43 @@ func CompararFormatos(listaFormato, listaPlan []map[string]interface{}, idPlan s
 			if err5 != nil {
 				return err5
 			}
-			nuevaLista := ConvFormatoAListaPlana(formatoPlanAct[0], idPlan)
+			nuevaLista := ConvArbolAListaPlana(formatoPlanAct[0], idPlan)
 			listaPlan = nuevaLista
 		}
 	}
 	return nil
 }
 
-//Función para comparar dos listas para las opciones de una plantilla
-func CompararOptions(slice1, slice2 []interface{}) bool {
-	if len(slice1) != len(slice2) {
+//Comparar los subgrupos de una plantilla con un plan
+func compararSubgrupos(objeto1, objeto2 map[string]interface{}) bool {
+	if objeto1["nombre"] != objeto2["nombre"] {
 		return false
 	}
-	for i := 0; i < len(slice1); i++ {
-		if !reflect.DeepEqual(slice1[i], slice2[i]) {
-			return false
-		}
+	if objeto1["descripcion"] != objeto2["descripcion"] {
+		return false
+	}
+	if objeto1["activo"] != objeto2["activo"] {
+		return false
+	}
+	if objeto1["bandera_tabla"] != objeto2["bandera_tabla"] {
+		return false
 	}
 	return true
 }
 
-//Función para verficar los objetos de dos formatos
-func CompararObjetosFormatos(objeto1, objeto2 map[string]interface{}) bool {
+//Comparar el detalle de los subgrupos de una plantilla con un plan
+func compararSubgruposDetalle(objeto1, objeto2 map[string]interface{}) bool {
 	if objeto1["nombre"] != objeto2["nombre"] {
 		return false
 	}
-	if objeto1["required"] != objeto2["required"] {
+	if objeto1["descripcion"] != objeto2["descripcion"] {
 		return false
 	}
-	if objeto1["type"] != objeto2["type"] {
+	if objeto1["dato"] != objeto2["dato"] {
 		return false
 	}
-	if objeto1["type"] == "select" {
-		options1, ok1 := objeto1["options"].([]interface{})
-		options2, ok2 := objeto2["options"].([]interface{})
-		if !ok1 || !ok2 {
-			return false
-		}
-		return CompararOptions(options1, options2)
+	if objeto1["activo"] != objeto2["activo"] {
+		return false
 	}
 	return true
 }
