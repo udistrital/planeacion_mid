@@ -1950,6 +1950,6 @@ func (c *FormulacionController) ActualizarEstructuraPlanes() {
 		formulacionhelper.ActualizarEstructuraPlan(listaPlantilla, listaPlan, planId)
 	}
 
-	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "Ok"}
+	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "La estructura de los planes fue actualizada correctamente"}
 	c.ServeJSON()
 }
