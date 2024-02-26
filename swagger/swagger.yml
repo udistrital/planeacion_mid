@@ -391,6 +391,25 @@ paths:
             $ref: '#/definitions/models.Formulacion'
         "403":
           description: :id is empty
+  /formulacion/estructura_planes/{id}:
+    put:
+      tags:
+      - formulacion
+      description: put Formulacion by id
+      operationId: FormulacionController.EstructuraPlanes
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
   /formulacion/get_all_actividades/{id}/:
     get:
       tags:
