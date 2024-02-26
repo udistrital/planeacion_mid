@@ -84,7 +84,6 @@ func ObtenerPlanesAccion() (resumenPlanes []map[string]interface{}, outputError 
 				planNuevo["dependencia_nombre"] = plan["dependencia_nombre"]
 				planNuevo["vigencia_id"] = plan["vigencia_id"]
 				planNuevo["vigencia"] = plan["vigencia"]
-				// TODO: subir cambio
 				planNuevo["nombre"] = plan["nombre"]
 				planNuevo["estado_id"] = planSeguimiento["estado_seguimiento_id"]
 				planNuevo["estado"] = estadosSeguimiento[planSeguimiento["estado_seguimiento_id"].(string)]
