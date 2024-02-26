@@ -1929,7 +1929,7 @@ func (c *FormulacionController) EstructuraPlanes() {
 	}
 
 	//Obtener lista plana del formato
-	listaPlantilla, err := formulacionhelper.ConvArbolAListaPlana(formatoPLantilla[0], id)
+	listaPlantilla, err := formulacionhelper.ConvArbolAListaPlana(formatoPLantilla[0], id, true)
 	if err != nil {
 		panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error al obtener el valor de referencia", "status": "400", "log": err})
 	}
@@ -1941,11 +1941,10 @@ func (c *FormulacionController) EstructuraPlanes() {
 		if err != nil {
 			panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error al obtener formato de plan", "status": "400", "log": err})
 		}
-		listaPlan, err := formulacionhelper.ConvArbolAListaPlana(formatoPlan[0], planId)
-		if err != nil {
-			panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error al obtener el valor de referencia", "status": "400", "log": err})
+		listaPlan, err := formulacionhelper.ConvArbolAListaPlana(formatoPlan[0], planId, false)
+		if err == nil {
+			formulacionhelper.ActualizarEstructuraPlan(listaPlantilla, listaPlan, planId)
 		}
-		formulacionhelper.ActualizarEstructuraPlan(listaPlantilla, listaPlan, planId)
 	}
 
 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "La estructura de los planes fue actualizada correctamente"}
