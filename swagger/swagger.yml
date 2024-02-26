@@ -1396,7 +1396,7 @@ paths:
       operationId: SeguimientoController.EstadoTrimestres
       parameters:
       - in: path
-        name: periodo
+        name: plan_id
         description: The key for staticblock
         required: true
         type: string

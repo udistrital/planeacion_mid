@@ -1833,7 +1833,7 @@ func (c *SeguimientoController) VerificarSeguimiento() {
 // EstadoTrimestres ...
 // @Title EstadoTrimestres
 // @Description get Seguimiento de los trimestres correspondientes
-// @Param	periodo 	path 	string	true		"The key for staticblock"
+// @Param	plan_id 	path 	string	true		"The key for staticblock"
 // @Success 200
 // @Failure 403
 // @Failure 404 not found resource
