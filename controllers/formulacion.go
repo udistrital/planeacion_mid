@@ -1888,14 +1888,6 @@ func (c *FormulacionController) CalculosDocentes() {
 	c.ServeJSON()
 }
 
-type Campo struct {
-	ID       string  `json:"id"`
-	Nombre   string  `json:"nombre"`
-	Required string  `json:"required"`
-	Sub      []Campo `json:"sub"`
-	Type     string  `json:"type"`
-}
-
 // EstructuraPlanes ...
 // @Title EstructuraPlanes
 // @Description put Formulacion by id
