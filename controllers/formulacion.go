@@ -1937,7 +1937,10 @@ func (c *FormulacionController) EstructuraPlanes() {
 	}
 
 	//Obtener lista plana del formato
-	listaPlantilla := formulacionhelper.ConvArbolAListaPlana(formatoPLantilla[0], id)
+	listaPlantilla, err := formulacionhelper.ConvArbolAListaPlana(formatoPLantilla[0], id)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error al obtener el valor de referencia", "status": "400", "log": err})
+	}
 
 	//Obtener los formatos de los planes y comparar con el formato de la plantilla
 	for _, plan := range planes {
@@ -1946,7 +1949,10 @@ func (c *FormulacionController) EstructuraPlanes() {
 		if err != nil {
 			panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error al obtener formato de plan", "status": "400", "log": err})
 		}
-		listaPlan := formulacionhelper.ConvArbolAListaPlana(formatoPlan[0], planId)
+		listaPlan, err := formulacionhelper.ConvArbolAListaPlana(formatoPlan[0], planId)
+		if err != nil {
+			panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error al obtener el valor de referencia", "status": "400", "log": err})
+		}
 		formulacionhelper.ActualizarEstructuraPlan(listaPlantilla, listaPlan, planId)
 	}
 

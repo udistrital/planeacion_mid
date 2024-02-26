@@ -1857,15 +1857,20 @@ func actualizarSubgrupoDetalle(bodySubgrupoDetalle map[string]interface{}, id st
 }
 
 //Convertir arbol a lista plana
-func ConvArbolAListaPlana(lista []map[string]interface{}, id string) []map[string]interface{} {
+func ConvArbolAListaPlana(lista []map[string]interface{}, id string) ([]map[string]interface{}, error) {
 	var listaPlana []map[string]interface{}
 	for _, objeto := range lista {
+		referencia, refOk := objeto["ref"].(string)
+		if !refOk {
+			return nil, fmt.Errorf("no se pudo obtener el valor de referencia")
+		}
+
 		nuevoMapa := map[string]interface{}{
 			"id":       objeto["id"],
 			"nombre":   objeto["nombre"],
 			"required": objeto["required"],
 			"type":     objeto["type"],
-			"ref":      objeto["ref"],
+			"ref":      referencia,
 			"padre":    id,
 		}
 		if objeto["type"] == "select" {
@@ -1874,11 +1879,14 @@ func ConvArbolAListaPlana(lista []map[string]interface{}, id string) []map[strin
 		listaPlana = append(listaPlana, nuevoMapa)
 
 		if sub, ok := objeto["sub"].([]map[string]interface{}); ok && len(sub) > 0 {
-			subListaPlana := ConvArbolAListaPlana(sub, objeto["id"].(string))
+			subListaPlana, err := ConvArbolAListaPlana(sub, objeto["id"].(string))
+			if err != nil {
+				return nil, err
+			}
 			listaPlana = append(listaPlana, subListaPlana...)
 		}
 	}
-	return listaPlana
+	return listaPlana, nil
 }
 
 //Actualizar la estructura de los planes en base a una plantilla
@@ -1889,7 +1897,11 @@ func ActualizarEstructuraPlan(listaFormato, listaPlan []map[string]interface{}, 
 		encontrado1 := false
 
 		for _, objeto2 := range listaPlan {
-			if objeto1["id"] == objeto2["ref"] {
+			refObjeto2, refObjeto2Ok := objeto2["ref"].(string)
+			if !refObjeto2Ok {
+				return fmt.Errorf("no se pudo obtener el valor de referencia")
+			}
+			if objeto1["id"] == refObjeto2 {
 				encontrado1 = true
 				auxObjeto = objeto2
 				break
@@ -1909,6 +1921,11 @@ func ActualizarEstructuraPlan(listaFormato, listaPlan []map[string]interface{}, 
 			if err != nil {
 				return err
 			}
+
+			refSubgPlan, refSubgPlanOk := subgPlan["ref"].(string)
+			if !refSubgPlanOk {
+				return fmt.Errorf("no se pudo obtener el valor de referencia")
+			}
 			if !compararSubgrupos(subgFormato, subgPlan) {
 				actSubgrupo := map[string]interface{}{
 					"nombre":         subgFormato["nombre"],
@@ -1916,7 +1933,7 @@ func ActualizarEstructuraPlan(listaFormato, listaPlan []map[string]interface{}, 
 					"activo":         subgFormato["activo"],
 					"bandera_tabla":  subgFormato["bandera_tabla"],
 					"padre":          subgPlan["padre"],
-					"ref":            subgPlan["ref"],
+					"ref":            refSubgPlan,
 					"fecha_creacion": subgPlan["fecha_creacion"],
 				}
 				_, err := actualizarSubgrupo(actSubgrupo, idNodoPlan)
@@ -1954,7 +1971,11 @@ func ActualizarEstructuraPlan(listaFormato, listaPlan []map[string]interface{}, 
 			encontrado2 := false
 
 			for _, objeto := range listaPlan {
-				if objeto1["padre"] == objeto["ref"] {
+				refObjeto, refObjetoOk := objeto["ref"].(string)
+				if !refObjetoOk {
+					return fmt.Errorf("no se pudo obtener el valor de referencia")
+				}
+				if objeto1["padre"] == refObjeto {
 					encontrado2 = true
 					padreID = objeto["id"].(string)
 					break
@@ -2005,7 +2026,10 @@ func ActualizarEstructuraPlan(listaFormato, listaPlan []map[string]interface{}, 
 			if err5 != nil {
 				return err5
 			}
-			nuevaLista := ConvArbolAListaPlana(formatoPlanAct[0], idPlan)
+			nuevaLista, err := ConvArbolAListaPlana(formatoPlanAct[0], idPlan)
+			if err != nil {
+				return err
+			}
 			listaPlan = nuevaLista
 		}
 	}
