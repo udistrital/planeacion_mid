@@ -34,6 +34,7 @@ func BuildTreeFa(hijos []models.Nodo, hijosID []map[string]interface{}) [][]map[
 			var id string
 			forkData["id"] = hijosID[i]["_id"]
 			forkData["nombre"] = hijos[i].Nombre
+			forkData["ref"] = hijosID[i]["ref"]
 			jsonString, _ := json.Marshal(hijosID[i]["_id"])
 			json.Unmarshal(jsonString, &id)
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id, &res); err == nil {
@@ -94,6 +95,7 @@ func getChildren(children []string) (childrenTree []map[string]interface{}) {
 		if nodo.Activo == true {
 			forkData["id"] = nodoId["_id"]
 			forkData["nombre"] = nodo.Nombre
+			forkData["ref"] = nodoId["ref"]
 			jsonString, _ := json.Marshal(nodoId["_id"])
 			json.Unmarshal(jsonString, &id)
 			if err_ := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id, &resp); err_ == nil {
