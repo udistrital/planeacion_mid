@@ -46,6 +46,7 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("VerificarIdentificaciones", c.VerificarIdentificaciones)
 	c.Mapping("PlanesEnFormulacion", c.PlanesEnFormulacion)
 	c.Mapping("CalculosDocentes", c.CalculosDocentes)
+	c.Mapping("EstructuraPlanes", c.EstructuraPlanes)
 }
 
 // ClonarFormato ...
@@ -1876,5 +1877,68 @@ func (c *FormulacionController) CalculosDocentes() {
 		"Message": "Successful",
 		"Data":    dataFinal,
 	}
+	c.ServeJSON()
+}
+
+// EstructuraPlanes ...
+// @Title EstructuraPlanes
+// @Description put Formulacion by id
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /estructura_planes/:id [put]
+func (c *FormulacionController) EstructuraPlanes() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+	id := c.Ctx.Input.Param(":id")
+
+	//Obtener plantilla por id
+	plantilla, err := formulacionhelper.GetPlantilla(id)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error al obtener plantilla", "status": "400", "log": err})
+	}
+
+	//Obtener los planes en estado "En formulacion" asociados a la plantilla
+	planes, err := formulacionhelper.GetPlanesPorNombre(plantilla["nombre"].(string))
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error al obtener planes asociados a plantilla", "status": "400", "log": err})
+	}
+
+	//Obtener el formato de la plantilla
+	formatoPLantilla, err := formulacionhelper.GetFormato(id)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error al obtener formato de plantilla", "status": "400", "log": err})
+	}
+
+	//Obtener lista plana del formato
+	listaPlantilla, err := formulacionhelper.ConvArbolAListaPlana(formatoPLantilla[0], id, true)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error al obtener el valor de referencia", "status": "400", "log": err})
+	}
+
+	//Obtener los formatos de los planes y comparar con el formato de la plantilla
+	for _, plan := range planes {
+		planId := plan["_id"].(string)
+		formatoPlan, err := formulacionhelper.GetFormato(planId)
+		if err != nil {
+			panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error al obtener formato de plan", "status": "400", "log": err})
+		}
+		listaPlan, err := formulacionhelper.ConvArbolAListaPlana(formatoPlan[0], planId, false)
+		if err == nil {
+			formulacionhelper.ActualizarEstructuraPlan(listaPlantilla, listaPlan, planId)
+		}
+	}
+
+	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "La estructura de los planes fue actualizada correctamente"}
 	c.ServeJSON()
 }
