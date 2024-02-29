@@ -1824,7 +1824,7 @@ func GetFormato(id string) ([][]map[string]interface{}, error) {
 		}
 		helpers.LimpiezaRespuestaRefactor(res, &plan)
 		formatoHelper.Limpia(plan)
-		tree := formatoHelper.BuildTreeFa(hijos, hijosID)
+		tree := formatoHelper.BuildTreeFaActEst(hijos, hijosID)
 		return tree, nil
 	} else {
 		return nil, err

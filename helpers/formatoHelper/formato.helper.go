@@ -20,8 +20,15 @@ func Limpia(plan map[string]interface{}) {
 	json.Unmarshal(jsonString, &estadoPlan)
 }
 
-func BuildTreeFa(hijos []models.Nodo, hijosID []map[string]interface{}) [][]map[string]interface{} {
+func BuildTreeFaActEst(hijos []models.Nodo, hijosID []map[string]interface{}) [][]map[string]interface{} {
+	return ConstruirArbolFormato(hijos, hijosID, true)
+}
 
+func BuildTreeFa(hijos []models.Nodo, hijosID []map[string]interface{}) [][]map[string]interface{} {
+	return ConstruirArbolFormato(hijos, hijosID, false)
+}
+
+func ConstruirArbolFormato(hijos []models.Nodo, hijosID []map[string]interface{}, activos bool) [][]map[string]interface{} {
 	var tree []map[string]interface{}
 	var requeridos []map[string]interface{}
 	var nodo []models.NodoDetalle
@@ -29,7 +36,7 @@ func BuildTreeFa(hijos []models.Nodo, hijosID []map[string]interface{}) [][]map[
 	var result [][]map[string]interface{}
 
 	for i := 0; i < len(hijos); i++ {
-		if hijos[i].Activo {
+		if activos || hijos[i].Activo {
 			forkData := make(map[string]interface{})
 			var id string
 			forkData["id"] = hijosID[i]["_id"]
@@ -59,16 +66,15 @@ func BuildTreeFa(hijos []models.Nodo, hijosID []map[string]interface{}) [][]map[
 				}
 			}
 			if len(hijos[i].Hijos) > 0 {
-				if len(getChildren(hijos[i].Hijos)) == 0 {
+				if len(getChildren(hijos[i].Hijos, activos)) == 0 {
 					forkData["sub"] = ""
 				} else {
-					forkData["sub"] = make([]map[string]interface{}, len(getChildren(hijos[i].Hijos)))
-					forkData["sub"] = getChildren(hijos[i].Hijos)
+					forkData["sub"] = make([]map[string]interface{}, len(getChildren(hijos[i].Hijos, activos)))
+					forkData["sub"] = getChildren(hijos[i].Hijos, activos)
 				}
 			}
 			tree = append(tree, forkData)
 			add(id)
-		} else {
 		}
 	}
 	requeridos = convert(validDataT)
@@ -77,7 +83,7 @@ func BuildTreeFa(hijos []models.Nodo, hijosID []map[string]interface{}) [][]map[
 	return result
 }
 
-func getChildren(children []string) (childrenTree []map[string]interface{}) {
+func getChildren(children []string, activos bool) (childrenTree []map[string]interface{}) {
 	var res map[string]interface{}
 	var resp map[string]interface{}
 	var nodo models.Nodo
@@ -92,7 +98,7 @@ func getChildren(children []string) (childrenTree []map[string]interface{}) {
 		}
 		helpers.LimpiezaRespuestaRefactor(res, &nodo)
 		helpers.LimpiezaRespuestaRefactor(res, &nodoId)
-		if nodo.Activo == true {
+		if activos || nodo.Activo {
 			forkData["id"] = nodoId["_id"]
 			forkData["nombre"] = nodo.Nombre
 			forkData["ref"] = nodoId["ref"]
@@ -120,10 +126,10 @@ func getChildren(children []string) (childrenTree []map[string]interface{}) {
 				}
 			}
 			if len(nodo.Hijos) > 0 {
-				if len(getChildren(nodo.Hijos)) == 0 {
+				if len(getChildren(nodo.Hijos, activos)) == 0 {
 					forkData["sub"] = ""
 				} else {
-					forkData["sub"] = getChildren(nodo.Hijos)
+					forkData["sub"] = getChildren(nodo.Hijos, activos)
 				}
 			}
 			childrenTree = append(childrenTree, forkData)
