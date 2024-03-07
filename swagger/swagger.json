@@ -148,6 +148,23 @@
                 }
             }
         },
+        "/evaluacion/planes/": {
+            "get": {
+                "tags": [
+                    "evaluacion"
+                ],
+                "description": "get Planes que se pueden evaluar",
+                "operationId": "EvaluacionController.GetPlanesAEvaluar",
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "404": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/evaluacion/planes_periodo/{vigencia}/{unidad}": {
             "get": {
                 "tags": [

@@ -14,6 +14,11 @@ import (
 	"github.com/udistrital/utils_oas/request"
 )
 
+const (
+	ABREVIACION_AVALADO_PARA_SEGUIMIENTO string = "AV"
+	ABREVIACION_SEGUIMIENTO_PLAN_ACCION  string = "S_SP"
+)
+
 func GetEvaluacionTrimestre(planId string, periodoId string, actividadId string) []map[string]interface{} {
 	var resSeguimiento map[string]interface{}
 	var seguimiento map[string]interface{}
@@ -309,4 +314,63 @@ func GetPeriodos(vigencia string) []map[string]interface{} {
 
 	helpers.SortSlice(&periodos, "periodo_id")
 	return periodos
+}
+
+func GetPlanesParaEvaluar() (planes []string, outputError map[string]interface{}) {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			outputError = map[string]interface{}{
+				// "funcion": "GetPlanesParaEvaluar/" + localError["funcion"].(string),
+				"funcion": "GetPlanesParaEvaluar",
+				"err":     localError["err"],
+				"status":  localError["status"],
+			}
+			panic(outputError)
+		}
+	}()
+
+	var respuestaEstado map[string]interface{}
+	var respuestaTipoSeguimiento map[string]interface{}
+	var respuestaSeguimiento map[string]interface{}
+
+	var estadoSeguimiento []map[string]interface{}
+	var tipoSeguimiento []map[string]interface{}
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=activo:true,codigo_abreviacion:"+ABREVIACION_AVALADO_PARA_SEGUIMIENTO, &respuestaEstado); err != nil {
+		panic(err)
+	}
+	helpers.LimpiezaRespuestaRefactor(respuestaEstado, &estadoSeguimiento)
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-seguimiento?query=activo:true,codigo_abreviacion:"+ABREVIACION_SEGUIMIENTO_PLAN_ACCION, &respuestaTipoSeguimiento); err != nil {
+		panic(err)
+	}
+	helpers.LimpiezaRespuestaRefactor(respuestaTipoSeguimiento, &tipoSeguimiento)
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/seguimiento?query=tipo_seguimiento_id:`+tipoSeguimiento[0]["_id"].(string)+`,estado_seguimiento_id:`+estadoSeguimiento[0]["_id"].(string), &respuestaSeguimiento); err == nil {
+		var seguimientos []map[string]interface{}
+		helpers.LimpiezaRespuestaRefactor(respuestaSeguimiento, &seguimientos)
+		for _, seguimiento := range seguimientos {
+			// Esta en los planes que ya se trajeron?
+			var respuestaPlan map[string]interface{}
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/plan/`+seguimiento["plan_id"].(string), &respuestaPlan); err == nil {
+				var plan map[string]interface{}
+				existeNombrePlan := false
+				helpers.LimpiezaRespuestaRefactor(respuestaPlan, &plan)
+				for _, nombre := range planes {
+					if nombre == plan["nombre"].(string) {
+						existeNombrePlan = true
+					}
+				}
+				if !existeNombrePlan {
+					planes = append(planes, plan["nombre"].(string))
+				}
+			} else {
+				panic(err)
+			}
+		}
+	} else {
+		panic(err)
+	}
+	return planes, outputError
 }

@@ -21,6 +21,7 @@ type EvaluacionController struct {
 func (c *EvaluacionController) URLMapping() {
 	c.Mapping("GetEvaluacion", c.GetEvaluacion)
 	c.Mapping("GetPlanesPeriodo", c.GetPlanesPeriodo)
+	c.Mapping("PlanesAEvaluar", c.PlanesAEvaluar)
 }
 
 // GetPlanesPeriodo ...
@@ -167,5 +168,22 @@ func (c *EvaluacionController) GetEvaluacion() {
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": evaluacion}
 	}
 
+	c.ServeJSON()
+}
+
+// Get Planes A Evaluar ...
+// @Title GetPlanesAEvaluar
+// @Description get Planes que se pueden evaluar
+// @Success 200
+// @Failure 404
+// @router /planes/ [get]
+func (c *EvaluacionController) PlanesAEvaluar() {
+	defer helpers.ErrorController(c.Controller, "EvaluacionController")
+
+	if datos, err := evaluacionhelper.GetPlanesParaEvaluar(); err == nil {
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": datos}
+	} else {
+		panic(map[string]interface{}{"funcion": "PlanesAEvaluar", "err": err, "status": "400", "message": "Error obteniendo los planes a evaluar"})
+	}
 	c.ServeJSON()
 }
