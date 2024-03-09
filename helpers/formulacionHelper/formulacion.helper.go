@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
@@ -915,4 +916,268 @@ func ObtenerPlanesFormulacion() []map[string]interface{} {
 		return resumenPlanes[i]["ultima_modificacion"].(string) > resumenPlanes[j]["ultima_modificacion"].(string)
 	})
 	return resumenPlanes
+}
+
+func DefinirFechasFuncionamiento(body map[string]interface{}) []interface{} {
+	var planesBody []map[string]interface{}
+
+	planesBody, err := ObtenerArrayPlanesInteres(body)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "DefinirFechasFuncionamientoFormulacion", "err": "Error en la decodificación JSON", "status": "400"})
+	}
+
+	// Llamada a la función para codificar cada elemento del array de planes de interés
+	planesJSON, err := CodificarPlanesInteres(planesBody)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "DefinirFechasFuncionamientoFormulacion", "err": "Error al codificar los planes de interés", "status": "400"})
+	}
+
+	body["planes_interes"] = ""
+	var respuestasAcumuladas []interface{}
+	for _, planJSON := range planesJSON { // Busca registros por cada _id de planes de interés y unidades
+		var res map[string]interface{}
+		var respuestaPost = make(map[string]interface{})
+		var respuestaPost2 = make(map[string]interface{})
+		body["planes_interes"] = "[" + planJSON + "]"
+		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/buscar-unidad-planes/1", "POST", &respuestaPost, body); err == nil {
+			data, ok := respuestaPost["Data"].([]interface{})
+			if ok && len(data) > 0 { // Si sí existe se procede a verificar que las fechas sean iguales
+				registro := data[0].(map[string]interface{})
+
+				// Parsear las fechas
+				fechaInicioBodyParsed, _ := time.Parse(time.RFC3339, body["fecha_inicio"].(string))
+				fechaInicioRegistroParsed, _ := time.Parse(time.RFC3339, registro["fecha_inicio"].(string))
+				fechaFinBodyParsed, _ := time.Parse(time.RFC3339, body["fecha_fin"].(string))
+				fechaFinRegistroParsed, _ := time.Parse(time.RFC3339, registro["fecha_fin"].(string))
+
+				if fechaInicioBodyParsed.Equal(fechaInicioRegistroParsed) && fechaFinBodyParsed.Equal(fechaFinRegistroParsed) {
+					// Registro Fechas iguales
+					registro = manejarUnidades(body, registro, 1)
+					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/"+registro["_id"].(string), "PUT", &res, registro); err != nil {
+						panic(map[string]interface{}{"funcion": "DefinirFechasFuncionamientoFormulacion", "err": "Error actualizando periodo-seguimiento \"registro[\"_id\"].(string)\"", "status": "400", "log": err})
+					}
+					respuestasAcumuladas = append(respuestasAcumuladas, res["Data"])
+				} else {
+					// Registro con Fechas distintas, entonces se debe editar el registro existente quitando las unidades del body
+					// Si unidades_interes del registro se queda vacio, se debe inactivar
+					registro = manejarUnidades(body, registro, 2)
+					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/"+registro["_id"].(string), "PUT", &res, registro); err != nil {
+						panic(map[string]interface{}{"funcion": "DefinirFechasFuncionamientoFormulacion", "err": "Error actualizando periodo-seguimiento \"registro[\"_id\"].(string)\"", "status": "400", "log": err})
+					}
+					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/buscar-unidad-planes/2", "POST", &respuestaPost2, body); err == nil {
+						data, ok := respuestaPost2["Data"].([]interface{})
+						if ok && len(data) > 0 { // Existe el registro, entonces se le agregan las unidades
+							registro2 := data[0].(map[string]interface{})
+							registro2 = manejarUnidades(body, registro2, 1)
+							if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/"+registro2["_id"].(string), "PUT", &res, registro2); err != nil {
+								panic(map[string]interface{}{"funcion": "DefinirFechasFuncionamientoFormulacion", "err": "Error actualizando periodo-seguimiento \"registro[\"_id\"].(string)\"", "status": "400", "log": err})
+							}
+							respuestasAcumuladas = append(respuestasAcumuladas, res["Data"])
+						} else { // No existe el registro, se crea el registro con las unidades del body
+							body["planes_interes"] = registro["planes_interes"]
+							if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento", "POST", &res, body); err != nil {
+								panic(map[string]interface{}{"funcion": "DefinirFechasFuncionamientoFormulacion", "err": "Error agregaron periodo-seguimiento", "status": "400", "log": err})
+							}
+							respuestasAcumuladas = append(respuestasAcumuladas, res["Data"])
+						}
+					}
+
+				}
+			} else { // No existe el registro con las unidades especificadas, se procede a validar por periodo, fecha_inicio y fecha_fin
+				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/buscar-unidad-planes/2", "POST", &respuestaPost2, body); err == nil {
+					data, ok := respuestaPost2["Data"].([]interface{})
+					if ok && len(data) > 0 { // Existe el registro, entonces se le agregan las unidades
+						registro := data[0].(map[string]interface{})
+						registro = manejarUnidades(body, registro, 1)
+						if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/"+registro["_id"].(string), "PUT", &res, registro); err != nil {
+							panic(map[string]interface{}{"funcion": "DefinirFechasFuncionamientoFormulacion", "err": "Error actualizando periodo-seguimiento \"registro[\"_id\"].(string)\"", "status": "400", "log": err})
+						}
+						respuestasAcumuladas = append(respuestasAcumuladas, res["Data"])
+					} else { // No existe el registro, se crea
+						if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento", "POST", &res, body); err != nil {
+							panic(map[string]interface{}{"funcion": "DefinirFechasFuncionamientoFormulacion", "err": "Error versionando periodo-seguimiento", "status": "400", "log": err})
+						}
+						respuestasAcumuladas = append(respuestasAcumuladas, res["Data"])
+					}
+				}
+			}
+		} else {
+			panic(map[string]interface{}{"funcion": "DefinirFechasFormulacionUnidadesPlanes", "err": "Error en la peticion", "status": "400", "log": err})
+		}
+	}
+	return respuestasAcumuladas
+}
+
+func ObtenerArrayPlanesInteres(body map[string]interface{}) ([]map[string]interface{}, error) {
+	// Acceder a la lista de planes de interés
+	planesInteresString, ok := body["planes_interes"].(string)
+	if !ok {
+		return nil, fmt.Errorf("No se pudo obtener la lista de planes de interés como cadena JSON")
+	}
+
+	// Decodificar la cadena JSON a una lista de interfaces
+	var planesInteres []interface{}
+	err := json.Unmarshal([]byte(planesInteresString), &planesInteres)
+	if err != nil {
+		return nil, fmt.Errorf("Error al decodificar la lista de planes de interés: %v", err)
+	}
+
+	// Almacenar los planes de interés en un array
+	var planes []map[string]interface{}
+	for _, plan := range planesInteres {
+		if planMap, ok := plan.(map[string]interface{}); ok {
+			planes = append(planes, map[string]interface{}{
+				"_id":    planMap["_id"],
+				"nombre": planMap["nombre"],
+			})
+		}
+	}
+
+	return planes, nil
+}
+
+func ObtenerArrayUnidadesInteres(body map[string]interface{}) ([]map[string]interface{}, error) {
+	// Acceder a la lista de unidades de interés
+	unidadesInteresString, ok := body["unidades_interes"].(string)
+	if !ok {
+		panic(map[string]interface{}{"funcion": "ObtenerArrayUnidadesInteres", "err": "No se pudo obtener la lista de unidades de interés como cadena JSON", "status": "400"})
+	}
+
+	// Decodificar la cadena JSON a una lista de interfaces
+	var unidadesInteres []interface{}
+	err := json.Unmarshal([]byte(unidadesInteresString), &unidadesInteres)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "ObtenerArrayUnidadesInteres", "err": "Error al decodificar la lista de unidades de interés", "status": "400"})
+	}
+
+	// Almacenar las unidades de interés en un array
+	var unidades []map[string]interface{}
+	for _, unidad := range unidadesInteres {
+		if unidadMap, ok := unidad.(map[string]interface{}); ok {
+			// Verificar si la clave "Id" está presente y tiene el tipo correcto
+			if id, idOk := unidadMap["Id"].(float64); idOk {
+				// Convertir el valor de "Id" a entero
+				idInt := int(id)
+				unidades = append(unidades, map[string]interface{}{
+					"Id":     idInt,
+					"Nombre": unidadMap["Nombre"],
+					// Otras propiedades de interés si es necesario
+				})
+			} else {
+				panic(map[string]interface{}{"funcion": "ObtenerArrayUnidadesInteres", "err": "El valor de Id no es un número", "status": "400"})
+			}
+		}
+	}
+	return unidades, nil
+}
+
+func CodificarPlanesInteres(planes []map[string]interface{}) ([]string, error) {
+	// Codificar cada elemento del array de planes de interés a formato JSON
+	var planesJSON []string
+	for _, plan := range planes {
+		planJSON, err := json.Marshal(plan)
+		if err != nil {
+			return nil, fmt.Errorf("Error al codificar un elemento del array de planes de interés: %v", err)
+		}
+		planesJSON = append(planesJSON, string(planJSON))
+	}
+
+	return planesJSON, nil
+}
+
+func manejarUnidades(body map[string]interface{}, registro map[string]interface{}, caso int) map[string]interface{} {
+	unidadesBody, err := ObtenerArrayUnidadesInteres(body)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "manejarUnidades", "err": "Error en la decodificación JSON", "status": "400"})
+	}
+
+	unidadesRegistro, err := ObtenerArrayUnidadesInteres(registro)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "manejarUnidades", "err": "Error en la decodificación JSON", "status": "400"})
+	}
+
+	// Crear un mapa para almacenar los Ids ya presentes en "registro"
+	idsPresentes := make(map[int]bool)
+	for _, unidad := range unidadesRegistro {
+		if id, ok := unidad["Id"].(int); ok {
+			idsPresentes[id] = true
+		} else {
+			panic(map[string]interface{}{"funcion": "manejarUnidades", "err": "Error al obtener el Id de la unidad de interés del registro", "status": "400"})
+		}
+	}
+
+	// Manejar las unidades de body que no existan en registro
+	for _, unidadBody := range unidadesBody {
+		if idBody, ok := unidadBody["Id"].(int); ok {
+			switch caso {
+			case 1:
+				// Si el Id de la unidad no existe en registro, agregar la unidad
+				if !idsPresentes[idBody] {
+					unidadesRegistro = append(unidadesRegistro, unidadBody)
+					idsPresentes[idBody] = true
+				}
+			case 2:
+				// Eliminar la unidad del registro si también está en body
+				if idsPresentes[idBody] {
+					unidadesRegistro = eliminarUnidad(unidadesRegistro, idBody)
+				}
+			default:
+				panic(map[string]interface{}{"funcion": "manejarUnidades", "err": "Caso no válido", "status": "400"})
+			}
+		} else {
+			panic(map[string]interface{}{"funcion": "manejarUnidades", "err": "Error al obtener el Id de la unidad de interés del body", "status": "400"})
+		}
+	}
+	if len(unidadesRegistro) == 0 {
+		registro["activo"] = false
+	}
+	unidadesRegistroJSON, err := json.Marshal(unidadesRegistro)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "manejarUnidades", "err": "Error al convertir el array a JSON", "status": "400"})
+	}
+	registro["unidades_interes"] = string(unidadesRegistroJSON)
+	return registro
+}
+
+func eliminarUnidad(unidades []map[string]interface{}, id int) []map[string]interface{} {
+	for i, unidad := range unidades {
+		if unidad["Id"].(int) == id {
+			// Eliminar la unidad del slice
+			unidades = append(unidades[:i], unidades[i+1:]...)
+			break
+		}
+	}
+	return unidades
+}
+
+func ValidarUnidadesPlanes(periodo_seguimiento map[string]interface{}, body_unidades map[string]interface{}) []map[string]interface{} {
+	unidadesJSON1 := []interface{}{}
+	if err := json.Unmarshal([]byte(periodo_seguimiento["unidades_interes"].(string)), &unidadesJSON1); err != nil {
+		panic(map[string]interface{}{"funcion": "ValidarUnidadesPlanes", "err": "Error al deserializar unidadesJSON1", "status": "400", "log": err})
+	}
+
+	unidadesJSON2 := body_unidades["unidades_interes"].([]interface{})
+
+	unidadesMap := make(map[int]bool)
+	for _, unidad := range unidadesJSON1 {
+		unidadMap := unidad.(map[string]interface{})
+		id := int(unidadMap["Id"].(float64))
+		unidadesMap[id] = true
+	}
+
+	var unidadesValidadas []map[string]interface{}
+
+	for _, unidad := range unidadesJSON2 {
+		unidadMap := unidad.(map[string]interface{})
+		id := int(unidadMap["Id"].(float64))
+		if !unidadesMap[id] {
+			// Si hay una unidad en el body que no está en periodo_seguimiento, retornar null
+			fmt.Println("Unidad en body no presente en periodo_seguimiento: ", unidadMap)
+			return nil
+		}
+		unidadesValidadas = append(unidadesValidadas, unidadMap)
+	}
+
+	// Retorna la intersección de las unidades
+	return unidadesValidadas
 }
