@@ -158,6 +158,28 @@ paths:
           description: ""
         "404":
           description: ""
+  /evaluacion/unidades/{plan}/{vigencia}:
+    get:
+      tags:
+      - evaluacion
+      description: get Unidades
+      operationId: EvaluacionController.GetUnidades
+      parameters:
+      - in: path
+        name: plan
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: path
+        name: vigencia
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+        "404":
+          description: ""
   /formato/:
     get:
       tags:

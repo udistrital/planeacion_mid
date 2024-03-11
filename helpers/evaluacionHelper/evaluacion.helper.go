@@ -321,7 +321,6 @@ func GetPlanesParaEvaluar() (planes []string, outputError map[string]interface{}
 		if err := recover(); err != nil {
 			localError := err.(map[string]interface{})
 			outputError = map[string]interface{}{
-				// "funcion": "GetPlanesParaEvaluar/" + localError["funcion"].(string),
 				"funcion": "GetPlanesParaEvaluar",
 				"err":     localError["err"],
 				"status":  localError["status"],
@@ -373,4 +372,85 @@ func GetPlanesParaEvaluar() (planes []string, outputError map[string]interface{}
 		panic(err)
 	}
 	return planes, outputError
+}
+
+func GetUnidadesPorPlanYVigencia(nombrePlan string, vigencia string) (unidades []map[string]interface{}, outputError map[string]interface{}) {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			outputError = map[string]interface{}{
+				"funcion": "GetUnidadesPorPlanYVigencia",
+				"err":     localError["err"],
+				"status":  localError["status"],
+			}
+			panic(outputError)
+		}
+	}()
+
+	var respuestaEstado map[string]interface{}
+	var respuestaTipoSeguimiento map[string]interface{}
+	var respuestaSeguimiento map[string]interface{}
+	var respuestaTipoDependencia []map[string]interface{}
+
+	var estadoSeguimiento []map[string]interface{}
+	var tipoSeguimiento []map[string]interface{}
+	idsUnidades := make([]string, 0)
+	unidades = make([]map[string]interface{}, 0)
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=activo:true,codigo_abreviacion:"+ABREVIACION_AVALADO_PARA_SEGUIMIENTO, &respuestaEstado); err != nil {
+		panic(err)
+	}
+	helpers.LimpiezaRespuestaRefactor(respuestaEstado, &estadoSeguimiento)
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-seguimiento?query=activo:true,codigo_abreviacion:"+ABREVIACION_SEGUIMIENTO_PLAN_ACCION, &respuestaTipoSeguimiento); err != nil {
+		panic(err)
+	}
+	helpers.LimpiezaRespuestaRefactor(respuestaTipoSeguimiento, &tipoSeguimiento)
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/seguimiento?query=tipo_seguimiento_id:`+tipoSeguimiento[0]["_id"].(string)+`,estado_seguimiento_id:`+estadoSeguimiento[0]["_id"].(string), &respuestaSeguimiento); err == nil {
+		var seguimientos []map[string]interface{}
+		helpers.LimpiezaRespuestaRefactor(respuestaSeguimiento, &seguimientos)
+		for _, seguimiento := range seguimientos {
+			// Esta en los planes que ya se trajeron?
+			var respuestaPlan map[string]interface{}
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/plan/`+seguimiento["plan_id"].(string), &respuestaPlan); err == nil {
+				var plan map[string]interface{}
+				helpers.LimpiezaRespuestaRefactor(respuestaPlan, &plan)
+
+				if plan["nombre"] == nombrePlan && vigencia == plan["vigencia"] {
+					existeIdUnidad := false
+					for _, idUnidad := range idsUnidades {
+						fmt.Println(plan["dependencia_id"])
+						if idUnidad == plan["dependencia_id"].(string) {
+							existeIdUnidad = true
+						}
+					}
+					if !existeIdUnidad {
+						idsUnidades = append(idsUnidades, plan["dependencia_id"].(string))
+					}
+				}
+
+			} else {
+				panic(err)
+			}
+		}
+		if len(idsUnidades) > 0 {
+			valor := 0
+			for _, idUnidad := range idsUnidades {
+				valor++
+				if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=DependenciaId__Id:"+idUnidad, &respuestaTipoDependencia); err == nil {
+					aux := respuestaTipoDependencia[0]["DependenciaId"].(map[string]interface{})
+					delete(aux, "DependenciaTipoDependencia")
+					aux["TipoDependencia"] = respuestaTipoDependencia[0]["TipoDependenciaId"]
+					unidades = append(unidades, aux)
+					respuestaTipoDependencia = nil
+				} else {
+					panic(err)
+				}
+			}
+		}
+	} else {
+		panic(err)
+	}
+	return unidades, outputError
 }
