@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"net/url"
 	"reflect"
 	"strconv"
 
@@ -21,6 +22,8 @@ type EvaluacionController struct {
 func (c *EvaluacionController) URLMapping() {
 	c.Mapping("GetEvaluacion", c.GetEvaluacion)
 	c.Mapping("GetPlanesPeriodo", c.GetPlanesPeriodo)
+	c.Mapping("PlanesAEvaluar", c.PlanesAEvaluar)
+	c.Mapping("Unidades", c.Unidades)
 }
 
 // GetPlanesPeriodo ...
@@ -165,6 +168,50 @@ func (c *EvaluacionController) GetEvaluacion() {
 		evaluacion = evaluacionhelper.GetEvaluacion(plan, trimestres, i)
 
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": evaluacion}
+	}
+
+	c.ServeJSON()
+}
+
+// Get Planes A Evaluar ...
+// @Title GetPlanesAEvaluar
+// @Description get Planes que se pueden evaluar
+// @Success 200
+// @Failure 404
+// @router /planes/ [get]
+func (c *EvaluacionController) PlanesAEvaluar() {
+	defer helpers.ErrorController(c.Controller, "EvaluacionController")
+
+	if datos, err := evaluacionhelper.GetPlanesParaEvaluar(); err == nil {
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": datos}
+	} else {
+		panic(map[string]interface{}{"funcion": "PlanesAEvaluar", "err": err, "status": "400", "message": "Error obteniendo los planes a evaluar"})
+	}
+	c.ServeJSON()
+}
+
+// Get Unidades ...
+// @Title GetUnidades
+// @Description get Unidades
+// @Param	plan 		path 	string	true		"The key for staticblock"
+// @Param	vigencia 	path 	string	true		"The key for staticblock"
+// @Success 200
+// @Failure 404
+// @router /unidades/:plan:/:vigencia [get]
+func (c *EvaluacionController) Unidades() {
+	defer helpers.ErrorController(c.Controller, "EvaluacionController")
+
+	plan := c.Ctx.Input.Param(":plan")
+	vigencia := c.Ctx.Input.Param(":vigencia")
+
+	if nombrePlan, err := url.QueryUnescape(plan); err == nil {
+		if data, err := evaluacionhelper.GetUnidadesPorPlanYVigencia(nombrePlan, vigencia); err == nil {
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": data}
+		} else {
+			panic(map[string]interface{}{"funcion": "Unidades", "err": err, "status": "400", "message": "Error obteniendo las unidades del plan y la vigencia dados"})
+		}
+	} else {
+		panic(map[string]interface{}{"funcion": "Unidades", "err": err, "status": "400", "message": "Error obteniendo las unidades del plan y la vigencia dados"})
 	}
 
 	c.ServeJSON()
