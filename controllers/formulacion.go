@@ -3,6 +3,7 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"math"
@@ -45,6 +46,7 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("Planes", c.Planes)
 	c.Mapping("VerificarIdentificaciones", c.VerificarIdentificaciones)
 	c.Mapping("PlanesEnFormulacion", c.PlanesEnFormulacion)
+	c.Mapping("DefinirFechasFuncionamiento", c.DefinirFechasFuncionamiento)
 	c.Mapping("CalculosDocentes", c.CalculosDocentes)
 	c.Mapping("EstructuraPlanes", c.EstructuraPlanes)
 }
@@ -98,6 +100,8 @@ func (c *FormulacionController) ClonarFormato() {
 		plan["vigencia"] = parametros["vigencia"].(string)
 		plan["dependencia_id"] = parametros["dependencia_id"].(string)
 		plan["estado_plan_id"] = "614d3ad301c7a200482fabfd"
+		plan["formato_id"] = id
+		plan["nueva_estructura"] = true
 
 		var resPost map[string]interface{}
 		var resLimpia map[string]interface{}
@@ -1940,5 +1944,42 @@ func (c *FormulacionController) EstructuraPlanes() {
 	}
 
 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "La estructura de los planes fue actualizada correctamente"}
+	c.ServeJSON()
+}
+
+// DefinirFechasFuncionamiento ...
+// @Title DefinirFechasFuncionamiento
+// @Description Peticion POST para definir fechas en planes de acción de funcionamiento
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Success 200 {object} models.Formulacion
+// @Failure 400 bad request
+// @router /habilitar_fechas_funcionamiento [post]
+func (c *FormulacionController) DefinirFechasFuncionamiento() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
+	var body map[string]interface{}
+	var res interface{}
+	
+	// Decodificar JSON desde el cuerpo de la solicitud
+	err := json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+	if err != nil {
+			// Manejar el error, imprimirlo o devolver una respuesta de error al cliente
+			fmt.Println("Error al decodificar JSON:", err)
+			c.Abort("400") // Bad Request
+			return
+	}
+	res = formulacionhelper.DefinirFechasFuncionamiento(body)
+	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": res}
 	c.ServeJSON()
 }

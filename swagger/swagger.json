@@ -983,13 +983,24 @@
                 }
             }
         },
-        "/formulacion/planes": {
-            "get": {
+        "/formulacion/habilitar_fechas_funcionamiento": {
+            "post": {
                 "tags": [
                     "formulacion"
                 ],
-                "description": "get Rubros",
-                "operationId": "FormulacionController.Planes",
+                "description": "Peticion POST para definir fechas en planes de acción de funcionamiento",
+                "operationId": "FormulacionController.DefinirFechasFuncionamiento",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "",
@@ -997,19 +1008,19 @@
                             "$ref": "#/definitions/models.Formulacion"
                         }
                     },
-                    "403": {
-                        "description": ":id is empty"
+                    "400": {
+                        "description": "bad request"
                     }
                 }
             }
         },
-        "/formulacion/planes_formulacion": {
+        "/formulacion/planes": {
             "get": {
                 "tags": [
                     "formulacion"
                 ],
-                "description": "get Planes en formulacion",
-                "operationId": "FormulacionController.GetPlanesEnFormulacion",
+                "description": "get Rubros",
+                "operationId": "FormulacionController.Planes",
                 "responses": {
                     "200": {
                         "description": "",
@@ -1057,17 +1068,8 @@
                 "tags": [
                     "formulacion"
                 ],
-                "description": "put Formulacion by id",
-                "operationId": "FormulacionController.VerificarIdentificaciones",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "description": "The key for staticblock",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
+                "description": "get Planes en formulacion",
+                "operationId": "FormulacionController.GetPlanesEnFormulacion",
                 "responses": {
                     "200": {
                         "description": "",
