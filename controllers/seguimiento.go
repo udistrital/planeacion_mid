@@ -1905,3 +1905,83 @@ func (c *SeguimientoController) VerificarSeguimiento() {
 
 	c.ServeJSON()
 }
+
+// EstadoTrimestres ...
+// @Title EstadoTrimestres
+// @Description get Seguimiento de los trimestres correspondientes
+// @Param	plan_id 	path 	string	true		"The key for staticblock"
+// @Success 200
+// @Failure 403
+// @Failure 404 not found resource
+// @router /estado_trimestres/:plan_id [get]
+func (c *SeguimientoController) EstadoTrimestres() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SeguimientoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+	var resSeguimiento map[string]interface{}
+	var resPeriodoSeguimiento map[string]interface{}
+	var resPeriodo map[string]interface{}
+	var planes []map[string]interface{}
+	var auxPlanes []map[string]interface{}
+
+	planId := c.Ctx.Input.Param(":plan_id")
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId, &resSeguimiento); err == nil {
+		helpers.LimpiezaRespuestaRefactor(resSeguimiento, &planes)
+
+		for _, plan := range planes {
+			var periodo []map[string]interface{}
+			periodoSeguimientoId := plan["periodo_seguimiento_id"].(string)
+
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento?query=_id:"+periodoSeguimientoId, &resPeriodoSeguimiento); err == nil {
+				var periodoSeguimiento []map[string]interface{}
+				helpers.LimpiezaRespuestaRefactor(resPeriodoSeguimiento, &periodoSeguimiento)
+				if fmt.Sprintf("%v", periodoSeguimiento[0]) != "map[]" {
+
+					if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+periodoSeguimiento[0]["periodo_id"].(string), &resPeriodo); err == nil {
+						helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
+						auxPeriodo := periodo[0]["ParametroId"].(map[string]interface{})
+						periodoSeguimiento[0]["periodo_nombre"] = auxPeriodo["CodigoAbreviacion"].(string)
+						plan["periodo_seguimiento_id"] = periodoSeguimiento[0]
+
+						if fmt.Sprintf("%v", periodo[0]) != "map[]" {
+							var resEstado map[string]interface{}
+
+							if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento/"+plan["estado_seguimiento_id"].(string), &resEstado); err == nil {
+								plan["estado_seguimiento_id"] = resEstado["Data"]
+
+								if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+plan["plan_id"].(string), &resEstado); err == nil {
+									plan["plan_id"] = resEstado["Data"]
+
+									auxPlanes = append(auxPlanes, plan)
+								}
+							}
+						}
+					} else {
+						panic(err)
+					}
+				}
+			} else {
+				panic(err)
+			}
+		}
+		if auxPlanes != nil {
+			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": auxPlanes}
+		} else {
+			c.Data["json"] = map[string]interface{}{"Success": false, "Status": "400", "Message": "Error", "Data": []int{}}
+		}
+
+	} else {
+		panic(err)
+	}
+	c.ServeJSON()
+}

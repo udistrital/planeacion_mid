@@ -47,6 +47,8 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("VerificarIdentificaciones", c.VerificarIdentificaciones)
 	c.Mapping("PlanesEnFormulacion", c.PlanesEnFormulacion)
 	c.Mapping("DefinirFechasFuncionamiento", c.DefinirFechasFuncionamiento)
+	c.Mapping("CalculosDocentes", c.CalculosDocentes)
+	c.Mapping("EstructuraPlanes", c.EstructuraPlanes)
 }
 
 // ClonarFormato ...
@@ -1801,25 +1803,147 @@ func (c *FormulacionController) VerificarIdentificaciones() {
 // @Title GetPlanesEnFormulacion
 // @Description get Planes en formulacion
 // @Success 200 {object} models.Formulacion
-// @Failure 403 :id is empty
-// @router /verificar_identificaciones/:id [get]
+// @Failure 400 bad response
+// @router /planes_formulacion [get]
 func (c *FormulacionController) PlanesEnFormulacion() {
+	defer helpers.ErrorController(c.Controller, "PlanesFormulacionController")
+
+	if resumenPlanesActivos, err := formulacionhelper.ObtenerPlanesFormulacion(); err != nil {
+		panic(map[string]interface{}{"funcion": "PlanesEnFormulacion", "err": err, "status": "400"})
+	} else {
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": resumenPlanesActivos}
+	}
+
+	c.ServeJSON()
+}
+
+// CalculosDocentes ...
+// @Title CalculosDocentes
+// @Description post Formulacion
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /calculos_docentes [post]
+func (c *FormulacionController) CalculosDocentes() {
+
 	defer func() {
 		if err := recover(); err != nil {
 			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/FormulacionController/" + (localError["funcion"]).(string))
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
 			c.Data["data"] = (localError["err"])
 			if status, ok := localError["status"]; ok {
 				c.Abort(status.(string))
 			} else {
-				c.Abort("500")
+				c.Abort("404")
 			}
 		}
 	}()
 
-	resumenPlanesActivos := formulacionhelper.ObtenerPlanesFormulacion()
+	//Obtener respuesta del body
+	var body map[string]interface{}
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &body); err != nil {
+		panic(map[string]interface{}{"funcion": "CalculosDocentes", "err": "Error al decodificar el cuerpo de la solicitud", "status": "400", "log": err})
+	}
 
-	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": resumenPlanesActivos}
+	// Obtener Desagregado
+	body["vigencia"] = body["vigencia"].(float64) - 1
+	bodyResolucionesDocente := formulacionhelper.ConstruirCuerpoRD(body)
+	respuestaPost, err := formulacionhelper.GetDesagregado(bodyResolucionesDocente)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "CalculosDocentes", "err": "Error al obtener desagregado", "status": "400", "log": err})
+	}
+	result := respuestaPost["Data"].([]interface{})
+
+	//Peticion GET hacia Parametros Service
+	vigenciaStr := strconv.FormatFloat(body["vigencia"].(float64), 'f', 0, 64)
+	salarioMinimo, err := formulacionhelper.GetSalarioMinimo(vigenciaStr)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "CalculosDocentes", "err": "Error al obtener salario minimo", "status": "400", "log": err})
+	}
+
+	// Objeto para hacer los cálculos necesarios
+	data := body
+	data["resolucionDocente"] = result[0].(map[string]interface{})
+	data["salarioMinimo"] = salarioMinimo["Valor"]
+	delete(body, "vigencia")
+	delete(body, "categoria")
+	delete(body, "tipo")
+
+	// Realizar los calculos
+	dataFinal, err := formulacionhelper.GetCalculos(data)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "CalculosDocentes", "err": "Error al intentar realizar los calculos", "status": "400", "log": err})
+	}
+
+	c.Data["json"] = map[string]interface{}{
+		"Success": true,
+		"Status":  "200",
+		"Message": "Successful",
+		"Data":    dataFinal,
+	}
+	c.ServeJSON()
+}
+
+// EstructuraPlanes ...
+// @Title EstructuraPlanes
+// @Description put Formulacion by id
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /estructura_planes/:id [put]
+func (c *FormulacionController) EstructuraPlanes() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+	id := c.Ctx.Input.Param(":id")
+
+	//Obtener plantilla por id
+	plantilla, err := formulacionhelper.GetPlantilla(id)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error al obtener plantilla", "status": "400", "log": err})
+	}
+
+	//Obtener los planes en estado "En formulacion" asociados a la plantilla
+	planes, err := formulacionhelper.GetPlanesPorNombre(plantilla["nombre"].(string))
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error al obtener planes asociados a plantilla", "status": "400", "log": err})
+	}
+
+	//Obtener el formato de la plantilla
+	formatoPLantilla, err := formulacionhelper.GetFormato(id)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error al obtener formato de plantilla", "status": "400", "log": err})
+	}
+
+	//Obtener lista plana del formato
+	listaPlantilla, err := formulacionhelper.ConvArbolAListaPlana(formatoPLantilla[0], id, true)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error al obtener el valor de referencia", "status": "400", "log": err})
+	}
+
+	//Obtener los formatos de los planes y comparar con el formato de la plantilla
+	for _, plan := range planes {
+		planId := plan["_id"].(string)
+		formatoPlan, err := formulacionhelper.GetFormato(planId)
+		if err != nil {
+			panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error al obtener formato de plan", "status": "400", "log": err})
+		}
+		listaPlan, err := formulacionhelper.ConvArbolAListaPlana(formatoPlan[0], planId, false)
+		if err == nil {
+			formulacionhelper.ActualizarEstructuraPlan(listaPlantilla, listaPlan, planId)
+		}
+	}
+
+	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "La estructura de los planes fue actualizada correctamente"}
 	c.ServeJSON()
 }
 
