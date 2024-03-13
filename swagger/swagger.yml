@@ -682,6 +682,19 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /formulacion/planes_formulacion:
+    get:
+      tags:
+      - formulacion
+      description: get Planes en formulacion
+      operationId: FormulacionController.GetPlanesEnFormulacion
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
         "400":
           description: bad response
   /formulacion/ponderacion_actividades/{plan}:
@@ -707,8 +720,14 @@ paths:
     get:
       tags:
       - formulacion
-      description: get Planes en formulacion
-      operationId: FormulacionController.GetPlanesEnFormulacion
+      description: put Formulacion by id
+      operationId: FormulacionController.VerificarIdentificaciones
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
       responses:
         "200":
           description: ""
