@@ -46,7 +46,6 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("Planes", c.Planes)
 	c.Mapping("VerificarIdentificaciones", c.VerificarIdentificaciones)
 	c.Mapping("PlanesEnFormulacion", c.PlanesEnFormulacion)
-	c.Mapping("GetPlanesUnidadesComun", c.GetPlanesUnidadesComun)
 	c.Mapping("DefinirFechasFuncionamiento", c.DefinirFechasFuncionamiento)
 }
 
@@ -1858,60 +1857,5 @@ func (c *FormulacionController) DefinirFechasFuncionamiento() {
 	}
 	res = formulacionhelper.DefinirFechasFuncionamiento(body)
 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": res}
-	c.ServeJSON()
-}
-
-// GetPlanesUnidadesComun ...
-// @Title GetPlanesUnidadesComun
-// @Description post Get planes en comun con unidades by id periodo-seguimiento
-// @Param	id		path 	string	true		"The key for staticblock"
-// @Param	body		body 	{}	true		"body for Plan content"
-// @Success 200 {object} models.Formulacion
-// @Failure 403 :id is empty
-// @router /get_planes_unidades_comun/:id [post]
-func (c *FormulacionController) GetPlanesUnidadesComun() {
-	defer func() {
-		if err := recover(); err != nil {
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("404")
-			}
-		}
-	}()
-	id := c.Ctx.Input.Param(":id")
-	var body_unidades map[string]interface{}
-	var periodo_seguimiento map[string]interface{}
-	var res map[string]interface{}
-	err := json.Unmarshal(c.Ctx.Input.RequestBody, &body_unidades)
-	if err != nil {
-		// Manejar el error, imprimirlo o devolver una respuesta de error al cliente
-		fmt.Println("Error al decodificar JSON:", err)
-		c.Abort("400") // Bad Request
-		return
-	}
-	// fmt.Println("Id periodo-seguimiento: ", id)
-	// fmt.Println("body Peticion:", body_unidades)
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/"+id, &res); err == nil {
-		helpers.LimpiezaRespuestaRefactor(res, &periodo_seguimiento)
-		// fmt.Println("Periodo_Seguimiento: ", periodo_seguimiento)
-		unidadesValidadas := formulacionhelper.ValidarUnidadesPlanes(periodo_seguimiento, body_unidades)
-
-		// Verificar el resultado
-		if len(unidadesValidadas) > 0 {
-			fmt.Println("Unidades de intersección:", unidadesValidadas)
-			planesInteres := periodo_seguimiento["planes_interes"]
-			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": planesInteres}
-		} else {
-			// fmt.Println("No hay unidades en la intersección")
-			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "404", "Message": "Successful", "Data": "Not found"}
-		}
-		// c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": planesInteres}
-	} else {
-		panic(err)
-	}
 	c.ServeJSON()
 }
