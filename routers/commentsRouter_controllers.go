@@ -63,8 +63,26 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:EvaluacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:EvaluacionController"],
         beego.ControllerComments{
+            Method: "PlanesAEvaluar",
+            Router: "/planes/",
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:EvaluacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:EvaluacionController"],
+        beego.ControllerComments{
             Method: "GetPlanesPeriodo",
             Router: "/planes_periodo/:vigencia/:unidad",
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:EvaluacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:EvaluacionController"],
+        beego.ControllerComments{
+            Method: "Unidades",
+            Router: "/unidades/:plan:/:vigencia",
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
             Filters: nil,
@@ -126,6 +144,15 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"],
         beego.ControllerComments{
+            Method: "CalculosDocentes",
+            Router: "/calculos_docentes",
+            AllowHTTPMethods: []string{"post"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"],
+        beego.ControllerComments{
             Method: "ClonarFormato",
             Router: "/clonar_formato/:id",
             AllowHTTPMethods: []string{"post"},
@@ -146,6 +173,15 @@ func init() {
         beego.ControllerComments{
             Method: "DeleteIdentificacion",
             Router: "/delete_identificacion/:id/:idTipo/:index",
+            AllowHTTPMethods: []string{"put"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"],
+        beego.ControllerComments{
+            Method: "EstructuraPlanes",
+            Router: "/estructura_planes/:id",
             AllowHTTPMethods: []string{"put"},
             MethodParams: param.Make(),
             Filters: nil,
@@ -520,6 +556,24 @@ func init() {
             Filters: nil,
             Params: nil})
 
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:PlanesAccionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:PlanesAccionController"],
+        beego.ControllerComments{
+            Method: "PlanesDeAccion",
+            Router: "/",
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:PlanesAccionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:PlanesAccionController"],
+        beego.ControllerComments{
+            Method: "PlanesDeAccionPorUnidad",
+            Router: "/:unidad_id",
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:ReportesController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:ReportesController"],
         beego.ControllerComments{
             Method: "Desagregado",
@@ -579,6 +633,15 @@ func init() {
             Method: "CrearReportes",
             Router: "/crear_reportes/:plan/:tipo",
             AllowHTTPMethods: []string{"post"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"],
+        beego.ControllerComments{
+            Method: "EstadoTrimestres",
+            Router: "/estado_trimestres/:plan_id",
+            AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
             Filters: nil,
             Params: nil})

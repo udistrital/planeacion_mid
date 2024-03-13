@@ -148,6 +148,23 @@
                 }
             }
         },
+        "/evaluacion/planes/": {
+            "get": {
+                "tags": [
+                    "evaluacion"
+                ],
+                "description": "get Planes que se pueden evaluar",
+                "operationId": "EvaluacionController.GetPlanesAEvaluar",
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "404": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/evaluacion/planes_periodo/{vigencia}/{unidad}": {
             "get": {
                 "tags": [
@@ -166,6 +183,39 @@
                     {
                         "in": "path",
                         "name": "unidad",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "404": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/evaluacion/unidades/{plan}/{vigencia}": {
+            "get": {
+                "tags": [
+                    "evaluacion"
+                ],
+                "description": "get Unidades",
+                "operationId": "EvaluacionController.GetUnidades",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "plan",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "vigencia",
                         "description": "The key for staticblock",
                         "required": true,
                         "type": "string"
@@ -442,6 +492,37 @@
                 }
             }
         },
+        "/formulacion/calculos_docentes": {
+            "post": {
+                "tags": [
+                    "formulacion"
+                ],
+                "description": "post Formulacion",
+                "operationId": "FormulacionController.CalculosDocentes",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Formulacion"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
         "/formulacion/clonar_formato/{id}": {
             "post": {
                 "tags": [
@@ -541,6 +622,35 @@
                     {
                         "in": "path",
                         "name": "index",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Formulacion"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
+        "/formulacion/estructura_planes/{id}": {
+            "put": {
+                "tags": [
+                    "formulacion"
+                ],
+                "description": "put Formulacion by id",
+                "operationId": "FormulacionController.EstructuraPlanes",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
                         "description": "The key for staticblock",
                         "required": true,
                         "type": "string"
@@ -918,8 +1028,8 @@
                             "$ref": "#/definitions/models.Formulacion"
                         }
                     },
-                    "403": {
-                        "description": ":id is empty"
+                    "400": {
+                        "description": "bad response"
                     }
                 }
             }
@@ -1792,6 +1902,55 @@
                 }
             }
         },
+        "/planes_accion/": {
+            "get": {
+                "tags": [
+                    "planes_accion"
+                ],
+                "description": "get Planes de Acción",
+                "operationId": "PlanesAccionController.GetPlanesDeAccion",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Formulacion"
+                        }
+                    },
+                    "400": {
+                        "description": "bad response"
+                    }
+                }
+            }
+        },
+        "/planes_accion/{unidad_id}": {
+            "get": {
+                "tags": [
+                    "planes_accion"
+                ],
+                "description": "get Tabla Resumen filtrando por el id de la unidad",
+                "operationId": "PlanesAccionController.GetTablaResumenUnidad",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Formulacion"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
         "/reportes/desagregado": {
             "post": {
                 "tags": [
@@ -2025,6 +2184,35 @@
                     },
                     "403": {
                         "description": ""
+                    }
+                }
+            }
+        },
+        "/seguimiento/estado_trimestres/{plan_id}": {
+            "get": {
+                "tags": [
+                    "seguimiento"
+                ],
+                "description": "get Seguimiento de los trimestres correspondientes",
+                "operationId": "SeguimientoController.EstadoTrimestres",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "plan_id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "403": {
+                        "description": ""
+                    },
+                    "404": {
+                        "description": "not found resource"
                     }
                 }
             }
