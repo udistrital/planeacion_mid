@@ -2348,3 +2348,35 @@ func eliminarUnidad(unidades []map[string]interface{}, id int) []map[string]inte
 	}
 	return unidades
 }
+
+func ValidarUnidadesPlanes(periodo_seguimiento map[string]interface{}, body_unidades map[string]interface{}) []map[string]interface{} {
+	unidadesJSON1 := []interface{}{}
+	if err := json.Unmarshal([]byte(periodo_seguimiento["unidades_interes"].(string)), &unidadesJSON1); err != nil {
+		panic(map[string]interface{}{"funcion": "ValidarUnidadesPlanes", "err": "Error al deserializar unidadesJSON1", "status": "400", "log": err})
+	}
+
+	unidadesJSON2 := body_unidades["unidades_interes"].([]interface{})
+
+	unidadesMap := make(map[int]bool)
+	for _, unidad := range unidadesJSON1 {
+		unidadMap := unidad.(map[string]interface{})
+		id := int(unidadMap["Id"].(float64))
+		unidadesMap[id] = true
+	}
+
+	var unidadesValidadas []map[string]interface{}
+
+	for _, unidad := range unidadesJSON2 {
+		unidadMap := unidad.(map[string]interface{})
+		id := int(unidadMap["Id"].(float64))
+		if !unidadesMap[id] {
+			// Si hay una unidad en el body que no está en periodo_seguimiento, retornar null
+			fmt.Println("Unidad en body no presente en periodo_seguimiento: ", unidadMap)
+			return nil
+		}
+		unidadesValidadas = append(unidadesValidadas, unidadMap)
+	}
+
+	// Retorna la intersección de las unidades
+	return unidadesValidadas
+}
