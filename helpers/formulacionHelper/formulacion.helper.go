@@ -763,16 +763,6 @@ func GetIndexActividad(entrada map[string]interface{}) int {
 	return maxIndex
 }
 
-func filtrarPlanes(data []map[string]interface{}, f func(map[string]interface{}) bool) []map[string]interface{} {
-	fltd := make([]map[string]interface{}, 0)
-	for _, v := range data {
-		if f(v) {
-			fltd = append(fltd, v)
-		}
-	}
-	return fltd
-}
-
 func getNumVersion(data []map[string]interface{}, f func(map[string]interface{}) bool) int {
 	for i, e := range data {
 		if f(e) {
@@ -864,7 +854,7 @@ func getEstados() map[string]string {
 }
 
 func obtenerNumeroVersion(planes []map[string]interface{}, planActual map[string]interface{}) int {
-	versionesPlan := filtrarPlanes(planes, func(plan map[string]interface{}) bool {
+	versionesPlan := helpers.FiltrarArreglo(planes, func(plan map[string]interface{}) bool {
 		return plan["dependencia_id"] == planActual["dependencia_id"] && plan["vigencia"] == planActual["vigencia"] && plan["nombre"] == planActual["nombre"]
 	})
 	versionesOrdenadas := OrdenarVersiones(versionesPlan)

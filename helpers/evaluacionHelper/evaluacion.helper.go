@@ -19,6 +19,13 @@ const (
 	ABREVIACION_SEGUIMIENTO_PLAN_ACCION  string = "S_SP"
 )
 
+var NOMBRE_TRIMESTRE = map[int]string{
+	1: "Trimestre Uno",
+	2: "Trimestre Dos",
+	3: "Trimestre Tres",
+	4: "Trimestre Cuatro",
+}
+
 func GetEvaluacionTrimestre(planId string, periodoId string, actividadId string) []map[string]interface{} {
 	var resSeguimiento map[string]interface{}
 	var seguimiento map[string]interface{}
@@ -420,7 +427,6 @@ func GetUnidadesPorPlanYVigencia(nombrePlan string, vigencia string) (unidades [
 				if plan["nombre"] == nombrePlan && vigencia == plan["vigencia"] {
 					existeIdUnidad := false
 					for _, idUnidad := range idsUnidades {
-						fmt.Println(plan["dependencia_id"])
 						if idUnidad == plan["dependencia_id"].(string) {
 							existeIdUnidad = true
 						}
@@ -453,4 +459,147 @@ func GetUnidadesPorPlanYVigencia(nombrePlan string, vigencia string) (unidades [
 		panic(err)
 	}
 	return unidades, outputError
+}
+
+func GetPlanesPeriodo(unidad string, vigencia string) (respuesta []map[string]interface{}, outputError map[string]interface{}) {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			outputError = map[string]interface{}{
+				"funcion": "GetPlanesPeriodo",
+				"err":     localError["err"],
+				"status":  localError["status"],
+			}
+			panic(outputError)
+		}
+	}()
+	var resPlan map[string]interface{}
+	var resSeguimiento map[string]interface{}
+	respuesta = make([]map[string]interface{}, 0)
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/plan?query=estado_plan_id:6153355601c7a2365b2fb2a1,dependencia_id:`+unidad+`,vigencia:`+vigencia, &resPlan); err == nil {
+		planes := make([]map[string]interface{}, 1)
+		helpers.LimpiezaRespuestaRefactor(resPlan, &planes)
+		// formatdata.JsonPrint(planes)
+		if fmt.Sprintf("%v", planes) == "[]" {
+			panic(map[string]interface{}{
+				"err":    "No se tienen planes en seguimiento para la dependencia y la vigencia",
+				"status": "404",
+			})
+		}
+
+		periodos := GetPeriodos(vigencia)
+		trimestres := seguimientohelper.GetTrimestres(vigencia)
+		for _, plan := range planes {
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/seguimiento?query=tipo_seguimiento_id:61f236f525e40c582a0840d0,estado_seguimiento_id:622ba49216511e93a95c326d,plan_id:`+plan["_id"].(string), &resSeguimiento); err == nil {
+				seguimientos := make([]map[string]interface{}, 1)
+				helpers.LimpiezaRespuestaRefactor(resSeguimiento, &seguimientos)
+				if fmt.Sprintf("%v", seguimientos) == "[]" {
+					continue
+				}
+
+				var periodosSelecionados []map[string]interface{}
+				for _, seguimiento := range seguimientos {
+					for _, periodo := range periodos {
+						if seguimiento["periodo_seguimiento_id"] == periodo["_id"] {
+							for _, trimestre := range trimestres {
+								var trimestreId float64
+								if reflect.TypeOf(trimestre["Id"]).String() == "string" {
+									trimestreId, _ = strconv.ParseFloat(trimestre["Id"].(string), 64)
+								} else {
+									trimestreId = trimestre["Id"].(float64)
+								}
+								var periodoId float64
+								if reflect.TypeOf(periodo["periodo_id"]).String() == "string" {
+									periodoId, _ = strconv.ParseFloat(periodo["periodo_id"].(string), 64)
+								} else {
+									periodoId = periodo["periodo_id"].(float64)
+								}
+
+								if trimestreId == periodoId {
+									periodosSelecionados = append(periodosSelecionados, map[string]interface{}{"nombre": trimestre["ParametroId"].(map[string]interface{})["Nombre"].(string), "id": periodo["_id"]})
+									break
+								}
+							}
+							break
+						}
+					}
+				}
+				respuesta = append(respuesta, map[string]interface{}{"plan": plan["nombre"], "id": plan["_id"], "periodos": periodosSelecionados})
+			} else {
+				panic(map[string]interface{}{
+					"err":    err,
+					"status": "404",
+				})
+			}
+		}
+	} else {
+		return nil, map[string]interface{}{
+			"err":    err,
+			"status": "404",
+		}
+	}
+	return respuesta, nil
+}
+
+func GetAvances(nombrePlan string, idVigencia string, idUnidad string) (respuesta map[string]interface{}, outputError map[string]interface{}) {
+	respuesta = make(map[string]interface{}, 0)
+	avance := map[int]float64{
+		1: 0,
+		2: 0,
+		3: 0,
+		4: 0,
+	}
+
+	if planes, err := GetPlanesPeriodo(idUnidad, idVigencia); err != nil {
+		panic(err)
+	} else {
+		planes = helpers.FiltrarArreglo(planes, func(plan map[string]interface{}) bool {
+			return plan["plan"] == nombrePlan
+		})
+		plan := planes[0]
+		respuesta["plan"] = map[string]interface{}{
+			"id":     plan["id"],
+			"nombre": plan["plan"],
+		}
+		periodos := plan["periodos"].([]map[string]interface{})
+		ultimoPeriodo := periodos[len(periodos)-1]
+		respuesta["periodo"] = map[string]interface{}{
+			"id":     ultimoPeriodo["id"],
+			"nombre": ultimoPeriodo["nombre"],
+		}
+		trimestres := GetPeriodos(idVigencia)
+		if len(trimestres) != 0 {
+			for index, trimestre := range trimestres {
+				for _, periodo := range periodos {
+					if trimestre["_id"] == periodo["id"] {
+						actividades := GetEvaluacion(plan["id"].(string), trimestres, index)
+						var numeroActividad = "0"
+						for _, actividad := range actividades {
+							if numeroActividad != actividad["numero"] {
+								// Se guarda el número de la actividad, si hay más registros con la misma actividad no se sumaran
+								numeroActividad = actividad["numero"].(string)
+								for i := 1; i < 5; i++ {
+									infoTrimestre := actividad["trimestre"+strconv.Itoa(i)].(map[string]interface{})
+									if fmt.Sprintf("%v", infoTrimestre) != "map[]" && periodo["nombre"] == NOMBRE_TRIMESTRE[i] {
+										// Se tiene info del Trimestre y se está evaluando el mismo periodo
+										avanceActividad := infoTrimestre["actividad"].(float64)
+										if avanceActividad >= 1 {
+											avance[i] = avance[i] + actividad["ponderado"].(float64)
+										} else {
+											avance[i] = avance[i] + actividad["ponderado"].(float64)*float64(avanceActividad)
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+	}
+	respuesta["Trimestres"] = avance
+	respuesta["Promedio"] = (avance[1] + avance[2] + avance[3] + avance[4]) / 4
+	return respuesta, nil
 }
