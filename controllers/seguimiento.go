@@ -132,7 +132,7 @@ func (c *SeguimientoController) CrearReportes() {
 	tipo := c.Ctx.Input.Param(":tipo")
 	var res map[string]interface{}
 	var resPadres map[string]interface{}
-	var resDependencia map[string]interface{}
+	var resDependencia []map[string]interface{}
 	var resTrimestres map[string]interface{}
 	var plan map[string]interface{}
 	var planesPadre []map[string]interface{}
@@ -252,32 +252,108 @@ func (c *SeguimientoController) CrearReportes() {
 		}
 
 		if nuevo {
+			if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia?query=Id:"+plan["dependencia_id"].(string), &resDependencia); err == nil {
+			} else {
+				panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error obteniendo la dependencia", "status": "400", "log": err})
+			}
 			for i := 0; i < len(trimestres); i++ {
 				periodo := int(trimestres[i]["Id"].(float64))
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?query=tipo_seguimiento_id:`+tipo+`,periodo_id:`+strconv.Itoa(periodo), &resTrimestres); err == nil {
+				if nuevaEstructura, ok := plan["nueva_estructura"].(bool); ok && nuevaEstructura {
+					var respuestaRegistro map[string]interface{}
+					planesInteresArray := []interface{}{
+						map[string]interface{}{
+							"_id":    plan["formato_id"],
+							"nombre": plan["nombre"],
+						},
+					}
+					planesInteresJSON, err := json.Marshal(planesInteresArray)
+					if err != nil {
+						panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error convirtiendo el array a JSON", "status": "400", "log": err})
+					}
+
+					dependenciaID, err := strconv.Atoi(plan["dependencia_id"].(string))
+					if err != nil {
+						panic(map[string]interface{}{
+								"funcion": "CrearReportes",
+								"err":     "Error convirtiendo el ID de la dependencia a entero",
+								"status":  "400",
+						})
+					}
+					unidadInteresArray := []interface{}{
+						map[string]interface{}{
+								"Id": dependenciaID,
+								"Nombre": resDependencia[0]["Nombre"].(string),
+						},
+					}
+					unidadInteresJSON, err := json.Marshal(unidadInteresArray)
+					if err != nil {
+						panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error convirtiendo el array a JSON", "status": "400", "log": err})
+					}
+
+					body := make(map[string]interface{})
+					body["periodo_id"] = strconv.Itoa(periodo)
+					body["planes_interes"] = string(planesInteresJSON)
+					body["unidades_interes"] = string(unidadInteresJSON)
+					body["tipo_seguimiento_id"] = tipo
+					body["activo"] = true
+
+					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/buscar-unidad-planes/1", "POST", &respuestaRegistro, body); err != nil {
+						panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error buscando periodo-seguimiento", "status": "400", "log": err})
+					}
+					
 					reporte["nombre"] = "Seguimiento para el " + plan["nombre"].(string)
 					reporte["descripcion"] = "Seguimiento " + plan["nombre"].(string)
-					if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"dependencia/"+plan["dependencia_id"].(string), &resDependencia); err == nil {
-						if resDependencia["Nombre"] != nil {
-							reporte["descripcion"] = reporte["descripcion"].(string) + " dependencia " + resDependencia["Nombre"].(string)
-						}
+					if resDependencia[0]["Nombre"] != nil {
+						reporte["descripcion"] = reporte["descripcion"].(string) + " dependencia " + resDependencia[0]["Nombre"].(string)
 					}
-					reporte["activo"] = false
+					reporte["activo"] = true
 					reporte["plan_id"] = plan_id
 					reporte["estado_seguimiento_id"] = "61f237df25e40c57a60840d5"
-					reporte["periodo_seguimiento_id"] = resTrimestres["Data"].([]interface{})[0].(map[string]interface{})["_id"]
-					reporte["fecha_inicio"] = resTrimestres["Data"].([]interface{})[0].(map[string]interface{})["fecha_fin"]
+					reporte["periodo_seguimiento_id"] = respuestaRegistro["Data"].([]interface{})[0].(map[string]interface{})["_id"]
+					reporte["fecha_inicio"] = respuestaRegistro["Data"].([]interface{})[0].(map[string]interface{})["fecha_inicio"]
 					reporte["tipo_seguimiento_id"] = tipo
 					reporte["dato"] = "{}"
+
+					jsonReporte, err := json.Marshal(reporte)
+					if err != nil {
+						fmt.Println("Error al convertir el reporte a JSON:", err)
+						return
+					}
+					fmt.Println("Reporte:", string(jsonReporte))
 
 					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &respuestaPost, reporte); err != nil {
 						panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error creando reporte", "status": "400", "log": err})
 					}
 
 					arrReportes = append(arrReportes, respuestaPost["Data"].(map[string]interface{}))
+					respuestaRegistro = nil
 					respuestaPost = nil
+
 				} else {
-					panic(err)
+					// El parámetro 'nueva_estructura' no está presente o no es del tipo bool o no es true.
+					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?query=tipo_seguimiento_id:`+tipo+`,periodo_id:`+strconv.Itoa(periodo), &resTrimestres); err == nil {
+						reporte["nombre"] = "Seguimiento para el " + plan["nombre"].(string)
+						reporte["descripcion"] = "Seguimiento " + plan["nombre"].(string)
+						if resDependencia[0]["Nombre"] != nil {
+							reporte["descripcion"] = reporte["descripcion"].(string) + " dependencia " + resDependencia[0]["Nombre"].(string)
+						}
+						reporte["activo"] = true
+						reporte["plan_id"] = plan_id
+						reporte["estado_seguimiento_id"] = "61f237df25e40c57a60840d5"
+						reporte["periodo_seguimiento_id"] = resTrimestres["Data"].([]interface{})[0].(map[string]interface{})["_id"]
+						reporte["fecha_inicio"] = resTrimestres["Data"].([]interface{})[0].(map[string]interface{})["fecha_fin"]
+						reporte["tipo_seguimiento_id"] = tipo
+						reporte["dato"] = "{}"
+
+						if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &respuestaPost, reporte); err != nil {
+							panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error creando reporte", "status": "400", "log": err})
+						}
+
+						arrReportes = append(arrReportes, respuestaPost["Data"].(map[string]interface{}))
+						respuestaPost = nil
+					} else {
+						panic(err)
+					}
 				}
 			}
 		}

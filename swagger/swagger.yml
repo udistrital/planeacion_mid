@@ -592,6 +592,31 @@ paths:
             $ref: '#/definitions/models.Formulacion'
         "403":
           description: :id is empty
+  /formulacion/get_planes_unidades_comun/{id}:
+    post:
+      tags:
+      - formulacion
+      description: post Get planes en comun con unidades by id periodo-seguimiento
+      operationId: FormulacionController.GetPlanesUnidadesComun
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
   /formulacion/get_rubros:
     get:
       tags:
@@ -673,6 +698,26 @@ paths:
             $ref: '#/definitions/models.Formulacion'
         "403":
           description: :id is empty
+  /formulacion/habilitar_fechas_funcionamiento:
+    post:
+      tags:
+      - formulacion
+      description: Peticion POST para definir fechas en planes de acción de funcionamiento
+      operationId: FormulacionController.DefinirFechasFuncionamiento
+      parameters:
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "400":
+          description: bad request
   /formulacion/planes:
     get:
       tags:
