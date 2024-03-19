@@ -537,17 +537,16 @@ func GetPlanesPeriodo(unidad string, vigencia string) (respuesta []map[string]in
 			"status": "404",
 		})
 	}
-	return respuesta, nil
+	return respuesta, outputError
 }
 
 func GetAvances(nombrePlan string, idVigencia string, idUnidad string) (respuesta map[string]interface{}, outputError map[string]interface{}) {
 	defer func() {
 		if err := recover(); err != nil {
-			localError := err.(map[string]interface{})
 			outputError = map[string]interface{}{
-				"funcion": "GetAvances" + localError["funcion"].(string),
-				"err":     localError["err"],
-				"status":  localError["status"],
+				"funcion": "GetAvances",
+				"err":     err,
+				"status":  "404",
 			}
 			panic(outputError)
 		}
@@ -610,5 +609,5 @@ func GetAvances(nombrePlan string, idVigencia string, idUnidad string) (respuest
 	}
 	respuesta["Trimestres"] = avance
 	respuesta["Promedio"] = (avance[1] + avance[2] + avance[3] + avance[4]) / 4
-	return respuesta, nil
+	return respuesta, outputError
 }

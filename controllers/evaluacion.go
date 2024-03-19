@@ -133,7 +133,7 @@ func (c *EvaluacionController) PlanesAEvaluar() {
 	if datos, err := evaluacionhelper.GetPlanesParaEvaluar(); err == nil {
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": datos}
 	} else {
-		panic(map[string]interface{}{"funcion": "PlanesAEvaluar", "err": err, "status": "400", "message": "Error obteniendo los planes a evaluar"})
+		panic(map[string]interface{}{"funcion": "PlanesAEvaluar", "err": err, "status": "404", "message": "Error obteniendo los planes a evaluar"})
 	}
 	c.ServeJSON()
 }
@@ -156,10 +156,10 @@ func (c *EvaluacionController) Unidades() {
 		if data, err := evaluacionhelper.GetUnidadesPorPlanYVigencia(nombrePlan, vigencia); err == nil {
 			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": data}
 		} else {
-			panic(map[string]interface{}{"funcion": "Unidades", "err": err, "status": "400", "message": "Error obteniendo las unidades del plan y la vigencia dados"})
+			panic(map[string]interface{}{"funcion": "Unidades", "err": err, "status": "404", "message": "Error obteniendo las unidades del plan y la vigencia dados"})
 		}
 	} else {
-		panic(map[string]interface{}{"funcion": "Unidades", "err": err, "status": "400", "message": "Error obteniendo las unidades del plan y la vigencia dados"})
+		panic(map[string]interface{}{"funcion": "Unidades", "err": err, "status": "404", "message": "Error obteniendo las unidades del plan y la vigencia dados"})
 	}
 
 	c.ServeJSON()
@@ -170,6 +170,7 @@ func (c *EvaluacionController) Unidades() {
 // @Description get Avance de Unidad
 // @Param	plan 		path 	string	true		"The key for staticblock"
 // @Param	vigencia 	path 	string	true		"The key for staticblock"
+// @Param	unidad 	path 	string	true		"The key for staticblock"
 // @Success 200
 // @Failure 404
 // @router /avance/:plan:/:vigencia/:unidad [get]
@@ -180,14 +181,14 @@ func (c *EvaluacionController) Avances() {
 	vigencia := c.Ctx.Input.Param(":vigencia")
 	unidad := c.Ctx.Input.Param(":unidad")
 
-	if nombrePlan, err := url.QueryUnescape(plan); err == nil {
-		if data, err := evaluacionhelper.GetAvances(nombrePlan, vigencia, unidad); err == nil {
+	if nombrePlan, err1 := url.QueryUnescape(plan); err1 == nil {
+		if data, err2 := evaluacionhelper.GetAvances(nombrePlan, vigencia, unidad); err2 == nil {
 			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": data}
 		} else {
-			panic(map[string]interface{}{"funcion": "Unidades", "err": err, "status": "400", "message": "Error obteniendo las unidades del plan y la vigencia dados"})
+			panic(map[string]interface{}{"funcion": "Avances", "err": err2, "status": "404", "message": "Error obteniendo los avances"})
 		}
 	} else {
-		panic(map[string]interface{}{"funcion": "Unidades", "err": err, "status": "400", "message": "Error obteniendo las unidades del plan y la vigencia dados"})
+		panic(map[string]interface{}{"funcion": "Avances", "err": err1, "status": "404", "message": "No se pudo obtener el nombre"})
 	}
 
 	c.ServeJSON()
