@@ -396,3 +396,13 @@ func ErrorController(c beego.Controller, controller string) {
 		}
 	}
 }
+
+func FiltrarArreglo(data []map[string]interface{}, condicion func(map[string]interface{}) bool) []map[string]interface{} {
+	fltd := make([]map[string]interface{}, 0)
+	for _, v := range data {
+		if condicion(v) {
+			fltd = append(fltd, v)
+		}
+	}
+	return fltd
+}
