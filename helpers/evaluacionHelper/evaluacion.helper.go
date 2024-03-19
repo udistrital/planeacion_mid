@@ -541,6 +541,17 @@ func GetPlanesPeriodo(unidad string, vigencia string) (respuesta []map[string]in
 }
 
 func GetAvances(nombrePlan string, idVigencia string, idUnidad string) (respuesta map[string]interface{}, outputError map[string]interface{}) {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			outputError = map[string]interface{}{
+				"funcion": "GetAvances" + localError["funcion"].(string),
+				"err":     localError["err"],
+				"status":  localError["status"],
+			}
+			panic(outputError)
+		}
+	}()
 	respuesta = make(map[string]interface{}, 0)
 	avance := map[int]float64{
 		1: 0,
