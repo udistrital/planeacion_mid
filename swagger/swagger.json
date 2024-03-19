@@ -148,6 +148,39 @@
                 }
             }
         },
+        "/evaluacion/avance/{plan}/{vigencia}/{unidad}": {
+            "get": {
+                "tags": [
+                    "evaluacion"
+                ],
+                "description": "get Avance de Unidad",
+                "operationId": "EvaluacionController.GetAvance",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "plan",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "vigencia",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "404": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/evaluacion/planes/": {
             "get": {
                 "tags": [

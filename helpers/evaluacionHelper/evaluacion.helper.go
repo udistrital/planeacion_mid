@@ -326,11 +326,10 @@ func GetPeriodos(vigencia string) []map[string]interface{} {
 func GetPlanesParaEvaluar() (planes []string, outputError map[string]interface{}) {
 	defer func() {
 		if err := recover(); err != nil {
-			localError := err.(map[string]interface{})
 			outputError = map[string]interface{}{
 				"funcion": "GetPlanesParaEvaluar",
-				"err":     localError["err"],
-				"status":  localError["status"],
+				"err":     err,
+				"status":  "400",
 			}
 			panic(outputError)
 		}
@@ -384,11 +383,10 @@ func GetPlanesParaEvaluar() (planes []string, outputError map[string]interface{}
 func GetUnidadesPorPlanYVigencia(nombrePlan string, vigencia string) (unidades []map[string]interface{}, outputError map[string]interface{}) {
 	defer func() {
 		if err := recover(); err != nil {
-			localError := err.(map[string]interface{})
 			outputError = map[string]interface{}{
 				"funcion": "GetUnidadesPorPlanYVigencia",
-				"err":     localError["err"],
-				"status":  localError["status"],
+				"err":     err,
+				"status":  "400",
 			}
 			panic(outputError)
 		}
@@ -534,10 +532,10 @@ func GetPlanesPeriodo(unidad string, vigencia string) (respuesta []map[string]in
 			}
 		}
 	} else {
-		return nil, map[string]interface{}{
+		panic(map[string]interface{}{
 			"err":    err,
 			"status": "404",
-		}
+		})
 	}
 	return respuesta, nil
 }
