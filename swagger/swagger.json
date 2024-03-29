@@ -148,6 +148,63 @@
                 }
             }
         },
+        "/evaluacion/avance/{plan}/{vigencia}/{unidad}": {
+            "get": {
+                "tags": [
+                    "evaluacion"
+                ],
+                "description": "get Avance de Unidad",
+                "operationId": "EvaluacionController.GetAvance",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "plan",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "vigencia",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "unidad",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "404": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/evaluacion/planes/": {
+            "get": {
+                "tags": [
+                    "evaluacion"
+                ],
+                "description": "get Planes que se pueden evaluar",
+                "operationId": "EvaluacionController.GetPlanesAEvaluar",
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "404": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/evaluacion/planes_periodo/{vigencia}/{unidad}": {
             "get": {
                 "tags": [
@@ -166,6 +223,39 @@
                     {
                         "in": "path",
                         "name": "unidad",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "404": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/evaluacion/unidades/{plan}/{vigencia}": {
+            "get": {
+                "tags": [
+                    "evaluacion"
+                ],
+                "description": "get Unidades",
+                "operationId": "EvaluacionController.GetUnidades",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "plan",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "vigencia",
                         "description": "The key for staticblock",
                         "required": true,
                         "type": "string"
@@ -810,6 +900,44 @@
                 }
             }
         },
+        "/formulacion/get_planes_unidades_comun/{id}": {
+            "post": {
+                "tags": [
+                    "formulacion"
+                ],
+                "description": "post Get planes en comun con unidades by id periodo-seguimiento",
+                "operationId": "FormulacionController.GetPlanesUnidadesComun",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Formulacion"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
         "/formulacion/get_rubros": {
             "get": {
                 "tags": [
@@ -929,6 +1057,37 @@
                     },
                     "403": {
                         "description": ":id is empty"
+                    }
+                }
+            }
+        },
+        "/formulacion/habilitar_fechas_funcionamiento": {
+            "post": {
+                "tags": [
+                    "formulacion"
+                ],
+                "description": "Peticion POST para definir fechas en planes de acción de funcionamiento",
+                "operationId": "FormulacionController.DefinirFechasFuncionamiento",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Formulacion"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request"
                     }
                 }
             }

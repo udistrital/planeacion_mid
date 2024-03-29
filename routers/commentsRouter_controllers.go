@@ -63,8 +63,35 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:EvaluacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:EvaluacionController"],
         beego.ControllerComments{
+            Method: "Avances",
+            Router: "/avance/:plan:/:vigencia/:unidad",
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:EvaluacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:EvaluacionController"],
+        beego.ControllerComments{
+            Method: "PlanesAEvaluar",
+            Router: "/planes/",
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:EvaluacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:EvaluacionController"],
+        beego.ControllerComments{
             Method: "GetPlanesPeriodo",
             Router: "/planes_periodo/:vigencia/:unidad",
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:EvaluacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:EvaluacionController"],
+        beego.ControllerComments{
+            Method: "Unidades",
+            Router: "/unidades/:plan:/:vigencia",
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
             Filters: nil,
@@ -216,6 +243,15 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"],
         beego.ControllerComments{
+            Method: "GetPlanesUnidadesComun",
+            Router: "/get_planes_unidades_comun/:id",
+            AllowHTTPMethods: []string{"post"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"],
+        beego.ControllerComments{
             Method: "GetRubros",
             Router: "/get_rubros",
             AllowHTTPMethods: []string{"get"},
@@ -246,6 +282,15 @@ func init() {
             Method: "GuardarIdentificacion",
             Router: "/guardar_identificacion/:id/:idTipo",
             AllowHTTPMethods: []string{"put"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"],
+        beego.ControllerComments{
+            Method: "DefinirFechasFuncionamiento",
+            Router: "/habilitar_fechas_funcionamiento",
+            AllowHTTPMethods: []string{"post"},
             MethodParams: param.Make(),
             Filters: nil,
             Params: nil})
