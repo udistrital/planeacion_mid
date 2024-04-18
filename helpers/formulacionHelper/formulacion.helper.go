@@ -11,8 +11,8 @@ import (
 	"net/url"
 	"sort"
 	"strconv"
-	"time"
 	"strings"
+	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
@@ -24,7 +24,7 @@ import (
 const (
 	CodigoTipoPlan                  string = "PL_SP"
 	CodigoTipoPlanAccionFormulacion string = "PAF_SP"
-	CodigoPlanEnFormulacion         string = "EF"
+	CodigoPlanEnFormulacion         string = "EF_SP"
 	Pregrado                        string = "PREGRADO"
 	Posgrado                        string = "POSGRADO"
 	RHVPosgrado                     string = "RHVPOS"
