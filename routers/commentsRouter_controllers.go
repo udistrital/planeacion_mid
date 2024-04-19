@@ -549,6 +549,15 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"],
         beego.ControllerComments{
+            Method: "AvalarPlan",
+            Router: "/avalar/:idPlan",
+            AllowHTTPMethods: []string{"post"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:SeguimientoController"],
+        beego.ControllerComments{
             Method: "CrearReportes",
             Router: "/crear_reportes/:plan/:tipo",
             AllowHTTPMethods: []string{"post"},

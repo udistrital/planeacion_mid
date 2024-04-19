@@ -3,6 +3,7 @@ package main
 import (
 	_ "github.com/udistrital/planeacion_mid/routers"
 	apistatus "github.com/udistrital/utils_oas/apiStatusLib"
+	"github.com/udistrital/utils_oas/xray"
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/plugins/cors"
@@ -27,6 +28,7 @@ func main() {
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 	}))
+	xray.InitXRay()
 	beego.ErrorController(&customerrorv2.CustomErrorController{})
 	apistatus.Init()
 	beego.Run()
