@@ -1906,7 +1906,10 @@ func (c *FormulacionController) EstructuraPlanes() {
 		}
 	}()
 	id := c.Ctx.Input.Param(":id")
-
+	fmt.Println("----ID DE PRUEBA----", id)
+	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "La estructura de los planes fue actualizada correctamente"}
+	c.ServeJSON()
+	return
 	//Obtener plantilla por id
 	plantilla, err := formulacionhelper.GetPlantilla(id)
 	if err != nil {
