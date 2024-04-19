@@ -523,6 +523,42 @@ func (c *SeguimientoController) CrearReportes() {
 	c.ServeJSON()
 }
 
+// ObtenerTrimestres ...
+// @Title ObtenerTrimestres
+// @Description get Seguimiento
+// @Param	vigencia 	path 	string	true		"The key for staticblock"
+// @Success 200
+// @Failure 404
+// @router /trimestres/:vigencia [get]
+func (c *SeguimientoController) ObtenerTrimestres() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "SeguimientoController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
+	vigencia := c.Ctx.Input.Param(":vigencia")
+	if len(vigencia) == 0 {
+		c.Data["json"] = map[string]interface{}{"Success": false, "Status": "404", "Message": "Request containt incorrect params", "Data": nil}
+	}
+
+	trimestres, err := seguimientohelper.ObtenerTrimestres(vigencia)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "AvalarPlan", "err": "Trimestres no encontrados", "status": "404"})
+	}
+
+	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": trimestres}
+
+	c.ServeJSON()
+}
+
 // GetPeriodos ...
 // @Title GetPeriodos
 // @Description get Seguimiento
