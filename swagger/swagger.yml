@@ -1306,6 +1306,23 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/models.Reportes'
+  /seguimiento/avalar/{idPlan}:
+    post:
+      tags:
+      - seguimiento
+      description: Post para avalar plan y crear reportes de seguimiento
+      operationId: SeguimientoController.AvalarPlan
+      parameters:
+      - in: path
+        name: idPlan
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+        "400":
+          description: ""
   /seguimiento/crear_reportes/{plan}/{tipo}:
     post:
       tags:
@@ -1743,6 +1760,23 @@ paths:
             $ref: '#/definitions/models.Seguimiento'
         "403":
           description: :id is empty
+  /seguimiento/trimestres/{vigencia}:
+    get:
+      tags:
+      - seguimiento
+      description: get Seguimiento
+      operationId: SeguimientoController.ObtenerTrimestres
+      parameters:
+      - in: path
+        name: vigencia
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+        "404":
+          description: ""
 definitions:
   '{}':
     title: '{}'

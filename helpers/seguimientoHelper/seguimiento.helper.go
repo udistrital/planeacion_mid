@@ -2,10 +2,12 @@ package seguimientohelper
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"sort"
 	"strconv"
+	"sync"
 
 	"log"
 	"strings"
@@ -53,6 +55,48 @@ func GetTrimestres(vigencia string) []map[string]interface{} {
 	}
 
 	return trimestres
+}
+
+func ObtenerTrimestres(vigencia string) ([]map[string]interface{}, error) {
+	trimestres := make([]map[string]interface{}, 4)
+	errorTrimestres := make(chan error, 4)
+
+	var wg sync.WaitGroup
+	wg.Add(4)
+
+	for i := 0; i < 4; i++ {
+		go func(index int) {
+			defer wg.Done()
+			var res map[string]interface{}
+			url := fmt.Sprintf("http://%s/parametro_periodo?query=PeriodoId:%s,ParametroId__CodigoAbreviacion:T%d", beego.AppConfig.String("ParametrosService"), vigencia, index+1)
+			if err := request.GetJson(url, &res); err != nil {
+				errorTrimestres <- err
+				return
+			}
+			var trimestre []map[string]interface{}
+			helpers.LimpiezaRespuestaRefactor(res, &trimestre)
+			trimestres[index] = trimestre[0]
+		}(i)
+	}
+
+	wg.Wait()
+	close(errorTrimestres)
+
+	// Check for errors
+	for err := range errorTrimestres {
+		return nil, err
+	}
+
+	// Flatten trimestres slice
+	var result []map[string]interface{}
+	for _, trimestre := range trimestres {
+		if len(trimestre) == 0 {
+			return nil, errors.New("No se encontró el trimestre")
+		}
+		result = append(result, trimestre)
+	}
+
+	return result, nil
 }
 
 func GetActividades(subgrupo_id string) []map[string]interface{} {
@@ -1021,4 +1065,15 @@ func GuardarDetalleSegimiento(detalle map[string]interface{}, actualizar bool) s
 	}
 
 	return id
+}
+
+func CambiarEstadoPlan(plan map[string]interface{}, idEstado string) (map[string]interface{}, error) {
+	idPlan := plan["_id"].(string)
+	plan["estado_plan_id"] = idEstado
+	var res map[string]interface{}
+	if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+idPlan, "PUT", &res, plan); err == nil {
+		return res, nil
+	} else {
+		return nil, err
+	}
 }
