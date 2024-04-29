@@ -40,6 +40,7 @@ func (c *SeguimientoController) URLMapping() {
 	c.Mapping("RetornarActividad", c.RetornarActividad)
 	c.Mapping("MigrarInformacion", c.MigrarInformacion)
 	c.Mapping("AvalarPlan", c.AvalarPlan)
+	c.Mapping("ObtenerTrimestres", c.ObtenerTrimestres)
 }
 
 // HabilitarReportes ...
