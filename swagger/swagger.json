@@ -2983,6 +2983,32 @@
                 }
             }
         },
+        "/seguimiento/trimestres/{vigencia}": {
+            "get": {
+                "tags": [
+                    "seguimiento"
+                ],
+                "description": "get Seguimiento",
+                "operationId": "SeguimientoController.ObtenerTrimestres",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "vigencia",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "404": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/seguimiento/verificar_seguimiento/{id}": {
             "put": {
                 "tags": [
