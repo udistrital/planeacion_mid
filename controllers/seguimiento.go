@@ -694,7 +694,7 @@ func (c *SeguimientoController) ObtenerTrimestres() {
 
 	trimestres, err := seguimientohelper.ObtenerTrimestres(vigencia)
 	if err != nil {
-		panic(map[string]interface{}{"funcion": "AvalarPlan", "err": "Trimestres no encontrados", "status": "404"})
+		panic(map[string]interface{}{"funcion": "ObtenerTrimestres", "err": "Trimestres no encontrados", "status": "404"})
 	}
 
 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": trimestres}
