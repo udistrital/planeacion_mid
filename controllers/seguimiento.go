@@ -168,6 +168,10 @@ func (c *SeguimientoController) AvalarPlan() {
 		panic(map[string]interface{}{"funcion": "AvalarPlan", "err": "Error al obtener trimestres", "status": "400"})
 	}
 
+	if len(trimestres) == 0 {
+		panic(map[string]interface{}{"funcion": "AvalarPlan", "err": "Error al obtener trimestres", "status": "400"})
+	}
+
 	// Creacion de reportes de seguimiento
 	tipo := "61f236f525e40c582a0840d0"
 	var resPadres map[string]interface{}
