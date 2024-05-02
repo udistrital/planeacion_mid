@@ -380,30 +380,39 @@ func (c *SeguimientoController) AvalarPlan() {
 				respuestaPost = nil
 
 			} else {
-				// El parámetro 'nueva_estructura' no está presente o no es del tipo bool o no es true.
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?query=tipo_seguimiento_id:`+tipo+`,periodo_id:`+strconv.Itoa(periodo), &resTrimestres); err == nil {
-					reporte["nombre"] = "Seguimiento para el " + plan["nombre"].(string)
-					reporte["descripcion"] = "Seguimiento " + plan["nombre"].(string)
-					if resDependencia[0]["Nombre"] != nil {
-						reporte["descripcion"] = reporte["descripcion"].(string) + " dependencia " + resDependencia[0]["Nombre"].(string)
-					}
-					reporte["activo"] = true
-					reporte["plan_id"] = plan_id
-					reporte["estado_seguimiento_id"] = "61f237df25e40c57a60840d5"
-					reporte["periodo_seguimiento_id"] = resTrimestres["Data"].([]interface{})[0].(map[string]interface{})["_id"]
-					reporte["fecha_inicio"] = resTrimestres["Data"].([]interface{})[0].(map[string]interface{})["fecha_fin"]
-					reporte["tipo_seguimiento_id"] = tipo
-					reporte["dato"] = "{}"
-
-					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &respuestaPost, reporte); err != nil {
-						panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error creando reporte", "status": "400", "log": err})
-					}
-
-					arrReportes = append(arrReportes, respuestaPost["Data"].(map[string]interface{}))
-					respuestaPost = nil
-				} else {
-					panic(err)
+				// El parámetro 'nueva_estructura' del plan no está presente o no es del tipo bool o no es true.
+				body := make(map[string]interface{})
+				body["periodo_id"] = strconv.Itoa(periodo)
+				body["nueva_estructura"] = nil
+				body["tipo_seguimiento_id"] = tipo
+				body["activo"] = true
+				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/buscar-unidad-planes/8", "POST", &resTrimestres, body); err != nil {
+					panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error buscando periodo-seguimiento", "status": "404", "log": err})
 				}
+
+				if resTrimestres["Data"] == nil {
+					panic(map[string]interface{}{"funcion": "CrearReportes", "err": "No se encontró el periodo-seguimiento", "status": "400"})
+				}
+
+				reporte["nombre"] = "Seguimiento para el " + plan["nombre"].(string)
+				reporte["descripcion"] = "Seguimiento " + plan["nombre"].(string)
+				if resDependencia[0]["Nombre"] != nil {
+					reporte["descripcion"] = reporte["descripcion"].(string) + " dependencia " + resDependencia[0]["Nombre"].(string)
+				}
+				reporte["activo"] = true
+				reporte["plan_id"] = plan_id
+				reporte["estado_seguimiento_id"] = "61f237df25e40c57a60840d5"
+				reporte["periodo_seguimiento_id"] = resTrimestres["Data"].([]interface{})[0].(map[string]interface{})["_id"]
+				reporte["fecha_inicio"] = resTrimestres["Data"].([]interface{})[0].(map[string]interface{})["fecha_fin"]
+				reporte["tipo_seguimiento_id"] = tipo
+				reporte["dato"] = "{}"
+
+				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &respuestaPost, reporte); err != nil {
+					panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error creando reporte", "status": "400", "log": err})
+				}
+
+				arrReportes = append(arrReportes, respuestaPost["Data"].(map[string]interface{}))
+				respuestaPost = nil
 			}
 		}
 	}
