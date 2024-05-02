@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"sort"
 	"strconv"
-	"sync"
 
 	"log"
 	"strings"
@@ -58,45 +57,105 @@ func GetTrimestres(vigencia string) []map[string]interface{} {
 }
 
 func ObtenerTrimestres(vigencia string) ([]map[string]interface{}, error) {
-	trimestres := make([]map[string]interface{}, 4)
-	errorTrimestres := make(chan error, 4)
 
-	var wg sync.WaitGroup
-	wg.Add(4)
+	var res map[string]interface{}
+	var trimestre []map[string]interface{}
+	var trimestres []map[string]interface{}
 
-	for i := 0; i < 4; i++ {
-		go func(index int) {
-			defer wg.Done()
-			var res map[string]interface{}
-			url := fmt.Sprintf("http://%s/parametro_periodo?query=PeriodoId:%s,ParametroId__CodigoAbreviacion:T%d", beego.AppConfig.String("ParametrosService"), vigencia, index+1)
-			if err := request.GetJson(url, &res); err != nil {
-				errorTrimestres <- err
-				return
-			}
-			var trimestre []map[string]interface{}
-			helpers.LimpiezaRespuestaRefactor(res, &trimestre)
-			trimestres[index] = trimestre[0]
-		}(i)
+	if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=PeriodoId:"+vigencia+",ParametroId__CodigoAbreviacion:T1", &res); err != nil {
+		return nil, errors.New("No se encontró el trimestre 1 para la vigencia seleccionada")
 	}
 
-	wg.Wait()
-	close(errorTrimestres)
+	helpers.LimpiezaRespuestaRefactor(res, &trimestre)
+	if len(trimestre[0]) <= 0 {
+		return nil, errors.New("No se encontró el trimestre 1 para la vigencia seleccionada")
+	}
+	trimestres = append(trimestres, trimestre...)
+	trimestre = nil
 
-	// Check for errors
-	for err := range errorTrimestres {
-		return nil, err
+	if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=PeriodoId:"+vigencia+",ParametroId__CodigoAbreviacion:T2", &res); err != nil {
+		return nil, errors.New("No se encontró el trimestre 2 para la vigencia seleccionada")
 	}
 
-	// Flatten trimestres slice
-	var result []map[string]interface{}
-	for _, trimestre := range trimestres {
-		if len(trimestre) == 0 {
-			return nil, errors.New("No se encontró el trimestre")
-		}
-		result = append(result, trimestre)
+	helpers.LimpiezaRespuestaRefactor(res, &trimestre)
+	if len(trimestre[0]) <= 0 {
+		return nil, errors.New("No se encontró el trimestre 2 para la vigencia seleccionada")
+	}
+	trimestres = append(trimestres, trimestre...)
+	trimestre = nil
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=PeriodoId:"+vigencia+",ParametroId__CodigoAbreviacion:T3", &res); err != nil {
+		return nil, errors.New("No se encontró el trimestre 3 para la vigencia seleccionada")
 	}
 
-	return result, nil
+	helpers.LimpiezaRespuestaRefactor(res, &trimestre)
+	if len(trimestre[0]) <= 0 {
+		return nil, errors.New("No se encontró el trimestre 3 para la vigencia seleccionada")
+	}
+	trimestres = append(trimestres, trimestre...)
+	trimestre = nil
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=PeriodoId:"+vigencia+",ParametroId__CodigoAbreviacion:T4", &res); err != nil {
+		return nil, errors.New("No se encontró el trimestre 4 para la vigencia seleccionada")
+	}
+
+	helpers.LimpiezaRespuestaRefactor(res, &trimestre)
+	if len(trimestre[0]) <= 0 {
+		return nil, errors.New("No se encontró el trimestre 4 para la vigencia seleccionada")
+	}
+	trimestres = append(trimestres, trimestre...)
+
+	return trimestres, nil
+
+	// TODO: Analizar por qué no funciona el siguiente código
+	// trimestres := make([]map[string]interface{}, 4)
+	// errorTrimestres := make(chan error, 4)
+
+	// var wg sync.WaitGroup
+	// wg.Add(4)
+
+	// for i := 0; i < 4; i++ {
+	// 	go func(index int) {
+	// 		defer wg.Done()
+	// 		var numeroTrimestre = index + 1
+	// 		var numeroTrimestreStr = strconv.Itoa(numeroTrimestre)
+	// 		var res map[string]interface{}
+	// 		beego.Info("http://" + beego.AppConfig.String("ParametrosService") + "/parametro_periodo?query=PeriodoId:" + vigencia + ",ParametroId__CodigoAbreviacion:T" + numeroTrimestreStr)
+	// 		if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=PeriodoId:"+vigencia+",ParametroId__CodigoAbreviacion:T"+numeroTrimestreStr, &res); err != nil {
+	// 			errorTrimestres <- err
+	// 			return
+	// 		}
+	// 		// url := fmt.Sprintf("http://%s/parametro_periodo?query=PeriodoId:%s,ParametroId__CodigoAbreviacion:T%d", beego.AppConfig.String("ParametrosService"), vigencia, index+1)
+
+	// 		var trimestre []map[string]interface{}
+	// 		helpers.LimpiezaRespuestaRefactor(res, &trimestre)
+	// 		beego.Info(res)
+	// 		if len(trimestre) > 0 {
+	// 			trimestres[index] = trimestre[0]
+	// 		} else {
+	// 			errorTrimestres <- errors.New("No se encontró el trimestre")
+	// 		}
+	// 	}(i)
+	// }
+
+	// wg.Wait()
+	// close(errorTrimestres)
+
+	// // Check for errors
+	// for err := range errorTrimestres {
+	// 	return nil, err
+	// }
+
+	// // Flatten trimestres slice
+	// var result []map[string]interface{}
+	// for _, trimestre := range trimestres {
+	// 	if len(trimestre) == 0 {
+	// 		return nil, errors.New("No se encontró el trimestre")
+	// 	}
+	// 	result = append(result, trimestre)
+	// }
+
+	// return result, nil
 }
 
 func GetActividades(subgrupo_id string) []map[string]interface{} {
