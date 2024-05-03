@@ -1175,8 +1175,13 @@ func (c *FormulacionController) VersionarPlan() {
 		plan["dependencia_id"] = planPadre["dependencia_id"].(string)
 		plan["estado_plan_id"] = "614d3ad301c7a200482fabfd"
 		plan["padre_plan_id"] = id
-		plan["formato_id"] = planPadre["formato_id"].(string)
-		plan["nueva_estructura"] = true
+		if value, ok := planPadre["formato_id"].(string); ok {
+			plan["formato_id"] = value
+		}
+		
+		if _, ok := planPadre["nueva_estructura"]; ok {
+				plan["nueva_estructura"] = true
+		}
 
 		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan", "POST", &respuestaPost, plan); err != nil {
 			panic(map[string]interface{}{"funcion": "VersionarPlan", "err": "Error versionando plan \"plan[\"_id\"].(string)\"", "status": "400", "log": err})
