@@ -1956,7 +1956,7 @@ func (c *FormulacionController) EstructuraPlanes() {
 
 // DefinirFechasFuncionamiento ...
 // @Title DefinirFechasFuncionamiento
-// @Description Peticion POST para definir fechas en planes de acción de funcionamiento
+// @Description Peticion POST para definir fechas en planes de acción de funcionamiento e inversión para los procesos de formulación y seguimiento
 // @Param	body		body 	{}	true		"body for Plan content"
 // @Success 200 {object} models.Formulacion
 // @Failure 400 bad request
@@ -1982,11 +1982,10 @@ func (c *FormulacionController) DefinirFechasFuncionamiento() {
 	err := json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 	if err != nil {
 		// Manejar el error, imprimirlo o devolver una respuesta de error al cliente
-		fmt.Println("Error al decodificar JSON:", err)
 		c.Abort("400") // Bad Request
 		return
 	}
-	res = formulacionhelper.DefinirFechasFuncionamiento(body)
+	res = formulacionhelper.DefinirFechasFormulacionSeguimiento(body)
 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": res}
 	c.ServeJSON()
 }
