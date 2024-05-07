@@ -348,6 +348,13 @@ func (c *SeguimientoController) AvalarPlan() {
 				}
 
 				if respuestaRegistro["Data"] == nil {
+					respuesta, err := seguimientohelper.CambiarEstadoPlan(plan, id_estado_preaval)
+					if err != nil {
+						panic(map[string]interface{}{"funcion": "AvalarPlan", "err": err, "status": "400"})
+					}
+					if respuesta["Success"] == false {
+						panic(map[string]interface{}{"funcion": "AvalarPlan", "err": respuesta["Message"], "status": "400"})
+					}
 					panic(map[string]interface{}{"funcion": "CrearReportes", "err": "No se encontró el periodo-seguimiento", "status": "400"})
 				}
 
