@@ -1066,7 +1066,7 @@
                 "tags": [
                     "formulacion"
                 ],
-                "description": "Peticion POST para definir fechas en planes de acción de funcionamiento",
+                "description": "Peticion POST para definir fechas en planes de acción de funcionamiento e inversión para los procesos de formulación y seguimiento",
                 "operationId": "FormulacionController.DefinirFechasFuncionamiento",
                 "parameters": [
                     {

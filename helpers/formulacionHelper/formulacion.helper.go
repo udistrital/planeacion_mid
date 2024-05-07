@@ -1758,7 +1758,7 @@ func GetTotalRecurso(data map[string]interface{}, ind bool) string {
 	return strconv.FormatFloat(resultado, 'f', -1, 64)
 }
 
-//Obtener una plantilla por id
+// Obtener una plantilla por id
 func GetPlantilla(id string) (map[string]interface{}, error) {
 	var resPlantilla map[string]interface{}
 	var plantilla []map[string]interface{}
@@ -1771,7 +1771,7 @@ func GetPlantilla(id string) (map[string]interface{}, error) {
 	return plantilla[0], nil
 }
 
-//Obtener el id de acuerdo al estado:"En formulación" por codigo de abreviación
+// Obtener el id de acuerdo al estado:"En formulación" por codigo de abreviación
 func getIdEstadoEnFormulacion() (string, error) {
 	var resEstado map[string]interface{}
 	var estado []map[string]interface{}
@@ -1783,7 +1783,7 @@ func getIdEstadoEnFormulacion() (string, error) {
 	return estado[0]["_id"].(string), nil
 }
 
-//Obtener los planes en estado:"En formulación" por nombre de plantilla
+// Obtener los planes en estado:"En formulación" por nombre de plantilla
 func GetPlanesPorNombre(nombre string) ([]map[string]interface{}, error) {
 	var resPlanes map[string]interface{}
 	var planes []map[string]interface{}
@@ -1799,7 +1799,7 @@ func GetPlanesPorNombre(nombre string) ([]map[string]interface{}, error) {
 	return planes, nil
 }
 
-//Obtener el formato de una plantilla o un plan
+// Obtener el formato de una plantilla o un plan
 func GetFormato(id string) ([][]map[string]interface{}, error) {
 	var res map[string]interface{}
 	var hijos []models.Nodo
@@ -1822,7 +1822,7 @@ func GetFormato(id string) ([][]map[string]interface{}, error) {
 	}
 }
 
-//Obtener un subgrupo por id
+// Obtener un subgrupo por id
 func getSubgrupo(id string) (map[string]interface{}, error) {
 	var resSubgrupo map[string]interface{}
 	var subgrupo map[string]interface{}
@@ -1834,7 +1834,7 @@ func getSubgrupo(id string) (map[string]interface{}, error) {
 	return subgrupo, nil
 }
 
-//Crear un subgrupo (registar_nodo)
+// Crear un subgrupo (registar_nodo)
 func crearSubgrupo(bodySubgrupo map[string]interface{}) (map[string]interface{}, error) {
 	var resSubgrupo map[string]interface{}
 	err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/registrar_nodo", "POST", &resSubgrupo, bodySubgrupo)
@@ -1844,7 +1844,7 @@ func crearSubgrupo(bodySubgrupo map[string]interface{}) (map[string]interface{},
 	return resSubgrupo, nil
 }
 
-//Actualizar un subgrupo
+// Actualizar un subgrupo
 func actualizarSubgrupo(bodySubgrupo map[string]interface{}, id string) (map[string]interface{}, error) {
 	var resSubgrupo map[string]interface{}
 	err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+id, "PUT", &resSubgrupo, bodySubgrupo)
@@ -1854,7 +1854,7 @@ func actualizarSubgrupo(bodySubgrupo map[string]interface{}, id string) (map[str
 	return resSubgrupo, nil
 }
 
-//Obtener el detalle de un subgrupo por id
+// Obtener el detalle de un subgrupo por id
 func getSubgrupoDetalle(id string) (map[string]interface{}, error) {
 	var resSubgrupoDetalle map[string]interface{}
 	var subgrupoDetalle []map[string]interface{}
@@ -1866,7 +1866,7 @@ func getSubgrupoDetalle(id string) (map[string]interface{}, error) {
 	return subgrupoDetalle[0], nil
 }
 
-//Crear el detalle de un subgrupo
+// Crear el detalle de un subgrupo
 func crearSubgrupoDetalle(bodySubgrupoDetalle map[string]interface{}) (map[string]interface{}, error) {
 	var resSubgrupoDetalle map[string]interface{}
 	err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/", "POST", &resSubgrupoDetalle, bodySubgrupoDetalle)
@@ -1876,7 +1876,7 @@ func crearSubgrupoDetalle(bodySubgrupoDetalle map[string]interface{}) (map[strin
 	return resSubgrupoDetalle, nil
 }
 
-//Actualizar el detalle de un subgrupo
+// Actualizar el detalle de un subgrupo
 func actualizarSubgrupoDetalle(bodySubgrupoDetalle map[string]interface{}, id string) (map[string]interface{}, error) {
 	var resSubgrupoDetalle map[string]interface{}
 	err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+id, "PUT", &resSubgrupoDetalle, bodySubgrupoDetalle)
@@ -1886,7 +1886,7 @@ func actualizarSubgrupoDetalle(bodySubgrupoDetalle map[string]interface{}, id st
 	return resSubgrupoDetalle, nil
 }
 
-//Convertir arbol a lista plana
+// Convertir arbol a lista plana
 func ConvArbolAListaPlana(lista []map[string]interface{}, id string, isFormato bool) ([]map[string]interface{}, error) {
 	var listaPlana []map[string]interface{}
 	for _, objeto := range lista {
@@ -1926,8 +1926,8 @@ func ConvArbolAListaPlana(lista []map[string]interface{}, id string, isFormato b
 	return listaPlana, nil
 }
 
-//Actualizar la estructura de los planes en base a una plantilla
-//Comparando los formatos de la plantilla y el plan
+// Actualizar la estructura de los planes en base a una plantilla
+// Comparando los formatos de la plantilla y el plan
 func ActualizarEstructuraPlan(listaFormato, listaPlan []map[string]interface{}, idPlan string) error {
 	for _, objeto1 := range listaFormato {
 		var auxObjeto map[string]interface{}
@@ -2073,7 +2073,7 @@ func ActualizarEstructuraPlan(listaFormato, listaPlan []map[string]interface{}, 
 	return nil
 }
 
-//Comparar los subgrupos de una plantilla con un plan
+// Comparar los subgrupos de una plantilla con un plan
 func compararSubgrupos(objeto1, objeto2 map[string]interface{}) bool {
 	if objeto1["nombre"] != objeto2["nombre"] {
 		return false
@@ -2090,7 +2090,7 @@ func compararSubgrupos(objeto1, objeto2 map[string]interface{}) bool {
 	return true
 }
 
-//Comparar el detalle de los subgrupos de una plantilla con un plan
+// Comparar el detalle de los subgrupos de una plantilla con un plan
 func compararSubgruposDetalle(objeto1, objeto2 map[string]interface{}) bool {
 	if objeto1["nombre"] != objeto2["nombre"] {
 		return false
@@ -2107,18 +2107,18 @@ func compararSubgruposDetalle(objeto1, objeto2 map[string]interface{}) bool {
 	return true
 }
 
-func DefinirFechasFuncionamiento(body map[string]interface{}) []interface{} {
+func DefinirFechasFormulacionSeguimiento(body map[string]interface{}) []interface{} {
 	var planesBody []map[string]interface{}
 
 	planesBody, err := ObtenerArrayPlanesInteres(body)
 	if err != nil {
-		panic(map[string]interface{}{"funcion": "DefinirFechasFuncionamientoFormulacion", "err": "Error en la decodificación JSON", "status": "400"})
+		panic(map[string]interface{}{"funcion": "DefinirFechasFormulacionSeguimiento", "err": "Error en la decodificación JSON", "status": "400"})
 	}
 
 	// Llamada a la función para codificar cada elemento del array de planes de interés
 	planesJSON, err := CodificarPlanesInteres(planesBody)
 	if err != nil {
-		panic(map[string]interface{}{"funcion": "DefinirFechasFuncionamientoFormulacion", "err": "Error al codificar los planes de interés", "status": "400"})
+		panic(map[string]interface{}{"funcion": "DefinirFechasFormulacionSeguimiento", "err": "Error al codificar los planes de interés", "status": "400"})
 	}
 
 	body["planes_interes"] = ""
@@ -2143,7 +2143,7 @@ func DefinirFechasFuncionamiento(body map[string]interface{}) []interface{} {
 					// Registro Fechas iguales
 					registro = manejarUnidades(body, registro, 1)
 					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/"+registro["_id"].(string), "PUT", &res, registro); err != nil {
-						panic(map[string]interface{}{"funcion": "DefinirFechasFuncionamientoFormulacion", "err": "Error actualizando periodo-seguimiento \"registro[\"_id\"].(string)\"", "status": "400", "log": err})
+						panic(map[string]interface{}{"funcion": "DefinirFechasFormulacionSeguimiento", "err": "Error actualizando periodo-seguimiento \"registro[\"_id\"].(string)\"", "status": "400", "log": err})
 					}
 					respuestasAcumuladas = append(respuestasAcumuladas, res["Data"])
 				} else {
@@ -2151,7 +2151,7 @@ func DefinirFechasFuncionamiento(body map[string]interface{}) []interface{} {
 					// Si unidades_interes del registro se queda vacio, se debe inactivar
 					registro = manejarUnidades(body, registro, 2)
 					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/"+registro["_id"].(string), "PUT", &res, registro); err != nil {
-						panic(map[string]interface{}{"funcion": "DefinirFechasFuncionamientoFormulacion", "err": "Error actualizando periodo-seguimiento \"registro[\"_id\"].(string)\"", "status": "400", "log": err})
+						panic(map[string]interface{}{"funcion": "DefinirFechasFormulacionSeguimiento", "err": "Error actualizando periodo-seguimiento \"registro[\"_id\"].(string)\"", "status": "400", "log": err})
 					}
 					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/buscar-unidad-planes/2", "POST", &respuestaPost2, body); err == nil {
 						data, ok := respuestaPost2["Data"].([]interface{})
@@ -2159,18 +2159,28 @@ func DefinirFechasFuncionamiento(body map[string]interface{}) []interface{} {
 							registro2 := data[0].(map[string]interface{})
 							registro2 = manejarUnidades(body, registro2, 1)
 							if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/"+registro2["_id"].(string), "PUT", &res, registro2); err != nil {
-								panic(map[string]interface{}{"funcion": "DefinirFechasFuncionamientoFormulacion", "err": "Error actualizando periodo-seguimiento \"registro[\"_id\"].(string)\"", "status": "400", "log": err})
+								panic(map[string]interface{}{"funcion": "DefinirFechasFormulacionSeguimiento", "err": "Error actualizando periodo-seguimiento \"registro[\"_id\"].(string)\"", "status": "400", "log": err})
 							}
 							respuestasAcumuladas = append(respuestasAcumuladas, res["Data"])
 						} else { // No existe el registro, se crea el registro con las unidades del body
 							body["planes_interes"] = registro["planes_interes"]
 							if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento", "POST", &res, body); err != nil {
-								panic(map[string]interface{}{"funcion": "DefinirFechasFuncionamientoFormulacion", "err": "Error agregaron periodo-seguimiento", "status": "400", "log": err})
+								panic(map[string]interface{}{"funcion": "DefinirFechasFormulacionSeguimiento", "err": "Error agregaron periodo-seguimiento", "status": "400", "log": err})
 							}
 							respuestasAcumuladas = append(respuestasAcumuladas, res["Data"])
 						}
+						
+						//? Actualiza registros de seguimiento en caso de que hayan planes avalados con el formato_id igual al id del plan_interes del body
+						if body["tipo_seguimiento_id"] == "61f236f525e40c582a0840d0" || body["tipo_seguimiento_id"] == "6385fa136a0d19d7888837ed" {
+							periodoSeguimientoIdAntiguo := registro["_id"].(string)
+							periodoSeguimientoIdNuevo := res["Data"].(map[string]interface{})["_id"].(string)
+							unidadesBody, err := ObtenerArrayUnidadesInteres(body)
+							if err != nil {
+								panic(map[string]interface{}{"funcion": "manejarUnidades", "err": "Error en la decodificación JSON", "status": "400"})
+							}
+							CambiarFechasSeguimiento(planJSON, unidadesBody, periodoSeguimientoIdAntiguo, periodoSeguimientoIdNuevo)
+						}
 					}
-
 				}
 			} else { // No existe el registro con las unidades especificadas, se procede a validar por periodo, fecha_inicio y fecha_fin
 				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/buscar-unidad-planes/2", "POST", &respuestaPost2, body); err == nil {
@@ -2179,22 +2189,72 @@ func DefinirFechasFuncionamiento(body map[string]interface{}) []interface{} {
 						registro := data[0].(map[string]interface{})
 						registro = manejarUnidades(body, registro, 1)
 						if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/"+registro["_id"].(string), "PUT", &res, registro); err != nil {
-							panic(map[string]interface{}{"funcion": "DefinirFechasFuncionamientoFormulacion", "err": "Error actualizando periodo-seguimiento \"registro[\"_id\"].(string)\"", "status": "400", "log": err})
+							panic(map[string]interface{}{"funcion": "DefinirFechasFormulacionSeguimiento", "err": "Error actualizando periodo-seguimiento \"registro[\"_id\"].(string)\"", "status": "400", "log": err})
 						}
 						respuestasAcumuladas = append(respuestasAcumuladas, res["Data"])
 					} else { // No existe el registro, se crea
 						if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento", "POST", &res, body); err != nil {
-							panic(map[string]interface{}{"funcion": "DefinirFechasFuncionamientoFormulacion", "err": "Error versionando periodo-seguimiento", "status": "400", "log": err})
+							panic(map[string]interface{}{"funcion": "DefinirFechasFormulacionSeguimiento", "err": "Error versionando periodo-seguimiento", "status": "400", "log": err})
 						}
 						respuestasAcumuladas = append(respuestasAcumuladas, res["Data"])
 					}
 				}
 			}
 		} else {
-			panic(map[string]interface{}{"funcion": "DefinirFechasFormulacionUnidadesPlanes", "err": "Error en la peticion", "status": "400", "log": err})
+			panic(map[string]interface{}{"funcion": "DefinirFechasFormulacionSeguimiento", "err": "Error en la peticion", "status": "400", "log": err})
 		}
 	}
 	return respuestasAcumuladas
+}
+
+//? Función para cambiar el periodo_seguimiento_id de los registros de seguimiento de los planes avalados
+func CambiarFechasSeguimiento(planInteresString string, unidadesInteres []map[string]interface{}, periodoSeguimientoIdAntiguo string, periodoSeguimientoIdNuevo string) {
+	var resPlanesAvalados map[string]interface{}
+	var resSeguimientos map[string]interface{}
+	var planesAvalados []map[string]interface{}
+	var seguimiento []map[string]interface{}
+	var seguimientoActualizado map[string]interface{}
+	var estadoAvaladoId = "6153355601c7a2365b2fb2a1"
+	var planInteres models.PlanInteres
+
+	err := json.Unmarshal([]byte(planInteresString), &planInteres)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "CambiarFechasSeguimiento", "err": "Error en la decodificación JSON", "status": "400"})
+	}
+
+	for _, unidad := range unidadesInteres {
+		idUnidad := strconv.Itoa(unidad["Id"].(int))
+
+		// 1. Se buscan planes avalados con el _id de la plantilla
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=formato_id:"+planInteres.Id+",estado_plan_id:"+estadoAvaladoId+",dependencia_id:"+idUnidad+",activo:true", &resPlanesAvalados); err != nil {
+			panic(map[string]interface{}{"funcion": "CambiarFechasSeguimiento", "err": "Error en la peticion", "status": "400", "log": err})
+		}
+		helpers.LimpiezaRespuestaRefactor(resPlanesAvalados, &planesAvalados)
+
+		if len(planesAvalados) < 1 { //? No se encontraron planes avalados con el formato_id del id del plan_interes
+			continue
+		}
+
+		// 2. Se buscan los registro de seguimiento en caso de que la respuesta anterior contenga registros
+
+		for _, planAvalado := range planesAvalados {
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=plan_id:"+planAvalado["_id"].(string)+",periodo_seguimiento_id:"+periodoSeguimientoIdAntiguo+",activo:true", &resSeguimientos); err != nil {
+				panic(map[string]interface{}{"funcion": "CambiarFechasSeguimiento", "err": "Error en la peticion", "status": "400", "log": err})
+			}
+			helpers.LimpiezaRespuestaRefactor(resSeguimientos, &seguimiento)
+
+			if len(seguimiento) < 1 { //? No se encontraron registros de seguimiento
+				continue
+			}
+
+			// 3. Se actualizan los registros de seguimiento
+			seguimientoRegistro := seguimiento[0]
+			seguimientoRegistro["periodo_seguimiento_id"] = periodoSeguimientoIdNuevo
+			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento[0]["_id"].(string), "PUT", &seguimientoActualizado, seguimientoRegistro); err != nil {
+				panic(map[string]interface{}{"funcion": "CambiarFechasSeguimiento", "err": "Error actualizando seguimiento", "status": "400", "log": err})
+			}
+		}
+	}
 }
 
 func ObtenerArrayPlanesInteres(body map[string]interface{}) ([]map[string]interface{}, error) {
