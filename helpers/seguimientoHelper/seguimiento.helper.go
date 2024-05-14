@@ -415,7 +415,7 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 										dato_plan_str := subgrupo_detalle[0]["dato_plan"].(string)
 										json.Unmarshal([]byte(dato_plan_str), &dato_plan)
 										nombreDetalle := strings.ToLower(subgrupo_detalle[0]["nombre"].(string))
-										if dato_plan[index] == nil || dato_plan[index].(map[string]interface{})["dato"] == "" {
+										if dato_plan[index] == nil || dato_plan[index].(map[string]interface{})["dato"] == nil || dato_plan[index].(map[string]interface{})["dato"] == "" {
 											break
 										}
 
