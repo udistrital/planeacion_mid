@@ -1055,6 +1055,97 @@ func SeguimientoAvalable(seguimiento map[string]interface{}) (bool, bool, map[st
 	return avaladas, observaciones, nil
 }
 
+func SeguimientoVerificable(seguimiento map[string]interface{}) (bool, bool, map[string]interface{}) {
+	var res map[string]interface{}
+	var subgrupos []map[string]interface{}
+	var datoPlan map[string]interface{}
+	var resSeguimientoDetalle map[string]interface{}
+	detalle := make(map[string]interface{})
+	dato := make(map[string]interface{})
+	observaciones := false
+	avaladas := false
+	estado := map[string]interface{}{}
+
+	planId := seguimiento["plan_id"].(string)
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+planId, &res); err == nil {
+		helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
+
+		for i := 0; i < len(subgrupos); i++ {
+			if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") && strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "general") {
+
+				actividades := GetActividades(subgrupos[i]["_id"].(string))
+
+				dato_plan_str := seguimiento["dato"].(string)
+				json.Unmarshal([]byte(dato_plan_str), &datoPlan)
+
+				for indexActividad, element := range datoPlan {
+					id, segregado := element.(map[string]interface{})["id"]
+
+					for _, actividad := range actividades {
+						if reflect.TypeOf(actividad["index"]).String() == "string" {
+							if indexActividad == actividad["index"] {
+								if segregado && id != "" {
+									if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+element.(map[string]interface{})["id"].(string), &resSeguimientoDetalle); err == nil {
+										helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
+										detalle = ConvertirStringJson(detalle)
+										estado = detalle["estado"].(map[string]interface{})
+										if estado["nombre"] != "Actividad Verificada" && estado["nombre"] != "Con observaciones" {
+											dato[indexActividad] = actividad["dato"]
+										}
+									}
+								} else {
+									if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad Verificada" && element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Con observaciones" {
+										dato[indexActividad] = actividad["dato"]
+									}
+								}
+							}
+						} else if indexActividad == strconv.FormatFloat(actividad["index"].(float64), 'g', 5, 64) {
+							if segregado && id != "" {
+								if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+element.(map[string]interface{})["id"].(string), &resSeguimientoDetalle); err == nil {
+									helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
+									detalle = ConvertirStringJson(detalle)
+									estado = detalle["estado"].(map[string]interface{})
+									if estado["nombre"] != "Actividad Verificada" && estado["nombre"] != "Con observaciones" {
+										dato[indexActividad] = actividad["dato"]
+									}
+								}
+							} else {
+								if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad Verificada" && element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Con observaciones" {
+									dato[indexActividad] = actividad["dato"]
+								}
+							}
+						}
+					}
+
+					if segregado && id != "" {
+						if estado["nombre"] == "Con observaciones" {
+							observaciones = true
+						}
+
+						if estado["nombre"] == "Actividad Verificada" {
+							avaladas = true
+						}
+					} else {
+						if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] == "Con observaciones" {
+							observaciones = true
+						}
+
+						if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] == "Actividad Verificada" {
+							avaladas = true
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if fmt.Sprintf("%v", dato) != "map[]" {
+		return false, false, map[string]interface{}{"error": 1, "motivo": "Hay actividades sin revisar", "actividades": dato}
+	}
+
+	return avaladas, observaciones, nil
+}
+
 func ConvertirJsonString(diccionario map[string]interface{}) map[string]interface{} {
 	dicStrings := map[string]interface{}{}
 
