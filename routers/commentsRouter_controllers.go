@@ -162,6 +162,15 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"],
         beego.ControllerComments{
+            Method: "CambioCargoIdVinculacionTercero",
+            Router: "/cargo_vinculacion/:id",
+            AllowHTTPMethods: []string{"put"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"],
+        beego.ControllerComments{
             Method: "ClonarFormato",
             Router: "/clonar_formato/:id",
             AllowHTTPMethods: []string{"post"},
@@ -344,6 +353,15 @@ func init() {
         beego.ControllerComments{
             Method: "VinculacionTercero",
             Router: "/vinculacion_tercero/:tercero_id",
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"],
+        beego.ControllerComments{
+            Method: "VinculacionTerceroByEmail",
+            Router: "/vinculacion_tercero_email/:tercero_email",
             AllowHTTPMethods: []string{"get"},
             MethodParams: param.Make(),
             Filters: nil,
