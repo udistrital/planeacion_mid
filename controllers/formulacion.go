@@ -50,6 +50,8 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("DefinirFechasFuncionamiento", c.DefinirFechasFuncionamiento)
 	c.Mapping("CalculosDocentes", c.CalculosDocentes)
 	c.Mapping("EstructuraPlanes", c.EstructuraPlanes)
+	c.Mapping("VinculacionTerceroByEmail", c.VinculacionTerceroByEmail)
+	c.Mapping("CambioCargoIdVinculacionTercero", c.CambioCargoIdVinculacionTercero)
 }
 
 // ClonarFormato ...
@@ -1178,9 +1180,9 @@ func (c *FormulacionController) VersionarPlan() {
 		if value, ok := planPadre["formato_id"].(string); ok {
 			plan["formato_id"] = value
 		}
-		
+
 		if _, ok := planPadre["nueva_estructura"]; ok {
-				plan["nueva_estructura"] = true
+			plan["nueva_estructura"] = true
 		}
 
 		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan", "POST", &respuestaPost, plan); err != nil {
@@ -1653,6 +1655,85 @@ func (c *FormulacionController) VinculacionTercero() {
 			}
 		}
 	}
+	c.ServeJSON()
+}
+
+// VinculacionTerceroByEmail ...
+// @Title VinculacionTerceroByEmail
+// @Description get VinculacionTerceroByEmail
+// @Param	tercero_email	path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /vinculacion_tercero_email/:tercero_email [get]
+func (c *FormulacionController) VinculacionTerceroByEmail() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
+	terceroEmail := c.Ctx.Input.Param(":tercero_email")
+	var vinculaciones []models.Vinculacion
+
+	idNoRegistra, idJefeOficina, idAsistenteDependencia, err := formulacionhelper.ObtenerIdParametros()
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "VinculacionTercero", "err": "Error get parametros", "status": "400", "log": err})
+	}
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/vinculacion?query=Activo:true,TerceroPrincipalId__UsuarioWSO2:"+terceroEmail, &vinculaciones); err != nil {
+		panic(map[string]interface{}{"funcion": "VinculacionTercero", "err": "Error get vinculacion", "status": "400", "log": err})
+	} else {
+		var vinculacionesResponse []models.Vinculacion
+		for i := 0; i < len(vinculaciones); i++ {
+			if vinculaciones[i].CargoId == int(idJefeOficina) || vinculaciones[i].CargoId == int(idAsistenteDependencia) || vinculaciones[i].CargoId == int(idNoRegistra) {
+				vinculacionesResponse = append(vinculacionesResponse, vinculaciones[i])
+			}
+		}
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": vinculacionesResponse}
+	}
+	c.ServeJSON()
+}
+
+// CambioCargoIdVinculacionTercero ...
+// @Title CambioCargoIdVinculacionTercero
+// @Description put Cambio de cargo_id en VinculacionTercero by idVinculacion
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Success 200 {object} {}
+// @Failure 403 :id is empty
+// @router /cargo_vinculacion/:id [put]
+func (c *FormulacionController) CambioCargoIdVinculacionTercero() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+	var body map[string]interface{}
+	id := c.Ctx.Input.Param(":id")
+	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+
+	res, err := formulacionhelper.CambioCargoIdVinculacionTercero(id, body)
+
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "CambioCargoIdVinculacionTercero", "err": "Error actualizando cargo_id en vinculacion", "status": "400", "log": err})
+	}
+
+	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": res}
 	c.ServeJSON()
 }
 
