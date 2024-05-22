@@ -157,7 +157,7 @@ paths:
       tags:
       - evaluacion
       description: get Planes que se pueden evaluar
-      operationId: EvaluacionController.GetPlanesAEvaluar
+      operationId: EvaluacionController.PlanesAEvaluar
       responses:
         "200":
           description: ""

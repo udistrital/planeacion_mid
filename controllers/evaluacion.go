@@ -1,11 +1,12 @@
 package controllers
 
 import (
-	"net/url"
+	"fmt"
 
 	"github.com/astaxie/beego"
-	"github.com/udistrital/planeacion_mid/helpers"
-	evaluacionhelper "github.com/udistrital/planeacion_mid/helpers/evaluacionHelper"
+	"github.com/udistrital/planeacion_mid/services"
+	"github.com/udistrital/utils_oas/errorhandler"
+	"github.com/udistrital/utils_oas/requestresponse"
 )
 
 // EvaluacionController operations for Evaluacion
@@ -15,8 +16,8 @@ type EvaluacionController struct {
 
 // URLMapping ...
 func (c *EvaluacionController) URLMapping() {
-	c.Mapping("GetEvaluacion", c.GetEvaluacion)
 	c.Mapping("GetPlanesPeriodo", c.GetPlanesPeriodo)
+	c.Mapping("GetEvaluacion", c.GetEvaluacion)
 	c.Mapping("PlanesAEvaluar", c.PlanesAEvaluar)
 	c.Mapping("Unidades", c.Unidades)
 	c.Mapping("Avances", c.Avances)
@@ -29,35 +30,21 @@ func (c *EvaluacionController) URLMapping() {
 // @Param	unidad 		path 	string	true		"The key for staticblock"
 // @Success 200
 // @Failure 404
-// @router /planes_periodo/:vigencia/:unidad [get]
+// @router /planes-periodo/:vigencia/:unidad [get]
 func (c *EvaluacionController) GetPlanesPeriodo() {
-	defer func() {
-		if err := recover(); err != nil {
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "EvaluacionController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("404")
-			}
-		}
-	}()
+	defer errorhandler.HandlePanic(&c.Controller)
 
 	vigencia := c.Ctx.Input.Param(":vigencia")
 	unidad := c.Ctx.Input.Param(":unidad")
 
-	if len(vigencia) == 0 {
-		c.Data["json"] = map[string]interface{}{"Success": false, "Status": "404", "Message": "Request containt incorrect params", "Data": nil}
-	}
-	if len(unidad) == 0 {
-		c.Data["json"] = map[string]interface{}{"Success": false, "Status": "404", "Message": "Request containt incorrect params", "Data": nil}
-	}
+	resultado, err := services.GetPlanesPeriodo(vigencia, unidad)
 
-	if respuesta, err := evaluacionhelper.GetPlanesPeriodo(unidad, vigencia); err == nil {
-		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": respuesta}
+	if err == nil {
+		c.Ctx.Output.SetStatus(200)
+		c.Data["json"] = requestresponse.APIResponseDTO(true, 200, resultado)
 	} else {
-		panic(err)
+		c.Ctx.Output.SetStatus(404)
+		c.Data["json"] = requestresponse.APIResponseDTO(true, 404, nil, err.Error())
 	}
 
 	c.ServeJSON()
@@ -73,49 +60,20 @@ func (c *EvaluacionController) GetPlanesPeriodo() {
 // @Failure 404
 // @router /:vigencia/:plan:/:periodo [get]
 func (c *EvaluacionController) GetEvaluacion() {
-	defer func() {
-		if err := recover(); err != nil {
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "EvaluacionController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("404")
-			}
-		}
-	}()
+	defer errorhandler.HandlePanic(&c.Controller)
 
-	var evaluacion []map[string]interface{}
 	vigencia := c.Ctx.Input.Param(":vigencia")
 	plan := c.Ctx.Input.Param(":plan")
 	periodoId := c.Ctx.Input.Param(":periodo")
 
-	if len(vigencia) == 0 {
-		c.Data["json"] = map[string]interface{}{"Success": false, "Status": "404", "Message": "Request containt incorrect params", "Data": nil}
-	}
-	if len(plan) == 0 {
-		c.Data["json"] = map[string]interface{}{"Success": false, "Status": "404", "Message": "Request containt incorrect params", "Data": nil}
-	}
-	if len(periodoId) == 0 {
-		c.Data["json"] = map[string]interface{}{"Success": false, "Status": "404", "Message": "Request containt incorrect params", "Data": nil}
-	}
+	resultado, err := services.GetEvaluacion(vigencia, plan, periodoId)
 
-	trimestres := evaluacionhelper.GetPeriodos(vigencia)
-	if len(trimestres) == 0 {
-		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": nil}
+	if err == nil {
+		c.Ctx.Output.SetStatus(200)
+		c.Data["json"] = requestresponse.APIResponseDTO(true, 200, resultado)
 	} else {
-		i := 0
-		for index, periodo := range trimestres {
-			if periodo["_id"] == periodoId {
-				i = index
-				break
-			}
-		}
-
-		evaluacion = evaluacionhelper.GetEvaluacion(plan, trimestres, i)
-
-		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": evaluacion}
+		c.Ctx.Output.SetStatus(404)
+		c.Data["json"] = requestresponse.APIResponseDTO(true, 404, nil, err.Error())
 	}
 
 	c.ServeJSON()
@@ -128,12 +86,16 @@ func (c *EvaluacionController) GetEvaluacion() {
 // @Failure 404
 // @router /planes/ [get]
 func (c *EvaluacionController) PlanesAEvaluar() {
-	defer helpers.ErrorController(c.Controller, "EvaluacionController")
+	defer errorhandler.HandlePanic(&c.Controller)
+	fmt.Println("Entered HomeHandler")
+	resultado, err := services.PlanesAEvaluar()
 
-	if datos, err := evaluacionhelper.GetPlanesParaEvaluar(); err == nil {
-		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": datos}
+	if err == nil {
+		c.Ctx.Output.SetStatus(200)
+		c.Data["json"] = requestresponse.APIResponseDTO(true, 200, resultado)
 	} else {
-		panic(map[string]interface{}{"funcion": "PlanesAEvaluar", "err": err, "status": "404", "message": "Error obteniendo los planes a evaluar"})
+		c.Ctx.Output.SetStatus(404)
+		c.Data["json"] = requestresponse.APIResponseDTO(true, 404, nil, err.Error())
 	}
 	c.ServeJSON()
 }
@@ -147,21 +109,20 @@ func (c *EvaluacionController) PlanesAEvaluar() {
 // @Failure 404
 // @router /unidades/:plan:/:vigencia [get]
 func (c *EvaluacionController) Unidades() {
-	defer helpers.ErrorController(c.Controller, "EvaluacionController")
+	defer errorhandler.HandlePanic(&c.Controller)
 
 	plan := c.Ctx.Input.Param(":plan")
 	vigencia := c.Ctx.Input.Param(":vigencia")
 
-	if nombrePlan, err := url.QueryUnescape(plan); err == nil {
-		if data, err := evaluacionhelper.GetUnidadesPorPlanYVigencia(nombrePlan, vigencia); err == nil {
-			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": data}
-		} else {
-			panic(map[string]interface{}{"funcion": "Unidades", "err": err, "status": "404", "message": "Error obteniendo las unidades del plan y la vigencia dados"})
-		}
-	} else {
-		panic(map[string]interface{}{"funcion": "Unidades", "err": err, "status": "404", "message": "Error obteniendo las unidades del plan y la vigencia dados"})
-	}
+	resultado, err := services.Unidades(plan, vigencia)
 
+	if err == nil {
+		c.Ctx.Output.SetStatus(200)
+		c.Data["json"] = requestresponse.APIResponseDTO(true, 200, resultado)
+	} else {
+		c.Ctx.Output.SetStatus(404)
+		c.Data["json"] = requestresponse.APIResponseDTO(true, 404, nil, err.Error())
+	}
 	c.ServeJSON()
 }
 
@@ -175,20 +136,20 @@ func (c *EvaluacionController) Unidades() {
 // @Failure 404
 // @router /avance/:plan:/:vigencia/:unidad [get]
 func (c *EvaluacionController) Avances() {
-	defer helpers.ErrorController(c.Controller, "EvaluacionController")
+	defer errorhandler.HandlePanic(&c.Controller)
 
 	plan := c.Ctx.Input.Param(":plan")
 	vigencia := c.Ctx.Input.Param(":vigencia")
 	unidad := c.Ctx.Input.Param(":unidad")
 
-	if nombrePlan, err1 := url.QueryUnescape(plan); err1 == nil {
-		if data, err2 := evaluacionhelper.GetAvances(nombrePlan, vigencia, unidad); err2 == nil {
-			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": data}
-		} else {
-			panic(map[string]interface{}{"funcion": "Avances", "err": err2, "status": "404", "message": "Error obteniendo los avances"})
-		}
+	resultado, err := services.Avances(plan, vigencia, unidad)
+
+	if err == nil {
+		c.Ctx.Output.SetStatus(200)
+		c.Data["json"] = requestresponse.APIResponseDTO(true, 200, resultado)
 	} else {
-		panic(map[string]interface{}{"funcion": "Avances", "err": err1, "status": "404", "message": "No se pudo obtener el nombre"})
+		c.Ctx.Output.SetStatus(404)
+		c.Data["json"] = requestresponse.APIResponseDTO(true, 404, nil, err.Error())
 	}
 
 	c.ServeJSON()
