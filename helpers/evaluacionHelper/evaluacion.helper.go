@@ -334,7 +334,6 @@ func PlanesAEvaluar() (planes []string, outputError error) {
 	var respuestaEstado map[string]interface{}
 	var respuestaTipoSeguimiento map[string]interface{}
 	var respuestaSeguimiento map[string]interface{}
-
 	var estadoSeguimiento []map[string]interface{}
 	var tipoSeguimiento []map[string]interface{}
 
@@ -372,7 +371,6 @@ func PlanesAEvaluar() (planes []string, outputError error) {
 		}
 	} else {
 		outputError = errors.New("error al decodificar el cuerpo de la solicitud: 404")
-
 	}
 	return planes, outputError
 }

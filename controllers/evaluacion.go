@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"net/url"
 
 	"github.com/astaxie/beego"
@@ -129,7 +128,6 @@ func (c *EvaluacionController) GetEvaluacion() {
 // @Failure 404
 // @router /planes/ [get]
 func (c *EvaluacionController) PlanesAEvaluar() {
-	fmt.Println("entrando a planes a evaluar")
 	defer helpers.ErrorController(c.Controller, "EvaluacionController")
 
 	if datos, err := evaluacionhelper.PlanesAEvaluar(); err == nil {
