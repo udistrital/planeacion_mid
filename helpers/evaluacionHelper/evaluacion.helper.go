@@ -2,6 +2,7 @@ package evaluacionhelper
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"reflect"
@@ -323,45 +324,39 @@ func GetPeriodos(vigencia string) []map[string]interface{} {
 	return periodos
 }
 
-func GetPlanesParaEvaluar() (planes []string, outputError map[string]interface{}) {
+func PlanesAEvaluar() (planes []string, outputError error) {
 	defer func() {
 		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetPlanesParaEvaluar",
-				"err":     err,
-				"status":  "400",
-			}
-			panic(outputError)
+			outputError = errors.New("error al decodificar el cuerpo de la solicitud")
 		}
 	}()
 
 	var respuestaEstado map[string]interface{}
 	var respuestaTipoSeguimiento map[string]interface{}
 	var respuestaSeguimiento map[string]interface{}
-
 	var estadoSeguimiento []map[string]interface{}
 	var tipoSeguimiento []map[string]interface{}
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=activo:true,codigo_abreviacion:"+ABREVIACION_AVALADO_PARA_SEGUIMIENTO, &respuestaEstado); err != nil {
-		panic(err)
+		outputError = errors.New("error al decodificar el cuerpo de la solicitud: 404")
 	}
-	helpers.LimpiezaRespuestaRefactor(respuestaEstado, &estadoSeguimiento)
+	request.LimpiezaRespuestaRefactor(respuestaEstado, &estadoSeguimiento)
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-seguimiento?query=activo:true,codigo_abreviacion:"+ABREVIACION_SEGUIMIENTO_PLAN_ACCION, &respuestaTipoSeguimiento); err != nil {
-		panic(err)
+		outputError = errors.New("error al decodificar el cuerpo de la solicitud: 404")
 	}
-	helpers.LimpiezaRespuestaRefactor(respuestaTipoSeguimiento, &tipoSeguimiento)
+	request.LimpiezaRespuestaRefactor(respuestaTipoSeguimiento, &tipoSeguimiento)
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/seguimiento?query=tipo_seguimiento_id:`+tipoSeguimiento[0]["_id"].(string)+`,estado_seguimiento_id:`+estadoSeguimiento[0]["_id"].(string), &respuestaSeguimiento); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/seguimiento?query=tipo_seguimiento_id:`+tipoSeguimiento[0]["_id"].(string)+`,estado_seguimiento_id:`+estadoSeguimiento[0]["_id"].(string)+`,activo:true`, &respuestaSeguimiento); err == nil {
 		var seguimientos []map[string]interface{}
-		helpers.LimpiezaRespuestaRefactor(respuestaSeguimiento, &seguimientos)
+		request.LimpiezaRespuestaRefactor(respuestaSeguimiento, &seguimientos)
 		for _, seguimiento := range seguimientos {
 			// Esta en los planes que ya se trajeron?
 			var respuestaPlan map[string]interface{}
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/plan/`+seguimiento["plan_id"].(string), &respuestaPlan); err == nil {
 				var plan map[string]interface{}
 				existeNombrePlan := false
-				helpers.LimpiezaRespuestaRefactor(respuestaPlan, &plan)
+				request.LimpiezaRespuestaRefactor(respuestaPlan, &plan)
 				for _, nombre := range planes {
 					if nombre == plan["nombre"].(string) {
 						existeNombrePlan = true
@@ -371,15 +366,14 @@ func GetPlanesParaEvaluar() (planes []string, outputError map[string]interface{}
 					planes = append(planes, plan["nombre"].(string))
 				}
 			} else {
-				panic(err)
+				outputError = errors.New("error al decodificar el cuerpo de la solicitud: 404")
 			}
 		}
 	} else {
-		panic(err)
+		outputError = errors.New("error al decodificar el cuerpo de la solicitud: 404")
 	}
 	return planes, outputError
 }
-
 func GetUnidadesPorPlanYVigencia(nombrePlan string, vigencia string) (unidades []map[string]interface{}, outputError map[string]interface{}) {
 	defer func() {
 		if err := recover(); err != nil {
