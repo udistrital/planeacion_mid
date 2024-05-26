@@ -122,7 +122,7 @@ func (c *EvaluacionController) GetEvaluacion() {
 }
 
 // Get Planes A Evaluar ...
-// @Title GetPlanesAEvaluar
+// @Title PlanesAEvaluar
 // @Description get Planes que se pueden evaluar
 // @Success 200
 // @Failure 404
@@ -130,7 +130,7 @@ func (c *EvaluacionController) GetEvaluacion() {
 func (c *EvaluacionController) PlanesAEvaluar() {
 	defer helpers.ErrorController(c.Controller, "EvaluacionController")
 
-	if datos, err := evaluacionhelper.GetPlanesParaEvaluar(); err == nil {
+	if datos, err := evaluacionhelper.PlanesAEvaluar(); err == nil {
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": datos}
 	} else {
 		panic(map[string]interface{}{"funcion": "PlanesAEvaluar", "err": err, "status": "404", "message": "Error obteniendo los planes a evaluar"})
