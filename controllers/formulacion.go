@@ -1283,14 +1283,19 @@ func (c *FormulacionController) PonderacionActividades() {
 	var respuestaLimpiaDetalle []map[string]interface{}
 	var subgrupoDetalle map[string]interface{}
 	var hijos []map[string]interface{}
+	var hijosFiltrado []map[string]interface{}
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan, &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &hijos)
-
 		for i := 0; i < len(hijos); i++ {
-			if strings.Contains(strings.ToUpper(hijos[i]["nombre"].(string)), "PONDERACIÓN") && strings.Contains(strings.ToUpper(hijos[i]["nombre"].(string)), "ACTIVIDAD") || strings.Contains(strings.ToUpper(hijos[i]["nombre"].(string)), "PONDERACIÓN") {
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijos[i]["_id"].(string), &respuestaDetalle); err == nil {
+			if(hijos[i]["activo"] == true) {
+				hijosFiltrado = append(hijosFiltrado, hijos[i])
+			}
+		}
 
+		for i := 0; i < len(hijosFiltrado); i++ {
+			if strings.Contains(strings.ToUpper(hijosFiltrado[i]["nombre"].(string)), "PONDERACIÓN") && strings.Contains(strings.ToUpper(hijosFiltrado[i]["nombre"].(string)), "ACTIVIDAD") || strings.Contains(strings.ToUpper(hijosFiltrado[i]["nombre"].(string)), "PONDERACIÓN") {
+				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijosFiltrado[i]["_id"].(string), &respuestaDetalle); err == nil {
 					helpers.LimpiezaRespuestaRefactor(respuestaDetalle, &respuestaLimpiaDetalle)
 					subgrupoDetalle = respuestaLimpiaDetalle[0]
 
@@ -1316,6 +1321,8 @@ func (c *FormulacionController) PonderacionActividades() {
 				} else {
 					panic(map[string]interface{}{"funcion": "PonderacionActividades", "err": "Error subgrupo_detalle plan \"plan\"", "status": "400", "log": err})
 				}
+			} else {
+				c.Data["json"] = map[string]interface{}{"Success": false, "Status": "400", "Message": "Error-tipo1", "Data": `El formato usado para definir la actividad, debe de tener como primer item las palabras "Ponderación" y "Actividad" o solo "Ponderación"`,}
 			}
 		}
 	} else {

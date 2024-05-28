@@ -1764,7 +1764,7 @@ func GetPlantilla(id string) (map[string]interface{}, error) {
 	var resPlantilla map[string]interface{}
 	var plantilla []map[string]interface{}
 
-	err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,formato:true,_id:"+id, &resPlantilla)
+	err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=formato:true,_id:"+id, &resPlantilla)
 	if err != nil {
 		return nil, err
 	}
