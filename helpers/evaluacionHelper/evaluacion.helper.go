@@ -12,6 +12,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
 	seguimientohelper "github.com/udistrital/planeacion_mid/helpers/seguimientoHelper"
+	"github.com/udistrital/utils_oas/formatdata"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -115,14 +116,16 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/seguimiento?query=estado_seguimiento_id:622ba49216511e93a95c326d,plan_id:`+planId+`,periodo_seguimiento_id:`+periodos[trimestre]["_id"].(string), &resSeguimiento); err == nil {
 		aux := make([]map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(resSeguimiento, &aux)
+		// fmt.Println("-----------------AUXILIAR-------------------------------", aux)
 		if fmt.Sprintf("%v", aux) == "[]" {
 			return nil
 		}
 
 		seguimiento = aux[0]
+		//fmt.Println("-----------------SEGUIMIENTO-------------------------------", seguimiento)
 		datoStr := seguimiento["dato"].(string)
 		json.Unmarshal([]byte(datoStr), &actividades)
-
+		// fmt.Println("-----------------actividadId-------------------------------", actividadId)
 		for actividadId, act := range actividades {
 			id, segregado := actividades[actividadId].(map[string]interface{})["id"].(string)
 			var actividad map[string]interface{}
@@ -135,13 +138,16 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 			} else {
 				actividad = act.(map[string]interface{})
 			}
+
 			for indexPeriodo, periodo := range periodos {
+				//CICLO DE PERIODO ROMPIEMIENTO CUENTA DE 0 A 132
+				// fmt.Println("----------------actividadId----------------------------", actividadId)
+
 				if indexPeriodo > trimestre {
 					break
 				}
 				resIndicadores := GetEvaluacionTrimestre(planId, periodo["_id"].(string), actividadId)
 				for _, resIndicador := range resIndicadores {
-
 					indice := -1
 					for index, eval := range evaluacion {
 						if eval["numero"] == actividad["informacion"].(map[string]interface{})["index"] && eval["indicador"] == resIndicador["indicador"] {
@@ -311,8 +317,9 @@ func GetPeriodos(vigencia string) []map[string]interface{} {
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?fields=_id,periodo_id&query=tipo_seguimiento_id:61f236f525e40c582a0840d0,periodo_id:`+strconv.Itoa(trimestreId), &resPeriodo); err == nil {
 				var periodo []map[string]interface{}
 				helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
-				(*periodos) = append((*periodos), periodo...)
+				(*periodos) = append((*periodos), periodo[len(periodo)-1])
 			}
+			fmt.Println("Preiodos: ", periodos)
 			periodosMutex.Unlock()
 			wg.Done()
 		}(int(trimestre["Id"].(float64)), &wg, &periodos)
@@ -535,16 +542,16 @@ func GetPlanesPeriodo(unidad string, vigencia string) (respuesta []map[string]in
 }
 
 func GetAvances(nombrePlan string, idVigencia string, idUnidad string) (respuesta map[string]interface{}, outputError map[string]interface{}) {
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetAvances",
-				"err":     err,
-				"status":  "404",
-			}
-			panic(outputError)
-		}
-	}()
+	// defer func() {
+	// 	if err := recover(); err != nil {
+	// 		outputError = map[string]interface{}{
+	// 			"funcion": "GetAvances",
+	// 			"err":     err,
+	// 			"status":  "404",
+	// 		}
+	// 		panic(outputError)
+	// 	}
+	// }()
 	respuesta = make(map[string]interface{}, 0)
 	avance := map[int]float64{
 		1: 0,
@@ -571,6 +578,7 @@ func GetAvances(nombrePlan string, idVigencia string, idUnidad string) (respuest
 			"nombre": ultimoPeriodo["nombre"],
 		}
 		trimestres := GetPeriodos(idVigencia)
+		formatdata.JsonPrint(trimestres)
 		if len(trimestres) != 0 {
 			for index, trimestre := range trimestres {
 				for _, periodo := range periodos {

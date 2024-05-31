@@ -165,8 +165,8 @@ func (c *EvaluacionController) Unidades() {
 	c.ServeJSON()
 }
 
-// Get Avance ...
-// @Title GetAvance
+// Avances ...
+// @Title Avances
 // @Description get Avance de Unidad
 // @Param	plan 		path 	string	true		"The key for staticblock"
 // @Param	vigencia 	path 	string	true		"The key for staticblock"

@@ -130,7 +130,7 @@ paths:
       tags:
       - evaluacion
       description: get Avance de Unidad
-      operationId: EvaluacionController.GetAvance
+      operationId: EvaluacionController.Avances
       parameters:
       - in: path
         name: plan
