@@ -116,16 +116,12 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/seguimiento?query=estado_seguimiento_id:622ba49216511e93a95c326d,plan_id:`+planId+`,periodo_seguimiento_id:`+periodos[trimestre]["_id"].(string), &resSeguimiento); err == nil {
 		aux := make([]map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(resSeguimiento, &aux)
-		// fmt.Println("-----------------AUXILIAR-------------------------------", aux)
 		if fmt.Sprintf("%v", aux) == "[]" {
 			return nil
 		}
-
 		seguimiento = aux[0]
-		//fmt.Println("-----------------SEGUIMIENTO-------------------------------", seguimiento)
 		datoStr := seguimiento["dato"].(string)
 		json.Unmarshal([]byte(datoStr), &actividades)
-		// fmt.Println("-----------------actividadId-------------------------------", actividadId)
 		for actividadId, act := range actividades {
 			id, segregado := actividades[actividadId].(map[string]interface{})["id"].(string)
 			var actividad map[string]interface{}
@@ -140,9 +136,6 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 			}
 
 			for indexPeriodo, periodo := range periodos {
-				//CICLO DE PERIODO ROMPIEMIENTO CUENTA DE 0 A 132
-				// fmt.Println("----------------actividadId----------------------------", actividadId)
-
 				if indexPeriodo > trimestre {
 					break
 				}
@@ -319,7 +312,6 @@ func GetPeriodos(vigencia string) []map[string]interface{} {
 				helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
 				(*periodos) = append((*periodos), periodo[len(periodo)-1])
 			}
-			fmt.Println("Preiodos: ", periodos)
 			periodosMutex.Unlock()
 			wg.Done()
 		}(int(trimestre["Id"].(float64)), &wg, &periodos)
