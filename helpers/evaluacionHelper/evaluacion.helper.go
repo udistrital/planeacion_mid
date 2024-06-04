@@ -311,7 +311,7 @@ func GetPeriodos(vigencia string) []map[string]interface{} {
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?fields=_id,periodo_id&query=tipo_seguimiento_id:61f236f525e40c582a0840d0,periodo_id:`+strconv.Itoa(trimestreId), &resPeriodo); err == nil {
 				var periodo []map[string]interface{}
 				helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
-				(*periodos) = append((*periodos), periodo...)
+				(*periodos) = append((*periodos), periodo[len(periodo)-1])
 			}
 			periodosMutex.Unlock()
 			wg.Done()
