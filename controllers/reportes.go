@@ -3466,7 +3466,7 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:6153355601c7a2365b2fb2a1,dependencia_id:"+body["unidad_id"].(string)+",nombre:"+nombre, &respuesta); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &planes)
 
-			trimestres := evaluacionhelper.GetPeriodos(body["vigencia"].(string))
+			trimestres := evaluacionhelper.GetPeriodos(body["vigencia"].(string), true)
 
 			if len(planes) <= 0 {
 				c.Abort("404")
@@ -3486,7 +3486,7 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 
 			var index int
 			for index = 3; index >= 0; index-- {
-				evaluacion = evaluacionhelper.GetEvaluacion(planes[0]["_id"].(string), trimestres, index)
+				evaluacion = evaluacionhelper.GetEvaluacion(planes[0]["_id"].(string), trimestres, index, body["vigencia"].(string), false)
 				if fmt.Sprintf("%v", evaluacion) != "[]" {
 					break
 				}
