@@ -101,9 +101,10 @@ func (c *EvaluacionController) GetEvaluacion() {
 		c.Data["json"] = map[string]interface{}{"Success": false, "Status": "404", "Message": "Request containt incorrect params", "Data": nil}
 	}
 
-	trimestres := evaluacionhelper.GetPeriodos(vigencia)
-	if len(trimestres) == 0 {
-		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": nil}
+	trimestres := evaluacionhelper.GetPeriodos(vigencia, true)
+
+	if len(trimestres) < 4 {
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful quedandose en el if del len", "Data": nil}
 	} else {
 		i := 0
 		for index, periodo := range trimestres {
@@ -113,7 +114,16 @@ func (c *EvaluacionController) GetEvaluacion() {
 			}
 		}
 
-		evaluacion = evaluacionhelper.GetEvaluacion(plan, trimestres, i)
+		var periodo_id interface{}
+
+		for _, periodo := range trimestres {
+			if periodo["_id"] == periodoId {
+				periodo_id = periodo["periodo_id"]
+				break
+			}
+		}
+
+		evaluacion = evaluacionhelper.GetEvaluacion(plan, trimestres, i, vigencia, periodo_id)
 
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": evaluacion}
 	}
@@ -165,8 +175,8 @@ func (c *EvaluacionController) Unidades() {
 	c.ServeJSON()
 }
 
-// Get Avance ...
-// @Title GetAvance
+// Avances ...
+// @Title Avances
 // @Description get Avance de Unidad
 // @Param	plan 		path 	string	true		"The key for staticblock"
 // @Param	vigencia 	path 	string	true		"The key for staticblock"
