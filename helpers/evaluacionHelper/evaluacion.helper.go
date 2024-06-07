@@ -104,7 +104,7 @@ func GetEvaluacionTrimestre(planId string, periodoId string, actividadId string)
 	return nil
 }
 
-func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre int) []map[string]interface{} {
+func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre int, vigencia string, periodo_id interface{}) []map[string]interface{} {
 	var resSeguimiento map[string]interface{}
 	var seguimiento map[string]interface{}
 	var evaluacion []map[string]interface{}
@@ -118,11 +118,9 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 		if fmt.Sprintf("%v", aux) == "[]" {
 			return nil
 		}
-
 		seguimiento = aux[0]
 		datoStr := seguimiento["dato"].(string)
 		json.Unmarshal([]byte(datoStr), &actividades)
-
 		for actividadId, act := range actividades {
 			id, segregado := actividades[actividadId].(map[string]interface{})["id"].(string)
 			var actividad map[string]interface{}
@@ -135,29 +133,32 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 			} else {
 				actividad = act.(map[string]interface{})
 			}
+
 			for indexPeriodo, periodo := range periodos {
 				if indexPeriodo > trimestre {
 					break
 				}
+				fmt.Println("---------------------------periodo[_id].(string)--------------", periodo["_id"].(string))
 				resIndicadores := GetEvaluacionTrimestre(planId, periodo["_id"].(string), actividadId)
-				for _, resIndicador := range resIndicadores {
 
+				for _, resIndicador := range resIndicadores {
 					indice := -1
 					for index, eval := range evaluacion {
 						if eval["numero"] == actividad["informacion"].(map[string]interface{})["index"] && eval["indicador"] == resIndicador["indicador"] {
 							indice = index
 							break
 						}
+
 					}
 
 					var trimestreNom string
-					if indexPeriodo == 0 {
+					if periodo_id == "344" {
 						trimestreNom = "trimestre1"
-					} else if indexPeriodo == 1 {
+					} else if periodo_id == "345" {
 						trimestreNom = "trimestre2"
-					} else if indexPeriodo == 2 {
+					} else if periodo_id == "346" {
 						trimestreNom = "trimestre3"
-					} else if indexPeriodo == 3 {
+					} else if periodo_id == "347" {
 						trimestreNom = "trimestre4"
 					}
 
@@ -293,7 +294,7 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 	return nil
 }
 
-func GetPeriodos(vigencia string) []map[string]interface{} {
+func GetPeriodos(vigencia string, modo bool) []map[string]interface{} {
 	var periodos []map[string]interface{}
 	var resPeriodo map[string]interface{}
 	var wg sync.WaitGroup
@@ -311,7 +312,12 @@ func GetPeriodos(vigencia string) []map[string]interface{} {
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?fields=_id,periodo_id&query=tipo_seguimiento_id:61f236f525e40c582a0840d0,periodo_id:`+strconv.Itoa(trimestreId), &resPeriodo); err == nil {
 				var periodo []map[string]interface{}
 				helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
-				(*periodos) = append((*periodos), periodo[len(periodo)-1])
+				if modo {
+					(*periodos) = append((*periodos), periodo...)
+				} else {
+					(*periodos) = append((*periodos), periodo[len(periodo)-1])
+				}
+
 			}
 			periodosMutex.Unlock()
 			wg.Done()
@@ -480,7 +486,7 @@ func GetPlanesPeriodo(unidad string, vigencia string) (respuesta []map[string]in
 			})
 		}
 
-		periodos := GetPeriodos(vigencia)
+		periodos := GetPeriodos(vigencia, true)
 		trimestres := seguimientohelper.GetTrimestres(vigencia)
 		for _, plan := range planes {
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/seguimiento?query=tipo_seguimiento_id:61f236f525e40c582a0840d0,estado_seguimiento_id:622ba49216511e93a95c326d,plan_id:`+plan["_id"].(string), &resSeguimiento); err == nil {
@@ -535,16 +541,16 @@ func GetPlanesPeriodo(unidad string, vigencia string) (respuesta []map[string]in
 }
 
 func GetAvances(nombrePlan string, idVigencia string, idUnidad string) (respuesta map[string]interface{}, outputError map[string]interface{}) {
-	defer func() {
-		if err := recover(); err != nil {
-			outputError = map[string]interface{}{
-				"funcion": "GetAvances",
-				"err":     err,
-				"status":  "404",
-			}
-			panic(outputError)
-		}
-	}()
+	// defer func() {
+	// 	if err := recover(); err != nil {
+	// 		outputError = map[string]interface{}{
+	// 			"funcion": "GetAvances",
+	// 			"err":     err,
+	// 			"status":  "404",
+	// 		}
+	// 		panic(outputError)
+	// 	}
+	// }()
 	respuesta = make(map[string]interface{}, 0)
 	avance := map[int]float64{
 		1: 0,
@@ -570,12 +576,20 @@ func GetAvances(nombrePlan string, idVigencia string, idUnidad string) (respuest
 			"id":     ultimoPeriodo["id"],
 			"nombre": ultimoPeriodo["nombre"],
 		}
-		trimestres := GetPeriodos(idVigencia)
+
+		trimestres := GetPeriodos(idVigencia, true)
+
+		var periodo_id interface{}
+
+		// formatdata.JsonPrint(trimestres)
 		if len(trimestres) != 0 {
 			for index, trimestre := range trimestres {
 				for _, periodo := range periodos {
 					if trimestre["_id"] == periodo["id"] {
-						actividades := GetEvaluacion(plan["id"].(string), trimestres, index)
+						if trimestre["_id"] == periodo["id"] {
+							periodo_id = trimestre["periodo_id"]
+						}
+						actividades := GetEvaluacion(plan["id"].(string), trimestres, index, idVigencia, periodo_id)
 						var numeroActividad = "0"
 						for _, actividad := range actividades {
 							if numeroActividad != actividad["numero"] {
@@ -595,6 +609,7 @@ func GetAvances(nombrePlan string, idVigencia string, idUnidad string) (respuest
 								}
 							}
 						}
+
 					}
 				}
 			}
