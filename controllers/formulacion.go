@@ -52,6 +52,7 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("EstructuraPlanes", c.EstructuraPlanes)
 	c.Mapping("VinculacionTerceroByEmail", c.VinculacionTerceroByEmail)
 	c.Mapping("CambioCargoIdVinculacionTercero", c.CambioCargoIdVinculacionTercero)
+	c.Mapping("VinculacionTerceroByIdentificacion", c.VinculacionTerceroByIdentificacion)
 }
 
 // ClonarFormato ...
@@ -1288,7 +1289,7 @@ func (c *FormulacionController) PonderacionActividades() {
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan, &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &hijos)
 		for i := 0; i < len(hijos); i++ {
-			if(hijos[i]["activo"] == true) {
+			if hijos[i]["activo"] == true {
 				hijosFiltrado = append(hijosFiltrado, hijos[i])
 			}
 		}
@@ -1322,7 +1323,7 @@ func (c *FormulacionController) PonderacionActividades() {
 					panic(map[string]interface{}{"funcion": "PonderacionActividades", "err": "Error subgrupo_detalle plan \"plan\"", "status": "400", "log": err})
 				}
 			} else {
-				c.Data["json"] = map[string]interface{}{"Success": false, "Status": "400", "Message": "Error-tipo1", "Data": `El formato usado para definir la actividad, debe de tener como primer item las palabras "Ponderación" y "Actividad" o solo "Ponderación"`,}
+				c.Data["json"] = map[string]interface{}{"Success": false, "Status": "400", "Message": "Error-tipo1", "Data": `El formato usado para definir la actividad, debe de tener como primer item las palabras "Ponderación" y "Actividad" o solo "Ponderación"`}
 			}
 		}
 	} else {
@@ -1697,6 +1698,57 @@ func (c *FormulacionController) VinculacionTerceroByEmail() {
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/vinculacion?query=Activo:true,TerceroPrincipalId__UsuarioWSO2:"+terceroEmail, &vinculaciones); err != nil {
 		panic(map[string]interface{}{"funcion": "VinculacionTercero", "err": "Error get vinculacion", "status": "400", "log": err})
+	} else {
+		var vinculacionesResponse []models.Vinculacion
+		for i := 0; i < len(vinculaciones); i++ {
+			if vinculaciones[i].CargoId == int(idJefeOficina) || vinculaciones[i].CargoId == int(idAsistenteDependencia) || vinculaciones[i].CargoId == int(idNoRegistra) {
+				vinculacionesResponse = append(vinculacionesResponse, vinculaciones[i])
+			}
+		}
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": vinculacionesResponse}
+	}
+	c.ServeJSON()
+}
+
+// VinculacionTerceroByIdentificacion ...
+// @Title VinculacionTerceroByIdentificacion
+// @Description get VinculacionTerceroByIdentificacion
+// @Param	identificacion	path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /vinculacion_tercero_identificacion/:identificacion [get]
+func (c *FormulacionController) VinculacionTerceroByIdentificacion() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
+	identificacionTercero := c.Ctx.Input.Param(":identificacion")
+	var vinculaciones []models.Vinculacion
+	var tercero []models.DatosIdentificacion
+
+	idNoRegistra, idJefeOficina, idAsistenteDependencia, err := formulacionhelper.ObtenerIdParametros()
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "VinculacionTerceroByIdentificacion", "err": "Error get parametros", "status": "400", "log": err})
+	}
+
+	s := "Numero:" + identificacionTercero + ",Activo:true"
+	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/datos_identificacion?query="+url.QueryEscape(s), &tercero); err != nil || tercero[0].TerceroID.ID == 0 {
+		panic(map[string]interface{}{"funcion": "VinculacionTerceroByIdentificacion", "err": "Error get tercero", "status": "400", "log": err})
+	}
+
+	TerceroIdStr := fmt.Sprintf("%d", tercero[0].TerceroID.ID)
+	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/vinculacion?query=Activo:true,TerceroPrincipalId:"+TerceroIdStr, &vinculaciones); err != nil {
+		panic(map[string]interface{}{"funcion": "VinculacionTerceroByIdentificacion", "err": "Error get vinculacion", "status": "400", "log": err})
 	} else {
 		var vinculacionesResponse []models.Vinculacion
 		for i := 0; i < len(vinculaciones); i++ {
