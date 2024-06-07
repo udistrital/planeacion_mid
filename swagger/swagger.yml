@@ -869,6 +869,25 @@ paths:
             $ref: '#/definitions/models.Formulacion'
         "403":
           description: :id is empty
+  /formulacion/vinculacion_tercero_identificacion/{identificacion}:
+    get:
+      tags:
+      - formulacion
+      description: get VinculacionTerceroByIdentificacion
+      operationId: FormulacionController.VinculacionTerceroByIdentificacion
+      parameters:
+      - in: path
+        name: identificacion
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
   /inversion/actualiza_sub_detalle/{id}:
     put:
       tags:
