@@ -12,7 +12,6 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
 	seguimientohelper "github.com/udistrital/planeacion_mid/helpers/seguimientoHelper"
-	"github.com/udistrital/utils_oas/formatdata"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -105,11 +104,15 @@ func GetEvaluacionTrimestre(planId string, periodoId string, actividadId string)
 	return nil
 }
 
-func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre int) []map[string]interface{} {
+func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre int, vigencia string, periodo_id interface{}) []map[string]interface{} {
 	var resSeguimiento map[string]interface{}
 	var seguimiento map[string]interface{}
 	var evaluacion []map[string]interface{}
 	var resSeguimientoDetalle map[string]interface{}
+	var trimestrenombreL []map[string]interface{}
+
+	var trimestrenombre map[string]interface{}
+
 	detalle := make(map[string]interface{})
 	actividades := make(map[string]interface{})
 
@@ -135,11 +138,32 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 				actividad = act.(map[string]interface{})
 			}
 
+			if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=PeriodoId:"+vigencia+",Id:"+periodo_id.(string)+"", &trimestrenombre); err == nil {
+				helpers.LimpiezaRespuestaRefactor(trimestrenombre, &trimestrenombreL)
+			} else {
+				panic(map[string]interface{}{"funcion": "trimestrenombre", "err": "Error ", "status": "400", "log": err})
+			}
+
+			// Variable para guardar el nombre del trimestre
+			var NombreTrim string
+
+			// Acceder al campo "Nombre" en el mapa "ParametroId"
+			for _, item := range trimestrenombreL {
+				if param, ok := item["ParametroId"].(map[string]interface{}); ok {
+					if nombre, ok := param["Nombre"].(string); ok {
+						NombreTrim = nombre
+						break
+					}
+				}
+			}
+
 			for indexPeriodo, periodo := range periodos {
 				if indexPeriodo > trimestre {
 					break
 				}
+
 				resIndicadores := GetEvaluacionTrimestre(planId, periodo["_id"].(string), actividadId)
+
 				for _, resIndicador := range resIndicadores {
 					indice := -1
 					for index, eval := range evaluacion {
@@ -150,13 +174,13 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 					}
 
 					var trimestreNom string
-					if indexPeriodo == 0 {
+					if NombreTrim == "Trimestre Uno" {
 						trimestreNom = "trimestre1"
-					} else if indexPeriodo == 1 {
+					} else if NombreTrim == "Trimestre Dos" {
 						trimestreNom = "trimestre2"
-					} else if indexPeriodo == 2 {
+					} else if NombreTrim == "Trimestre Tres" {
 						trimestreNom = "trimestre3"
-					} else if indexPeriodo == 3 {
+					} else if NombreTrim == "Trimestre Cuatro" {
 						trimestreNom = "trimestre4"
 					}
 
@@ -292,13 +316,14 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 	return nil
 }
 
-func GetPeriodos(vigencia string) []map[string]interface{} {
+func GetPeriodos(vigencia string, modo bool) []map[string]interface{} {
 	var periodos []map[string]interface{}
 	var resPeriodo map[string]interface{}
 	var wg sync.WaitGroup
-	trimestres := seguimientohelper.GetTrimestres(vigencia)
-	periodosMutex := sync.Mutex{}
 
+	trimestres := seguimientohelper.GetTrimestres(vigencia)
+
+	periodosMutex := sync.Mutex{}
 	for _, trimestre := range trimestres {
 		wg.Add(1)
 		if fmt.Sprintf("%v", trimestre) == "map[]" {
@@ -310,7 +335,12 @@ func GetPeriodos(vigencia string) []map[string]interface{} {
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?fields=_id,periodo_id&query=tipo_seguimiento_id:61f236f525e40c582a0840d0,periodo_id:`+strconv.Itoa(trimestreId), &resPeriodo); err == nil {
 				var periodo []map[string]interface{}
 				helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
-				(*periodos) = append((*periodos), periodo[len(periodo)-1])
+				if modo {
+					(*periodos) = append((*periodos), periodo...)
+				} else {
+					(*periodos) = append((*periodos), periodo[len(periodo)-1])
+				}
+
 			}
 			periodosMutex.Unlock()
 			wg.Done()
@@ -464,6 +494,7 @@ func GetPlanesPeriodo(unidad string, vigencia string) (respuesta []map[string]in
 			panic(outputError)
 		}
 	}()
+
 	var resPlan map[string]interface{}
 	var resSeguimiento map[string]interface{}
 	respuesta = make([]map[string]interface{}, 0)
@@ -479,7 +510,7 @@ func GetPlanesPeriodo(unidad string, vigencia string) (respuesta []map[string]in
 			})
 		}
 
-		periodos := GetPeriodos(vigencia)
+		periodos := GetPeriodos(vigencia, true)
 		trimestres := seguimientohelper.GetTrimestres(vigencia)
 		for _, plan := range planes {
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/seguimiento?query=tipo_seguimiento_id:61f236f525e40c582a0840d0,estado_seguimiento_id:622ba49216511e93a95c326d,plan_id:`+plan["_id"].(string), &resSeguimiento); err == nil {
@@ -569,13 +600,20 @@ func GetAvances(nombrePlan string, idVigencia string, idUnidad string) (respuest
 			"id":     ultimoPeriodo["id"],
 			"nombre": ultimoPeriodo["nombre"],
 		}
-		trimestres := GetPeriodos(idVigencia)
-		formatdata.JsonPrint(trimestres)
+
+		trimestres := GetPeriodos(idVigencia, true)
+
+		var periodo_id interface{}
+
+		// formatdata.JsonPrint(trimestres)
 		if len(trimestres) != 0 {
 			for index, trimestre := range trimestres {
 				for _, periodo := range periodos {
 					if trimestre["_id"] == periodo["id"] {
-						actividades := GetEvaluacion(plan["id"].(string), trimestres, index)
+						if trimestre["_id"] == periodo["id"] {
+							periodo_id = trimestre["periodo_id"]
+						}
+						actividades := GetEvaluacion(plan["id"].(string), trimestres, index, idVigencia, periodo_id)
 						var numeroActividad = "0"
 						for _, actividad := range actividades {
 							if numeroActividad != actividad["numero"] {
@@ -595,6 +633,7 @@ func GetAvances(nombrePlan string, idVigencia string, idUnidad string) (respuest
 								}
 							}
 						}
+
 					}
 				}
 			}
