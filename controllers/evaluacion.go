@@ -103,23 +103,16 @@ func (c *EvaluacionController) GetEvaluacion() {
 
 	trimestres := evaluacionhelper.GetPeriodos(vigencia, true)
 
-	if len(trimestres) < 4 {
-		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful quedandose en el if del len", "Data": nil}
+	var periodo_id interface{}
+
+	if len(trimestres) == 0 {
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": nil}
 	} else {
 		i := 0
 		for index, periodo := range trimestres {
 			if periodo["_id"] == periodoId {
 				i = index
-				break
-			}
-		}
-
-		var periodo_id interface{}
-
-		for _, periodo := range trimestres {
-			if periodo["_id"] == periodoId {
 				periodo_id = periodo["periodo_id"]
-				break
 			}
 		}
 

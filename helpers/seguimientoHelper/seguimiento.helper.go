@@ -40,6 +40,7 @@ func GetTrimestres(vigencia string) []map[string]interface{} {
 				if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=PeriodoId:"+vigencia+",ParametroId__CodigoAbreviacion:T4", &res); err == nil {
 					helpers.LimpiezaRespuestaRefactor(res, &trimestre)
 					trimestres = append(trimestres, trimestre...)
+
 				} else {
 					panic(map[string]interface{}{"funcion": "GetTrimestres", "err": "Error ", "status": "400", "log": err})
 				}
