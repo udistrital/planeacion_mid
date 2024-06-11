@@ -1318,7 +1318,6 @@ func (c *FormulacionController) PonderacionActividades() {
 						ponderacionActividades["Total"] = suma
 						c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": ponderacionActividades}
 					}
-
 				} else {
 					panic(map[string]interface{}{"funcion": "PonderacionActividades", "err": "Error subgrupo_detalle plan \"plan\"", "status": "400", "log": err})
 				}
