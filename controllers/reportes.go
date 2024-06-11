@@ -443,7 +443,6 @@ func (c *ReportesController) PlanAccionAnual() {
 			}
 		}
 	}()
-
 	var body map[string]interface{}
 	var respuesta map[string]interface{}
 	var planesFilter []map[string]interface{}
@@ -460,20 +459,20 @@ func (c *ReportesController) PlanAccionAnual() {
 	nombre := c.Ctx.Input.Param(":nombre")
 	consolidadoExcelPlanAnual := excelize.NewFile()
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+
 	if body["unidad_id"].(string) != "" {
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",dependencia_id:"+body["unidad_id"].(string)+",nombre:"+nombre, &respuesta); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
-
 			if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+`/periodo?query=Id:`+body["vigencia"].(string), &resPeriodo); err == nil {
 				helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
 			}
-
 			for planes := 0; planes < len(planesFilter); planes++ {
 				planesFilterData := planesFilter[planes]
 				plan_id = planesFilterData["_id"].(string)
 
 				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id+"&fields=nombre,_id,hijos,activo", &res); err == nil {
 					helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
+
 					for i := 0; i < len(subgrupos); i++ {
 						if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") && strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "general") {
 							actividades := reporteshelper.GetActividades(subgrupos[i]["_id"].(string))
@@ -490,6 +489,7 @@ func (c *ReportesController) PlanAccionAnual() {
 								aux1, _ := strconv.Atoi((actividades[j]["index"]).(string))
 								return aux < aux1
 							})
+
 							reporteshelper.LimpiarDetalles()
 							for j := 0; j < len(actividades); j++ {
 								arregloLineamieto = nil
@@ -509,10 +509,13 @@ func (c *ReportesController) PlanAccionAnual() {
 								var armonizacionTercerNivel interface{}
 								var armonizacionTercerNivelPI interface{}
 
+								// fmt.Println("===============tree y armonizacionTercer ================ =================", tree, "=============== SEPARACION ================ =================", armonizacionTercer)
+
 								if armonizacionTercer["armo"] != nil {
 									armonizacionTercerNivel = armonizacionTercer["armo"].(map[string]interface{})["armonizacionPED"]
 									armonizacionTercerNivelPI = armonizacionTercer["armo"].(map[string]interface{})["armonizacionPI"]
 								}
+								fmt.Println("===============armonizacionTercerNivel y armonizacionTercerNivelPI ================ =================", armonizacionTercerNivel, armonizacionTercerNivelPI)
 
 								for datoGeneral := 0; datoGeneral < len(treeDatos); datoGeneral++ {
 									treeDato := treeDatos[datoGeneral]
@@ -569,7 +572,6 @@ func (c *ReportesController) PlanAccionAnual() {
 								//} else {
 								//	arregloLineamietoPI = []map[string]interface{}{}
 								//}
-
 								generalData := make(map[string]interface{})
 								if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=DependenciaId:"+body["unidad_id"].(string), &respuestaUnidad); err == nil {
 									aux := respuestaUnidad[0]
@@ -791,6 +793,7 @@ func (c *ReportesController) PlanAccionAnual() {
 
 					y_lin := rowPos
 					h_lin := MaxRowsXActivity / len(armoPED)
+
 					for _, lin := range armoPED {
 						consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(y_lin), "B"+fmt.Sprint(y_lin+h_lin-1))
 						consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(y_lin), lin["nombreLineamiento"])
@@ -903,7 +906,6 @@ func (c *ReportesController) PlanAccionAnual() {
 					consolidadoExcelPlanAnual.SetActiveSheet(indexPlan)
 				}
 				consolidadoExcelPlanAnual = reporteshelper.TablaIdentificaciones(consolidadoExcelPlanAnual, plan_id)
-
 			}
 
 			if len(planesFilter) <= 0 {
@@ -947,6 +949,7 @@ func (c *ReportesController) PlanAccionAnual() {
 			buf, _ := consolidadoExcelPlanAnual.WriteToBuffer()
 			strings.NewReader(buf.String())
 			encoded := base64.StdEncoding.EncodeToString(buf.Bytes())
+			
 
 			dataSend := make(map[string]interface{})
 			dataSend["generalData"] = arregloPlanAnual
@@ -956,6 +959,7 @@ func (c *ReportesController) PlanAccionAnual() {
 		} else {
 			panic(err)
 		}
+
 	}
 
 	c.ServeJSON()
@@ -1012,6 +1016,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 			if idUnidad != planes["dependencia_id"].(string) {
 				if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=DependenciaId:"+planes["dependencia_id"].(string), &respuestaUnidad); err == nil {
 					planes["nombreUnidad"] = respuestaUnidad[0]["DependenciaId"].(map[string]interface{})["Nombre"].(string)
+					fmt.Sprintf("http://" + beego.AppConfig.String("OikosService") + "/dependencia_tipo_dependencia?query=DependenciaId:" + planes["dependencia_id"].(string))
 				} else {
 					panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
 				}
@@ -1384,7 +1389,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 
 				datosExcelPlan := arregloPlanAnual[excelPlan]
 				armoPED := datosExcelPlan["datosArmonizacion"].([]map[string]interface{})
-				armoPI := datosExcelPlan["datosArmonizacionPI"].([]map[string]interface{})
+				armoPI := datosExcelPlan[""].([]map[string]interface{})
 				datosComplementarios := datosExcelPlan["datosComplementarios"].(map[string]interface{})
 				indicadores := datosComplementarios["indicadores"].(map[string]interface{})
 

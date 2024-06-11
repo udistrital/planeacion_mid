@@ -119,6 +119,7 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 						}
 					}
 				}
+
 				forkData["sub"] = make([]map[string]interface{}, len(aux))
 				forkData["sub"] = aux
 			} else {
@@ -127,13 +128,17 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 
 			tree = append(tree, forkData)
 			add(id)
+
 		}
 	}
+
 	requeridos, armonizacion[0] = convert(validDataT, index)
 	result = append(result, tree)
 	result = append(result, requeridos)
 	result = append(result, armonizacion)
+
 	LimpiaIds()
+
 	return result
 }
 
@@ -265,6 +270,7 @@ func ArbolArmonizacionV2(armonizacion string) []map[string]interface{} {
 			var respuestaSubgrupo map[string]interface{}
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+armonizacionPED[i], &respuesta); err == nil {
 				helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaSubgrupo)
+
 				if len(respuestaSubgrupo) > 0 {
 					nombre := strings.ToLower(respuestaSubgrupo["nombre"].(string))
 					if strings.Contains(nombre, "lineamiento") {

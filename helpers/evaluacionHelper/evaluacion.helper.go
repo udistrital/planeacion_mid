@@ -109,6 +109,10 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 	var seguimiento map[string]interface{}
 	var evaluacion []map[string]interface{}
 	var resSeguimientoDetalle map[string]interface{}
+	var trimestrenombreL []map[string]interface{}
+
+	var trimestrenombre map[string]interface{}
+
 	detalle := make(map[string]interface{})
 	actividades := make(map[string]interface{})
 
@@ -134,11 +138,30 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 				actividad = act.(map[string]interface{})
 			}
 
+			if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=PeriodoId:"+vigencia+",Id:"+periodo_id.(string)+"", &trimestrenombre); err == nil {
+				helpers.LimpiezaRespuestaRefactor(trimestrenombre, &trimestrenombreL)
+			} else {
+				panic(map[string]interface{}{"funcion": "trimestrenombre", "err": "Error ", "status": "400", "log": err})
+			}
+
+			// Variable para guardar el nombre del trimestre
+			var NombreTrim string
+
+			// Acceder al campo "Nombre" en el mapa "ParametroId"
+			for _, item := range trimestrenombreL {
+				if param, ok := item["ParametroId"].(map[string]interface{}); ok {
+					if nombre, ok := param["Nombre"].(string); ok {
+						NombreTrim = nombre
+						break
+					}
+				}
+			}
+
 			for indexPeriodo, periodo := range periodos {
 				if indexPeriodo > trimestre {
 					break
 				}
-				fmt.Println("---------------------------periodo[_id].(string)--------------", periodo["_id"].(string))
+        
 				resIndicadores := GetEvaluacionTrimestre(planId, periodo["_id"].(string), actividadId)
 
 				for _, resIndicador := range resIndicadores {
@@ -152,13 +175,14 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 					}
 
 					var trimestreNom string
-					if periodo_id == "344" {
+          
+					if NombreTrim == "Trimestre Uno" {
 						trimestreNom = "trimestre1"
-					} else if periodo_id == "345" {
+					} else if NombreTrim == "Trimestre Dos" {
 						trimestreNom = "trimestre2"
-					} else if periodo_id == "346" {
+					} else if NombreTrim == "Trimestre Tres" {
 						trimestreNom = "trimestre3"
-					} else if periodo_id == "347" {
+					} else if NombreTrim == "Trimestre Cuatro" {
 						trimestreNom = "trimestre4"
 					}
 
@@ -298,9 +322,10 @@ func GetPeriodos(vigencia string, modo bool) []map[string]interface{} {
 	var periodos []map[string]interface{}
 	var resPeriodo map[string]interface{}
 	var wg sync.WaitGroup
-	trimestres := seguimientohelper.GetTrimestres(vigencia)
-	periodosMutex := sync.Mutex{}
 
+	trimestres := seguimientohelper.GetTrimestres(vigencia)
+
+	periodosMutex := sync.Mutex{}
 	for _, trimestre := range trimestres {
 		wg.Add(1)
 		if fmt.Sprintf("%v", trimestre) == "map[]" {
@@ -471,6 +496,7 @@ func GetPlanesPeriodo(unidad string, vigencia string) (respuesta []map[string]in
 			panic(outputError)
 		}
 	}()
+
 	var resPlan map[string]interface{}
 	var resSeguimiento map[string]interface{}
 	respuesta = make([]map[string]interface{}, 0)
