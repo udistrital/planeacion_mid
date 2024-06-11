@@ -373,6 +373,31 @@ paths:
             $ref: '#/definitions/models.Formulacion'
         "403":
           description: :id is empty
+  /formulacion/cargo_vinculacion/{id}:
+    put:
+      tags:
+      - formulacion
+      description: put Cambio de cargo_id en VinculacionTercero by idVinculacion
+      operationId: FormulacionController.CambioCargoIdVinculacionTercero
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/{}'
+        "403":
+          description: :id is empty
   /formulacion/clonar_formato/{id}:
     post:
       tags:
@@ -815,6 +840,44 @@ paths:
       parameters:
       - in: path
         name: tercero_id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /formulacion/vinculacion_tercero_email/{tercero_email}:
+    get:
+      tags:
+      - formulacion
+      description: get VinculacionTerceroByEmail
+      operationId: FormulacionController.VinculacionTerceroByEmail
+      parameters:
+      - in: path
+        name: tercero_email
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
+  /formulacion/vinculacion_tercero_identificacion/{identificacion}:
+    get:
+      tags:
+      - formulacion
+      description: get VinculacionTerceroByIdentificacion
+      operationId: FormulacionController.VinculacionTerceroByIdentificacion
+      parameters:
+      - in: path
+        name: identificacion
         description: The key for staticblock
         required: true
         type: string

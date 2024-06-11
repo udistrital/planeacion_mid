@@ -50,6 +50,9 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("DefinirFechasFuncionamiento", c.DefinirFechasFuncionamiento)
 	c.Mapping("CalculosDocentes", c.CalculosDocentes)
 	c.Mapping("EstructuraPlanes", c.EstructuraPlanes)
+	c.Mapping("VinculacionTerceroByEmail", c.VinculacionTerceroByEmail)
+	c.Mapping("CambioCargoIdVinculacionTercero", c.CambioCargoIdVinculacionTercero)
+	c.Mapping("VinculacionTerceroByIdentificacion", c.VinculacionTerceroByIdentificacion)
 }
 
 // ClonarFormato ...
@@ -1178,9 +1181,9 @@ func (c *FormulacionController) VersionarPlan() {
 		if value, ok := planPadre["formato_id"].(string); ok {
 			plan["formato_id"] = value
 		}
-		
+
 		if _, ok := planPadre["nueva_estructura"]; ok {
-				plan["nueva_estructura"] = true
+			plan["nueva_estructura"] = true
 		}
 
 		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan", "POST", &respuestaPost, plan); err != nil {
@@ -1281,14 +1284,19 @@ func (c *FormulacionController) PonderacionActividades() {
 	var respuestaLimpiaDetalle []map[string]interface{}
 	var subgrupoDetalle map[string]interface{}
 	var hijos []map[string]interface{}
+	var hijosFiltrado []map[string]interface{}
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+plan, &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &hijos)
-
 		for i := 0; i < len(hijos); i++ {
-			if strings.Contains(strings.ToUpper(hijos[i]["nombre"].(string)), "PONDERACIÓN") && strings.Contains(strings.ToUpper(hijos[i]["nombre"].(string)), "ACTIVIDAD") || strings.Contains(strings.ToUpper(hijos[i]["nombre"].(string)), "PONDERACIÓN") {
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijos[i]["_id"].(string), &respuestaDetalle); err == nil {
+			if hijos[i]["activo"] == true {
+				hijosFiltrado = append(hijosFiltrado, hijos[i])
+			}
+		}
 
+		for i := 0; i < len(hijosFiltrado); i++ {
+			if strings.Contains(strings.ToUpper(hijosFiltrado[i]["nombre"].(string)), "PONDERACIÓN") && strings.Contains(strings.ToUpper(hijosFiltrado[i]["nombre"].(string)), "ACTIVIDAD") || strings.Contains(strings.ToUpper(hijosFiltrado[i]["nombre"].(string)), "PONDERACIÓN") {
+				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijosFiltrado[i]["_id"].(string), &respuestaDetalle); err == nil {
 					helpers.LimpiezaRespuestaRefactor(respuestaDetalle, &respuestaLimpiaDetalle)
 					subgrupoDetalle = respuestaLimpiaDetalle[0]
 
@@ -1314,6 +1322,11 @@ func (c *FormulacionController) PonderacionActividades() {
 				} else {
 					panic(map[string]interface{}{"funcion": "PonderacionActividades", "err": "Error subgrupo_detalle plan \"plan\"", "status": "400", "log": err})
 				}
+
+			} else {
+				c.Data["json"] = map[string]interface{}{"Success": false, "Status": "400", "Message": "Error-tipo1", "Data": `El formato usado para definir la actividad, debe de tener como primer item las palabras "Ponderación" y "Actividad" o solo "Ponderación"`}
+
+
 			}
 		}
 	} else {
@@ -1656,6 +1669,136 @@ func (c *FormulacionController) VinculacionTercero() {
 	c.ServeJSON()
 }
 
+// VinculacionTerceroByEmail ...
+// @Title VinculacionTerceroByEmail
+// @Description get VinculacionTerceroByEmail
+// @Param	tercero_email	path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /vinculacion_tercero_email/:tercero_email [get]
+func (c *FormulacionController) VinculacionTerceroByEmail() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
+	terceroEmail := c.Ctx.Input.Param(":tercero_email")
+	var vinculaciones []models.Vinculacion
+
+	idNoRegistra, idJefeOficina, idAsistenteDependencia, err := formulacionhelper.ObtenerIdParametros()
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "VinculacionTercero", "err": "Error get parametros", "status": "400", "log": err})
+	}
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/vinculacion?query=Activo:true,TerceroPrincipalId__UsuarioWSO2:"+terceroEmail, &vinculaciones); err != nil {
+		panic(map[string]interface{}{"funcion": "VinculacionTercero", "err": "Error get vinculacion", "status": "400", "log": err})
+	} else {
+		var vinculacionesResponse []models.Vinculacion
+		for i := 0; i < len(vinculaciones); i++ {
+			if vinculaciones[i].CargoId == int(idJefeOficina) || vinculaciones[i].CargoId == int(idAsistenteDependencia) || vinculaciones[i].CargoId == int(idNoRegistra) {
+				vinculacionesResponse = append(vinculacionesResponse, vinculaciones[i])
+			}
+		}
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": vinculacionesResponse}
+	}
+	c.ServeJSON()
+}
+
+// VinculacionTerceroByIdentificacion ...
+// @Title VinculacionTerceroByIdentificacion
+// @Description get VinculacionTerceroByIdentificacion
+// @Param	identificacion	path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /vinculacion_tercero_identificacion/:identificacion [get]
+func (c *FormulacionController) VinculacionTerceroByIdentificacion() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
+	identificacionTercero := c.Ctx.Input.Param(":identificacion")
+	var vinculaciones []models.Vinculacion
+	var tercero []models.DatosIdentificacion
+
+	idNoRegistra, idJefeOficina, idAsistenteDependencia, err := formulacionhelper.ObtenerIdParametros()
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "VinculacionTerceroByIdentificacion", "err": "Error get parametros", "status": "400", "log": err})
+	}
+
+	s := "Numero:" + identificacionTercero + ",Activo:true"
+	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/datos_identificacion?query="+url.QueryEscape(s), &tercero); err != nil || tercero[0].TerceroID.ID == 0 {
+		panic(map[string]interface{}{"funcion": "VinculacionTerceroByIdentificacion", "err": "Error get tercero", "status": "400", "log": err})
+	}
+
+	TerceroIdStr := fmt.Sprintf("%d", tercero[0].TerceroID.ID)
+	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/vinculacion?query=Activo:true,TerceroPrincipalId:"+TerceroIdStr, &vinculaciones); err != nil {
+		panic(map[string]interface{}{"funcion": "VinculacionTerceroByIdentificacion", "err": "Error get vinculacion", "status": "400", "log": err})
+	} else {
+		var vinculacionesResponse []models.Vinculacion
+		for i := 0; i < len(vinculaciones); i++ {
+			if vinculaciones[i].CargoId == int(idJefeOficina) || vinculaciones[i].CargoId == int(idAsistenteDependencia) || vinculaciones[i].CargoId == int(idNoRegistra) {
+				vinculacionesResponse = append(vinculacionesResponse, vinculaciones[i])
+			}
+		}
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": vinculacionesResponse}
+	}
+	c.ServeJSON()
+}
+
+// CambioCargoIdVinculacionTercero ...
+// @Title CambioCargoIdVinculacionTercero
+// @Description put Cambio de cargo_id en VinculacionTercero by idVinculacion
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Success 200 {object} {}
+// @Failure 403 :id is empty
+// @router /cargo_vinculacion/:id [put]
+func (c *FormulacionController) CambioCargoIdVinculacionTercero() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+	var body map[string]interface{}
+	id := c.Ctx.Input.Param(":id")
+	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+
+	res, err := formulacionhelper.CambioCargoIdVinculacionTercero(id, body)
+
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "CambioCargoIdVinculacionTercero", "err": "Error actualizando cargo_id en vinculacion", "status": "400", "log": err})
+	}
+
+	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": res}
+	c.ServeJSON()
+}
+
 // Planes ...
 // @Title Planes
 // @Description get Rubros
@@ -1913,7 +2056,6 @@ func (c *FormulacionController) EstructuraPlanes() {
 		}
 	}()
 	id := c.Ctx.Input.Param(":id")
-
 	//Obtener plantilla por id
 	plantilla, err := formulacionhelper.GetPlantilla(id)
 	if err != nil {

@@ -161,7 +161,7 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 				if indexPeriodo > trimestre {
 					break
 				}
-
+        
 				resIndicadores := GetEvaluacionTrimestre(planId, periodo["_id"].(string), actividadId)
 
 				for _, resIndicador := range resIndicadores {
@@ -171,9 +171,11 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 							indice = index
 							break
 						}
+
 					}
 
 					var trimestreNom string
+          
 					if NombreTrim == "Trimestre Uno" {
 						trimestreNom = "trimestre1"
 					} else if NombreTrim == "Trimestre Dos" {
