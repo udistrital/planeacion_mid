@@ -1328,6 +1328,7 @@ func (c *FormulacionController) PonderacionActividades() {
 
 
 			}
+			
 		}
 	} else {
 		panic(map[string]interface{}{"funcion": "PonderacionActividades", "err": "Error subgrupo_hijos plan \"plan\"", "status": "400", "log": err})
