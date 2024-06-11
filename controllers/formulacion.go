@@ -1322,13 +1322,7 @@ func (c *FormulacionController) PonderacionActividades() {
 				} else {
 					panic(map[string]interface{}{"funcion": "PonderacionActividades", "err": "Error subgrupo_detalle plan \"plan\"", "status": "400", "log": err})
 				}
-
-			} else {
-				c.Data["json"] = map[string]interface{}{"Success": false, "Status": "400", "Message": "Error-tipo1", "Data": `El formato usado para definir la actividad, debe de tener como primer item las palabras "Ponderación" y "Actividad" o solo "Ponderación"`}
-
-
 			}
-			
 		}
 	} else {
 		panic(map[string]interface{}{"funcion": "PonderacionActividades", "err": "Error subgrupo_hijos plan \"plan\"", "status": "400", "log": err})
