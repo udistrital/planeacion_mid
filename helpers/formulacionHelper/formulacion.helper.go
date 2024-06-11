@@ -2461,6 +2461,8 @@ func ObtenerIdParametros() (float64, float64, float64, error) {
 }
 
 func CambioCargoIdVinculacionTercero(idVinculacion string, body map[string]interface{}) (*models.Vinculacion, error) {
+	const ROL_ASISTENTE_PLANEACION, CORREO_OFICINA_PLANEACION = "ASISTENTE_PLANEACION", "planeac@udistrital.edu.co"
+	var vinculacionPlaneacion, rolAsistentePlaneacion bool
 	var vinculacion []models.Vinculacion
 
 	idNoRegistra, idJefeOficina, idAsistenteDependencia, err := ObtenerIdParametros()
@@ -2471,6 +2473,19 @@ func CambioCargoIdVinculacionTercero(idVinculacion string, body map[string]inter
 	err = request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/vinculacion?query=Activo:true,Id:"+idVinculacion, &vinculacion)
 	if err != nil || vinculacion[0].CargoId == 0 {
 		panic(map[string]interface{}{"funcion": "CambioCargoIdVinculacionTercero", "err": "Error get vinculacion", "status": "400", "log": err})
+	}
+
+	vinculaciones := body["user"].(map[string]interface{})["Vinculacion"].([]interface{})
+	vinculacionSeleccionada := body["user"].(map[string]interface{})["VinculacionSeleccionadaId"]
+	
+	for _, vinculacion := range vinculaciones {
+		if vinculacion.(map[string]interface{})["Id"].(float64) == vinculacionSeleccionada {
+			vinculacionPlaneacion = (vinculacion.(map[string]interface{})["DependenciaCorreo"].(string) == CORREO_OFICINA_PLANEACION)
+			rolAsistentePlaneacion = (body["rol"].(string) == ROL_ASISTENTE_PLANEACION)
+			if rolAsistentePlaneacion && !vinculacionPlaneacion && body["vincular"] == true {
+				return nil, fmt.Errorf("El usuario no puede tener el rol de %s si no pertenece a la Oficina de Asesora de Planeación", ROL_ASISTENTE_PLANEACION)
+			}
+		}
 	}
 
 	if vinculacion[0].CargoId == int(idJefeOficina) || vinculacion[0].CargoId == int(idAsistenteDependencia) || vinculacion[0].CargoId == int(idNoRegistra) {
