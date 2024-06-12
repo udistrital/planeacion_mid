@@ -2480,10 +2480,14 @@ func CambioCargoIdVinculacionTercero(idVinculacion string, body map[string]inter
 	
 	for _, vinculacion := range vinculaciones {
 		if vinculacion.(map[string]interface{})["Id"].(float64) == vinculacionSeleccionada {
-			vinculacionPlaneacion = (vinculacion.(map[string]interface{})["DependenciaCorreo"].(string) == CORREO_OFICINA_PLANEACION)
-			rolAsistentePlaneacion = (body["rol"].(string) == ROL_ASISTENTE_PLANEACION)
-			if rolAsistentePlaneacion && !vinculacionPlaneacion && body["vincular"] == true {
-				return nil, fmt.Errorf("El usuario no puede tener el rol de %s si no pertenece a la Oficina de Asesora de Planeación", ROL_ASISTENTE_PLANEACION)
+			if DependenciaCorreo, ok := vinculacion.(map[string]interface{})["DependenciaCorreo"].(string); ok {
+        vinculacionPlaneacion = DependenciaCorreo == CORREO_OFICINA_PLANEACION
+				rolAsistentePlaneacion = (body["rol"].(string) == ROL_ASISTENTE_PLANEACION)
+				if rolAsistentePlaneacion && !vinculacionPlaneacion && body["vincular"] == true {
+					return nil, fmt.Errorf("El usuario no puede tener el rol de %s si no pertenece a la Oficina de Asesora de Planeación", ROL_ASISTENTE_PLANEACION)
+				}
+			} else {
+				return nil, fmt.Errorf("no se pudo obtener la Dependencia asociada a la vinculación")
 			}
 		}
 	}
