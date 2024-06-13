@@ -2460,10 +2460,32 @@ func ObtenerIdParametros() (float64, float64, float64, error) {
 	return IdNoRegistra, IdJefeOficina, IdAsistenteDependencia, nil
 }
 
+func obtenerCorreoPlaneacion() (string, error) {
+	var respuestaPeticion map[string]interface{}
+	var correoPlaneacion map[string]interface{}
+	baseURL := "http://" + beego.AppConfig.String("ParametrosService") + "/parametro_periodo?query="
+	err := request.GetJson(baseURL+"ParametroId.CodigoAbreviacion:CORREO_OAP,ParametroId.TipoParametroId.CodigoAbreviacion:P_SISGPLAN,Activo:true", &respuestaPeticion)
+	jsonData, ok := respuestaPeticion["Data"].([]interface{})[0].(map[string]interface{})["Valor"].(string)
+
+	if err != nil || !ok {
+		return "", fmt.Errorf("no se pudo obtener el correo de la Oficina de Asesora de Planeación del módulo de parámetros, comuníquese con computo@udistrital.edu.co")
+	}
+	err1 := json.Unmarshal([]byte(jsonData), &correoPlaneacion)
+	if err1 != nil {
+		return "", fmt.Errorf("Error al deserializar el JSON de Correo Oficina Planeacion: ", err)
+		}
+	return correoPlaneacion["Valor"].(string), nil
+}
+
 func CambioCargoIdVinculacionTercero(idVinculacion string, body map[string]interface{}) (*models.Vinculacion, error) {
-	const ROL_ASISTENTE_PLANEACION, CORREO_OFICINA_PLANEACION = "ASISTENTE_PLANEACION", "planeac@udistrital.edu.co"
+	const ROL_ASISTENTE_PLANEACION = "ASISTENTE_PLANEACION"
 	var vinculacionPlaneacion, rolAsistentePlaneacion bool
 	var vinculacion []models.Vinculacion
+
+	correoPlaneacion, errorPeticion := obtenerCorreoPlaneacion()
+	if errorPeticion != nil {
+		panic(map[string]interface{}{"funcion": "CambioCargoIdVinculacionTercero", "err": errorPeticion.Error(), "status": "400", "log": errorPeticion})
+	}
 
 	idNoRegistra, idJefeOficina, idAsistenteDependencia, err := ObtenerIdParametros()
 	if err != nil {
@@ -2481,7 +2503,7 @@ func CambioCargoIdVinculacionTercero(idVinculacion string, body map[string]inter
 	for _, vinculacion := range vinculaciones {
 		if vinculacion.(map[string]interface{})["Id"].(float64) == vinculacionSeleccionada {
 			if DependenciaCorreo, ok := vinculacion.(map[string]interface{})["DependenciaCorreo"].(string); ok {
-        vinculacionPlaneacion = DependenciaCorreo == CORREO_OFICINA_PLANEACION
+        vinculacionPlaneacion = DependenciaCorreo == correoPlaneacion
 				rolAsistentePlaneacion = (body["rol"].(string) == ROL_ASISTENTE_PLANEACION)
 				if rolAsistentePlaneacion && !vinculacionPlaneacion && body["vincular"] == true {
 					return nil, fmt.Errorf("El usuario no puede tener el rol de %s si no pertenece a la Oficina de Asesora de Planeación", ROL_ASISTENTE_PLANEACION)
