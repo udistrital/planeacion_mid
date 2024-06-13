@@ -1786,7 +1786,7 @@ func (c *FormulacionController) CambioCargoIdVinculacionTercero() {
 	res, err := formulacionhelper.CambioCargoIdVinculacionTercero(id, body)
 
 	if err != nil {
-		panic(map[string]interface{}{"funcion": "CambioCargoIdVinculacionTercero", "err": "Error actualizando cargo_id en vinculacion", "status": "400", "log": err})
+		panic(map[string]interface{}{"funcion": "CambioCargoIdVinculacionTercero", "err": err.Error(), "status": "400", "log": err})
 	}
 
 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": res}
