@@ -913,7 +913,7 @@ func SeguimientoReportable(seguimiento map[string]interface{}) (bool, map[string
 							} else {
 								dato[strconv.FormatFloat(actividad["index"].(float64), 'g', 5, 64)] = actividad["dato"]
 							}
-						} else if actividad["estado"].(map[string]interface{})["nombre"] != "Actividad reportada" && actividad["estado"].(map[string]interface{})["nombre"] != "Actividad avalada" {
+						} else if actividad["estado"].(map[string]interface{})["nombre"] != "Actividad reportada" && actividad["estado"].(map[string]interface{})["nombre"] != "Actividad avalada" && actividad["estado"].(map[string]interface{})["nombre"] != "Actividad Verificada" {
 							if reflect.TypeOf(actividad["index"]).String() == "string" {
 								dato[actividad["index"].(string)] = actividad["dato"]
 							} else {
