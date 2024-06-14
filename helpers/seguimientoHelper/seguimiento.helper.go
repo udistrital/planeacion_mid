@@ -1090,7 +1090,7 @@ func SeguimientoVerificable(seguimiento map[string]interface{}) (bool, bool, map
 										helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
 										detalle = ConvertirStringJson(detalle)
 										estado = detalle["estado"].(map[string]interface{})
-										if estado["nombre"] != "Actividad Verificada" && estado["nombre"] != "Con observaciones" {
+										if estado["nombre"] != "Actividad Verificada" && estado["nombre"] != "Con observaciones" && estado["nombre"] != "Actividad avalada" {
 											dato[indexActividad] = actividad["dato"]
 										}
 									}
@@ -1106,12 +1106,12 @@ func SeguimientoVerificable(seguimiento map[string]interface{}) (bool, bool, map
 									helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
 									detalle = ConvertirStringJson(detalle)
 									estado = detalle["estado"].(map[string]interface{})
-									if estado["nombre"] != "Actividad Verificada" && estado["nombre"] != "Con observaciones" {
+									if estado["nombre"] != "Actividad Verificada" && estado["nombre"] != "Con observaciones" && estado["nombre"] != "Actividad avalada" {
 										dato[indexActividad] = actividad["dato"]
 									}
 								}
 							} else {
-								if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad Verificada" && element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Con observaciones" {
+								if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad Verificada" && element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Con observaciones" && element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad avalada" {
 									dato[indexActividad] = actividad["dato"]
 								}
 							}
