@@ -949,7 +949,6 @@ func (c *ReportesController) PlanAccionAnual() {
 			buf, _ := consolidadoExcelPlanAnual.WriteToBuffer()
 			strings.NewReader(buf.String())
 			encoded := base64.StdEncoding.EncodeToString(buf.Bytes())
-			
 
 			dataSend := make(map[string]interface{})
 			dataSend["generalData"] = arregloPlanAnual
@@ -3491,7 +3490,7 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 
 			var index int
 			for index = 3; index >= 0; index-- {
-				evaluacion = evaluacionhelper.GetEvaluacion(planes[0]["_id"].(string), trimestres, index, body["vigencia"].(string), false)
+				evaluacion = evaluacionhelper.GetEvaluacion(planes[0]["_id"].(string), trimestres, index)
 				if fmt.Sprintf("%v", evaluacion) != "[]" {
 					break
 				}
