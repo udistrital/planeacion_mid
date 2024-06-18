@@ -101,22 +101,17 @@ func (c *EvaluacionController) GetEvaluacion() {
 		c.Data["json"] = map[string]interface{}{"Success": false, "Status": "404", "Message": "Request containt incorrect params", "Data": nil}
 	}
 
-	trimestres := evaluacionhelper.GetPeriodos(vigencia, true)
-
-	var periodo_id interface{}
+	trimestres := evaluacionhelper.GetPeriodosPlan(vigencia, plan)
 
 	if len(trimestres) == 0 {
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": nil}
 	} else {
-		i := 0
-		for index, periodo := range trimestres {
-			if periodo["_id"] == periodoId {
-				i = index
-				periodo_id = periodo["periodo_id"]
+		for posicionTrimestre, trimestre := range trimestres {
+			if trimestre["_id"] == periodoId {
+				evaluacion = evaluacionhelper.GetEvaluacion(plan, trimestres, posicionTrimestre)
+				break
 			}
 		}
-
-		evaluacion = evaluacionhelper.GetEvaluacion(plan, trimestres, i, vigencia, periodo_id)
 
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": evaluacion}
 	}
