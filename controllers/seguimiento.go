@@ -460,7 +460,6 @@ func (c *SeguimientoController) CrearReportes() {
 								detalle["activo"] = true
 								detalle["estado"] = estado
 								delete(detalle, "_id")
-								delete(detalle, "cuantitativo")
 								newDetalleId := seguimientohelper.GuardarDetalleSegimiento(detalle, false) // false => POST
 								dato[idxAct].(map[string]interface{})["id"] = newDetalleId
 							}
