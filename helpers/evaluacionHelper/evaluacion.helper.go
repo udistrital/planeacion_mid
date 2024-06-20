@@ -133,6 +133,8 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id, &resSeguimientoDetalle); err == nil {
 					helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
 					actividad = seguimientohelper.ConvertirStringJson(detalle)
+				} else {
+					panic(map[string]interface{}{"funcion": "GetEvaluacion", "err": "Error ", "status": "400", "log": err})
 				}
 			} else {
 				actividad = act.(map[string]interface{})
@@ -314,6 +316,8 @@ func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre i
 		}
 
 		return evaluacion
+	} else {
+		panic(map[string]interface{}{"funcion": "GetEvaluacion", "err": "Error ", "status": "400", "log": err})
 	}
 	return nil
 }
