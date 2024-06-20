@@ -3470,7 +3470,7 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:6153355601c7a2365b2fb2a1,dependencia_id:"+body["unidad_id"].(string)+",nombre:"+nombre, &respuesta); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &planes)
 
-			trimestres := evaluacionhelper.GetPeriodos(body["vigencia"].(string), true)
+			trimestres := evaluacionhelper.GetPeriodos(body["vigencia"].(string))
 
 			if len(planes) <= 0 {
 				c.Abort("404")
