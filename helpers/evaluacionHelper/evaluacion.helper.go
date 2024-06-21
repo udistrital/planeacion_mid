@@ -141,17 +141,18 @@ func GetEvaluacion(planId string, trimestres []map[string]interface{}, posicionT
 
 		for indexPeriodo, trimestre := range trimestres {
 			var trimestreNom string
-			var trimestreNombre []map[string]interface{}
-			var resTrimestreNombre map[string]interface{}
+			var parametrosPeriodo []map[string]interface{}
+			var resParametroPeriodo map[string]interface{}
 
 			if indexPeriodo > posicionTrimestre {
 				break
 			}
 
 			periodoId := trimestre["periodo_id"].(string)
-			if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+periodoId, &resTrimestreNombre); err == nil {
-				helpers.LimpiezaRespuestaRefactor(resTrimestreNombre, &trimestreNombre)
-				if param, ok := trimestreNombre[0]["ParametroId"].(map[string]interface{}); ok {
+
+			if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+periodoId, &resParametroPeriodo); err == nil {
+				helpers.LimpiezaRespuestaRefactor(resParametroPeriodo, &parametrosPeriodo)
+				if param, ok := parametrosPeriodo[0]["ParametroId"].(map[string]interface{}); ok {
 					if nombre, ok := param["Nombre"].(string); ok {
 						if nombre == "Trimestre Uno" {
 							trimestreNom = "trimestre1"
@@ -327,34 +328,43 @@ func GetPeriodosPlan(vigenciaId string, plan_id string) []map[string]interface{}
 	for _, trimestre := range trimestres {
 		if fmt.Sprintf("%v", trimestre) != "map[]" {
 			wg.Add(1)
-			go func(trimestreId int, wg *sync.WaitGroup, periodos *[]map[string]interface{}) {
-				periodosMutex.Lock()
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?query=tipo_seguimiento_id:61f236f525e40c582a0840d0,periodo_id:`+strconv.Itoa(trimestreId)+",activo:true", &respuestaPeriodoSeguimiento); err == nil {
+			go func(trimestre map[string]interface{}, wg *sync.WaitGroup, periodos *[]map[string]interface{}) {
+				defer wg.Done()
+				trimestreId := int(trimestre["Id"].(float64))
+				codigoAbreviacion := (trimestre["ParametroId"].(map[string]interface{}))["CodigoAbreviacion"].(string)
+
+				// Trae los periodos de seguimiento que son del trimestre respectivo organizados por la fecha de modificación
+				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?query=tipo_seguimiento_id:61f236f525e40c582a0840d0,periodo_id:`+strconv.Itoa(trimestreId)+"&fields=_id,planes_interes,periodo_id&sortby=fecha_modificacion&order=asc", &respuestaPeriodoSeguimiento); err == nil {
 					var periodosSeguimiento []map[string]interface{}
 					helpers.LimpiezaRespuestaRefactor(respuestaPeriodoSeguimiento, &periodosSeguimiento)
 					for _, periodo := range periodosSeguimiento {
 						var planes_interes []map[string]interface{}
-						json.Unmarshal([]byte(periodo["planes_interes"].(string)), &planes_interes)
-						for _, plan_interes := range planes_interes {
-							if plan_interes["_id"].(string) == plan_completo["formato_id"] {
-								(*periodos) = append((*periodos), periodo)
+						if periodo["planes_interes"] != nil {
+							json.Unmarshal([]byte(periodo["planes_interes"].(string)), &planes_interes)
+							for _, plan_interes := range planes_interes {
+								// Solo agrega los seguimientos que respectan al plan
+								if plan_interes["_id"].(string) == plan_completo["formato_id"] {
+									periodo["codigo_trimestre"] = codigoAbreviacion[len(codigoAbreviacion)-1:]
+									periodosMutex.Lock()
+									// Guarda el periodo de seguimiento que ha sido modificado más recientemente
+									(*periodos) = append((*periodos), periodo)
+									periodosMutex.Unlock()
+								}
 							}
 						}
 					}
 				}
-				periodosMutex.Unlock()
-				wg.Done()
-			}(int(trimestre["Id"].(float64)), &wg, &periodos)
+			}(trimestre, &wg, &periodos)
 		}
 	}
 
 	wg.Wait()
 
-	helpers.SortSlice(&periodos, "periodo_id")
+	helpers.SortSlice(&periodos, "codigo_trimestre")
 	return periodos
 }
 
-func GetPeriodos(vigencia string, modo bool) []map[string]interface{} {
+func GetPeriodos(vigencia string) []map[string]interface{} {
 	var periodos []map[string]interface{}
 	var resPeriodo map[string]interface{}
 	var wg sync.WaitGroup
@@ -371,14 +381,9 @@ func GetPeriodos(vigencia string, modo bool) []map[string]interface{} {
 		go func(trimestreId int, wg *sync.WaitGroup, periodos *[]map[string]interface{}) {
 			periodosMutex.Lock()
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?fields=_id,periodo_id&query=tipo_seguimiento_id:61f236f525e40c582a0840d0,periodo_id:`+strconv.Itoa(trimestreId), &resPeriodo); err == nil {
-				var periodo []map[string]interface{}
-				helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
-				if modo {
-					(*periodos) = append((*periodos), periodo...)
-				} else {
-					(*periodos) = append((*periodos), periodo[len(periodo)-1])
-				}
-
+				var periodosTraidos []map[string]interface{}
+				helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodosTraidos)
+				(*periodos) = append((*periodos), periodosTraidos...)
 			}
 			periodosMutex.Unlock()
 			wg.Done()
@@ -547,9 +552,9 @@ func GetPlanesPeriodo(unidad string, vigencia string) (respuesta []map[string]in
 			})
 		}
 
-		periodos := GetPeriodos(vigencia, true)
 		trimestres := seguimientohelper.GetTrimestres(vigencia)
 		for _, plan := range planes {
+			periodos := GetPeriodosPlan(vigencia, plan["_id"].(string))
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/seguimiento?query=tipo_seguimiento_id:61f236f525e40c582a0840d0,estado_seguimiento_id:622ba49216511e93a95c326d,plan_id:`+plan["_id"].(string), &resSeguimiento); err == nil {
 				seguimientos := make([]map[string]interface{}, 1)
 				helpers.LimpiezaRespuestaRefactor(resSeguimiento, &seguimientos)
@@ -638,7 +643,7 @@ func GetAvances(nombrePlan string, idVigencia string, idUnidad string) (respuest
 			"nombre": ultimoPeriodo["nombre"],
 		}
 
-		trimestres := GetPeriodos(idVigencia, true)
+		trimestres := GetPeriodosPlan(idVigencia, plan["id"].(string))
 
 		if len(trimestres) != 0 {
 			for index, trimestre := range trimestres {
