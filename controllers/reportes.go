@@ -54,7 +54,7 @@ func (c *ReportesController) ValidarReporte() {
 	var body map[string]interface{}
 	res := make(map[string]interface{})
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
-	if body["categoria"].(string) == "Evaluación" {
+	if body["categoria"].(string) == "Evaluacion" {
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",dependencia_id:"+body["unidad_id"].(string), &res1); err == nil {
 			helpers.LimpiezaRespuestaRefactor(res1, &resFilter)
 
@@ -70,7 +70,7 @@ func (c *ReportesController) ValidarReporte() {
 						noPlan = false
 						if resFilter[i]["vigencia"] == body["vigencia"].(string) {
 							noVigencia = false
-							if resFilter[i]["estado_plan_id"] == "6153355601c7a2365b2fb2a1" {
+							if resFilter[i]["estado_plan_id"] == "6153355601c7a2365b2fb2a1" { //Estado Avalado
 								noEstado = false
 								res["mensaje"] = ""
 								res["reporte"] = true
@@ -81,7 +81,7 @@ func (c *ReportesController) ValidarReporte() {
 				}
 
 				if noPlan {
-					res["mensaje"] = "La unidad no tiene registros con el plan seleccionado"
+					res["mensaje"] = "La unidad no tiene registros con el plan seleccionado o el tipo-plan no coincide con un Plan de Acción de Funcionamiento"
 					res["reporte"] = false
 				} else if noVigencia {
 					res["mensaje"] = "La unidad no cuenta con registros para la vigencia y el plan selecionados"
@@ -116,7 +116,7 @@ func (c *ReportesController) ValidarReporte() {
 				}
 
 				if noPlan {
-					res["mensaje"] = "No existen registros con el plan seleccionado"
+					res["mensaje"] = "No existen registros con el plan seleccionado o el tipo-plan no coincide con un Plan de Acción de Funcionamiento"
 					res["reporte"] = false
 				} else if noEstado {
 					res["mensaje"] = "No existen registros con el estado y plan seleccionado"
@@ -126,7 +126,9 @@ func (c *ReportesController) ValidarReporte() {
 		} else {
 			res["mensaje"] = "Ocurrio un error"
 		}
-	} else if body["categoria"].(string) == "Plan de acción unidad" {
+	} else if body["categoria"].(string) == "Plan_Accion_Unidad" {
+		// TODO: hacer validación de tipo de plan de acción para mostrar que los demás planes aún no están soportados por el sistema.
+		// "Por favor verificar el tipo de plan de acción. Actualmente NO soportado por el módulo de reportes."
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",dependencia_id:"+body["unidad_id"].(string), &res1); err == nil {
 			helpers.LimpiezaRespuestaRefactor(res1, &resFilter)
 			if len(resFilter) == 0 {
@@ -152,7 +154,7 @@ func (c *ReportesController) ValidarReporte() {
 				}
 
 				if noPlan {
-					res["mensaje"] = "La unidad no tiene registros con el plan seleccionado"
+					res["mensaje"] = "La unidad no tiene registros con el plan seleccionado o el tipo-plan no coincide con un Plan de Acción de Funcionamiento"
 					res["reporte"] = false
 				} else if noVigencia {
 					res["mensaje"] = "La unidad no cuenta con registros para la vigencia y el plan selecionados"
@@ -163,9 +165,9 @@ func (c *ReportesController) ValidarReporte() {
 				}
 			}
 		} else {
-			res["mensaje"] = "Ocurrio un error"
+			res["mensaje"] = "Ocurrió un error"
 		}
-	} else if body["categoria"].(string) == "Plan de acción general" {
+	} else if body["categoria"].(string) == "Plan_Accion_General" {
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string), &res1); err == nil {
 			helpers.LimpiezaRespuestaRefactor(res1, &resFilter)
 			if len(resFilter) == 0 {
@@ -855,7 +857,7 @@ func (c *ReportesController) PlanAccionAnual() {
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "J"+fmt.Sprint(rowPos), "J"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "K"+fmt.Sprint(rowPos), "K"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
 					consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(rowPos), "L"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
-					consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(rowPos), datosExcelPlan["numeroActividad"])
+					consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(rowPos), excelPlan+1)
 					consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(rowPos), datosComplementarios["Ponderación de la actividad"])
 					consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(rowPos), datosComplementarios["Periodo de ejecución"])
 					consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(rowPos), datosComplementarios["Actividad general"])
@@ -1388,7 +1390,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 
 				datosExcelPlan := arregloPlanAnual[excelPlan]
 				armoPED := datosExcelPlan["datosArmonizacion"].([]map[string]interface{})
-				armoPI := datosExcelPlan[""].([]map[string]interface{})
+				armoPI := datosExcelPlan["datosArmonizacionPI"].([]map[string]interface{})
 				datosComplementarios := datosExcelPlan["datosComplementarios"].(map[string]interface{})
 				indicadores := datosComplementarios["indicadores"].(map[string]interface{})
 
@@ -1457,7 +1459,7 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 				consolidadoExcelPlanAnual.MergeCell(sheetName, "J"+fmt.Sprint(rowPos), "J"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
 				consolidadoExcelPlanAnual.MergeCell(sheetName, "K"+fmt.Sprint(rowPos), "K"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
 				consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(rowPos), "L"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(rowPos), datosExcelPlan["numeroActividad"])
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(rowPos), excelPlan+1)
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(rowPos), datosComplementarios["Ponderación de la actividad"])
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(rowPos), datosComplementarios["Periodo de ejecución"])
 				consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(rowPos), datosComplementarios["Actividad general"])
@@ -3157,8 +3159,10 @@ func (c *ReportesController) Necesidades() {
 						valores := rubrosGeneral[i]["valorU"].([]float64)
 
 						// TODO: Revisar este machete, hay menos valores que unidades, se repite la primera unidad, el problema se presenta más arriba.
-						if unidades[0] == unidades[1] && (len(unidades)-1) == len(valores) {
-							unidades = unidades[1:]
+						if (len(unidades) > 1) {
+							if unidades[0] == unidades[1] && (len(unidades)-1) == len(valores) {
+								unidades = unidades[1:]
+							}
 						}
 						// --- end of machete
 
@@ -3470,12 +3474,12 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:6153355601c7a2365b2fb2a1,dependencia_id:"+body["unidad_id"].(string)+",nombre:"+nombre, &respuesta); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &planes)
 
-			trimestres := evaluacionhelper.GetPeriodos(body["vigencia"].(string))
-
 			if len(planes) <= 0 {
 				c.Abort("404")
 			}
 
+			trimestres := evaluacionhelper.GetPeriodosPlan(body["vigencia"].(string), planes[0]["_id"].(string))
+			
 			dependencia := body["unidad_id"].(string)
 			if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia?query=Id:"+dependencia, &respuestaOikos); err == nil {
 				unidadNombre = respuestaOikos[0]["Nombre"].(string)
@@ -3807,7 +3811,7 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			indiceGraficos := 23
 			for i, actividad := range evaluacion {
 				// Datos
-				consolidadoExcelEvaluacion.SetCellValue(sheetName, "B"+fmt.Sprint(indice), actividad["numero"])
+				consolidadoExcelEvaluacion.SetCellValue(sheetName, "B"+fmt.Sprint(indice), i+1)
 				consolidadoExcelEvaluacion.SetCellValue(sheetName, "C"+fmt.Sprint(indice), actividad["ponderado"].(float64)/100)
 				consolidadoExcelEvaluacion.SetCellValue(sheetName, "D"+fmt.Sprint(indice), actividad["periodo"])
 				consolidadoExcelEvaluacion.SetCellValue(sheetName, "E"+fmt.Sprint(indice), actividad["actividad"])
