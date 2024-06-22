@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"math/big"
 	"reflect"
 	"sort"
 	"strconv"
-
-	"log"
 	"strings"
 
 	"github.com/astaxie/beego"
@@ -1227,4 +1227,42 @@ func CambiarEstadoPlan(plan map[string]interface{}, idEstado string) (map[string
 	} else {
 		return nil, err
 	}
+}
+
+// encodeBase62 genera el hash a partir de un planId en formato hexadecimal
+func EncodeBase62(actividadID string) string {
+	const charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	num := new(big.Int)
+	num.SetString(actividadID, 16)
+
+	var encoded string
+
+	zero := big.NewInt(0)
+	base := big.NewInt(62)
+
+	for num.Cmp(zero) > 0 {
+		var quotient, remainder big.Int
+		num.DivMod(num, base, &remainder)
+		encoded = string(charset[remainder.Int64()]) + encoded
+		fmt.Println(quotient.Int64())
+	}
+
+	return encoded
+}
+
+func DecodeBase62(base62Str string) string {
+	const charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+	decodedNum := new(big.Int)
+
+	for _, char := range base62Str {
+		index := strings.IndexByte(charset, byte(char))
+		if index == -1 {
+			panic("Invalid character found in base62 string")
+		}
+		decodedNum.Mul(decodedNum, big.NewInt(62))
+		decodedNum.Add(decodedNum, big.NewInt(int64(index)))
+	}
+
+	return fmt.Sprintf("%x", decodedNum)
 }
