@@ -1648,16 +1648,19 @@ func (c *FormulacionController) VinculacionTercero() {
 
 	terceroId := c.Ctx.Input.Param(":tercero_id")
 	var vinculaciones []models.Vinculacion
+	var vinculacionesResponse []models.Vinculacion
 	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/vinculacion?query=Activo:true,TerceroPrincipalId:"+terceroId, &vinculaciones); err != nil {
 		panic(map[string]interface{}{"funcion": "VinculacionTercero", "err": "Error get vinculacion", "status": "400", "log": err})
 	} else {
 		for i := 0; i < len(vinculaciones); i++ {
 			if vinculaciones[i].CargoId == 319 || vinculaciones[i].CargoId == 312 || vinculaciones[i].CargoId == 320 {
-				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": vinculaciones[i]}
-			} else {
-				c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": ""}
+				vinculacionesResponse = append(vinculacionesResponse, vinculaciones[i])
 			}
 		}
+		if len(vinculacionesResponse) < 1 {
+			panic(map[string]interface{}{"funcion": "VinculacionTercero", "err": "No se encontraron vinculaciones", "status": "404", "log": err})
+		}
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": vinculacionesResponse}
 	}
 	c.ServeJSON()
 }

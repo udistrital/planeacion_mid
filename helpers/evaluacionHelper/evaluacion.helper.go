@@ -104,221 +104,267 @@ func GetEvaluacionTrimestre(planId string, periodoId string, actividadId string)
 	return nil
 }
 
-func GetEvaluacion(planId string, periodos []map[string]interface{}, trimestre int, vigencia string, periodo_id interface{}) []map[string]interface{} {
+func GetEvaluacion(planId string, trimestres []map[string]interface{}, posicionTrimestre int) []map[string]interface{} {
 	var resSeguimiento map[string]interface{}
 	var seguimiento map[string]interface{}
 	var evaluacion []map[string]interface{}
-	var resSeguimientoDetalle map[string]interface{}
-	var trimestrenombreL []map[string]interface{}
 
-	var trimestrenombre map[string]interface{}
-
-	detalle := make(map[string]interface{})
 	actividades := make(map[string]interface{})
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/seguimiento?query=estado_seguimiento_id:622ba49216511e93a95c326d,plan_id:`+planId+`,periodo_seguimiento_id:`+periodos[trimestre]["_id"].(string), &resSeguimiento); err == nil {
-		aux := make([]map[string]interface{}, 1)
-		helpers.LimpiezaRespuestaRefactor(resSeguimiento, &aux)
-		if fmt.Sprintf("%v", aux) == "[]" {
-			return nil
-		}
-		seguimiento = aux[0]
-		datoStr := seguimiento["dato"].(string)
-		json.Unmarshal([]byte(datoStr), &actividades)
-		for actividadId, act := range actividades {
-			id, segregado := actividades[actividadId].(map[string]interface{})["id"].(string)
-			var actividad map[string]interface{}
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/seguimiento?query=estado_seguimiento_id:622ba49216511e93a95c326d,plan_id:`+planId+`,periodo_seguimiento_id:`+trimestres[posicionTrimestre]["_id"].(string), &resSeguimiento); err != nil {
+		return nil
+	}
+	aux := make([]map[string]interface{}, 1)
+	helpers.LimpiezaRespuestaRefactor(resSeguimiento, &aux)
+	if fmt.Sprintf("%v", aux) == "[]" {
+		return nil
+	}
+	seguimiento = aux[0]
+	datoStr := seguimiento["dato"].(string)
+	json.Unmarshal([]byte(datoStr), &actividades)
 
-			if segregado && id != "" {
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id, &resSeguimientoDetalle); err == nil {
-					helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
-					actividad = seguimientohelper.ConvertirStringJson(detalle)
-				}
-			} else {
-				actividad = act.(map[string]interface{})
+	for actividadId, act := range actividades {
+		var actividad map[string]interface{}
+		var resSeguimientoDetalle map[string]interface{}
+		var detalle map[string]interface{}
+
+		id_actividad, existe_id_actividad := actividades[actividadId].(map[string]interface{})["id"].(string)
+
+		if existe_id_actividad && id_actividad != "" {
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id_actividad, &resSeguimientoDetalle); err == nil {
+				helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
+				actividad = seguimientohelper.ConvertirStringJson(detalle)
+			}
+		} else {
+			actividad = act.(map[string]interface{})
+		}
+
+		for indexPeriodo, trimestre := range trimestres {
+			var trimestreNom string
+			var parametrosPeriodo []map[string]interface{}
+			var resParametroPeriodo map[string]interface{}
+
+			if indexPeriodo > posicionTrimestre {
+				break
 			}
 
-			if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=PeriodoId:"+vigencia+",Id:"+periodo_id.(string)+"", &trimestrenombre); err == nil {
-				helpers.LimpiezaRespuestaRefactor(trimestrenombre, &trimestrenombreL)
+			periodoId := trimestre["periodo_id"].(string)
+
+			if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+periodoId, &resParametroPeriodo); err == nil {
+				helpers.LimpiezaRespuestaRefactor(resParametroPeriodo, &parametrosPeriodo)
+				if param, ok := parametrosPeriodo[0]["ParametroId"].(map[string]interface{}); ok {
+					if nombre, ok := param["Nombre"].(string); ok {
+						if nombre == "Trimestre Uno" {
+							trimestreNom = "trimestre1"
+						} else if nombre == "Trimestre Dos" {
+							trimestreNom = "trimestre2"
+						} else if nombre == "Trimestre Tres" {
+							trimestreNom = "trimestre3"
+						} else if nombre == "Trimestre Cuatro" {
+							trimestreNom = "trimestre4"
+						}
+					}
+				}
 			} else {
 				panic(map[string]interface{}{"funcion": "trimestrenombre", "err": "Error ", "status": "400", "log": err})
 			}
 
-			// Variable para guardar el nombre del trimestre
-			var NombreTrim string
+			resIndicadores := GetEvaluacionTrimestre(planId, trimestre["_id"].(string), actividadId)
+			for _, resIndicador := range resIndicadores {
 
-			// Acceder al campo "Nombre" en el mapa "ParametroId"
-			for _, item := range trimestrenombreL {
-				if param, ok := item["ParametroId"].(map[string]interface{}); ok {
-					if nombre, ok := param["Nombre"].(string); ok {
-						NombreTrim = nombre
+				indice := -1
+				for index, eval := range evaluacion {
+					if eval["numero"] == actividad["informacion"].(map[string]interface{})["index"] && eval["indicador"] == resIndicador["indicador"] {
+						indice = index
 						break
 					}
 				}
-			}
 
-			for indexPeriodo, periodo := range periodos {
-				if indexPeriodo > trimestre {
-					break
-				}
-        
-				resIndicadores := GetEvaluacionTrimestre(planId, periodo["_id"].(string), actividadId)
-
-				for _, resIndicador := range resIndicadores {
-					indice := -1
-					for index, eval := range evaluacion {
-						if eval["numero"] == actividad["informacion"].(map[string]interface{})["index"] && eval["indicador"] == resIndicador["indicador"] {
-							indice = index
-							break
-						}
-
+				if indice == -1 {
+					evaluacionAux := map[string]interface{}{
+						"actividad":  actividad["informacion"].(map[string]interface{})["descripcion"],
+						"numero":     actividad["informacion"].(map[string]interface{})["index"],
+						"periodo":    actividad["informacion"].(map[string]interface{})["periodo"],
+						"ponderado":  actividad["informacion"].(map[string]interface{})["ponderacion"],
+						"trimestre1": make(map[string]interface{}),
+						"trimestre2": make(map[string]interface{}),
+						"trimestre3": make(map[string]interface{}),
+						"trimestre4": make(map[string]interface{}),
+					}
+					evaluacionAux["indicador"] = resIndicador["indicador"]
+					evaluacionAux["unidad"] = resIndicador["unidad"]
+					evaluacionAux["formula"] = resIndicador["formula"]
+					evaluacionAux["meta"] = resIndicador["metaA"].(float64)
+					evaluacionAux[trimestreNom] = map[string]interface{}{
+						"acumulado":            resIndicador["acumulado"],
+						"denominador":          resIndicador["denominador"],
+						"meta":                 resIndicador["meta"],
+						"numerador":            resIndicador["numerador"],
+						"periodo":              resIndicador["periodo"],
+						"numeradorAcumulado":   resIndicador["numeradorAcumulado"],
+						"denominadorAcumulado": resIndicador["denominadorAcumulado"],
+						"brecha":               resIndicador["brecha"],
 					}
 
-					var trimestreNom string
-          
-					if NombreTrim == "Trimestre Uno" {
-						trimestreNom = "trimestre1"
-					} else if NombreTrim == "Trimestre Dos" {
-						trimestreNom = "trimestre2"
-					} else if NombreTrim == "Trimestre Tres" {
-						trimestreNom = "trimestre3"
-					} else if NombreTrim == "Trimestre Cuatro" {
-						trimestreNom = "trimestre4"
-					}
-
-					if indice == -1 {
-						evaluacionAct := map[string]interface{}{
-							"actividad":  actividad["informacion"].(map[string]interface{})["descripcion"],
-							"numero":     actividad["informacion"].(map[string]interface{})["index"],
-							"periodo":    actividad["informacion"].(map[string]interface{})["periodo"],
-							"ponderado":  actividad["informacion"].(map[string]interface{})["ponderacion"],
-							"trimestre1": make(map[string]interface{}),
-							"trimestre2": make(map[string]interface{}),
-							"trimestre3": make(map[string]interface{}),
-							"trimestre4": make(map[string]interface{}),
-						}
-						evaluacionAct["indicador"] = resIndicador["indicador"]
-						evaluacionAct["unidad"] = resIndicador["unidad"]
-						evaluacionAct["formula"] = resIndicador["formula"]
-						evaluacionAct["meta"] = resIndicador["metaA"].(float64)
-						evaluacionAct[trimestreNom] = map[string]interface{}{
-							"acumulado":            resIndicador["acumulado"],
-							"denominador":          resIndicador["denominador"],
-							"meta":                 resIndicador["meta"],
-							"numerador":            resIndicador["numerador"],
-							"periodo":              resIndicador["periodo"],
-							"numeradorAcumulado":   resIndicador["numeradorAcumulado"],
-							"denominadorAcumulado": resIndicador["denominadorAcumulado"],
-							"brecha":               resIndicador["brecha"],
-						}
-
-						evaluacion = append(evaluacion, evaluacionAct)
-					} else {
-						evaluacion[indice][trimestreNom] = map[string]interface{}{
-							"acumulado":            resIndicador["acumulado"],
-							"denominador":          resIndicador["denominador"],
-							"meta":                 resIndicador["meta"],
-							"numerador":            resIndicador["numerador"],
-							"periodo":              resIndicador["periodo"],
-							"numeradorAcumulado":   resIndicador["numeradorAcumulado"],
-							"denominadorAcumulado": resIndicador["denominadorAcumulado"],
-							"brecha":               resIndicador["brecha"],
-						}
+					evaluacion = append(evaluacion, evaluacionAux)
+				} else {
+					evaluacion[indice][trimestreNom] = map[string]interface{}{
+						"acumulado":            resIndicador["acumulado"],
+						"denominador":          resIndicador["denominador"],
+						"meta":                 resIndicador["meta"],
+						"numerador":            resIndicador["numerador"],
+						"periodo":              resIndicador["periodo"],
+						"numeradorAcumulado":   resIndicador["numeradorAcumulado"],
+						"denominadorAcumulado": resIndicador["denominadorAcumulado"],
+						"brecha":               resIndicador["brecha"],
 					}
 				}
 			}
 		}
-
-		helpers.SortSlice(&evaluacion, "numero")
-		agrupacion_actividades := make(map[string][]int)
-		for i, eval := range evaluacion {
-			if _, ok := agrupacion_actividades[eval["numero"].(string)]; !ok {
-				agrupacion_actividades[eval["numero"].(string)] = []int{}
-			}
-			agrupacion_actividades[eval["numero"].(string)] = append(agrupacion_actividades[eval["numero"].(string)], i)
-		}
-
-		for _, idxs := range agrupacion_actividades {
-			sum1 := 0.0
-			sum2 := 0.0
-			sum3 := 0.0
-			sum4 := 0.0
-
-			for _, i := range idxs {
-				if fmt.Sprintf("%v", evaluacion[i]["trimestre1"]) != "map[]" {
-					if evaluacion[i]["trimestre1"].(map[string]interface{})["meta"].(float64) > 1 {
-						sum1 = sum1 + 1.0
-					} else {
-						sum1 = sum1 + evaluacion[i]["trimestre1"].(map[string]interface{})["meta"].(float64)
-					}
-				}
-				if fmt.Sprintf("%v", evaluacion[i]["trimestre2"]) != "map[]" {
-					if evaluacion[i]["trimestre2"].(map[string]interface{})["meta"].(float64) > 1 {
-						sum2 = sum2 + 1.0
-					} else {
-						sum2 = sum2 + evaluacion[i]["trimestre2"].(map[string]interface{})["meta"].(float64)
-					}
-				}
-				if fmt.Sprintf("%v", evaluacion[i]["trimestre3"]) != "map[]" {
-					if evaluacion[i]["trimestre3"].(map[string]interface{})["meta"].(float64) > 1 {
-						sum3 = sum3 + 1.0
-					} else {
-						sum3 = sum3 + evaluacion[i]["trimestre3"].(map[string]interface{})["meta"].(float64)
-					}
-				}
-				if fmt.Sprintf("%v", evaluacion[i]["trimestre4"]) != "map[]" {
-					if evaluacion[i]["trimestre4"].(map[string]interface{})["meta"].(float64) > 1 {
-						sum4 = sum4 + 1.0
-					} else {
-						sum4 = sum4 + evaluacion[i]["trimestre4"].(map[string]interface{})["meta"].(float64)
-					}
-				}
-			}
-
-			cont := len(idxs)
-			cumplActividad1 := math.Floor((sum1/float64(cont))*1000) / 1000
-			cumplActividad2 := math.Floor((sum2/float64(cont))*1000) / 1000
-			cumplActividad3 := math.Floor((sum3/float64(cont))*1000) / 1000
-			cumplActividad4 := math.Floor((sum4/float64(cont))*1000) / 1000
-
-			if cumplActividad1 > 1 {
-				cumplActividad1 = 1
-			}
-
-			if cumplActividad2 > 1 {
-				cumplActividad2 = 1
-			}
-
-			if cumplActividad3 > 1 {
-				cumplActividad3 = 1
-			}
-
-			if cumplActividad4 > 1 {
-				cumplActividad4 = 1
-			}
-
-			for _, i := range idxs {
-				if fmt.Sprintf("%v", evaluacion[i]["trimestre1"]) != "map[]" {
-					evaluacion[i]["trimestre1"].(map[string]interface{})["actividad"] = cumplActividad1
-				}
-				if fmt.Sprintf("%v", evaluacion[i]["trimestre2"]) != "map[]" {
-					evaluacion[i]["trimestre2"].(map[string]interface{})["actividad"] = cumplActividad2
-				}
-				if fmt.Sprintf("%v", evaluacion[i]["trimestre3"]) != "map[]" {
-					evaluacion[i]["trimestre3"].(map[string]interface{})["actividad"] = cumplActividad3
-				}
-				if fmt.Sprintf("%v", evaluacion[i]["trimestre4"]) != "map[]" {
-					evaluacion[i]["trimestre4"].(map[string]interface{})["actividad"] = cumplActividad4
-				}
-			}
-		}
-
-		return evaluacion
 	}
-	return nil
+
+	helpers.SortSlice(&evaluacion, "numero")
+	agrupacion_actividades := make(map[string][]int)
+	for i, eval := range evaluacion {
+		if _, ok := agrupacion_actividades[eval["numero"].(string)]; !ok {
+			agrupacion_actividades[eval["numero"].(string)] = []int{}
+		}
+		agrupacion_actividades[eval["numero"].(string)] = append(agrupacion_actividades[eval["numero"].(string)], i)
+	}
+
+	for _, idxs := range agrupacion_actividades {
+		sum1 := 0.0
+		sum2 := 0.0
+		sum3 := 0.0
+		sum4 := 0.0
+
+		for _, i := range idxs {
+			if fmt.Sprintf("%v", evaluacion[i]["trimestre1"]) != "map[]" {
+				if evaluacion[i]["trimestre1"].(map[string]interface{})["meta"].(float64) > 1 {
+					sum1 = sum1 + 1.0
+				} else {
+					sum1 = sum1 + evaluacion[i]["trimestre1"].(map[string]interface{})["meta"].(float64)
+				}
+			}
+			if fmt.Sprintf("%v", evaluacion[i]["trimestre2"]) != "map[]" {
+				if evaluacion[i]["trimestre2"].(map[string]interface{})["meta"].(float64) > 1 {
+					sum2 = sum2 + 1.0
+				} else {
+					sum2 = sum2 + evaluacion[i]["trimestre2"].(map[string]interface{})["meta"].(float64)
+				}
+			}
+			if fmt.Sprintf("%v", evaluacion[i]["trimestre3"]) != "map[]" {
+				if evaluacion[i]["trimestre3"].(map[string]interface{})["meta"].(float64) > 1 {
+					sum3 = sum3 + 1.0
+				} else {
+					sum3 = sum3 + evaluacion[i]["trimestre3"].(map[string]interface{})["meta"].(float64)
+				}
+			}
+			if fmt.Sprintf("%v", evaluacion[i]["trimestre4"]) != "map[]" {
+				if evaluacion[i]["trimestre4"].(map[string]interface{})["meta"].(float64) > 1 {
+					sum4 = sum4 + 1.0
+				} else {
+					sum4 = sum4 + evaluacion[i]["trimestre4"].(map[string]interface{})["meta"].(float64)
+				}
+			}
+		}
+
+		cont := len(idxs)
+		cumplActividad1 := math.Floor((sum1/float64(cont))*1000) / 1000
+		cumplActividad2 := math.Floor((sum2/float64(cont))*1000) / 1000
+		cumplActividad3 := math.Floor((sum3/float64(cont))*1000) / 1000
+		cumplActividad4 := math.Floor((sum4/float64(cont))*1000) / 1000
+
+		if cumplActividad1 > 1 {
+			cumplActividad1 = 1
+		}
+
+		if cumplActividad2 > 1 {
+			cumplActividad2 = 1
+		}
+
+		if cumplActividad3 > 1 {
+			cumplActividad3 = 1
+		}
+
+		if cumplActividad4 > 1 {
+			cumplActividad4 = 1
+		}
+
+		for _, i := range idxs {
+			if fmt.Sprintf("%v", evaluacion[i]["trimestre1"]) != "map[]" {
+				evaluacion[i]["trimestre1"].(map[string]interface{})["actividad"] = cumplActividad1
+			}
+			if fmt.Sprintf("%v", evaluacion[i]["trimestre2"]) != "map[]" {
+				evaluacion[i]["trimestre2"].(map[string]interface{})["actividad"] = cumplActividad2
+			}
+			if fmt.Sprintf("%v", evaluacion[i]["trimestre3"]) != "map[]" {
+				evaluacion[i]["trimestre3"].(map[string]interface{})["actividad"] = cumplActividad3
+			}
+			if fmt.Sprintf("%v", evaluacion[i]["trimestre4"]) != "map[]" {
+				evaluacion[i]["trimestre4"].(map[string]interface{})["actividad"] = cumplActividad4
+			}
+		}
+	}
+
+	return evaluacion
+
 }
 
-func GetPeriodos(vigencia string, modo bool) []map[string]interface{} {
+func GetPeriodosPlan(vigenciaId string, plan_id string) []map[string]interface{} {
+	var periodos []map[string]interface{}
+	var respuestaPeriodoSeguimiento map[string]interface{}
+	var plan_completo map[string]interface{}
+	var respuestaPlan map[string]interface{}
+	var wg sync.WaitGroup
+
+	trimestres := seguimientohelper.GetTrimestres(vigenciaId)
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/plan/`+plan_id, &respuestaPlan); err == nil {
+		helpers.LimpiezaRespuestaRefactor(respuestaPlan, &plan_completo)
+	}
+
+	periodosMutex := sync.Mutex{}
+	for _, trimestre := range trimestres {
+		if fmt.Sprintf("%v", trimestre) != "map[]" {
+			wg.Add(1)
+			go func(trimestre map[string]interface{}, wg *sync.WaitGroup, periodos *[]map[string]interface{}) {
+				defer wg.Done()
+				trimestreId := int(trimestre["Id"].(float64))
+				codigoAbreviacion := (trimestre["ParametroId"].(map[string]interface{}))["CodigoAbreviacion"].(string)
+
+				// Trae los periodos de seguimiento que son del trimestre respectivo organizados por la fecha de modificación
+				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?query=tipo_seguimiento_id:61f236f525e40c582a0840d0,periodo_id:`+strconv.Itoa(trimestreId)+"&fields=_id,planes_interes,periodo_id&sortby=fecha_modificacion&order=asc", &respuestaPeriodoSeguimiento); err == nil {
+					var periodosSeguimiento []map[string]interface{}
+					helpers.LimpiezaRespuestaRefactor(respuestaPeriodoSeguimiento, &periodosSeguimiento)
+					for _, periodo := range periodosSeguimiento {
+						var planes_interes []map[string]interface{}
+						if periodo["planes_interes"] != nil {
+							json.Unmarshal([]byte(periodo["planes_interes"].(string)), &planes_interes)
+							for _, plan_interes := range planes_interes {
+								// Solo agrega los seguimientos que respectan al plan
+								if plan_interes["_id"].(string) == plan_completo["formato_id"] {
+									periodo["codigo_trimestre"] = codigoAbreviacion[len(codigoAbreviacion)-1:]
+									periodosMutex.Lock()
+									// Guarda el periodo de seguimiento que ha sido modificado más recientemente
+									(*periodos) = append((*periodos), periodo)
+									periodosMutex.Unlock()
+								}
+							}
+						}
+					}
+				}
+			}(trimestre, &wg, &periodos)
+		}
+	}
+
+	wg.Wait()
+
+	helpers.SortSlice(&periodos, "codigo_trimestre")
+	return periodos
+}
+
+func GetPeriodos(vigencia string) []map[string]interface{} {
 	var periodos []map[string]interface{}
 	var resPeriodo map[string]interface{}
 	var wg sync.WaitGroup
@@ -335,14 +381,9 @@ func GetPeriodos(vigencia string, modo bool) []map[string]interface{} {
 		go func(trimestreId int, wg *sync.WaitGroup, periodos *[]map[string]interface{}) {
 			periodosMutex.Lock()
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?fields=_id,periodo_id&query=tipo_seguimiento_id:61f236f525e40c582a0840d0,periodo_id:`+strconv.Itoa(trimestreId), &resPeriodo); err == nil {
-				var periodo []map[string]interface{}
-				helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
-				if modo {
-					(*periodos) = append((*periodos), periodo...)
-				} else {
-					(*periodos) = append((*periodos), periodo[len(periodo)-1])
-				}
-
+				var periodosTraidos []map[string]interface{}
+				helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodosTraidos)
+				(*periodos) = append((*periodos), periodosTraidos...)
 			}
 			periodosMutex.Unlock()
 			wg.Done()
@@ -504,7 +545,6 @@ func GetPlanesPeriodo(unidad string, vigencia string) (respuesta []map[string]in
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/plan?query=estado_plan_id:6153355601c7a2365b2fb2a1,dependencia_id:`+unidad+`,vigencia:`+vigencia, &resPlan); err == nil {
 		planes := make([]map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(resPlan, &planes)
-		// formatdata.JsonPrint(planes)
 		if fmt.Sprintf("%v", planes) == "[]" {
 			panic(map[string]interface{}{
 				"err":    "No se tienen planes en seguimiento para la dependencia y la vigencia",
@@ -512,9 +552,9 @@ func GetPlanesPeriodo(unidad string, vigencia string) (respuesta []map[string]in
 			})
 		}
 
-		periodos := GetPeriodos(vigencia, true)
 		trimestres := seguimientohelper.GetTrimestres(vigencia)
 		for _, plan := range planes {
+			periodos := GetPeriodosPlan(vigencia, plan["_id"].(string))
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/seguimiento?query=tipo_seguimiento_id:61f236f525e40c582a0840d0,estado_seguimiento_id:622ba49216511e93a95c326d,plan_id:`+plan["_id"].(string), &resSeguimiento); err == nil {
 				seguimientos := make([]map[string]interface{}, 1)
 				helpers.LimpiezaRespuestaRefactor(resSeguimiento, &seguimientos)
@@ -603,19 +643,13 @@ func GetAvances(nombrePlan string, idVigencia string, idUnidad string) (respuest
 			"nombre": ultimoPeriodo["nombre"],
 		}
 
-		trimestres := GetPeriodos(idVigencia, true)
+		trimestres := GetPeriodosPlan(idVigencia, plan["id"].(string))
 
-		var periodo_id interface{}
-
-		// formatdata.JsonPrint(trimestres)
 		if len(trimestres) != 0 {
 			for index, trimestre := range trimestres {
 				for _, periodo := range periodos {
 					if trimestre["_id"] == periodo["id"] {
-						if trimestre["_id"] == periodo["id"] {
-							periodo_id = trimestre["periodo_id"]
-						}
-						actividades := GetEvaluacion(plan["id"].(string), trimestres, index, idVigencia, periodo_id)
+						actividades := GetEvaluacion(plan["id"].(string), trimestres, index)
 						var numeroActividad = "0"
 						for _, actividad := range actividades {
 							if numeroActividad != actividad["numero"] {
