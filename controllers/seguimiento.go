@@ -217,7 +217,7 @@ func (c *SeguimientoController) AvalarPlan() {
 				}
 			}
 
-			if(len(seguimientosPeticion) == 0 && plan["nueva_estructura"].(bool)) {
+			if len(seguimientosPeticion) == 0 && plan["nueva_estructura"].(bool) {
 				nuevo = true
 			}
 
@@ -792,7 +792,7 @@ func (c *SeguimientoController) GetActividadesGenerales() {
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,_id:"+seguimiento_id, &resSeguimiento); err == nil {
 		helpers.LimpiezaRespuestaRefactor(resSeguimiento, &seguimiento)
 		if fmt.Sprintf("%v", seguimiento) != "[]" {
-			planId := seguimiento[0]["plan_id"].(string)
+			planId := seguimiento[0]["plan_id"].(string) // Obtenemos el planId
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+planId, &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
 
@@ -840,6 +840,28 @@ func (c *SeguimientoController) GetActividadesGenerales() {
 								}
 							}
 						}
+
+						// Añadir el planId-index a cada actividad y mantener el index individual
+						for _, actividad := range actividades {
+							var actividadID string
+							if index, ok := actividad["index"].(float64); ok {
+								actividadID = fmt.Sprintf("%s%d", planId, int(index))
+							} else if indexStr, ok := actividad["index"].(string); ok {
+								actividadID = fmt.Sprintf("%s%s", planId, indexStr)
+							}
+
+							// Codificar actividadID en Base64 usando el helper
+							encodedID := seguimientohelper.EncodeBase62(actividadID)
+
+							actividad["id_actividad"] = encodedID
+
+							// Decodificar el id_actividad codificado para verificar
+							// decodedID := seguimientohelper.DecodeBase62(encodedID)
+							// actividad["id_actividad_decoded"] = decodedID
+							// actividad["planId"] = actividadID
+
+						}
+
 						c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": actividades}
 						break
 					}
@@ -992,6 +1014,10 @@ func (c *SeguimientoController) GetSeguimiento() {
 	var seguimientoActividad map[string]interface{}
 	var periodo []map[string]interface{}
 	var trimestre string
+
+	id_actividad_decoded := planId + "" + indexActividad
+	id_actividad := seguimientohelper.EncodeBase62(id_actividad_decoded)
+
 	dato := make(map[string]interface{})
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestreId, &respuesta); err == nil {
@@ -1014,9 +1040,12 @@ func (c *SeguimientoController) GetSeguimiento() {
 		actividad, _ := json.Marshal(seguimientohelper.GetActividad(seguimiento, indexActividad, trimestre))
 		json.Unmarshal([]byte(string(actividad)), &seguimientoActividad)
 		seguimientoActividad["_id"] = seguimiento["_id"].(string)
+		seguimientoActividad["id_actividad"] = id_actividad
+
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento/"+seguimiento["estado_seguimiento_id"].(string), &resEstado); err == nil {
 			seguimientoActividad["estadoSeguimiento"] = resEstado["Data"].(map[string]interface{})["nombre"].(string)
 		}
+
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": seguimientoActividad}
 	} else {
 		panic(err)
@@ -2245,7 +2274,7 @@ func (c *SeguimientoController) RetornarActividadJefeDependencia() {
 		beego.Info("Body: ", body)
 		fmt.Println("Se encontro el detalle")
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
-			
+
 			aux := make([]map[string]interface{}, 1)
 			helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
 
