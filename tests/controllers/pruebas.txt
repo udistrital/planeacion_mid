@@ -1,101 +1,227 @@
 === RUN   TestGetObtenerArbol
     arbol_test.go:14: TestGetObtenerArbol Finalizado Correctamente (OK)
---- PASS: TestGetObtenerArbol (25.99s)
+--- PASS: TestGetObtenerArbol (25.97s)
 === RUN   TestGetPlanesPeriodo
     evaluacion_test.go:14: TestGetPlanesPeriodo Finalizado Correctamente (OK)
---- PASS: TestGetPlanesPeriodo (12.64s)
+--- PASS: TestGetPlanesPeriodo (10.51s)
 === RUN   TestGetEvaluacion
     evaluacion_test.go:27: TestGetEvaluacion Finalizado Correctamente (OK)
---- PASS: TestGetEvaluacion (3.59s)
+--- PASS: TestGetEvaluacion (3.62s)
 === RUN   TestPlanesAEvaluar
-    evaluacion_test.go:40: TestPlanesAEvaluar Finalizado Correctamente (OK)
---- PASS: TestPlanesAEvaluar (2.81s)
+    evaluacion_test.go:37: Error TestPlanesAEvaluar Se esperaba 200 y se obtuvo 404
+--- FAIL: TestPlanesAEvaluar (0.38s)
 === RUN   TestGetUnidades
     evaluacion_test.go:53: TestGetUnidades Finalizado Correctamente (OK)
---- PASS: TestGetUnidades (3.88s)
+--- PASS: TestGetUnidades (3.68s)
 === RUN   TestGetAvances
     evaluacion_test.go:66: TestGetAvances Finalizado Correctamente (OK)
---- PASS: TestGetAvances (15.31s)
+--- PASS: TestGetAvances (13.91s)
 === RUN   TestGetFormato
     formato_test.go:14: TestGetFormato Finalizado Correctamente (OK)
---- PASS: TestGetFormato (27.46s)
+--- PASS: TestGetFormato (27.03s)
 === RUN   TestGetPlan
-    formulacion_test.go:14: TestGetPlan Finalizado Correctamente (OK)
---- PASS: TestGetPlan (22.95s)
+    formulacion_test.go:15: TestGetPlan Finalizado Correctamente (OK)
+--- PASS: TestGetPlan (21.32s)
 === RUN   TestGetAllActividades
-    formulacion_test.go:27: TestGetAllActividades Finalizado Correctamente (OK)
---- PASS: TestGetAllActividades (1.54s)
+    formulacion_test.go:28: TestGetAllActividades Finalizado Correctamente (OK)
+--- PASS: TestGetAllActividades (1.44s)
 === RUN   TestConsultarIdentificaciones
-    formulacion_test.go:41: TestConsultarIdentificaciones Finalizado Correctamente (OK)
---- PASS: TestConsultarIdentificaciones (0.11s)
+    formulacion_test.go:42: TestConsultarIdentificaciones Finalizado Correctamente (OK)
+--- PASS: TestConsultarIdentificaciones (0.09s)
 === RUN   TestConsultarPlanVersiones
-    formulacion_test.go:55: TestConsultarPlanVersiones Finalizado Correctamente (OK)
---- PASS: TestConsultarPlanVersiones (0.11s)
+    formulacion_test.go:56: TestConsultarPlanVersiones Finalizado Correctamente (OK)
+--- PASS: TestConsultarPlanVersiones (0.09s)
 === RUN   TestPonderacionActividades
-    formulacion_test.go:69: TestCPonderacionActividades Finalizado Correctamente (OK)
---- PASS: TestPonderacionActividades (0.23s)
+    formulacion_test.go:70: TestCPonderacionActividades Finalizado Correctamente (OK)
+--- PASS: TestPonderacionActividades (0.20s)
 === RUN   TestConsultarUnidades
-    formulacion_test.go:83: TestConsultarUnidades Finalizado Correctamente (OK)
---- PASS: TestConsultarUnidades (1.91s)
+    formulacion_test.go:84: TestConsultarUnidades Finalizado Correctamente (OK)
+--- PASS: TestConsultarUnidades (1.74s)
 === RUN   TestVinculacionTercero
-    formulacion_test.go:97: TestVinculacionTercero Finalizado Correctamente (OK)
---- PASS: TestVinculacionTercero (0.42s)
+    formulacion_test.go:98: TestVinculacionTercero Finalizado Correctamente (OK)
+--- PASS: TestVinculacionTercero (1.16s)
 === RUN   TestPlanes
-    formulacion_test.go:113: TestPlanes Finalizado Correctamente (OK)
---- PASS: TestPlanes (11.95s)
+    formulacion_test.go:114: TestPlanes Finalizado Correctamente (OK)
+--- PASS: TestPlanes (10.80s)
 === RUN   TestVerificarIdentificaciones
-    formulacion_test.go:127: TestVerificarIdentificaciones Finalizado Correctamente (OK)
---- PASS: TestVerificarIdentificaciones (0.11s)
+    formulacion_test.go:128: TestVerificarIdentificaciones Finalizado Correctamente (OK)
+--- PASS: TestVerificarIdentificaciones (0.09s)
 === RUN   TestPlanesEnFormulacion
-    formulacion_test.go:140: TestPlanesEnFormulacion Finalizado Correctamente (OK)
---- PASS: TestPlanesEnFormulacion (1.37s)
+    formulacion_test.go:141: TestPlanesEnFormulacion Finalizado Correctamente (OK)
+--- PASS: TestPlanesEnFormulacion (1.01s)
+=== RUN   TestClonarFormato
+    formulacion_test.go:160: TestClonarFormato Finalizado Correctamente (OK)
+--- PASS: TestClonarFormato (0.09s)
+=== RUN   TestConsultarArbolArmonizacion
+    formulacion_test.go:176: TestConsultarArbolArmonizacion Finalizado Correctamente (OK)
+--- PASS: TestConsultarArbolArmonizacion (0.00s)
+=== RUN   TestVersionarPlan
+    formulacion_test.go:192: TestVersionarPlan Finalizado Correctamente (OK)
+--- PASS: TestVersionarPlan (0.10s)
+=== RUN   TestGuardarActividad
+    formulacion_test.go:218: TestGuardarActividad Finalizado Correctamente (OK)
+--- PASS: TestGuardarActividad (0.00s)
+=== RUN   TestActualizarActividad
+    formulacion_test.go:241: TestActualizarActividad Finalizado Correctamente (OK)
+--- PASS: TestActualizarActividad (0.01s)
+=== RUN   TestDesactivarActividad
+    formulacion_test.go:260: TestDesactivarActividad Finalizado Correctamente (OK)
+--- PASS: TestDesactivarActividad (0.10s)
+=== RUN   TestGuardarIdentificacion
+    formulacion_test.go:286: TestGuardarIdentificacion Finalizado Correctamente (OK)
+--- PASS: TestGuardarIdentificacion (0.20s)
+=== RUN   TestDesactivarIdentificacion
+    formulacion_test.go:305: TestDesactivarIdentificacion Finalizado Correctamente (OK)
+--- PASS: TestDesactivarIdentificacion (0.19s)
 === RUN   TestProyecto
-    inversion_test.go:14: TestProyecto Finalizado Correctamente (OK)
---- PASS: TestProyecto (0.11s)
+    inversion_test.go:15: TestProyecto Finalizado Correctamente (OK)
+--- PASS: TestProyecto (0.09s)
 === RUN   TestConsultarMetasProyecto
-    inversion_test.go:27: TestConsultarMetasProyecto Finalizado Correctamente (OK)
---- PASS: TestConsultarMetasProyecto (0.34s)
+    inversion_test.go:28: TestConsultarMetasProyecto Finalizado Correctamente (OK)
+--- PASS: TestConsultarMetasProyecto (0.29s)
 === RUN   TestProyectos
-    inversion_test.go:40: TestProyectos Finalizado Correctamente (OK)
---- PASS: TestProyectos (0.23s)
+    inversion_test.go:41: TestProyectos Finalizado Correctamente (OK)
+--- PASS: TestProyectos (0.20s)
 === RUN   TestConsultarPlanIdentificador
-    inversion_test.go:53: TestConsultarPlanIdentificador Finalizado Correctamente (OK)
---- PASS: TestConsultarPlanIdentificador (0.10s)
+    inversion_test.go:54: TestConsultarPlanIdentificador Finalizado Correctamente (OK)
+--- PASS: TestConsultarPlanIdentificador (0.09s)
 === RUN   TestConsultarPlanInversion
-    inversion_test.go:66: TestConsultarPlanInversion Finalizado Correctamente (OK)
---- PASS: TestConsultarPlanInversion (0.24s)
+    inversion_test.go:67: TestConsultarPlanInversion Finalizado Correctamente (OK)
+--- PASS: TestConsultarPlanInversion (0.20s)
 === RUN   TestConsultarTodasMetasPlan
-    inversion_test.go:79: TestConsultarTodasMetasPlan Finalizado Correctamente (OK)
---- PASS: TestConsultarTodasMetasPlan (1.12s)
+    inversion_test.go:80: TestConsultarTodasMetasPlan Finalizado Correctamente (OK)
+--- PASS: TestConsultarTodasMetasPlan (0.96s)
 === RUN   TestConsultarMagnitudesProgramadas
-    inversion_test.go:92: TestConsultarMagnitudesProgramadas Finalizado Correctamente (OK)
---- PASS: TestConsultarMagnitudesProgramadas (0.24s)
+    inversion_test.go:93: TestConsultarMagnitudesProgramadas Finalizado Correctamente (OK)
+--- PASS: TestConsultarMagnitudesProgramadas (0.20s)
 === RUN   TestVerificarMagnitudesProgramadas
-    inversion_test.go:105: TestVerificarMagnitudesProgramadas Finalizado Correctamente (OK)
---- PASS: TestVerificarMagnitudesProgramadas (0.23s)
+    inversion_test.go:106: TestVerificarMagnitudesProgramadas Finalizado Correctamente (OK)
+--- PASS: TestVerificarMagnitudesProgramadas (0.20s)
+=== RUN   TestAgregarProyecto
+    inversion_test.go:127: TestAgregarProyecto Finalizado Correctamente (OK)
+--- PASS: TestAgregarProyecto (0.66s)
+=== RUN   TestGuardarDocumentosInversion
+    inversion_test.go:154: TestGuardarDocumentosInversion Finalizado Correctamente (OK)
+--- PASS: TestGuardarDocumentosInversion (0.00s)
+=== RUN   TestCrearPlan
+    inversion_test.go:179: TestCrearPlan Finalizado Correctamente (OK)
+--- PASS: TestCrearPlan (0.09s)
+=== RUN   TestCrearGrupoMeta
+    inversion_test.go:208: TestCrearGrupoMeta Finalizado Correctamente (OK)
+--- PASS: TestCrearGrupoMeta (0.09s)
+=== RUN   TestVersionarPlanInversion
+    inversion_test.go:224: TestVersionarPlanInversion Finalizado Correctamente (OK)
+--- PASS: TestVersionarPlanInversion (0.09s)
+=== RUN   TestEditarProyecto
+    inversion_test.go:247: TestEditarProyecto Finalizado Correctamente (OK)
+--- PASS: TestEditarProyecto (0.00s)
+=== RUN   TestActualizarSubgrupoDetalle
+    inversion_test.go:273: TestActualizarSubgrupoDetalle Finalizado Correctamente (OK)
+--- PASS: TestActualizarSubgrupoDetalle (0.10s)
+=== RUN   TestActualizarProyectoGeneral
+    inversion_test.go:299: TestActualizarProyectoGeneral Finalizado Correctamente (OK)
+--- PASS: TestActualizarProyectoGeneral (0.10s)
+=== RUN   TestGuardarMeta
+    inversion_test.go:317: Error TestGuardarMeta Se esperaba 200 y se obtuvo 404
+--- FAIL: TestGuardarMeta (0.00s)
+=== RUN   TestActualizarMetaPlan
+    inversion_test.go:343: ActualizarMetaPlan Finalizado Correctamente (OK)
+--- PASS: TestActualizarMetaPlan (0.00s)
+=== RUN   TestInactivarMeta
+    inversion_test.go:364: TestInactivarMeta Finalizado Correctamente (OK)
+--- PASS: TestInactivarMeta (1.64s)
+=== RUN   TestProgramarMagnitudesPlan
+    inversion_test.go:382: Error TestProgramarMagnitudesPlan Se esperaba 200 y se obtuvo 404
+--- FAIL: TestProgramarMagnitudesPlan (0.00s)
+=== RUN   TestActualizarActividadInversion
+    inversion_test.go:403: Error TestActualizarActividadInversion Se esperaba 200 y se obtuvo 404
+--- FAIL: TestActualizarActividadInversion (0.00s)
+=== RUN   TestActualizarTablaActividad
+    inversion_test.go:424: Error TestActualizarTablaActividad Se esperaba 200 y se obtuvo 404
+--- FAIL: TestActualizarTablaActividad (0.00s)
+=== RUN   TestActualizarPresupuestoMeta
+    inversion_test.go:445: Error TestActualizarPresupuestoMeta Se esperaba 200 y se obtuvo 404
+--- FAIL: TestActualizarPresupuestoMeta (0.00s)
 === RUN   TestPlanesDeAccion
     planes_accion_test.go:14: TestPlanesDeAccion Finalizado Correctamente (OK)
---- PASS: TestPlanesDeAccion (2.12s)
+--- PASS: TestPlanesDeAccion (1.37s)
+=== RUN   TestValidarReporte
+    reportes_test.go:24: TestValidarReporte Finalizado Correctamente (OK)
+--- PASS: TestValidarReporte (0.00s)
+=== RUN   TestDesagregado
+    reportes_test.go:39: TestDesagregado Finalizado Correctamente (OK)
+--- PASS: TestDesagregado (0.01s)
+=== RUN   TestPlanAccionAnual
+    reportes_test.go:60: TestPlanAccionAnual Finalizado Correctamente (OK)
+--- PASS: TestPlanAccionAnual (0.00s)
+=== RUN   TestPlanAccionAnualGeneral
+    reportes_test.go:79: TestPlanAccionAnualGeneral Finalizado Correctamente (OK)
+--- PASS: TestPlanAccionAnualGeneral (0.00s)
+=== RUN   TestNecesidades
+    reportes_test.go:99: TestNecesidades Finalizado Correctamente (OK)
+--- PASS: TestNecesidades (0.01s)
+=== RUN   TestPlanAccionEvaluacion
+    reportes_test.go:119: TestPlanAccionEvaluacion Finalizado Correctamente (OK)
+--- PASS: TestPlanAccionEvaluacion (0.01s)
 === RUN   TestTrimestres
-    seguimiento_test.go:14: TestTrimestres Finalizado Correctamente (OK)
---- PASS: TestTrimestres (0.45s)
+    seguimiento_test.go:15: TestTrimestres Finalizado Correctamente (OK)
+--- PASS: TestTrimestres (0.39s)
 === RUN   TestPeriodos
-    seguimiento_test.go:27: TestPeriodos Finalizado Correctamente (OK)
---- PASS: TestPeriodos (0.44s)
+    seguimiento_test.go:28: TestPeriodos Finalizado Correctamente (OK)
+--- PASS: TestPeriodos (0.38s)
 === RUN   TestActividades
-    seguimiento_test.go:40: TestActividades Finalizado Correctamente (OK)
---- PASS: TestActividades (0.36s)
+    seguimiento_test.go:41: TestActividades Finalizado Correctamente (OK)
+--- PASS: TestActividades (0.30s)
 === RUN   TestSeguimiento
-    seguimiento_test.go:53: TestSeguimiento Finalizado Correctamente (OK)
---- PASS: TestSeguimiento (1.78s)
+    seguimiento_test.go:54: TestSeguimiento Finalizado Correctamente (OK)
+--- PASS: TestSeguimiento (1.35s)
 === RUN   TestIndicadores
-    seguimiento_test.go:67: TestIndicadores Finalizado Correctamente (OK)
---- PASS: TestIndicadores (0.27s)
+    seguimiento_test.go:68: TestIndicadores Finalizado Correctamente (OK)
+--- PASS: TestIndicadores (0.20s)
 === RUN   TestConsultarEstadoTrimestre
-    seguimiento_test.go:81: TestConsultarEstadoTrimestre Finalizado Correctamente (OK)
---- PASS: TestConsultarEstadoTrimestre (0.86s)
+    seguimiento_test.go:82: TestConsultarEstadoTrimestre Finalizado Correctamente (OK)
+--- PASS: TestConsultarEstadoTrimestre (0.09s)
 === RUN   TestConsultarEstadoTrimestres
-    seguimiento_test.go:95: TestConsultarEstadoTrimestres Finalizado Correctamente (OK)
---- PASS: TestConsultarEstadoTrimestres (2.08s)
-PASS
-ok  	github.com/udistrital/planeacion_mid/tests/controllers	143.367s
+    seguimiento_test.go:96: TestConsultarEstadoTrimestres Finalizado Correctamente (OK)
+--- PASS: TestConsultarEstadoTrimestres (0.09s)
+=== RUN   TestCrearReportes
+    seguimiento_test.go:114: TestCrearReportes Finalizado Correctamente (OK)
+--- PASS: TestCrearReportes (2.79s)
+=== RUN   TestObtenerAvanceIndicador
+    seguimiento_test.go:135: TestObtenerAvanceIndicador Finalizado Correctamente (OK)
+--- PASS: TestObtenerAvanceIndicador (0.00s)
+=== RUN   TestMigrarInformacion
+    seguimiento_test.go:151: TestMigrarInformacion Finalizado Correctamente (OK)
+--- PASS: TestMigrarInformacion (0.10s)
+=== RUN   TestGuardarSeguimiento
+    seguimiento_test.go:171: TestGuardarSeguimiento Finalizado Correctamente (OK)
+--- PASS: TestGuardarSeguimiento (0.75s)
+=== RUN   TestGuardarDocumentosSeguimiento
+    seguimiento_test.go:200: Error TestGuardarDocumentosSeguimiento Se esperaba 200 y se obtuvo 400
+--- FAIL: TestGuardarDocumentosSeguimiento (0.00s)
+=== RUN   TestGuardarCualitativo
+    seguimiento_test.go:320: TestGuardarCualitativo Finalizado Correctamente (OK)
+--- PASS: TestGuardarCualitativo (0.29s)
+=== RUN   TestGuardarCuantitativo
+    seguimiento_test.go:339: TestGuardarCuantitativo Finalizado Correctamente (OK)
+--- PASS: TestGuardarCuantitativo (0.28s)
+=== RUN   TestReportarActividad
+    seguimiento_test.go:358: TestReportarActividad Finalizado Correctamente (OK)
+--- PASS: TestReportarActividad (0.09s)
+=== RUN   TestReportarSeguimiento
+    seguimiento_test.go:377: TestReportarSeguimiento Finalizado Correctamente (OK)
+--- PASS: TestReportarSeguimiento (0.39s)
+=== RUN   TestRevisarActividad
+    seguimiento_test.go:402: TestRevisarActividad Finalizado Correctamente (OK)
+--- PASS: TestRevisarActividad (0.29s)
+=== RUN   TestRevisarSeguimiento
+    seguimiento_test.go:422: TestRevisarSeguimiento Finalizado Correctamente (OK)
+--- PASS: TestRevisarSeguimiento (0.49s)
+=== RUN   TestRetornarActividad
+--- PASS: TestRetornarActividad (0.00s)
+=== RUN   TestHabilitarReportes
+    seguimiento_test.go:477: TestHabilitarReportes Finalizado Correctamente (OK)
+--- PASS: TestHabilitarReportes (0.53s)
+FAIL
+exit status 1
+FAIL	github.com/udistrital/planeacion_mid/tests/controllers	139.026s
