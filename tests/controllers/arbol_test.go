@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"bytes"
 	"net/http"
 	"testing"
 )
@@ -21,41 +20,41 @@ func TestGetObtenerArbol(t *testing.T) {
 }
 
 // TODO: falta armar petición con :id y JSON
-func TestActivarPlan(t *testing.T) {
-	body := []byte(`{}`)
+// func TestActivarPlan(t *testing.T) {
+// 	body := []byte(`{}`)
 
-	if request, err := http.NewRequest(http.MethodPut, "http://localhost:8081/v1/arbol/activar_plan/:id", bytes.NewBuffer(body)); err == nil {
-		client := &http.Client{}
-		if response, err := client.Do(request); err == nil {
-			if response.StatusCode != 200 {
-				t.Error("Error TestActivarPlan Se esperaba 200 y se obtuvo", response.StatusCode)
-				t.Fail()
-			} else {
-				t.Log("TestActivarPlan Finalizado Correctamente (OK)")
-			}
-		}
-	} else {
-		t.Error("Error al crear la solicitud PUT: ", err.Error())
-		t.Fail()
-	}
-}
+// 	if request, err := http.NewRequest(http.MethodPut, "http://localhost:8081/v1/arbol/activar_plan/:id", bytes.NewBuffer(body)); err == nil {
+// 		client := &http.Client{}
+// 		if response, err := client.Do(request); err == nil {
+// 			if response.StatusCode != 200 {
+// 				t.Error("Error TestActivarPlan Se esperaba 200 y se obtuvo", response.StatusCode)
+// 				t.Fail()
+// 			} else {
+// 				t.Log("TestActivarPlan Finalizado Correctamente (OK)")
+// 			}
+// 		}
+// 	} else {
+// 		t.Error("Error al crear la solicitud PUT: ", err.Error())
+// 		t.Fail()
+// 	}
+// }
 
-// TODO: falta armar petición con :id y JSON
-func TestActivarNodo(t *testing.T) {
-	body := []byte(`{}`)
+// // TODO: falta armar petición con :id y JSON
+// func TestActivarNodo(t *testing.T) {
+// 	body := []byte(`{}`)
 
-	if request, err := http.NewRequest(http.MethodPut, "http://localhost:8081/v1/arbol/activar_nodo", bytes.NewBuffer(body)); err == nil {
-		client := &http.Client{}
-		if response, err := client.Do(request); err == nil {
-			if response.StatusCode != 200 {
-				t.Error("Error TestActivarNodo Se esperaba 200 y se obtuvo", response.StatusCode)
-				t.Fail()
-			} else {
-				t.Log("TestActivarNodo Finalizado Correctamente (OK)")
-			}
-		}
-	} else {
-		t.Error("Error al crear la solicitud PUT: ", err.Error())
-		t.Fail()
-	}
-}
+// 	if request, err := http.NewRequest(http.MethodPut, "http://localhost:8081/v1/arbol/activar_nodo", bytes.NewBuffer(body)); err == nil {
+// 		client := &http.Client{}
+// 		if response, err := client.Do(request); err == nil {
+// 			if response.StatusCode != 200 {
+// 				t.Error("Error TestActivarNodo Se esperaba 200 y se obtuvo", response.StatusCode)
+// 				t.Fail()
+// 			} else {
+// 				t.Log("TestActivarNodo Finalizado Correctamente (OK)")
+// 			}
+// 		}
+// 	} else {
+// 		t.Error("Error al crear la solicitud PUT: ", err.Error())
+// 		t.Fail()
+// 	}
+// }
