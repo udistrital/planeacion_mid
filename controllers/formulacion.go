@@ -1399,7 +1399,7 @@ func (c *FormulacionController) GetUnidades() {
 	}
 
 	tipoDependenciaDependencia := map[string][]string{
-		"10": {"92", "96", "97", "209"},
+		"10": {"92", "96", "97", "209", "259", "263", "266"},
 		"14": {"42", "171"},
 		"33": {"222"},
 	}
@@ -1416,6 +1416,17 @@ func (c *FormulacionController) GetUnidades() {
 				unidades = append(unidades, aux)
 			}
 		}
+	}
+
+	dependencias := []string{"267"}
+	for _, dep := range dependencias {
+		var respuesta map[string]interface{}
+		err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia/"+dep, &respuesta)
+		if err != nil {
+			panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+		}
+
+		unidades = append(unidades, respuesta)
 	}
 
 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": unidades}
