@@ -1418,7 +1418,7 @@ func (c *FormulacionController) GetUnidades() {
 		}
 	}
 
-	dependencias := []string{"267"}
+	dependencias := []string{"267", "268"}
 	for _, dep := range dependencias {
 		var respuesta map[string]interface{}
 		err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia/"+dep, &respuesta)
