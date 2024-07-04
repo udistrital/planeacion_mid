@@ -2870,6 +2870,53 @@
                 }
             }
         },
+        "/seguimiento/promedio_brecha_estado/{plan}/{planid}/{codigoAbreviacion}/{vigencia}/{dependecia}": {
+            "get": {
+                "tags": [
+                    "seguimiento"
+                ],
+                "description": "get Brecha y Estado para Plan dado",
+                "operationId": "SeguimientoController.ObtenerPromedioBrechayEstado",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "plan",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "planid",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "vigencia",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "path",
+                        "name": "dependencia",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "404": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/seguimiento/reportar_actividad/{index}": {
             "put": {
                 "tags": [
