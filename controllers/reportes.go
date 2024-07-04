@@ -480,18 +480,26 @@ func (c *ReportesController) PlanAccionAnual() {
 							actividades := reporteshelper.GetActividades(subgrupos[i]["_id"].(string))
 							var arregloLineamieto []map[string]interface{}
 							var arregloLineamietoPI []map[string]interface{}
-							sort.SliceStable(actividades, func(i int, j int) bool {
-								if _, ok := actividades[i]["index"].(float64); ok {
-									actividades[i]["index"] = fmt.Sprintf("%v", int(actividades[i]["index"].(float64)))
+							if len(actividades) == 1 {
+								for index := range actividades {
+									if val, ok := actividades[index]["index"].(float64); ok {
+										actividades[index]["index"] = fmt.Sprintf("%v", int(val))
+									}
 								}
-								if _, ok := actividades[j]["index"].(float64); ok {
-									actividades[j]["index"] = fmt.Sprintf("%v", int(actividades[j]["index"].(float64)))
-								}
-								aux, _ := strconv.Atoi((actividades[i]["index"]).(string))
-								aux1, _ := strconv.Atoi((actividades[j]["index"]).(string))
-								return aux < aux1
-							})
-
+							} else {
+								sort.SliceStable(actividades, func(i int, j int) bool {
+									if _, ok := actividades[i]["index"].(float64); ok {
+										actividades[i]["index"] = fmt.Sprintf("%v", int(actividades[i]["index"].(float64)))
+									}
+									if _, ok := actividades[j]["index"].(float64); ok {
+										actividades[j]["index"] = fmt.Sprintf("%v", int(actividades[j]["index"].(float64)))
+									}
+									aux, _ := strconv.Atoi((actividades[i]["index"]).(string))
+									aux1, _ := strconv.Atoi((actividades[j]["index"]).(string))
+									return aux < aux1
+								})
+							}
+							
 							reporteshelper.LimpiarDetalles()
 							for j := 0; j < len(actividades); j++ {
 								arregloLineamieto = nil
@@ -3159,7 +3167,7 @@ func (c *ReportesController) Necesidades() {
 						valores := rubrosGeneral[i]["valorU"].([]float64)
 
 						// TODO: Revisar este machete, hay menos valores que unidades, se repite la primera unidad, el problema se presenta más arriba.
-						if (len(unidades) > 1) {
+						if len(unidades) > 1 {
 							if unidades[0] == unidades[1] && (len(unidades)-1) == len(valores) {
 								unidades = unidades[1:]
 							}
@@ -3479,7 +3487,7 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			}
 
 			trimestres := evaluacionhelper.GetPeriodosPlan(body["vigencia"].(string), planes[0]["_id"].(string))
-			
+
 			dependencia := body["unidad_id"].(string)
 			if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia?query=Id:"+dependencia, &respuestaOikos); err == nil {
 				unidadNombre = respuestaOikos[0]["Nombre"].(string)
