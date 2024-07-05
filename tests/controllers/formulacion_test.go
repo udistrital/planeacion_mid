@@ -102,8 +102,33 @@ func TestVinculacionTercero(t *testing.T) {
 	}
 }
 
-// TODO: VinculacionTerceroByEmail
-// TODO: VinculacionTerceroByIdentificacion
+func TestVinculacionTerceroByEmail(t *testing.T) {
+	if response, err := http.Get("http://localhost:8081/v1/formulacion/vinculacion_tercero_email/mpcastroc@udistrital.edu.co"); err == nil {
+		if response.StatusCode != 200 {
+			t.Error("Error TestVinculacionTerceroByEmail Se esperaba 200 y se obtuvo", response.StatusCode)
+			t.Fail()
+		} else {
+			t.Log("TestVinculacionTerceroByEmail Finalizado Correctamente (OK)")
+		}
+	} else {
+		t.Error("Error TestVinculacionTerceroByEmail:", err.Error())
+		t.Fail()
+	}
+}
+
+func TestVinculacionTerceroByIdentificacion(t *testing.T) {
+	if response, err := http.Get("http://localhost:8081/v1/formulacion/vinculacion_tercero_identificacion/1022435418"); err == nil {
+		if response.StatusCode != 200 {
+			t.Error("Error TestGetPlan Se esperaba 200 y se obtuvo", response.StatusCode)
+			t.Fail()
+		} else {
+			t.Log("TestGetPlan Finalizado Correctamente (OK)")
+		}
+	} else {
+		t.Error("Error TestGetPlan:", err.Error())
+		t.Fail()
+	}
+}
 func TestPlanes(t *testing.T) {
 	if response, err := http.Get("http://localhost:8081/v1/formulacion/planes"); err == nil {
 		if response.StatusCode != 200 {
@@ -195,19 +220,54 @@ func TestPlanesEnFormulacion(t *testing.T) {
 // 		t.Fail()
 // 	}
 // }
+// TODO: Faltan datos de prueba
+// func TestCalculosDocentes(t *testing.T) {
+// 	body := []byte(`{}`)
 
-// // TODO: CalculosDocentes
-// // TODO: DefinirFechasFuncionamiento
-// // TODO: GetPlanesUnidadesComun
+// 	if response, err := http.Post("http://localhost:8081/v1/formulacion/calculos_docentes", "application/json", bytes.NewBuffer(body)); err == nil {
+// 		if response.StatusCode != 200 {
+// 			t.Error("Error TestCalculosDocentes Se esperaba 200 y se obtuvo", response.StatusCode)
+// 			t.Fail()
+// 		} else {
+// 			t.Log("TestCalculosDocentes Finalizado Correctamente (OK)")
+// 		}
+// 	} else {
+// 		t.Error("Error TestCalculosDocentes:", err.Error())
+// 		t.Fail()
+// 	}
+// }
+// func TestDefinirFechasFuncionamiento(t *testing.T) {
+
+// 	body := []byte(`{
+// 	"activo": true,
+// 	"fecha_fin": "2024-07-14T00:00:00.000Z",
+// 	"fecha_inicio": "2024-07-01T00:00:00.000Z",
+// 	"periodo_id": "39",
+// 	"planes_interes": "[{\"_id\":\"667a5074252f5d1000cc7f14\",\"nombre\":\"Pruebas AFM\"}]",
+// 	"tipo_seguimiento_id": "6260e975ebe1e6498f7404ee",
+// 	"unidades_interes": "[{\"Id\":8,\"Nombre\":\"VICERRECTORIA ACADEMICA\"}]",
+// 	"usuario_modificacion": "52505205"}`)
+
+// 	if response, err := http.Post("http://localhost:8081/v1/formulacion/habilitar_fechas_funcionamiento", "application/json", bytes.NewBuffer(body)); err == nil {
+// 		if response.StatusCode != 200 {
+// 			t.Error("Error TestDefinirFechasFuncionamiento Se esperaba 200 y se obtuvo", response.StatusCode)
+// 			t.Fail()
+// 		} else {
+// 			t.Log("TestDefinirFechasFuncionamiento Finalizado Correctamente (OK)")
+// 		}
+// 	} else {
+// 		t.Error("Error TestDefinirFechasFuncionamiento:", err.Error())
+// 		t.Fail()
+// 	}
+
+// }
+
+// GetPlanesUnidadesComun no se consume desde el cliente
 
 // func TestGuardarActividad(t *testing.T) {
-// 	body := []byte(`{{
-// 		"armo": "613991d2df020fd81056e5c8",
-// 		"armoPI": "613991d2df020fd81056e5c8",
-// 		"entrada": {"1":{"dato":"Prueba Meta segplan","index":1},"10":{"activo":false,"dato":"Prueba Meta segplan","index":"10"},"11":{"activo":true,"dato":"Prueba Meta segplan","index":11},"12":{"activo":true,"dato":"Prueba Meta segplan","index":12},"13":{"activo":true,"dato":"Prueba Meta segplan","index":13},"14":{"activo":false,"dato":"Prueba Meta segplan","index":"14"},"2":{"dato":"Prueba Meta segplan","index":"2"},"3":{"dato":"Prueba Meta segplan","index":"3"},"4":{"dato":"Prueba Meta segplan","index":4},"5":{"dato":"Prueba Meta segplan","index":5},"6":{"dato":"Prueba Meta segplan","index":6},"7":{"dato":"Prueba Meta segplan","index":7},"8":{"dato":"Prueba Meta segplan","index":8},"9":{"activo":false,"dato":"Prueba Meta segplan","index":"9"}}
-// 	}}`)
+// 	body := []byte(`{"armo":"616647531634ade426ed535a","armoPI":"652ca721ce026b594962570e","entrada":{"66872d8540bc041bddaea70e":"","66872d8540bc041bddaea70e_o":"","66872d8540bc044cd4aea720":"investigadores","66872d8540bc044cd4aea720_o":"","66872d8540bc04b2deaea715":"","66872d8540bc04b2deaea715_o":"","66872d8640bc043c1faea72a":"Σ investigadores","66872d8640bc043c1faea72a_o":"","66872d8640bc04e044aea734":200,"66872d8640bc04e044aea734_o":"","66872d8740bc0407d3aea759":"Denominador fijo","66872d8740bc0407d3aea759_o":"","66872d8740bc046293aea741":"Unidad","66872d8740bc046293aea741_o":"","66872d8740bc04b147aea74d":"Creciente","66872d8740bc04b147aea74d_o":"","66872d8840bc0431e5aea765":100,"66872d8840bc0431e5aea765_o":"","66872d8840bc044ec8aea76d":"CERI","66872d8840bc044ec8aea76d_o":""}}`)
 
-// 	if request, err := http.NewRequest(http.MethodPut, "http://localhost:8081/v1/formulacion/guardar_actividad/613991d2df020fd81056e5c8", bytes.NewBuffer(body)); err == nil {
+// 	if request, err := http.NewRequest(http.MethodPut, "http://localhost:8081/v1/formulacion/guardar_actividad/66872d8340bc047b72aea6ef", bytes.NewBuffer(body)); err == nil {
 // 		client := &http.Client{}
 // 		if response, err := client.Do(request); err == nil {
 // 			if response.StatusCode != 200 {
@@ -224,13 +284,9 @@ func TestPlanesEnFormulacion(t *testing.T) {
 // }
 
 // func TestActualizarActividad(t *testing.T) {
-// 	body := []byte(`{{
-// 		"armo": "613991d2df020fd81056e5c8",
-// 		"armoPI": "613991d2df020fd81056e5c8",
-// 		"entrada": {"1":{"dato":"Prueba Meta segplan","index":1},"10":{"activo":false,"dato":"Prueba Meta segplan","index":"10"},"11":{"activo":true,"dato":"Prueba Meta segplan","index":11},"12":{"activo":true,"dato":"Prueba Meta segplan","index":12},"13":{"activo":true,"dato":"Prueba Meta segplan","index":13},"14":{"activo":false,"dato":"Prueba Meta segplan","index":"14"},"2":{"dato":"Prueba Meta segplan","index":"2"},"3":{"dato":"Prueba Meta segplan","index":"3"},"4":{"dato":"Prueba Meta segplan","index":4},"5":{"dato":"Prueba Meta segplan","index":5},"6":{"dato":"Prueba Meta segplan","index":6},"7":{"dato":"Prueba Meta segplan","index":7},"8":{"dato":"Prueba Meta segplan","index":8},"9":{"activo":false,"dato":"Prueba Meta segplan","index":"9"}}
-// 	}}`)
+// 	body := []byte(`{"armo":"616647531634ade426ed535a","armoPI":"652ca721ce026b594962570e","entrada":{"66872d8340bc0464f3aea6f2":"Actividad 1","66872d8340bc0470cfaea6f9":"1.1 actividad 1\n1.2 act 2\n1.3 act","66872d8440bc040c37aea707":"Toda la vigencia","66872d8440bc041501aea700":"Investigación","66872d8540bc041bddaea70e":"","66872d8540bc041bddaea70e_o":"Sin observación","66872d8540bc044cd4aea720":"investigadores","66872d8540bc044cd4aea720_o":"Sin observación","66872d8540bc04b2deaea715":"","66872d8540bc04b2deaea715_o":"Sin observación","66872d8640bc043c1faea72a":"Σ investigadores","66872d8640bc043c1faea72a_o":"Sin observación","66872d8640bc04e044aea734":200,"66872d8640bc04e044aea734_o":"Sin observación","66872d8740bc0407d3aea759":"Denominador fijo","66872d8740bc0407d3aea759_o":"Sin observación","66872d8740bc046293aea741":"Unidad","66872d8740bc046293aea741_o":"Sin observación","66872d8740bc04b147aea74d":"Creciente","66872d8740bc04b147aea74d_o":"Sin observación","66872d8840bc0431e5aea765":100,"66872d8840bc0431e5aea765_o":"Sin observación","66872d8840bc044ec8aea76d":"CERI","66872d8840bc044ec8aea76d_o":"Sin observación"}}`)
 
-// 	if request, err := http.NewRequest(http.MethodPut, "http://localhost:8081/v1/formulacion/actualizar_actividad/613991d2df020fd81056e5c8/1", bytes.NewBuffer(body)); err == nil {
+// 	if request, err := http.NewRequest(http.MethodPut, "http://localhost:8081/v1/formulacion/actualizar_actividad/66872d8340bc047b72aea6ef/1", bytes.NewBuffer(body)); err == nil {
 // 		client := &http.Client{}
 // 		if response, err := client.Do(request); err == nil {
 // 			if response.StatusCode != 200 {
@@ -266,16 +322,9 @@ func TestPlanesEnFormulacion(t *testing.T) {
 // }
 
 // func TestGuardarIdentificacion(t *testing.T) {
-// 	body := []byte(`{
-// 		"nombre": "Identificación de Contratistas Plan de Acción de Funcionamiento 2022",
-// 		"descripcion": "Identificación de Contratistas Plan de Acción de Funcionamiento 2022 OFICINA ASESORA DE ASUNTOS DISCIPLINARIOS",
-// 		"plan_id": "616f6911a985e921bca12e96",
-// 		"dato": "{}",
-// 		"tipo_identificacion_id": "6184b3e6f6fc97850127bb68",
-// 		"activo": true
-// 	  }`)
+// 	body := []byte(`{"0":{"descripcionNecesidad":"Investigadores iniciales","perfil":487,"cantidad":20,"meses":6,"dias":0,"valorUnitario":"$6,382,169.00","valorUnitarioInc":"$7,020,385.90","valorTotal":"$765,860,280.00","valorTotalInc":"$842,446,308.00","actividades":["1"],"rubro":"2.1.1.01.01.001.01.1","rubroNombre":"Sueldo Básico Administrativos","total":"","totalInc":"842446308.00","activo":true,"index":"1"}}`)
 
-// 	if request, err := http.NewRequest(http.MethodPut, "http://localhost:8081/v1/formulacion/guardar_identificacion/616f6911a985e921bca12e96/6184b3e6f6fc97850127bb68", bytes.NewBuffer(body)); err == nil {
+// 	if request, err := http.NewRequest(http.MethodPut, "http://localhost:8081/v1/formulacion/guardar_identificacion/66872d8340bc047b72aea6ef/6184b3e6f6fc97850127bb68", bytes.NewBuffer(body)); err == nil {
 // 		client := &http.Client{}
 // 		if response, err := client.Do(request); err == nil {
 // 			if response.StatusCode != 200 {
@@ -310,5 +359,41 @@ func TestPlanesEnFormulacion(t *testing.T) {
 // 	}
 // }
 
-// // TODO: CambioCargoIdVinculacionTercero
-// // TODO: EstructuraPlanes
+// TODO: Faltan datos de prueba
+// func TestCambioCargoIdVinculacionTercero(t *testing.T) {
+// 	body := []byte(`{}`)
+
+// 	if request, err := http.NewRequest(http.MethodPut, "http://localhost:8081/v1/formulacion/cargo_vinculacion/7230282", bytes.NewBuffer(body)); err == nil {
+// 		client := &http.Client{}
+// 		if response, err := client.Do(request); err == nil {
+// 			if response.StatusCode != 200 {
+// 				t.Error("Error TestCambioCargoIdVinculacionTercero Se esperaba 200 y se obtuvo", response.StatusCode)
+// 				t.Fail()
+// 			} else {
+// 				t.Log("TestCambioCargoIdVinculacionTercero Finalizado Correctamente (OK)")
+// 			}
+// 		}
+// 	} else {
+// 		t.Error("Error al crear la solicitud PUT: ", err.Error())
+// 		t.Fail()
+// 	}
+// }
+
+// func TestEstructuraPlanes(t *testing.T) {
+// 	body := []byte(`{}`)
+
+// 	if request, err := http.NewRequest(http.MethodPut, "http://localhost:8081/v1/formulacion/estructura_planes/6686e63640bc042575ae2b79", bytes.NewBuffer(body)); err == nil {
+// 		client := &http.Client{}
+// 		if response, err := client.Do(request); err == nil {
+// 			if response.StatusCode != 200 {
+// 				t.Error("Error TestEstructuraPlanes Se esperaba 200 y se obtuvo", response.StatusCode)
+// 				t.Fail()
+// 			} else {
+// 				t.Log("TestEstructuraPlanes Finalizado Correctamente (OK)")
+// 			}
+// 		}
+// 	} else {
+// 		t.Error("Error al crear la solicitud PUT: ", err.Error())
+// 		t.Fail()
+// 	}
+// }

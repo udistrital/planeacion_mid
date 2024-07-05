@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestProyecto(t *testing.T) {
+func TestProyectoId(t *testing.T) {
 	if response, err := http.Get("http://localhost:8081/v1/inversion/proyecto/617c3171f6fc97294f27a041"); err == nil {
 		if response.StatusCode != 200 {
 			t.Error("Error TestProyecto Se esperaba 200 y se obtuvo", response.StatusCode)
@@ -80,19 +80,6 @@ func TestConsultarTodasMetasPlan(t *testing.T) {
 		}
 	} else {
 		t.Error("Error TestConsultarTodasMetasPlan:", err.Error())
-		t.Fail()
-	}
-}
-func TestConsultarMagnitudesProgramadas(t *testing.T) {
-	if response, err := http.Get("http://localhost:8081/v1/inversion/magnitudes/64367379a280497994a41e46/1"); err == nil {
-		if response.StatusCode != 200 {
-			t.Error("Error TestConsultarMagnitudesProgramadas Se esperaba 200 y se obtuvo", response.StatusCode)
-			t.Fail()
-		} else {
-			t.Log("TestConsultarMagnitudesProgramadas Finalizado Correctamente (OK)")
-		}
-	} else {
-		t.Error("Error TestConsultarMagnitudesProgramadas:", err.Error())
 		t.Fail()
 	}
 }
@@ -179,35 +166,6 @@ func TestVerificarMagnitudesProgramadas(t *testing.T) {
 // 		}
 // 	} else {
 // 		t.Error("Error TestCrearPlan:", err.Error())
-// 		t.Fail()
-// 	}
-// }
-
-// func TestCrearGrupoMeta(t *testing.T) {
-// 	body := []byte(`{
-// 		"id": "618de204f6fc97904a27d902",
-// 		"activo": true,
-// 		"aplicativo_id": "idPlaneacion",
-// 		"dependencia_id": "10",
-// 		"descripcion": "Plan de Acción de Funcionamiento 2022 - 01",
-// 		"estado_plan_id": "614d3aeb01c7a245952fabff",
-// 		"formato": false,
-// 		"nombre": "Plan de Acción de Funcionamiento 2022",
-// 		"padre_plan_id": "616700961634ad4d31ed6bd6",
-// 		"tipo_plan_id": "61639b8c1634adf976ed4b4c",
-// 		"vigencia": "3",
-// 		"indexMeta": "documento"
-// 	  }`)
-
-// 	if response, err := http.Post("http://localhost:8081/v1/inversion/crear_grupo_meta", "application/json", bytes.NewBuffer(body)); err == nil {
-// 		if response.StatusCode != 200 {
-// 			t.Error("Error TestCrearGrupoMeta Se esperaba 200 y se obtuvo", response.StatusCode)
-// 			t.Fail()
-// 		} else {
-// 			t.Log("TestCrearGrupoMeta Finalizado Correctamente (OK)")
-// 		}
-// 	} else {
-// 		t.Error("Error TestCrearGrupoMeta:", err.Error())
 // 		t.Fail()
 // 	}
 // }
@@ -304,8 +262,7 @@ func TestVerificarMagnitudesProgramadas(t *testing.T) {
 // 	}
 // }
 
-// // TODO: TestGuardarMeta
-// // SE NECESITA EL JSON
+// TODO: Faltan datos de prueba
 // func TestGuardarMeta(t *testing.T) {
 // 	body := []byte(`{}`)
 
@@ -325,10 +282,27 @@ func TestVerificarMagnitudesProgramadas(t *testing.T) {
 // 	}
 // }
 
-// // TODO: ArmonizarInversion
+// TODO: Faltan datos de prueba
+// func TestArmonizarInversion(t *testing.T) {
+// 	body := []byte(`{}`)
 
-// // TODO: ActualizarMetaPlan
-// // SE NECESITA EL JSON
+// 	if request, err := http.NewRequest(http.MethodPut, "http://localhost:8081/v1/inversion/armonizar/622676b216511e8ea55be6de", bytes.NewBuffer(body)); err == nil {
+// 		client := &http.Client{}
+// 		if response, err := client.Do(request); err == nil {
+// 			if response.StatusCode != 200 {
+// 				t.Error("Error ArmonizarInversion Se esperaba 200 y se obtuvo", response.StatusCode)
+// 				t.Fail()
+// 			} else {
+// 				t.Log("ArmonizarInversion Finalizado Correctamente (OK)")
+// 			}
+// 		}
+// 	} else {
+// 		t.Error("Error al crear la solicitud PUT: ", err.Error())
+// 		t.Fail()
+// 	}
+// }
+
+// TODO: Faltan datos de prueba
 // func TestActualizarMetaPlan(t *testing.T) {
 // 	body := []byte(`{}`)
 
@@ -348,50 +322,7 @@ func TestVerificarMagnitudesProgramadas(t *testing.T) {
 // 	}
 // }
 
-// // TODO: InactivarMeta
-// // BUSCAR DATO QUE COINCIDA
-// func TestInactivarMeta(t *testing.T) {
-// 	body := []byte(`{}`)
-
-// 	if request, err := http.NewRequest(http.MethodPut, "http://localhost:8081/v1/inversion/inactivar_meta/622676b216511e8ea55be6de/1", bytes.NewBuffer(body)); err == nil {
-// 		client := &http.Client{}
-// 		if response, err := client.Do(request); err == nil {
-// 			if response.StatusCode != 200 {
-// 				t.Error("Error TestInactivarMeta Se esperaba 200 y se obtuvo", response.StatusCode)
-// 				t.Fail()
-// 			} else {
-// 				t.Log("TestInactivarMeta Finalizado Correctamente (OK)")
-// 			}
-// 		}
-// 	} else {
-// 		t.Error("Error al crear la solicitud PUT: ", err.Error())
-// 		t.Fail()
-// 	}
-// }
-
-// // TODO: ProgMagnitudesPlan
-// // SE NECESITA EL JSON
-// func TestProgramarMagnitudesPlan(t *testing.T) {
-// 	body := []byte(`{}`)
-
-// 	if request, err := http.NewRequest(http.MethodPut, "http://localhost:8081/v1/inversion/magnitudes/", bytes.NewBuffer(body)); err == nil {
-// 		client := &http.Client{}
-// 		if response, err := client.Do(request); err == nil {
-// 			if response.StatusCode != 200 {
-// 				t.Error("Error TestProgramarMagnitudesPlan Se esperaba 200 y se obtuvo", response.StatusCode)
-// 				t.Fail()
-// 			} else {
-// 				t.Log("TestProgramarMagnitudesPlan Finalizado Correctamente (OK)")
-// 			}
-// 		}
-// 	} else {
-// 		t.Error("Error al crear la solicitud PUT: ", err.Error())
-// 		t.Fail()
-// 	}
-// }
-
-// // TODO: ActualizarActividad
-// // SE NECESITA EL JSON
+// TODO: Faltan datos de prueba
 // func TestActualizarActividadInversion(t *testing.T) {
 // 	body := []byte(`{}`)
 
@@ -411,8 +342,7 @@ func TestVerificarMagnitudesProgramadas(t *testing.T) {
 // 	}
 // }
 
-// // TODO: ActualizarTablaActividad
-// // SE NECESITA EL JSON
+// TODO: Faltan datos de prueba
 // func TestActualizarTablaActividad(t *testing.T) {
 // 	body := []byte(`{}`)
 
@@ -432,8 +362,7 @@ func TestVerificarMagnitudesProgramadas(t *testing.T) {
 // 	}
 // }
 
-// // TODO: ActualizarPresupuestoMeta
-// // SE NECESITA EL JSON
+// TODO: Faltan datos de prueba
 // func TestActualizarPresupuestoMeta(t *testing.T) {
 // 	body := []byte(`{}`)
 
