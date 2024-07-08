@@ -2391,6 +2391,34 @@
                 }
             }
         },
+        "/seguimiento/brecha-estado": {
+            "post": {
+                "tags": [
+                    "seguimiento"
+                ],
+                "description": "post Brecha y Estado para Plan dado",
+                "operationId": "SeguimientoController.ObtenerPromedioBrechayEstado",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "404": {
+                        "description": ""
+                    }
+                }
+            }
+        },
         "/seguimiento/crear_reportes/{plan}/{tipo}": {
             "post": {
                 "tags": [
@@ -2865,53 +2893,6 @@
                         "description": ""
                     },
                     "403": {
-                        "description": ""
-                    }
-                }
-            }
-        },
-        "/seguimiento/promedio_brecha_estado/{plan}/{planid}/{codigoAbreviacion}/{vigencia}/{dependecia}": {
-            "get": {
-                "tags": [
-                    "seguimiento"
-                ],
-                "description": "get Brecha y Estado para Plan dado",
-                "operationId": "SeguimientoController.ObtenerPromedioBrechayEstado",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "plan",
-                        "description": "The key for staticblock",
-                        "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "in": "path",
-                        "name": "planid",
-                        "description": "The key for staticblock",
-                        "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "in": "path",
-                        "name": "vigencia",
-                        "description": "The key for staticblock",
-                        "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "in": "path",
-                        "name": "dependencia",
-                        "description": "The key for staticblock",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": ""
-                    },
-                    "404": {
                         "description": ""
                     }
                 }
