@@ -2621,27 +2621,17 @@ func (c *SeguimientoController) EstadoTrimestres() {
 
 // ObtenerPromedioBrechayEstado ...
 // @Title ObtenerPromedioBrechayEstado
-// @Description get Brecha y Estado para Plan dado
-// @Param	plan 	path 	string	true		"The key for staticblock"
-// @Param	planid 	path 	string	true		"The key for staticblock"
-// @Param	vigencia 		path 	string	true		"The key for staticblock"
-// @Param	dependencia 		path 	string	true		"The key for staticblock"
+// @Description post Brecha y Estado para Plan dado
+// @Param	body		body 	{}	true		"body for Plan content"
 // @Success 200
 // @Failure 404
-// @router /promedio_brecha_estado/:plan/:planid/:vigencia/:dependecia [get]
+// @router /brecha-estado [post]
 func (c *SeguimientoController) ObtenerPromedioBrechayEstado() {
 	defer helpers.ErrorController(c.Controller, "SeguimientoController")
 
-	plan := c.Ctx.Input.Param(":plan")
-	planid := c.Ctx.Input.Param(":planid")
-	vigencia := c.Ctx.Input.Param(":vigencia")
-	dependencia := c.Ctx.Input.Param(":dependencia")
+	body := c.Ctx.Input.RequestBody
 
-	if len(plan) == 0 || len(planid) == 0 || len(vigencia) == 0 || len(dependencia) == 0 {
-		c.Data["json"] = map[string]interface{}{"Success": false, "Status": "404", "Message": "Request containt incorrect params", "Data": nil}
-	}
-
-	if respuesta, err := seguimientohelper.ObtenerPromedioBrechayEstado(plan, planid, vigencia, dependencia); err == nil {
+	if respuesta, err := seguimientohelper.ObtenerPromedioBrechayEstado(body); err == nil {
 		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": respuesta}
 	} else {
 		panic(map[string]interface{}{"funcion": "ObtenerPromedioBrechayEstado", "err": err, "status": "404", "message": "Error obteniendo brechas y estados"})

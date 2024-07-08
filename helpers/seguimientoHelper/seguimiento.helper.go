@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"math/big"
-	"net/url"
 	"reflect"
 	"sort"
 	"strconv"
@@ -1330,7 +1329,7 @@ func GetEstadoTrimestre(planId string, trimestre string) (respuesta map[string]i
 	return nil, outputError
 }
 
-func ObtenerPromedioBrechayEstado(plan string, planid string, vigencia string, dependencia string) (respuesta []map[string]interface{}, outputError map[string]interface{}) {
+func ObtenerPromedioBrechayEstado(requestBody []byte) (respuesta []map[string]interface{}, outputError map[string]interface{}) {
 	defer func() {
 		if err := recover(); err != nil {
 			localError := err.(map[string]interface{})
@@ -1343,36 +1342,42 @@ func ObtenerPromedioBrechayEstado(plan string, planid string, vigencia string, d
 		}
 	}()
 
+	var body map[string]interface{}
 	var trimestres []map[string]interface{}
 
-	periodos := GetTrimestres(vigencia)
-	if len(periodos) == 0 {
-		panic(map[string]interface{}{
-			"err":    "El plan no tiene definido Trimestres",
-			"status": "404",
-		})
-	}
+	if err := json.Unmarshal(requestBody, &body); err == nil {
+		nombrePlan := body["nombre"].(string)
+		id := body["id"].(string)
+		vigencia := body["vigencia"].(string)
+		dependencia := body["dependencia"].(string)
 
-	for _, periodo := range periodos {
-		trimestre := map[string]interface{}{
-			"codigo": periodo["ParametroId"].(map[string]interface{})["CodigoAbreviacion"],
-			"nombre": periodo["ParametroId"].(map[string]interface{})["Nombre"],
-		}
-		trimestres = append(trimestres, trimestre)
-	}
-
-	for _, tr := range trimestres {
-		estado, err := GetEstadoTrimestre(planid, tr["codigo"].(string))
-		if err != nil {
+		periodos := GetTrimestres(vigencia)
+		if len(periodos) == 0 {
 			panic(map[string]interface{}{
-				"err":    err,
+				"err":    "El plan no tiene definido Trimestres",
 				"status": "404",
 			})
 		}
-		tr["estado"] = estado["estado_seguimiento_id"].(map[string]interface{})["nombre"]
-	}
 
-	if nombrePlan, err := url.QueryUnescape(plan); err == nil {
+		for _, periodo := range periodos {
+			trimestre := map[string]interface{}{
+				"codigo": periodo["ParametroId"].(map[string]interface{})["CodigoAbreviacion"],
+				"nombre": periodo["ParametroId"].(map[string]interface{})["Nombre"],
+			}
+			trimestres = append(trimestres, trimestre)
+		}
+
+		for _, tr := range trimestres {
+			estado, err := GetEstadoTrimestre(id, tr["codigo"].(string))
+			if err != nil {
+				panic(map[string]interface{}{
+					"err":    err,
+					"status": "404",
+				})
+			}
+			tr["estado"] = estado["estado_seguimiento_id"].(map[string]interface{})["nombre"]
+		}
+
 		unidades, errUnd := comunhelper.GetUnidadesPorPlanYVigencia(nombrePlan, vigencia)
 		if errUnd != nil {
 			panic(map[string]interface{}{
@@ -1400,7 +1405,7 @@ func ObtenerPromedioBrechayEstado(plan string, planid string, vigencia string, d
 				ultimoPeriodo := pers[len(pers)-1]
 				ultimoPeriodoID := ultimoPeriodo["id"].(string)
 
-				periodosPlan := comunhelper.GetPeriodosPlan(vigencia, planid)
+				periodosPlan := comunhelper.GetPeriodosPlan(vigencia, id)
 				if len(periodosPlan) == 0 {
 					panic(map[string]interface{}{
 						"err":    "El plan no posee trimestres",
