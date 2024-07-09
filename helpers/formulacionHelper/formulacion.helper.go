@@ -23,7 +23,6 @@ import (
 )
 
 const (
-	CodigoTipoPlan                  string = "PL_SP"
 	CodigoTipoPlanAccionFormulacion string = "PAF_SP"
 	CodigoPlanEnFormulacion         string = "EF_SP"
 	Pregrado                        string = "PREGRADO"
@@ -924,7 +923,8 @@ func ObtenerPlanesFormulacion() (resumenPlanes []map[string]interface{}, outputE
 			panic(outputError)
 		}
 	}()
-	tiposPlanes := []string{CodigoTipoPlan, CodigoTipoPlanAccionFormulacion}
+	tiposPlanes := []string{CodigoTipoPlanAccionFormulacion}
+
 	estados := getEstados()
 	vigencias := getVigencias()
 	unidades := getUnidades()
