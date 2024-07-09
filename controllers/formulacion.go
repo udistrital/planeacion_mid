@@ -40,6 +40,7 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("VersionarPlan", c.VersionarPlan)
 	c.Mapping("GetPlanVersiones", c.GetPlanVersiones)
 	c.Mapping("PonderacionActividades", c.PonderacionActividades)
+	c.Mapping("GetRubros", c.GetRubros)
 	c.Mapping("GetUnidades", c.GetUnidades)
 	c.Mapping("VinculacionTercero", c.VinculacionTercero)
 	c.Mapping("Planes", c.Planes)
@@ -1329,6 +1330,50 @@ func (c *FormulacionController) PonderacionActividades() {
 	c.ServeJSON()
 }
 
+// GetRubros ...
+// @Title GetRubros
+// @Description get Rubros
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /get_rubros [get]
+func (c *FormulacionController) GetRubros() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
+	var respuesta map[string]interface{}
+	var rubros []interface{}
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanCuentasService")+"/arbol_rubro", &respuesta); err != nil {
+		panic(map[string]interface{}{"funcion": "GetRubros", "err": "Error arbol_rubros", "status": "400", "log": err})
+	} else {
+		rubros = respuesta["Body"].([]interface{})
+		for i := 0; i < len(rubros); i++ {
+			if strings.ToUpper(rubros[i].(map[string]interface{})["Nombre"].(string)) == "GASTOS" {
+				aux := rubros[i].(map[string]interface{})
+				hojas := formulacionhelper.GetHijosRubro(aux["Hijos"].([]interface{}))
+				if len(hojas) != 0 {
+					c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": hojas}
+				} else {
+					c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": ""}
+				}
+				break
+			}
+		}
+	}
+	c.ServeJSON()
+}
+
 // GetUnidades ...
 // @Title GetUnidades
 // @Description get Unidades
@@ -1752,8 +1797,9 @@ func (c *FormulacionController) CambioCargoIdVinculacionTercero() {
 
 // Planes ...
 // @Title Planes
-// @Description get Planes
+// @Description get Rubros
 // @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
 // @router /planes [get]
 func (c *FormulacionController) Planes() {
 

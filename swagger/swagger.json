@@ -976,6 +976,26 @@
                 }
             }
         },
+        "/formulacion/get_rubros": {
+            "get": {
+                "tags": [
+                    "formulacion"
+                ],
+                "description": "get Rubros",
+                "operationId": "FormulacionController.GetRubros",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Formulacion"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
         "/formulacion/get_unidades": {
             "get": {
                 "tags": [
@@ -1115,7 +1135,7 @@
                 "tags": [
                     "formulacion"
                 ],
-                "description": "get Planes",
+                "description": "get Rubros",
                 "operationId": "FormulacionController.Planes",
                 "responses": {
                     "200": {
@@ -1123,6 +1143,9 @@
                         "schema": {
                             "$ref": "#/definitions/models.Formulacion"
                         }
+                    },
+                    "403": {
+                        "description": ":id is empty"
                     }
                 }
             }
