@@ -499,7 +499,7 @@ func (c *ReportesController) PlanAccionAnual() {
 									return aux < aux1
 								})
 							}
-							
+
 							reporteshelper.LimpiarDetalles()
 							for j := 0; j < len(actividades); j++ {
 								arregloLineamieto = nil
@@ -519,13 +519,10 @@ func (c *ReportesController) PlanAccionAnual() {
 								var armonizacionTercerNivel interface{}
 								var armonizacionTercerNivelPI interface{}
 
-								// fmt.Println("===============tree y armonizacionTercer ================ =================", tree, "=============== SEPARACION ================ =================", armonizacionTercer)
-
 								if armonizacionTercer["armo"] != nil {
 									armonizacionTercerNivel = armonizacionTercer["armo"].(map[string]interface{})["armonizacionPED"]
 									armonizacionTercerNivelPI = armonizacionTercer["armo"].(map[string]interface{})["armonizacionPI"]
 								}
-								fmt.Println("===============armonizacionTercerNivel y armonizacionTercerNivelPI ================ =================", armonizacionTercerNivel, armonizacionTercerNivelPI)
 
 								for datoGeneral := 0; datoGeneral < len(treeDatos); datoGeneral++ {
 									treeDato := treeDatos[datoGeneral]
@@ -3474,6 +3471,9 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 	var evaluacion []map[string]interface{}
 	var respuestaOikos []map[string]interface{}
 	var resPeriodo map[string]interface{}
+	var res map[string]interface{}
+	var subgrupos []map[string]interface{}
+	excelArmonizacion := make([]map[string]interface{}, 0)
 	nombre := c.Ctx.Input.Param(":nombre")
 	consolidadoExcelEvaluacion := excelize.NewFile()
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
@@ -3561,6 +3561,122 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 				}
 			case -1:
 				c.Abort("404")
+			}
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+planes[0]["_id"].(string)+"&fields=nombre,_id,hijos,activo", &res); err == nil {
+				helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
+
+				for i := 0; i < len(subgrupos); i++ {
+					if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") && strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "general") {
+						actividades := reporteshelper.GetActividades(subgrupos[i]["_id"].(string))
+						var arregloLineamietoPED []map[string]interface{}
+						var arregloLineamietoPI []map[string]interface{}
+						if len(actividades) == 1 {
+							for index := range actividades {
+								if val, ok := actividades[index]["index"].(float64); ok {
+									actividades[index]["index"] = fmt.Sprintf("%v", int(val))
+								}
+							}
+						} else {
+							sort.SliceStable(actividades, func(i int, j int) bool {
+								if _, ok := actividades[i]["index"].(float64); ok {
+									actividades[i]["index"] = fmt.Sprintf("%v", int(actividades[i]["index"].(float64)))
+								}
+								if _, ok := actividades[j]["index"].(float64); ok {
+									actividades[j]["index"] = fmt.Sprintf("%v", int(actividades[j]["index"].(float64)))
+								}
+								aux, _ := strconv.Atoi((actividades[i]["index"]).(string))
+								aux1, _ := strconv.Atoi((actividades[j]["index"]).(string))
+								return aux < aux1
+							})
+						}
+
+						reporteshelper.LimpiarDetalles()
+						for j := 0; j < len(actividades); j++ {
+							arregloLineamietoPED = nil
+							arregloLineamietoPI = nil
+							actividad := actividades[j]
+							actividadName := actividad["dato"].(string)
+							index := actividad["index"].(string)
+							datosArmonizacion := make(map[string]interface{})
+							titulosArmonizacion := make(map[string]interface{})
+
+							reporteshelper.Limpia()
+							tree := reporteshelper.BuildTreeFa(subgrupos, index)
+							treeDatos := tree[0]
+							treeDatas := tree[1]
+							treeArmo := tree[2]
+							armonizacionTercer := treeArmo[0]
+							var armonizacionTercerNivel interface{}
+							var armonizacionTercerNivelPI interface{}
+
+							if armonizacionTercer["armo"] != nil {
+								armonizacionTercerNivel = armonizacionTercer["armo"].(map[string]interface{})["armonizacionPED"]
+								armonizacionTercerNivelPI = armonizacionTercer["armo"].(map[string]interface{})["armonizacionPI"]
+							}
+
+							for datoGeneral := 0; datoGeneral < len(treeDatos); datoGeneral++ {
+								treeDato := treeDatos[datoGeneral]
+								treeData := treeDatas[0]
+								if treeDato["sub"] == "" {
+									nombre := strings.ToLower(treeDato["nombre"].(string))
+									if strings.Contains(nombre, "ponderación") || strings.Contains(nombre, "ponderacion") && strings.Contains(nombre, "actividad") {
+										datosArmonizacion["Ponderación de la actividad"] = treeData[treeDato["id"].((string))]
+									} else if strings.Contains(nombre, "período") || strings.Contains(nombre, "periodo") && strings.Contains(nombre, "ejecucion") || strings.Contains(nombre, "ejecución") {
+										datosArmonizacion["Periodo de ejecución"] = treeData[treeDato["id"].(string)]
+									} else if strings.Contains(nombre, "actividad") && strings.Contains(nombre, "general") {
+										datosArmonizacion["Actividad general"] = treeData[treeDato["id"].(string)]
+									} else if strings.Contains(nombre, "tarea") || strings.Contains(nombre, "actividades específicas") {
+										datosArmonizacion["Tareas"] = treeData[treeDato["id"].(string)]
+									} else {
+										datosArmonizacion[treeDato["nombre"].(string)] = treeData[treeDato["id"].(string)]
+									}
+								}
+							}
+							var treeIndicador map[string]interface{}
+							auxTree := tree[0]
+							for i := 0; i < len(auxTree); i++ {
+								subgrupo := auxTree[i]
+								if strings.Contains(strings.ToLower(subgrupo["nombre"].(string)), "indicador") {
+									treeIndicador = auxTree[i]
+								}
+							}
+
+							subIndicador := treeIndicador["sub"].([]map[string]interface{})
+							for ind := 0; ind < len(subIndicador); ind++ {
+								subIndicadorRes := subIndicador[ind]
+								treeData := treeDatas[0]
+								dataIndicador := make(map[string]interface{})
+								auxSubIndicador := subIndicadorRes["sub"].([]map[string]interface{})
+								for subInd := 0; subInd < len(auxSubIndicador); subInd++ {
+									if treeData[auxSubIndicador[subInd]["id"].(string)] == nil {
+										treeData[auxSubIndicador[subInd]["id"].(string)] = ""
+									}
+									dataIndicador[auxSubIndicador[subInd]["nombre"].(string)] = treeData[auxSubIndicador[subInd]["id"].(string)]
+								}
+								titulosArmonizacion[subIndicadorRes["nombre"].(string)] = dataIndicador
+							}
+
+							datosArmonizacion["indicadores"] = titulosArmonizacion
+							arregloLineamietoPED = reporteshelper.ArbolArmonizacionV2(armonizacionTercerNivel.(string))
+
+							arregloLineamietoPI = reporteshelper.ArbolArmonizacionPIV2(armonizacionTercerNivelPI.(string))
+							// fmt.Println("===============arregloLineamietoPED=================================")
+							// formatdata.JsonPrint(arregloLineamietoPED)
+							// fmt.Println("===============arregloLineamietoPI=================================")
+							// formatdata.JsonPrint(arregloLineamietoPI)
+							generalData := make(map[string]interface{})
+							generalData["nombreActividad"] = actividadName
+							generalData["numeroActividad"] = index
+							generalData["datosArmonizacionPED"] = arregloLineamietoPED
+							generalData["datosArmonizacionPI"] = arregloLineamietoPI
+							generalData["datosComplementarios"] = datosArmonizacion
+							excelArmonizacion = append(excelArmonizacion, generalData)
+						}
+						break
+					}
+				}
+			} else {
+				panic(err)
 			}
 
 			sheetName := "Evaluación"
@@ -3696,6 +3812,130 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 					{Type: "bottom", Color: "000000", Style: 1},
 				},
 			})
+
+			// stylehead, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+			// 	Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+			// 	Font:      &excelize.Font{Bold: true, Color: "FFFFFF"},
+			// 	Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"CC0000"}},
+			// 	Border: []excelize.Border{
+			// 		{Type: "right", Color: "000000", Style: 1},
+			// 		{Type: "left", Color: "000000", Style: 1},
+			// 		{Type: "top", Color: "000000", Style: 1},
+			// 		{Type: "bottom", Color: "000000", Style: 1},
+			// 	},
+			// })
+			// styletitles, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+			// 	Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+			// 	Font:      &excelize.Font{Bold: true},
+			// 	Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+			// 	Border: []excelize.Border{
+			// 		{Type: "right", Color: "000000", Style: 1},
+			// 		{Type: "left", Color: "000000", Style: 1},
+			// 		{Type: "top", Color: "000000", Style: 1},
+			// 		{Type: "bottom", Color: "000000", Style: 1},
+			// 	},
+			// })
+			stylecontent, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+				Alignment: &excelize.Alignment{Horizontal: "justify", Vertical: "center", WrapText: true},
+				Border: []excelize.Border{
+					{Type: "right", Color: "000000", Style: 1},
+					{Type: "left", Color: "000000", Style: 1},
+					{Type: "top", Color: "000000", Style: 1},
+					{Type: "bottom", Color: "000000", Style: 1},
+				},
+			})
+			stylecontentS, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+				Alignment: &excelize.Alignment{Horizontal: "justify", Vertical: "center", WrapText: true},
+				Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+				Border: []excelize.Border{
+					{Type: "right", Color: "000000", Style: 1},
+					{Type: "left", Color: "000000", Style: 1},
+					{Type: "top", Color: "000000", Style: 1},
+					{Type: "bottom", Color: "000000", Style: 1},
+				},
+			})
+			stylecontentC, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+				Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+				Border: []excelize.Border{
+					{Type: "right", Color: "000000", Style: 1},
+					{Type: "left", Color: "000000", Style: 1},
+					{Type: "top", Color: "000000", Style: 1},
+					{Type: "bottom", Color: "000000", Style: 1},
+				},
+			})
+			stylecontentCS, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+				Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+				Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+				Border: []excelize.Border{
+					{Type: "right", Color: "000000", Style: 1},
+					{Type: "left", Color: "000000", Style: 1},
+					{Type: "top", Color: "000000", Style: 1},
+					{Type: "bottom", Color: "000000", Style: 1},
+				},
+			})
+			styleLineamiento, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+				Alignment: &excelize.Alignment{
+					Horizontal:   "center",
+					Vertical:     "center",
+					WrapText:     true,
+					TextRotation: 90,
+				},
+				Border: []excelize.Border{
+					{Type: "right", Color: "000000", Style: 1},
+					{Type: "left", Color: "000000", Style: 1},
+					{Type: "top", Color: "000000", Style: 1},
+					{Type: "bottom", Color: "000000", Style: 1},
+				},
+			})
+			styleLineamientoSombra, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+				Alignment: &excelize.Alignment{
+					Horizontal:   "center",
+					Vertical:     "center",
+					WrapText:     true,
+					TextRotation: 90,
+				},
+				Fill: excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+				Border: []excelize.Border{
+					{Type: "right", Color: "000000", Style: 1},
+					{Type: "left", Color: "000000", Style: 1},
+					{Type: "top", Color: "000000", Style: 1},
+					{Type: "bottom", Color: "000000", Style: 1},
+				},
+			})
+			// stylecontentCL, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+			// 	Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+			// 	Border: []excelize.Border{
+			// 		{Type: "right", Color: "000000", Style: 1},
+			// 		{Type: "left", Color: "000000", Style: 1},
+			// 		{Type: "bottom", Color: "000000", Style: 4},
+			// 	},
+			// })
+			// stylecontentCLD, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+			// 	Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+			// 	Border: []excelize.Border{
+			// 		{Type: "right", Color: "000000", Style: 1},
+			// 		{Type: "left", Color: "000000", Style: 1},
+			// 		{Type: "bottom", Color: "000000", Style: 1},
+			// 	},
+			// })
+			// stylecontentCLS, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+			// 	Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+			// 	Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+			// 	Border: []excelize.Border{
+			// 		{Type: "right", Color: "000000", Style: 1},
+			// 		{Type: "left", Color: "000000", Style: 1},
+			// 		{Type: "bottom", Color: "000000", Style: 4},
+			// 	},
+			// })
+			// stylecontentCLDS, _ := consolidadoExcelEvaluacion.NewStyle(&excelize.Style{
+			// 	Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+			// 	Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"F2F2F2"}},
+			// 	Border: []excelize.Border{
+			// 		{Type: "right", Color: "000000", Style: 1},
+			// 		{Type: "left", Color: "000000", Style: 1},
+			// 		{Type: "bottom", Color: "000000", Style: 1},
+			// 	},
+			// })
 
 			// Size
 			consolidadoExcelEvaluacion.SetColWidth(sheetName, "A", "A", 3)
@@ -4114,6 +4354,98 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 				VaryColors:   &disable,
 				ShowBlanksAs: "span",
 			})
+
+			// Agregar armonización
+			// TODO: Acomodar en el lugar esperado
+			sheetName = "Armonización"
+			consolidadoExcelEvaluacion.NewSheet(sheetName)
+			contadorArmonizacion := 5
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "B"+fmt.Sprint(contadorArmonizacion+2), "Armonización PED")
+			consolidadoExcelEvaluacion.MergeCell(sheetName, "B"+fmt.Sprint(contadorArmonizacion+2), "D"+fmt.Sprint(contadorArmonizacion+2))
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "B"+fmt.Sprint(contadorArmonizacion+2), "D"+fmt.Sprint(contadorArmonizacion+2), styleTitulo)
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "B"+fmt.Sprint(contadorArmonizacion+3), "Lineamiento")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "C"+fmt.Sprint(contadorArmonizacion+3), "Meta")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "D"+fmt.Sprint(contadorArmonizacion+3), "Estrategias")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "E"+fmt.Sprint(contadorArmonizacion+2), "Armonización Plan Indicativo")
+			consolidadoExcelEvaluacion.MergeCell(sheetName, "E"+fmt.Sprint(contadorArmonizacion+2), "G"+fmt.Sprint(contadorArmonizacion+2))
+			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "E"+fmt.Sprint(contadorArmonizacion+2), "G"+fmt.Sprint(contadorArmonizacion+2), styleTitulo)
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "E"+fmt.Sprint(contadorArmonizacion+3), "Ejes transformadores")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "F"+fmt.Sprint(contadorArmonizacion+3), "Lineamientos de acción")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "G"+fmt.Sprint(contadorArmonizacion+3), "Estrategias")
+			contadorArmonizacion = contadorArmonizacion + 2
+			for posArmonizacion := 0; posArmonizacion < len(excelArmonizacion); posArmonizacion++ {
+				datosExcelArmonizacion := excelArmonizacion[posArmonizacion]
+				armoPED := datosExcelArmonizacion["datosArmonizacionPED"].([]map[string]interface{})
+				fmt.Println("----------------")
+				fmt.Println(armoPED)
+				armoPI := datosExcelArmonizacion["datosArmonizacionPI"].([]map[string]interface{})
+				fmt.Println("----------------")
+				fmt.Println(armoPI)
+				datosComplementarios := datosExcelArmonizacion["datosComplementarios"].(map[string]interface{})
+				indicadores := datosComplementarios["indicadores"].(map[string]interface{})
+
+				MaxRowsXActivity := reporteshelper.MinComMul_Armonization(armoPED, armoPI, len(indicadores))
+
+				y_lin := contadorArmonizacion + 2
+				h_lin := MaxRowsXActivity / len(armoPED)
+				for _, lin := range armoPED {
+					consolidadoExcelEvaluacion.MergeCell(sheetName, "B"+fmt.Sprint(y_lin), "B"+fmt.Sprint(y_lin+h_lin-1))
+					consolidadoExcelEvaluacion.SetCellValue(sheetName, "B"+fmt.Sprint(y_lin), lin["nombreLineamiento"])
+					reporteshelper.SombrearCeldas(consolidadoExcelEvaluacion, posArmonizacion, sheetName, "B"+fmt.Sprint(y_lin), "B"+fmt.Sprint(y_lin+h_lin-1), styleLineamiento, styleLineamientoSombra)
+					y_met := y_lin
+					h_met := h_lin / len(lin["meta"].([]map[string]interface{}))
+					for _, met := range lin["meta"].([]map[string]interface{}) {
+						consolidadoExcelEvaluacion.MergeCell(sheetName, "C"+fmt.Sprint(y_met), "C"+fmt.Sprint(y_met+h_met-1))
+						consolidadoExcelEvaluacion.SetCellValue(sheetName, "C"+fmt.Sprint(y_met), met["nombreMeta"])
+						reporteshelper.SombrearCeldas(consolidadoExcelEvaluacion, posArmonizacion, sheetName, "C"+fmt.Sprint(y_met), "C"+fmt.Sprint(y_met+h_met-1), stylecontentC, stylecontentCS)
+						y_est := y_met
+						h_est := h_met / len(met["estrategias"].([]map[string]interface{}))
+						for _, est := range met["estrategias"].([]map[string]interface{}) {
+							consolidadoExcelEvaluacion.MergeCell(sheetName, "D"+fmt.Sprint(y_est), "D"+fmt.Sprint(y_est+h_est-1))
+							consolidadoExcelEvaluacion.SetCellValue(sheetName, "D"+fmt.Sprint(y_est), est["descripcionEstrategia"])
+							if (est["nombreEstrategia"].(string) == "No seleccionado") || strings.Contains(strings.ToLower(est["nombreEstrategia"].(string)), "no aplica") {
+								reporteshelper.SombrearCeldas(consolidadoExcelEvaluacion, posArmonizacion, sheetName, "D"+fmt.Sprint(y_est), "D"+fmt.Sprint(y_est+h_est-1), stylecontentC, stylecontentCS)
+							} else {
+								reporteshelper.SombrearCeldas(consolidadoExcelEvaluacion, posArmonizacion, sheetName, "D"+fmt.Sprint(y_est), "D"+fmt.Sprint(y_est+h_est-1), stylecontent, stylecontentS)
+							}
+							y_est += h_est
+						}
+						y_met += h_met
+					}
+					y_lin += h_lin
+				}
+
+				y_eje := contadorArmonizacion + 2
+				h_eje := MaxRowsXActivity / len(armoPI)
+				for _, eje := range armoPI {
+					consolidadoExcelEvaluacion.MergeCell(sheetName, "E"+fmt.Sprint(y_eje), "E"+fmt.Sprint(y_eje+h_eje-1))
+					consolidadoExcelEvaluacion.SetCellValue(sheetName, "E"+fmt.Sprint(y_eje), eje["nombreFactor"])
+					reporteshelper.SombrearCeldas(consolidadoExcelEvaluacion, posArmonizacion, sheetName, "E"+fmt.Sprint(y_eje), "E"+fmt.Sprint(y_eje+h_eje-1), stylecontentC, stylecontentCS)
+					y_lin := y_eje
+					h_lin := h_eje / len(eje["lineamientos"].([]map[string]interface{}))
+					for _, lin := range eje["lineamientos"].([]map[string]interface{}) {
+						consolidadoExcelEvaluacion.MergeCell(sheetName, "F"+fmt.Sprint(y_lin), "F"+fmt.Sprint(y_lin+h_lin-1))
+						consolidadoExcelEvaluacion.SetCellValue(sheetName, "F"+fmt.Sprint(y_lin), lin["nombreLineamiento"])
+						reporteshelper.SombrearCeldas(consolidadoExcelEvaluacion, posArmonizacion, sheetName, "F"+fmt.Sprint(y_lin), "F"+fmt.Sprint(y_lin+h_lin-1), stylecontentC, stylecontentCS)
+						y_est := y_lin
+						h_est := h_lin / len(lin["estrategias"].([]map[string]interface{}))
+						for _, est := range lin["estrategias"].([]map[string]interface{}) {
+							consolidadoExcelEvaluacion.MergeCell(sheetName, "G"+fmt.Sprint(y_est), "G"+fmt.Sprint(y_est+h_est-1))
+							consolidadoExcelEvaluacion.SetCellValue(sheetName, "G"+fmt.Sprint(y_est), est["descripcionEstrategia"])
+							if (est["nombreEstrategia"].(string) == "No seleccionado") || strings.Contains(strings.ToLower(est["nombreEstrategia"].(string)), "no aplica") {
+								reporteshelper.SombrearCeldas(consolidadoExcelEvaluacion, posArmonizacion, sheetName, "G"+fmt.Sprint(y_est), "G"+fmt.Sprint(y_est+h_est-1), stylecontentC, stylecontentCS)
+							} else {
+								reporteshelper.SombrearCeldas(consolidadoExcelEvaluacion, posArmonizacion, sheetName, "G"+fmt.Sprint(y_est), "G"+fmt.Sprint(y_est+h_est-1), stylecontent, stylecontentS)
+							}
+							y_est += h_est
+						}
+						y_lin += h_lin
+					}
+					y_eje += h_eje
+				}
+
+				contadorArmonizacion += MaxRowsXActivity
+			}
 
 			buf, _ := consolidadoExcelEvaluacion.WriteToBuffer()
 			strings.NewReader(buf.String())
