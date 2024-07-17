@@ -13,7 +13,6 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
-	"github.com/udistrital/utils_oas/formatdata"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -518,8 +517,6 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 						if informacion["denominador"] == nil {
 							informacion["denominador"] = ""
 						}
-						fmt.Println("-------informacion----------")
-						formatdata.JsonPrint(informacion)
 
 						respuestas = GetRespuestaAnterior(seguimiento, len(indicadores)-1, respuestas, index, trimestre)
 					}
@@ -1301,11 +1298,7 @@ func GetSeguimiento(planId string, indexActividad string, trimestreId string) (m
 		datoStr := seguimiento["dato"].(string)
 		json.Unmarshal([]byte(datoStr), &dato)
 
-		fmt.Println("----------actividad----------")
-
-		auxActividad := GetActividad(seguimiento, indexActividad, trimestre)
-		fmt.Print(auxActividad)
-		actividad, _ := json.Marshal(auxActividad)
+		actividad, _ := json.Marshal(GetActividad(seguimiento, indexActividad, trimestre))
 		json.Unmarshal([]byte(string(actividad)), &seguimientoActividad)
 		seguimientoActividad["_id"] = seguimiento["_id"].(string)
 		seguimientoActividad["id_actividad"] = id_actividad

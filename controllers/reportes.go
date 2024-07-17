@@ -3515,9 +3515,9 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			}
 
 			trimestreVacio := map[string]interface{}{"actividad": 0.0, "acumulado": 0.0, "denominador": 0.0, "meta": 0.0, "numerador": 0.0, "periodo": 0.0, "numeradorAcumulado": 0.0, "denominadorAcumulado": 0.0, "brecha": 0.0, "cualitativo": map[string]interface{}{"reporte": "", "dificultades": ""}}
-			for indexActividad, actividad := range evaluacion {
+			for _, actividad := range evaluacion {
 				for auxTrim := len(trimestresConContenido) - 1; auxTrim >= 0; auxTrim-- {
-					seguimiento, err := seguimientohelper.GetSeguimiento(planes[0]["_id"].(string), strconv.Itoa(indexActividad+1), trimestresConContenido[auxTrim]["_id"].(string))
+					seguimiento, err := seguimientohelper.GetSeguimiento(planes[0]["_id"].(string), actividad["numero"].(string), trimestresConContenido[auxTrim]["_id"].(string))
 					if err == nil {
 						switch auxTrim {
 						case 0:
