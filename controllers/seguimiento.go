@@ -44,6 +44,7 @@ func (c *SeguimientoController) URLMapping() {
 	c.Mapping("RetornarActividadJefeDependencia", c.RetornarActividadJefeDependencia)
 	c.Mapping("RevisarActividadJefeDependencia", c.RevisarActividadJefeDependencia)
 	c.Mapping("RevisarSeguimientoJefeDependencia", c.RevisarSeguimientoJefeDependencia)
+	c.Mapping("ObtenerPromedioBrechayEstado", c.ObtenerPromedioBrechayEstado)
 }
 
 // HabilitarReportes ...
@@ -1205,64 +1206,24 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 // @Failure 404 not found resource
 // @router /get_estado_trimestre/:plan_id/:trimestre [get]
 func (c *SeguimientoController) GetEstadoTrimestre() {
-	defer func() {
-		if err := recover(); err != nil {
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "SeguimientoController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("404")
-			}
-		}
-	}()
-	var resSeguimiento map[string]interface{}
-	var resPeriodoSeguimiento map[string]interface{}
-	var resPeriodo map[string]interface{}
-	var planes []map[string]interface{}
-	var periodoSeguimiento []map[string]interface{}
+	defer helpers.ErrorController(c.Controller, "SeguimientoController")
 
 	planId := c.Ctx.Input.Param(":plan_id")
 	trimestre := c.Ctx.Input.Param(":trimestre")
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId, &resSeguimiento); err == nil {
-		helpers.LimpiezaRespuestaRefactor(resSeguimiento, &planes)
+	if len(planId) == 0 {
+		c.Data["json"] = map[string]interface{}{"Success": false, "Status": "404", "Message": "Request containt incorrect params", "Data": nil}
+	}
+	if len(trimestre) == 0 {
+		c.Data["json"] = map[string]interface{}{"Success": false, "Status": "404", "Message": "Request containt incorrect params", "Data": nil}
+	}
 
-		for _, plan := range planes {
-			var periodo []map[string]interface{}
-			periodoSeguimientoId := plan["periodo_seguimiento_id"].(string)
-
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento?query=_id:"+periodoSeguimientoId, &resPeriodoSeguimiento); err == nil {
-				helpers.LimpiezaRespuestaRefactor(resPeriodoSeguimiento, &periodoSeguimiento)
-				if fmt.Sprintf("%v", periodoSeguimiento[0]) != "map[]" {
-
-					if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+periodoSeguimiento[0]["periodo_id"].(string)+",ParametroId__CodigoAbreviacion:"+trimestre, &resPeriodo); err == nil {
-						helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
-						plan["periodo_seguimiento_id"] = periodoSeguimiento[0]
-
-						if fmt.Sprintf("%v", periodo[0]) != "map[]" {
-							var resEstado map[string]interface{}
-
-							if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento/"+plan["estado_seguimiento_id"].(string), &resEstado); err == nil {
-								plan["estado_seguimiento_id"] = resEstado["Data"]
-
-								if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+plan["plan_id"].(string), &resEstado); err == nil {
-									plan["plan_id"] = resEstado["Data"]
-
-									c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": plan}
-									break
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
+	if respuesta, err := seguimientohelper.GetEstadoTrimestre(planId, trimestre); err == nil {
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": respuesta}
 	} else {
 		panic(err)
 	}
+
 	c.ServeJSON()
 }
 
@@ -2506,5 +2467,26 @@ func (c *SeguimientoController) EstadoTrimestres() {
 	} else {
 		panic(err)
 	}
+	c.ServeJSON()
+}
+
+// ObtenerPromedioBrechayEstado ...
+// @Title ObtenerPromedioBrechayEstado
+// @Description post Brecha y Estado para Plan dado
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Success 200
+// @Failure 404
+// @router /brecha-estado [post]
+func (c *SeguimientoController) ObtenerPromedioBrechayEstado() {
+	defer helpers.ErrorController(c.Controller, "SeguimientoController")
+
+	body := c.Ctx.Input.RequestBody
+
+	if respuesta, err := seguimientohelper.ObtenerPromedioBrechayEstado(body); err == nil {
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": respuesta}
+	} else {
+		panic(map[string]interface{}{"funcion": "ObtenerPromedioBrechayEstado", "err": err, "status": "404", "message": "Error obteniendo brechas y estados"})
+	}
+
 	c.ServeJSON()
 }

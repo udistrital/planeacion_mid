@@ -343,7 +343,6 @@ func (c *FormulacionController) ActualizarActividad() {
 
 		if len(keyStr) > 1 && keyStr[1] == "o" {
 			id_subgrupoDetalle = keyStr[0]
-			if element != "" {
 				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id_subgrupoDetalle, &respuesta); err != nil {
 					panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error get subgrupo-detalle \"key\"", "status": "400", "log": err})
 				}
@@ -373,8 +372,6 @@ func (c *FormulacionController) ActualizarActividad() {
 				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupo_detalle["_id"].(string), "PUT", &res, subgrupo_detalle); err != nil {
 					panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
 				}
-
-			}
 			continue
 		}
 		id_subgrupoDetalle = key
@@ -413,9 +410,7 @@ func (c *FormulacionController) ActualizarActividad() {
 					actividad["index"] = index_actividad
 					actividad["dato"] = element
 					actividad["activo"] = aux_actividad["activo"]
-					if aux_actividad["observacion"] != nil {
-						actividad["observacion"] = aux_actividad["observacion"]
-					}
+					actividad["observacion"] = aux_actividad["observacion"]
 					dato_plan[index_actividad] = actividad
 				}
 			}
