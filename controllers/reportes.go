@@ -3913,7 +3913,7 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			consolidadoExcelEvaluacion.MergeCell(sheetName, "BM21", "BM22")
 
 			consolidadoExcelEvaluacion.MergeCell(sheetName, "P21", "Z21")
-			consolidadoExcelEvaluacion.MergeCell(sheetName, "AA21", "AJ21")
+			consolidadoExcelEvaluacion.MergeCell(sheetName, "AA21", "AK21")
 			consolidadoExcelEvaluacion.MergeCell(sheetName, "AL21", "AV21")
 			consolidadoExcelEvaluacion.MergeCell(sheetName, "AW21", "BG21")
 			// Style
@@ -3922,10 +3922,6 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "E4", "E4", styleSombreadoSB)
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "B19", "B19", styleNegrilla)
 			//  Estilos títulos
-			consolidadoExcelEvaluacion.MergeCell(sheetName, "P21", "Z21")
-			consolidadoExcelEvaluacion.MergeCell(sheetName, "AA21", "AJ21")
-			consolidadoExcelEvaluacion.MergeCell(sheetName, "AL21", "AV21")
-			consolidadoExcelEvaluacion.MergeCell(sheetName, "AW21", "BG21")
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "B21", "BG21", styleTitulo)
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "J22", "BG22", styleContenidoC)
 			consolidadoExcelEvaluacion.SetCellStyle(sheetName, "B22", "G22", styleSubTitles)
@@ -3967,7 +3963,7 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "P21", "Trimestre I")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AA21", "Trimestre II")
-			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AJ21", "Trimestre III")
+			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AL21", "Trimestre III")
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "AW21", "Trimestre IV")
 
 			consolidadoExcelEvaluacion.SetCellValue(sheetName, "B22", "Lineamiento")
