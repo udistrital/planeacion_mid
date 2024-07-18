@@ -425,7 +425,7 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 	var hijos []interface{}
 	var subgrupos []map[string]interface{}
 	var indicadores []map[string]interface{}
-	var respuestas []map[string]interface{}
+	respuestas := make([]map[string]interface{}, 0)
 	response := map[string]interface{}{}
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+seguimiento["plan_id"].(string), &resInformacion); err == nil {
@@ -1242,10 +1242,9 @@ func EncodeBase62(actividadID string) string {
 	base := big.NewInt(62)
 
 	for num.Cmp(zero) > 0 {
-		var quotient, remainder big.Int
+		var remainder big.Int
 		num.DivMod(num, base, &remainder)
 		encoded = string(charset[remainder.Int64()]) + encoded
-		fmt.Println(quotient.Int64())
 	}
 
 	return encoded
@@ -1266,6 +1265,53 @@ func DecodeBase62(base62Str string) string {
 	}
 
 	return fmt.Sprintf("%x", decodedNum)
+}
+
+func GetSeguimiento(planId string, indexActividad string, trimestreId string) (map[string]interface{}, error) {
+	var respuesta map[string]interface{}
+	var resPeriodoSeguimiento map[string]interface{}
+	var resPeriodo map[string]interface{}
+	var resEstado map[string]interface{}
+	var periodoSeguimiento map[string]interface{}
+	var seguimiento map[string]interface{}
+	var seguimientoActividad map[string]interface{}
+	var periodo []map[string]interface{}
+	var trimestre string
+
+	id_actividad := EncodeBase62(planId + "" + indexActividad)
+
+	dato := make(map[string]interface{})
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestreId, &respuesta); err == nil {
+		aux := make([]map[string]interface{}, 1)
+		helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
+		seguimiento = aux[0]
+
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/"+seguimiento["periodo_seguimiento_id"].(string), &resPeriodoSeguimiento); err == nil {
+			helpers.LimpiezaRespuestaRefactor(resPeriodoSeguimiento, &periodoSeguimiento)
+
+			if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+periodoSeguimiento["periodo_id"].(string), &resPeriodo); err == nil {
+				helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
+				trimestre = periodo[0]["ParametroId"].(map[string]interface{})["CodigoAbreviacion"].(string)
+			}
+		}
+
+		datoStr := seguimiento["dato"].(string)
+		json.Unmarshal([]byte(datoStr), &dato)
+
+		actividad, _ := json.Marshal(GetActividad(seguimiento, indexActividad, trimestre))
+		json.Unmarshal([]byte(string(actividad)), &seguimientoActividad)
+		seguimientoActividad["_id"] = seguimiento["_id"].(string)
+		seguimientoActividad["id_actividad"] = id_actividad
+
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento/"+seguimiento["estado_seguimiento_id"].(string), &resEstado); err == nil {
+			seguimientoActividad["estadoSeguimiento"] = resEstado["Data"].(map[string]interface{})["nombre"].(string)
+		}
+
+		return seguimientoActividad, nil
+	} else {
+		return nil, err
+	}
 }
 
 func GetEstadoTrimestre(planId string, trimestre string) (respuesta map[string]interface{}, outputError map[string]interface{}) {
