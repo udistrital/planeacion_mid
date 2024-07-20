@@ -593,6 +593,11 @@ func GetRespuestaAnterior(dataSeg map[string]interface{}, index int, respuestas 
 										continue
 									}
 
+									if index+1 > len(detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})) {
+										respuestas[index]["divisionCero"] = divisionCero
+										continue
+									}
+
 									if detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["indicadorAcumulado"] != nil {
 										indicadorAcumulado += detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["indicadorAcumulado"].(float64)
 									}
