@@ -1760,13 +1760,13 @@ func (c *SeguimientoController) RevisarActividad() {
 			dato[indexActividad] = body
 
 			// Cualitativo
-			if body["cualitativo"].(map[string]interface{})["observaciones"] != "" && body["cualitativo"].(map[string]interface{})["observaciones"] != "Sin observación" && body["cualitativo"].(map[string]interface{})["observaciones"] != nil {
+			if body["cualitativo"].(map[string]interface{})["observaciones_planeacion"] != "" && body["cualitativo"].(map[string]interface{})["observaciones_planeacion"] != "Sin observación" && body["cualitativo"].(map[string]interface{})["observaciones_planeacion"] != nil {
 				comentario = true
 			}
 
 			// Cuantitativo
 			for _, indicador := range body["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{}) {
-				if indicador.(map[string]interface{})["observaciones"] != "" && indicador.(map[string]interface{})["observaciones"] != "Sin observación" && indicador.(map[string]interface{})["observaciones"] != nil {
+				if indicador.(map[string]interface{})["observaciones_planeacion"] != "" && indicador.(map[string]interface{})["observaciones_planeacion"] != "Sin observación" && indicador.(map[string]interface{})["observaciones_planeacion"] != nil {
 					comentario = true
 					break
 				}
@@ -1868,13 +1868,13 @@ func (c *SeguimientoController) RevisarActividadJefeDependencia() {
 			dato[indexActividad] = body
 
 			// Cualitativo
-			if body["cualitativo"].(map[string]interface{})["observaciones"] != "" && body["cualitativo"].(map[string]interface{})["observaciones"] != "Sin observación" && body["cualitativo"].(map[string]interface{})["observaciones"] != nil {
+			if body["cualitativo"].(map[string]interface{})["observaciones_dependencia"] != "" && body["cualitativo"].(map[string]interface{})["observaciones_dependencia"] != "Sin observación" && body["cualitativo"].(map[string]interface{})["observaciones_dependencia"] != nil {
 				comentario = true
 			}
 
 			// Cuantitativo
 			for _, indicador := range body["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{}) {
-				if indicador.(map[string]interface{})["observaciones"] != "" && indicador.(map[string]interface{})["observaciones"] != "Sin observación" && indicador.(map[string]interface{})["observaciones"] != nil {
+				if indicador.(map[string]interface{})["observaciones_dependencia"] != "" && indicador.(map[string]interface{})["observaciones_dependencia"] != "Sin observación" && indicador.(map[string]interface{})["observaciones_dependencia"] != nil {
 					comentario = true
 					break
 				}

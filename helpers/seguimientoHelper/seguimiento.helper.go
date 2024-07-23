@@ -942,7 +942,8 @@ func ActividadConObservaciones(seguimiento map[string]interface{}) bool {
 	if seguimiento["cuantitativo"] != nil {
 		cuantitativo = seguimiento["cuantitativo"].(map[string]interface{})
 		for _, indicador := range cuantitativo["indicadores"].([]interface{}) {
-			if indicador.(map[string]interface{})["observaciones"] != "" && indicador.(map[string]interface{})["observaciones"] != "Sin observación" && indicador.(map[string]interface{})["observaciones"] != nil {
+			if (indicador.(map[string]interface{})["observaciones_dependencia"] != "" && indicador.(map[string]interface{})["observaciones_dependencia"] != "Sin observación" && indicador.(map[string]interface{})["observaciones_dependencia"] != nil) ||
+				(indicador.(map[string]interface{})["observaciones_planeacion"] != "" && indicador.(map[string]interface{})["observaciones_planeacion"] != "Sin observación" && indicador.(map[string]interface{})["observaciones_planeacion"] != nil) {
 				return true
 			}
 		}
@@ -950,7 +951,8 @@ func ActividadConObservaciones(seguimiento map[string]interface{}) bool {
 
 	if seguimiento["cualitativo"] != nil {
 		cualitativo = seguimiento["cualitativo"].(map[string]interface{})
-		if cualitativo["observaciones"] != "" && cualitativo["observaciones"] != "Sin observación" && cualitativo["observaciones"] != nil {
+		if (cualitativo["observaciones_dependencia"] != "" && cualitativo["observaciones_dependencia"] != "Sin observación" && cualitativo["observaciones_dependencia"] != nil) ||
+			(cualitativo["observaciones_planeacion"] != "" && cualitativo["observaciones_planeacion"] != "Sin observación" && cualitativo["observaciones_planeacion"] != nil) {
 			return true
 		}
 	}
