@@ -571,10 +571,9 @@ func (c *ReportesController) PlanAccionAnual() {
 								//}
 
 								generalData := make(map[string]interface{})
-								if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=DependenciaId:"+body["unidad_id"].(string), &respuestaUnidad); err == nil {
+								if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia?query=Id:"+body["unidad_id"].(string), &respuestaUnidad); err == nil {
 									aux := respuestaUnidad[0]
-									dependenciaNombre := aux["DependenciaId"].(map[string]interface{})
-									nombreUnidad = dependenciaNombre["Nombre"].(string)
+									nombreUnidad = aux["Nombre"].(string)
 								} else {
 									panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
 								}
@@ -1010,8 +1009,8 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
 		for _, planes := range planesFilter {
 			if idUnidad != planes["dependencia_id"].(string) {
-				if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=DependenciaId:"+planes["dependencia_id"].(string), &respuestaUnidad); err == nil {
-					planes["nombreUnidad"] = respuestaUnidad[0]["DependenciaId"].(map[string]interface{})["Nombre"].(string)
+				if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia?query=Id:"+planes["dependencia_id"].(string), &respuestaUnidad); err == nil {
+					planes["nombreUnidad"] = respuestaUnidad[0]["Nombre"].(string)
 				} else {
 					panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
 				}
