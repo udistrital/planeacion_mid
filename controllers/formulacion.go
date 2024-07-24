@@ -29,6 +29,7 @@ type FormulacionController struct {
 // URLMapping ...
 func (c *FormulacionController) URLMapping() {
 	c.Mapping("ClonarFormato", c.ClonarFormato)
+	c.Mapping("ClonarPI_PED", c.ClonarPI_PED)
 	c.Mapping("GuardarActividad", c.GuardarActividad)
 	c.Mapping("GetPlan", c.GetPlan)
 	c.Mapping("ActualizarActividad", c.ActualizarActividad)
@@ -106,6 +107,95 @@ func (c *FormulacionController) ClonarFormato() {
 		plan["estado_plan_id"] = "614d3ad301c7a200482fabfd"
 		plan["formato_id"] = id
 		plan["nueva_estructura"] = true
+
+		var resPost map[string]interface{}
+		var resLimpia map[string]interface{}
+
+		aux, err := json.Marshal(plan)
+		if err != nil {
+			log.Fatalf("Error codificado: %v", err)
+		}
+
+		peticion, err := http.NewRequest("POST", url, bytes.NewBuffer(aux))
+		if err != nil {
+			log.Fatalf("Error creando peticion: %v", err)
+		}
+		peticion.Header.Set("Content-Type", "application/json; charset=UTF-8")
+		respuesta, err := clienteHttp.Do(peticion)
+		if err != nil {
+			log.Fatalf("Error haciendo peticion: %v", err)
+		}
+
+		defer respuesta.Body.Close()
+
+		cuerpoRespuesta, err := io.ReadAll(respuesta.Body)
+		if err != nil {
+			log.Fatalf("Error leyendo peticion: %v", err)
+		}
+
+		json.Unmarshal(cuerpoRespuesta, &resPost)
+		resLimpia = resPost["Data"].(map[string]interface{})
+		padre := resLimpia["_id"].(string)
+		c.Data["json"] = resPost
+
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &respuestaHijos); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuestaHijos, &hijos)
+			formulacionhelper.ClonarHijos(hijos, padre)
+		}
+
+	}
+	c.ServeJSON()
+
+}
+
+// ClonarPI_PED ...
+// @Title ClonarPI_PED
+// @Description Metodo para clonar los PI y PED
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /clonar-pi-ped/:id [post]
+func (c *FormulacionController) ClonarPI_PED() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
+	id := c.Ctx.Input.Param(":id")
+
+	var respuesta map[string]interface{}
+	var respuestaHijos map[string]interface{}
+	var hijos []map[string]interface{}
+	var planFormato map[string]interface{}
+	var parametros map[string]interface{}
+
+	plan := make(map[string]interface{})
+	clienteHttp := &http.Client{}
+	url := "http://" + beego.AppConfig.String("PlanesService") + "/plan/"
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &respuesta); err == nil {
+
+		helpers.LimpiezaRespuestaRefactor(respuesta, &planFormato)
+		json.Unmarshal(c.Ctx.Input.RequestBody, &parametros)
+
+		plan["nombre"] = "" + planFormato["nombre"].(string) + " - CLONADO"
+		plan["descripcion"] = planFormato["descripcion"].(string)
+		plan["tipo_plan_id"] = planFormato["tipo_plan_id"].(string)
+		plan["aplicativo_id"] = planFormato["aplicativo_id"].(string)
+		if planFormato["vigencia_aplica"] != nil {
+			plan["vigencia_aplica"] = planFormato["vigencia_aplica"].(string)
+		}
+		plan["activo"] = planFormato["activo"]
+		plan["formato"] = planFormato["formato"]
 
 		var resPost map[string]interface{}
 		var resLimpia map[string]interface{}
@@ -1863,7 +1953,21 @@ func (c *FormulacionController) Planes() {
 				arregloPlanes = append(arregloPlanes, planesTipo)
 
 				if arregloPlanes != nil {
-					c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": arregloPlanes}
+					// Mapa auxiliar para rastrear IDs únicos
+					idMap := make(map[string]bool)
+
+					// Nuevo slice para almacenar elementos únicos
+					uniquePlanes := []map[string]interface{}{}
+
+					for _, plan := range arregloPlanes {
+						id := plan["_id"].(string)
+						if !idMap[id] {
+							// Si el ID no ha sido visto antes, añadirlo al mapa y al slice único
+							idMap[id] = true
+							uniquePlanes = append(uniquePlanes, plan)
+						}
+					}
+					c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": uniquePlanes}
 				} else {
 					c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": ""}
 				}
