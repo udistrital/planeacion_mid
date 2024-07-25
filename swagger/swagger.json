@@ -601,6 +601,35 @@
                 }
             }
         },
+        "/formulacion/clonar-pi-ped/{id}": {
+            "post": {
+                "tags": [
+                    "formulacion"
+                ],
+                "description": "Metodo para clonar los PI y PED",
+                "operationId": "FormulacionController.ClonarPI_PED",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "The key for staticblock",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Formulacion"
+                        }
+                    },
+                    "403": {
+                        "description": ":id is empty"
+                    }
+                }
+            }
+        },
         "/formulacion/clonar_formato/{id}": {
             "post": {
                 "tags": [
