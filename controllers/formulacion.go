@@ -191,9 +191,6 @@ func (c *FormulacionController) ClonarPI_PED() {
 		plan["descripcion"] = planFormato["descripcion"].(string)
 		plan["tipo_plan_id"] = planFormato["tipo_plan_id"].(string)
 		plan["aplicativo_id"] = planFormato["aplicativo_id"].(string)
-		if planFormato["vigencia_aplica"] != nil {
-			plan["vigencia_aplica"] = planFormato["vigencia_aplica"].(string)
-		}
 		plan["activo"] = planFormato["activo"]
 		plan["formato"] = planFormato["formato"]
 
