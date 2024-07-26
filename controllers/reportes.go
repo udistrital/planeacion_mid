@@ -3507,7 +3507,6 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			trimestres := evaluacionhelper.GetPeriodosPlan(body["vigencia"].(string), planes[0]["_id"].(string))
 
 			dependencia := body["unidad_id"].(string)
-			beego.Info("Dependencia: ", dependencia)
 			if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia?query=Id:"+dependencia, &respuestaOikos); err == nil {
 				unidadNombre = respuestaOikos[0]["Nombre"].(string)
 				arregloPlanAnual = append(arregloPlanAnual, map[string]interface{}{"nombreUnidad": unidadNombre})
@@ -3518,12 +3517,6 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+`/periodo?query=Id:`+body["vigencia"].(string), &resPeriodo); err == nil {
 				helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
 			}
-			jsonByte, err := json.Marshal(trimestres)
-			if err != nil{
-				beego.Error("Error al convertir a json")
-			}
-			jsonString := string(jsonByte)
-			beego.Info("Trimestres: ", jsonString)
 
 			trimestreDelAnio := "-1"
 			trimestresConContenido := make([]map[string]interface{}, 0)
