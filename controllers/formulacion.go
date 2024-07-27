@@ -285,7 +285,7 @@ func (c *FormulacionController) GuardarActividad() {
 			actividad := make(map[string]interface{})
 
 			if subgrupo_detalle["dato_plan"] == nil {
-				actividad["index"] = 1
+				actividad["index"] = maxIndex + 1
 				actividad["dato"] = element
 				actividad["activo"] = true
 				i := strconv.Itoa(actividad["index"].(int))

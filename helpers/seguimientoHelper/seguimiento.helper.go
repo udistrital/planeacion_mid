@@ -1478,17 +1478,17 @@ func ObtenerPromedioBrechayEstado(requestBody []byte) (respuesta []map[string]in
 					var brechasT3 []float64
 					var brechasT4 []float64
 					for _, eval := range evaluacion {
-						if eval["trimestre1"] != nil && eval["trimestre1"].(map[string]interface{})["actividad"] != "" && len(eval["trimestre1"].(map[string]interface{})) > 0 {
-							brechasT1 = append(brechasT1, eval["trimestre1"].(map[string]interface{})["actividad"].(float64))
+						if eval["trimestre1"] != nil && eval["trimestre1"].(map[string]interface{})["brecha"] != "" && len(eval["trimestre1"].(map[string]interface{})) > 0 {
+							brechasT1 = append(brechasT1, eval["trimestre1"].(map[string]interface{})["brecha"].(float64))
 						}
-						if eval["trimestre2"] != nil && eval["trimestre2"].(map[string]interface{})["actividad"] != "" && len(eval["trimestre2"].(map[string]interface{})) > 0 {
-							brechasT2 = append(brechasT2, eval["trimestre2"].(map[string]interface{})["actividad"].(float64))
+						if eval["trimestre2"] != nil && eval["trimestre2"].(map[string]interface{})["brecha"] != "" && len(eval["trimestre2"].(map[string]interface{})) > 0 {
+							brechasT2 = append(brechasT2, eval["trimestre2"].(map[string]interface{})["brecha"].(float64))
 						}
-						if eval["trimestre3"] != nil && eval["trimestre3"].(map[string]interface{})["actividad"] != "" && len(eval["trimestre3"].(map[string]interface{})) > 0 {
-							brechasT3 = append(brechasT3, eval["trimestre3"].(map[string]interface{})["actividad"].(float64))
+						if eval["trimestre3"] != nil && eval["trimestre3"].(map[string]interface{})["brecha"] != "" && len(eval["trimestre3"].(map[string]interface{})) > 0 {
+							brechasT3 = append(brechasT3, eval["trimestre3"].(map[string]interface{})["brecha"].(float64))
 						}
-						if eval["trimestre4"] != nil && eval["trimestre4"].(map[string]interface{})["actividad"] != "" && len(eval["trimestre4"].(map[string]interface{})) > 0 {
-							brechasT4 = append(brechasT4, eval["trimestre4"].(map[string]interface{})["actividad"].(float64))
+						if eval["trimestre4"] != nil && eval["trimestre4"].(map[string]interface{})["brecha"] != "" && len(eval["trimestre4"].(map[string]interface{})) > 0 {
+							brechasT4 = append(brechasT4, eval["trimestre4"].(map[string]interface{})["brecha"].(float64))
 						}
 					}
 
@@ -1500,7 +1500,7 @@ func ObtenerPromedioBrechayEstado(requestBody []byte) (respuesta []map[string]in
 								suma += numero
 							}
 							if len(brechasT1) > 0 {
-								prod = (1 - (suma / float64(len(brechasT1))))
+								prod = ((suma / float64(len(brechasT1))))
 							}
 
 							prodFormatted := fmt.Sprintf("%.2f", prod*100)
@@ -1510,7 +1510,7 @@ func ObtenerPromedioBrechayEstado(requestBody []byte) (respuesta []map[string]in
 								suma += numero
 							}
 							if len(brechasT2) > 0 {
-								prod = (1 - (suma / float64(len(brechasT2))))
+								prod = ((suma / float64(len(brechasT2))))
 							}
 
 							prodFormatted := fmt.Sprintf("%.2f", prod*100)
@@ -1520,7 +1520,7 @@ func ObtenerPromedioBrechayEstado(requestBody []byte) (respuesta []map[string]in
 								suma += numero
 							}
 							if len(brechasT3) > 0 {
-								prod = (1 - (suma / float64(len(brechasT3))))
+								prod = ((suma / float64(len(brechasT3))))
 							}
 
 							prodFormatted := fmt.Sprintf("%.2f", prod*100)
@@ -1530,7 +1530,7 @@ func ObtenerPromedioBrechayEstado(requestBody []byte) (respuesta []map[string]in
 								suma += numero
 							}
 							if len(brechasT4) > 0 {
-								prod = (1 - (suma / float64(len(brechasT4))))
+								prod = ((suma / float64(len(brechasT4))))
 							}
 
 							prodFormatted := fmt.Sprintf("%.2f", prod*100)
