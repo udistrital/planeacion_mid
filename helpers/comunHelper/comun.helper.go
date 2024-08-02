@@ -236,7 +236,7 @@ func GetPlanesPeriodo(unidad string, vigencia string) (respuesta []map[string]in
 	respuesta = make([]map[string]interface{}, 0)
 	var planes []map[string]interface{}
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/plan?query=estado_plan_id:6153355601c7a2365b2fb2a1,dependencia_id:`+unidad+`,vigencia:`+vigencia, &resPlan); err == nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/plan?query=estado_plan_id:6153355601c7a2365b2fb2a1,dependencia_id:`+unidad+`,vigencia:`+vigencia+`,activo:true`, &resPlan); err == nil {
 		// planes := make([]map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(resPlan, &planes)
 		if fmt.Sprintf("%v", planes) == "[]" {
