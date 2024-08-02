@@ -312,7 +312,6 @@ func GetEvaluacion(planId string, trimestres []map[string]interface{}, posicionT
 
 func GetPeriodosPlan(vigenciaId string, plan_id string) []map[string]interface{} {
 	var periodos []map[string]interface{}
-	var respuestaPeriodoSeguimiento map[string]interface{}
 	var respuestaUnidad []map[string]interface{}
 	var plan_completo map[string]interface{}
 	var plan_formato map[string]interface{}
@@ -363,6 +362,7 @@ func GetPeriodosPlan(vigenciaId string, plan_id string) []map[string]interface{}
 					"planes_interes":  string(plan_interes_json),
 				}
 
+				var respuestaPeriodoSeguimiento map[string]interface{}
 				//? Busca registros de periodo-seguimiento mediante expresiones regulares (Revisar planes_crud)
 				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/buscar-unidad-planes/1", "POST", &respuestaPeriodoSeguimiento, body); err == nil {
 					var periodosSeguimiento []map[string]interface{}
@@ -560,9 +560,10 @@ func GetPlanesPeriodo(unidad string, vigencia string) (respuesta []map[string]in
 	var resPlan map[string]interface{}
 	var resSeguimiento map[string]interface{}
 	respuesta = make([]map[string]interface{}, 0)
+	var planes []map[string]interface{}
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/plan?query=estado_plan_id:6153355601c7a2365b2fb2a1,dependencia_id:`+unidad+`,vigencia:`+vigencia, &resPlan); err == nil {
-		planes := make([]map[string]interface{}, 1)
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/plan?query=estado_plan_id:6153355601c7a2365b2fb2a1,dependencia_id:`+unidad+`,vigencia:`+vigencia+`,activo:true`, &resPlan); err == nil {
+		// planes := make([]map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(resPlan, &planes)
 		if fmt.Sprintf("%v", planes) == "[]" {
 			panic(map[string]interface{}{
