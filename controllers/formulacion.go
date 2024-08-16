@@ -3,6 +3,7 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -29,6 +30,7 @@ type FormulacionController struct {
 // URLMapping ...
 func (c *FormulacionController) URLMapping() {
 	c.Mapping("ClonarFormato", c.ClonarFormato)
+	c.Mapping("ClonarFormatoPAF", c.ClonarFormatoPAF)
 	c.Mapping("ClonarPI_PED", c.ClonarPI_PED)
 	c.Mapping("GuardarActividad", c.GuardarActividad)
 	c.Mapping("GetPlan", c.GetPlan)
@@ -146,6 +148,117 @@ func (c *FormulacionController) ClonarFormato() {
 	}
 	c.ServeJSON()
 
+}
+
+// ClonarFormatoPAF ...
+// @Title ClonarFormatoPAF
+// @Description metodo post para creacion de formato PAF con niveles básicos
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /clonar-formato-paf [post]
+func (c *FormulacionController) ClonarFormatoPAF() {
+
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
+	var body map[string]interface{}
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &body); err != nil {
+		panic(map[string]interface{}{"funcion": "ClonarFormatoPAF", "err": "Error al decodificar el cuerpo de la solicitud", "status": "400", "log": err})
+	}
+
+	const CodigoAbreviacionParametroPAF string = "FORMATO_PAF"
+	var valorParametroPAF map[string]string
+	var respuestaParametroPlanFormato map[string]interface{}
+	var parametroPlanFormato []map[string]interface{}
+	var respuesta map[string]interface{}
+	var planFormato []map[string]interface{}
+	plan := make(map[string]interface{})
+	var respuestaHijos map[string]interface{}
+	var hijos []map[string]interface{}
+
+	clienteHttp := &http.Client{}
+	url := "http://" + beego.AppConfig.String("PlanesService") + "/plan/"
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=ParametroId.CodigoAbreviacion:"+CodigoAbreviacionParametroPAF+",ParametroId.TipoParametroId.CodigoAbreviacion:P_SISGPLAN,Activo:true", &respuestaParametroPlanFormato); err != nil {
+		panic(map[string]interface{}{"funcion": "ClonarFormatoPAF", "err": "Error obteniendo parámetro " + CodigoAbreviacionParametroPAF, "status": "400", "log": err})
+	}
+	helpers.LimpiezaRespuestaRefactor(respuestaParametroPlanFormato, &parametroPlanFormato)
+
+	if len(parametroPlanFormato) != 1 || parametroPlanFormato[0]["Id"] == nil {
+		panic(map[string]interface{}{"funcion": "ClonarFormatoPAF", "err": "No se encontró el parámetro " + CodigoAbreviacionParametroPAF, "status": "404", "log": errors.New("no se encontró el parámetro " + CodigoAbreviacionParametroPAF)})
+	}
+
+	err := json.Unmarshal([]byte(parametroPlanFormato[0]["Valor"].(string)), &valorParametroPAF)
+	if err != nil {
+		log.Fatalf("Error decodificado: %v", err)
+	}
+
+	// beego.Info("http://" + beego.AppConfig.String("PlanesService") + "/plan?query=nombre:" + valorParametroPAF["Valor"])
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=nombre:"+valorParametroPAF["Valor"], &respuesta); err != nil {
+		panic(map[string]interface{}{"funcion": "ClonarFormatoPAF", "err": "Error obteniendo el plan formato " + valorParametroPAF["Valor"], "status": "400", "log": err})
+	}
+	helpers.LimpiezaRespuestaRefactor(respuesta, &planFormato)
+
+	if len(planFormato) != 1 || planFormato[0]["_id"] == nil {
+		panic(map[string]interface{}{"funcion": "ClonarFormatoPAF", "err": "No se encontró el plan formato ", "status": "404", "log": errors.New("no se encontró el plan formato ")})
+	}
+	beego.Info("planFormato: ", len(planFormato))
+	beego.Info("Parametros: ", body)
+
+	plan["nombre"] = body["nombre"].(string)
+	plan["descripcion"] = body["descripcion"].(string)
+	plan["tipo_plan_id"] = planFormato[0]["tipo_plan_id"].(string)
+	plan["aplicativo_id"] = planFormato[0]["aplicativo_id"].(string)
+	plan["activo"] = true
+	plan["formato"] = true
+
+	var resPost map[string]interface{}
+	var resLimpia map[string]interface{}
+
+	aux, err := json.Marshal(plan)
+	if err != nil {
+		log.Fatalf("Error codificado: %v", err)
+	}
+
+	peticion, err := http.NewRequest("POST", url, bytes.NewBuffer(aux))
+	if err != nil {
+		log.Fatalf("Error creando peticion: %v", err)
+	}
+	peticion.Header.Set("Content-Type", "application/json; charset=UTF-8")
+	respuestaPeticion, err := clienteHttp.Do(peticion)
+	if err != nil {
+		log.Fatalf("Error haciendo peticion: %v", err)
+	}
+
+	defer respuestaPeticion.Body.Close()
+
+	cuerpoRespuesta, err := io.ReadAll(respuestaPeticion.Body)
+	if err != nil {
+		log.Fatalf("Error leyendo peticion: %v", err)
+	}
+
+	json.Unmarshal(cuerpoRespuesta, &resPost)
+	resLimpia = resPost["Data"].(map[string]interface{})
+	padre := resLimpia["_id"].(string)
+	c.Data["json"] = resPost
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+planFormato[0]["_id"].(string), &respuestaHijos); err == nil {
+		helpers.LimpiezaRespuestaRefactor(respuestaHijos, &hijos)
+		formulacionhelper.ClonarHijos(hijos, padre)
+	}
+
+	c.ServeJSON()
 }
 
 // ClonarPI_PED ...
@@ -430,35 +543,35 @@ func (c *FormulacionController) ActualizarActividad() {
 
 		if len(keyStr) > 1 && keyStr[1] == "o" {
 			id_subgrupoDetalle = keyStr[0]
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id_subgrupoDetalle, &respuesta); err != nil {
-					panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error get subgrupo-detalle \"key\"", "status": "400", "log": err})
-				}
-				helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id_subgrupoDetalle, &respuesta); err != nil {
+				panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error get subgrupo-detalle \"key\"", "status": "400", "log": err})
+			}
+			helpers.LimpiezaRespuestaRefactor(respuesta, &respuestaLimpia)
 
-				subgrupo_detalle = respuestaLimpia[0]
-				if subgrupo_detalle["dato_plan"] != nil {
-					actividad := make(map[string]interface{})
-					dato_plan_str := subgrupo_detalle["dato_plan"].(string)
-					json.Unmarshal([]byte(dato_plan_str), &dato_plan)
-					for index_actividad := range dato_plan {
-						if index_actividad == index {
-							aux_actividad := dato_plan[index_actividad].(map[string]interface{})
-							actividad["index"] = index_actividad
-							actividad["dato"] = aux_actividad["dato"]
-							actividad["activo"] = aux_actividad["activo"]
-							actividad["observacion"] = element
+			subgrupo_detalle = respuestaLimpia[0]
+			if subgrupo_detalle["dato_plan"] != nil {
+				actividad := make(map[string]interface{})
+				dato_plan_str := subgrupo_detalle["dato_plan"].(string)
+				json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+				for index_actividad := range dato_plan {
+					if index_actividad == index {
+						aux_actividad := dato_plan[index_actividad].(map[string]interface{})
+						actividad["index"] = index_actividad
+						actividad["dato"] = aux_actividad["dato"]
+						actividad["activo"] = aux_actividad["activo"]
+						actividad["observacion"] = element
 
-							dato_plan[index_actividad] = actividad
-						}
+						dato_plan[index_actividad] = actividad
 					}
-					b, _ := json.Marshal(dato_plan)
-					str := string(b)
-					subgrupo_detalle["dato_plan"] = str
 				}
+				b, _ := json.Marshal(dato_plan)
+				str := string(b)
+				subgrupo_detalle["dato_plan"] = str
+			}
 
-				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupo_detalle["_id"].(string), "PUT", &res, subgrupo_detalle); err != nil {
-					panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
-				}
+			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/"+subgrupo_detalle["_id"].(string), "PUT", &res, subgrupo_detalle); err != nil {
+				panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
+			}
 			continue
 		}
 		id_subgrupoDetalle = key
