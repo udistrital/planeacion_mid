@@ -398,6 +398,26 @@ paths:
             $ref: '#/definitions/{}'
         "403":
           description: :id is empty
+  /formulacion/clonar-formato-paf:
+    post:
+      tags:
+      - formulacion
+      description: metodo post para creacion de formato PAF con niveles básicos
+      operationId: FormulacionController.ClonarFormatoPAF
+      parameters:
+      - in: body
+        name: body
+        description: body for Plan content
+        required: true
+        schema:
+          $ref: '#/definitions/{}'
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
   /formulacion/clonar-pi-ped/{id}:
     post:
       tags:
