@@ -1190,6 +1190,37 @@
                 }
             }
         },
+        "/formulacion/obtener-fechas": {
+            "post": {
+                "tags": [
+                    "formulacion"
+                ],
+                "description": "Peticion POST para obtener fechas parametrizadas en planes de acción de funcionamiento e inversión para los procesos de formulación y seguimiento",
+                "operationId": "FormulacionController.ObtenerFechasParametrizadas",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "body for Plan content",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/{}"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Formulacion"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request"
+                    }
+                }
+            }
+        },
         "/formulacion/planes": {
             "get": {
                 "tags": [
