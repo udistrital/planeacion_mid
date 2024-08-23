@@ -2287,7 +2287,7 @@ func ObtenerFechasParametrizadas(body map[string]interface{}) ([]map[string]inte
 		}
 		helpers.LimpiezaRespuestaRefactor(respuestaPeticion, &periodoSeguimientoFormulacion)
 		if len(periodoSeguimientoFormulacion) == 0 {
-			panic(map[string]interface{}{"funcion": "helper.ObtenerFechasParametrizadas", "err": "Error obteniendo periodo-seguimiento", "status": "400", "log": errors.New("respuesta vacia")})
+			panic(map[string]interface{}{"funcion": "helper.ObtenerFechasParametrizadas", "err": "No hay fechas parametrizadas", "status": "400", "log": errors.New("respuesta vacia")})
 		}
 		respuesta = append(respuesta, periodoSeguimientoFormulacion[0])
 	}
@@ -2304,7 +2304,7 @@ func ObtenerFechasParametrizadas(body map[string]interface{}) ([]map[string]inte
 			}
 			helpers.LimpiezaRespuestaRefactor(respuestaPeticion, &periodoSeguimientoSeguimiento)
 			if len(periodoSeguimientoSeguimiento) == 0 {
-				panic(map[string]interface{}{"funcion": "helper.ObtenerFechasParametrizadas", "err": "Error obteniendo periodo-seguimiento", "status": "400", "log": errors.New("respuesta vacia")})
+				panic(map[string]interface{}{"funcion": "helper.ObtenerFechasParametrizadas", "err": "No hay fechas parametrizadas", "status": "400", "log": errors.New("respuesta vacia")})
 			}
 			respuesta = append(respuesta, periodoSeguimientoSeguimiento[0])
 		}
