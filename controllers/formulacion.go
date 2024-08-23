@@ -51,6 +51,7 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("PlanesEnFormulacion", c.PlanesEnFormulacion)
 	c.Mapping("GetPlanesUnidadesComun", c.GetPlanesUnidadesComun)
 	c.Mapping("DefinirFechasFuncionamiento", c.DefinirFechasFuncionamiento)
+	c.Mapping("ObtenerFechasParametrizadas", c.ObtenerFechasParametrizadas)
 	c.Mapping("CalculosDocentes", c.CalculosDocentes)
 	c.Mapping("EstructuraPlanes", c.EstructuraPlanes)
 	c.Mapping("VinculacionTerceroByEmail", c.VinculacionTerceroByEmail)
@@ -2150,11 +2151,47 @@ func (c *FormulacionController) DefinirFechasFuncionamiento() {
 	// Decodificar JSON desde el cuerpo de la solicitud
 	err := json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 	if err != nil {
-		// Manejar el error, imprimirlo o devolver una respuesta de error al cliente
-		c.Abort("400") // Bad Request
-		return
+		panic(map[string]interface{}{"funcion": "DefinirFechasFuncionamiento", "err": "Error al decodificar JSON desde el cuerpo de la solicitud", "status": "400", "log": err})
 	}
 	res = formulacionhelper.DefinirFechasFormulacionSeguimiento(body)
+	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": res}
+	c.ServeJSON()
+}
+
+// ObtenerFechasParametrizadas ...
+// @Title ObtenerFechasParametrizadas
+// @Description Peticion POST para obtener fechas parametrizadas en planes de acción de funcionamiento e inversión para los procesos de formulación y seguimiento
+// @Param	body		body 	{}	true		"body for Plan content"
+// @Success 200 {object} models.Formulacion
+// @Failure 400 bad request
+// @router /obtener-fechas [post]
+func (c *FormulacionController) ObtenerFechasParametrizadas() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
+	var body map[string]interface{}
+	var res interface{}
+
+	// Decodificar JSON desde el cuerpo de la solicitud
+	err := json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "ObtenerFechasParametrizadas", "err": "Error al decodificar JSON desde el cuerpo de la solicitud", "status": "400", "log": err})
+	}
+	res, err = formulacionhelper.ObtenerFechasParametrizadas(body)
+
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "ObtenerFechasParametrizadas", "err": "Error al obtener fechas para el plan seleccionado", "status": "400", "log": err})
+	}
 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": res}
 	c.ServeJSON()
 }

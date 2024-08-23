@@ -18,6 +18,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
 	"github.com/udistrital/planeacion_mid/helpers/formatoHelper"
+	seguimientohelper "github.com/udistrital/planeacion_mid/helpers/seguimientoHelper"
 	"github.com/udistrital/planeacion_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
@@ -321,7 +322,7 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 						actividad = dato_plan[index].(map[string]interface{})
 						if v != "" {
 							forkData[v] = actividad["dato"]
-							if actividad["observacion"] != nil || actividad["observacion"] != ""{
+							if actividad["observacion"] != nil || actividad["observacion"] != "" {
 								keyObservacion := v + "_o"
 								forkData[keyObservacion] = getObservacion(actividad)
 							} else {
@@ -2258,6 +2259,59 @@ func CambiarFechasSeguimiento(planInteresString string, unidadesInteres []map[st
 	}
 }
 
+func ObtenerFechasParametrizadas(body map[string]interface{}) ([]map[string]interface{}, error) {
+	//? Códigos de abreviación de tipo-seguimiento de Planes de acción de Funcionamiento
+	const FORMULACION_FUNCIONAMIENTO = "F_SP"
+	const SEGUIMIENTO_FUNCIONAMIENTO = "S_SP"
+	// Agregar Códigos de abreviación de tipo-seguimiento de Planes de acción de Inversión (Cuando se vaya a implementar)
+	// Agregar variables booleanas de formulación y seguimiento para Inversión (Cuando se vaya a implementar)
+	var formulacion_funcionamiento = false
+	var seguimiento_funcionamiento = false
+	respuesta := make([]map[string]interface{}, 0)
+	bodyPeticion := make(map[string]interface{})
+	respuestaPeticion := make(map[string]interface{})
+
+	for k, v := range body {
+		bodyPeticion[k] = v
+	}
+	delete(bodyPeticion, "vigencia_id")
+	delete(bodyPeticion, "codigo_abreviacion_proceso")
+
+	formulacion_funcionamiento = body["codigo_abreviacion_proceso"] == FORMULACION_FUNCIONAMIENTO
+	seguimiento_funcionamiento = body["codigo_abreviacion_proceso"] == SEGUIMIENTO_FUNCIONAMIENTO
+	if formulacion_funcionamiento {
+		var periodoSeguimientoFormulacion []map[string]interface{}
+		bodyPeticion["periodo_id"] = body["vigencia_id"]
+		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/buscar-unidad-planes/7", "POST", &respuestaPeticion, bodyPeticion); err != nil {
+			panic(map[string]interface{}{"funcion": "helper.ObtenerFechasParametrizadas", "err": "Error obteniendo periodo-seguimiento", "status": "400", "log": err})
+		}
+		helpers.LimpiezaRespuestaRefactor(respuestaPeticion, &periodoSeguimientoFormulacion)
+		if len(periodoSeguimientoFormulacion) == 0 {
+			panic(map[string]interface{}{"funcion": "helper.ObtenerFechasParametrizadas", "err": "Error obteniendo periodo-seguimiento", "status": "400", "log": errors.New("respuesta vacia")})
+		}
+		respuesta = append(respuesta, periodoSeguimientoFormulacion[0])
+	}
+	if seguimiento_funcionamiento {
+		trimestres, err := seguimientohelper.ObtenerTrimestres(body["vigencia_id"].(string))
+		if err != nil {
+			return nil, err
+		}
+		for _, trimestre := range trimestres {
+			var periodoSeguimientoSeguimiento []map[string]interface{}
+			bodyPeticion["periodo_id"] = trimestre["Id"]
+			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/buscar-unidad-planes/7", "POST", &respuestaPeticion, bodyPeticion); err != nil {
+				panic(map[string]interface{}{"funcion": "helper.ObtenerFechasParametrizadas", "err": "Error obteniendo periodo-seguimiento", "status": "400", "log": err})
+			}
+			helpers.LimpiezaRespuestaRefactor(respuestaPeticion, &periodoSeguimientoSeguimiento)
+			if len(periodoSeguimientoSeguimiento) == 0 {
+				panic(map[string]interface{}{"funcion": "helper.ObtenerFechasParametrizadas", "err": "Error obteniendo periodo-seguimiento", "status": "400", "log": errors.New("respuesta vacia")})
+			}
+			respuesta = append(respuesta, periodoSeguimientoSeguimiento[0])
+		}
+	}
+	return respuesta, nil
+}
+
 func ObtenerArrayPlanesInteres(body map[string]interface{}) ([]map[string]interface{}, error) {
 	// Acceder a la lista de planes de interés
 	planesInteresString, ok := body["planes_interes"].(string)
@@ -2472,7 +2526,7 @@ func obtenerCorreoPlaneacion() (string, error) {
 	err1 := json.Unmarshal([]byte(jsonData), &correoPlaneacion)
 	if err1 != nil {
 		return "", fmt.Errorf("Error al deserializar el JSON de Correo Oficina Planeacion: ", err)
-		}
+	}
 	return correoPlaneacion["Valor"].(string), nil
 }
 
@@ -2498,11 +2552,11 @@ func CambioCargoIdVinculacionTercero(idVinculacion string, body map[string]inter
 
 	vinculaciones := body["user"].(map[string]interface{})["Vinculacion"].([]interface{})
 	vinculacionSeleccionada := body["user"].(map[string]interface{})["VinculacionSeleccionadaId"]
-	
+
 	for _, vinculacion := range vinculaciones {
 		if vinculacion.(map[string]interface{})["Id"].(float64) == vinculacionSeleccionada {
 			if DependenciaCorreo, ok := vinculacion.(map[string]interface{})["DependenciaCorreo"].(string); ok {
-        vinculacionPlaneacion = DependenciaCorreo == correoPlaneacion
+				vinculacionPlaneacion = DependenciaCorreo == correoPlaneacion
 				rolAsistentePlaneacion = (body["rol"].(string) == ROL_ASISTENTE_PLANEACION)
 				if rolAsistentePlaneacion && !vinculacionPlaneacion && body["vincular"] == true {
 					return nil, fmt.Errorf("El usuario no puede tener el rol de %s si no pertenece a la Oficina de Asesora de Planeación", ROL_ASISTENTE_PLANEACION)
