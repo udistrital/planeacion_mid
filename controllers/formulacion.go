@@ -1637,7 +1637,22 @@ func (c *FormulacionController) GetUnidades() {
 		}
 	}
 
-	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": unidades}
+	if unidades == nil {
+		panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": errors.New("no hay unidades")})
+	}
+
+	idMap := make(map[float64]bool)
+	unidadesSinDuplicados := []map[string]interface{}{}
+
+	for _, unidad := range unidades {
+		id := unidad["Id"].(float64)
+		if !idMap[id] {
+			// Si el ID no ha sido visto antes, añadirlo al mapa y al slice único
+			idMap[id] = true
+			unidadesSinDuplicados = append(unidadesSinDuplicados, unidad)
+		}
+	}
+	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": unidadesSinDuplicados}
 	c.ServeJSON()
 }
 
