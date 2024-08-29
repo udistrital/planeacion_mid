@@ -401,7 +401,7 @@ func GetInformacionPlan(seguimiento map[string]interface{}, index string) map[st
 					case strings.Contains(nombreHijo, "producto"):
 						informacion["producto"] = datoPlan[index].(map[string]interface{})["dato"]
 						continue
-					case strings.Contains(nombreHijo, "actividad general"):
+					case strings.Contains(nombreHijo, "actividad"):
 						informacion["descripcion"] = datoPlan[index].(map[string]interface{})["dato"]
 						continue
 					}
@@ -984,7 +984,7 @@ func SeguimientoAvalable(seguimiento map[string]interface{}) (bool, bool, map[st
 		helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
 
 		for i := 0; i < len(subgrupos); i++ {
-			if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") && strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "general") {
+			if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") {
 
 				actividades := GetActividades(subgrupos[i]["_id"].(string))
 
@@ -1075,7 +1075,7 @@ func SeguimientoVerificable(seguimiento map[string]interface{}) (bool, bool, map
 		helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
 
 		for i := 0; i < len(subgrupos); i++ {
-			if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") && strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "general") {
+			if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") {
 
 				actividades := GetActividades(subgrupos[i]["_id"].(string))
 
