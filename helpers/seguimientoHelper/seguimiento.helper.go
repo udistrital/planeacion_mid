@@ -861,7 +861,7 @@ func SeguimientoReportable(seguimiento map[string]interface{}) (bool, map[string
 		helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
 
 		for i := 0; i < len(subgrupos); i++ {
-			if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") && strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "general") {
+			if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") {
 
 				actividades := GetActividades(subgrupos[i]["_id"].(string))
 				if seguimiento["dato"] == "{}" {
