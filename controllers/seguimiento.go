@@ -1260,7 +1260,9 @@ func (c *SeguimientoController) GuardarDocumentos() {
 			for _, evidencia := range body["evidencia"].([]interface{}) {
 				if evidencia.(map[string]interface{})["Enlace"] != nil {
 					evidencias = append(evidencias, evidencia.(map[string]interface{}))
-					if evidencia.(map[string]interface{})["Observacion"] != nil && evidencia.(map[string]interface{})["Observacion"] != "Sin observación" && evidencia.(map[string]interface{})["Observacion"] != "" {
+					if ((evidencia.(map[string]interface{})["Observacion_dependencia"] != nil && evidencia.(map[string]interface{})["Observacion_dependencia"] != "Sin observación" && evidencia.(map[string]interface{})["Observacion_dependencia"] != "") ||
+						(evidencia.(map[string]interface{})["Observacion_planeacion"] != nil && evidencia.(map[string]interface{})["Observacion_planeacion"] != "Sin observación" && evidencia.(map[string]interface{})["Observacion_planeacion"] != "")) && 
+						evidencia.(map[string]interface{})["Activo"] == true {
 						comentario = true
 					}
 				}
@@ -1279,7 +1281,8 @@ func (c *SeguimientoController) GuardarDocumentos() {
 							"id":                doc.(map[string]interface{})["TipoDocumento"].(map[string]interface{})["Id"],
 							"codigoAbreviacion": doc.(map[string]interface{})["TipoDocumento"].(map[string]interface{})["CodigoAbreviacion"],
 						},
-						"Observacion": "",
+						"Observacion_dependencia": "",
+						"Observacion_planeacion": "",
 						"Activo":      true,
 					})
 				}
@@ -1772,14 +1775,6 @@ func (c *SeguimientoController) RevisarActividad() {
 				}
 			}
 
-			// Evidencia
-			for _, evidencia := range body["evidencia"].([]interface{}) {
-				if evidencia.(map[string]interface{})["Observacion"] != "" && evidencia.(map[string]interface{})["Observacion"] != "Sin observación" {
-					comentario = true
-					break
-				}
-			}
-
 			if comentario {
 				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:CO", &resEstado); err == nil {
 					estado = map[string]interface{}{
@@ -1875,14 +1870,6 @@ func (c *SeguimientoController) RevisarActividadJefeDependencia() {
 			// Cuantitativo
 			for _, indicador := range body["cuantitativo"].(map[string]interface{})["indicadores"].([]interface{}) {
 				if indicador.(map[string]interface{})["observaciones_dependencia"] != "" && indicador.(map[string]interface{})["observaciones_dependencia"] != "Sin observación" && indicador.(map[string]interface{})["observaciones_dependencia"] != nil {
-					comentario = true
-					break
-				}
-			}
-
-			// Evidencia
-			for _, evidencia := range body["evidencia"].([]interface{}) {
-				if evidencia.(map[string]interface{})["Observacion"] != "" && evidencia.(map[string]interface{})["Observacion"] != "Sin observación" {
 					comentario = true
 					break
 				}
