@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -2786,7 +2787,7 @@ func ConstruirExcelPlanAccionUnidad(esReporteAntiguo bool, datosReporte map[stri
 		consolidadoExcelPlanAnual.SetColWidth(sheetName, "M", "N", 52)
 		consolidadoExcelPlanAnual.SetColWidth(sheetName, "O", "O", 30)
 		consolidadoExcelPlanAnual.SetColWidth(sheetName, "P", "P", 10)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "Q", "Q", 30)
+		consolidadoExcelPlanAnual.SetColWidth(sheetName, "Q", "Q", 25)
 		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B1", "Q1", stylehead)
 		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B2", "Q2", styletitles)
 
@@ -2990,6 +2991,7 @@ func ConstruirExcelPlanAccionUnidad(esReporteAntiguo bool, datosReporte map[stri
 		consolidadoExcelPlanAnual.MergeCell(sheetName, "J1", "J2")
 		consolidadoExcelPlanAnual.MergeCell(sheetName, "K1", "K2")
 		consolidadoExcelPlanAnual.MergeCell(sheetName, "P1", "P2")
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "Q1", "Q2")
 		consolidadoExcelPlanAnual.MergeCell(sheetName, "L1", "O1")
 		consolidadoExcelPlanAnual.SetColWidth(sheetName, "B", "B", 18)
 		consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "C", 11)
@@ -3002,9 +3004,10 @@ func ConstruirExcelPlanAccionUnidad(esReporteAntiguo bool, datosReporte map[stri
 		consolidadoExcelPlanAnual.SetColWidth(sheetName, "L", "M", 52)
 		consolidadoExcelPlanAnual.SetColWidth(sheetName, "N", "N", 30)
 		consolidadoExcelPlanAnual.SetColWidth(sheetName, "O", "O", 10)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "P", "P", 30)
-		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B1", "P1", stylehead)
-		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B2", "P2", styletitles)
+		consolidadoExcelPlanAnual.SetColWidth(sheetName, "P", "P", 25)
+		consolidadoExcelPlanAnual.SetColWidth(sheetName, "Q", "Q", 30)
+		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B1", "Q1", stylehead)
+		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B2", "Q2", styletitles)
 
 		// encabezado excel
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B1", "Armonización PED")
@@ -3025,6 +3028,7 @@ func ConstruirExcelPlanAccionUnidad(esReporteAntiguo bool, datosReporte map[stri
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "N2", "Criterio del indicador")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "O2", "Meta")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "P2", "Producto esperado")
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "Q2", "Unidad o grupo responsable")
 
 		rowPos := 3
 
@@ -3191,7 +3195,10 @@ func ConstruirExcelPlanAccionUnidad(esReporteAntiguo bool, datosReporte map[stri
 
 			consolidadoExcelPlanAnual.MergeCell(sheetName, "P"+fmt.Sprint(rowPos), "P"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "P"+fmt.Sprint(rowPos), datosComplementarios["Producto esperado"])
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "Q"+fmt.Sprint(rowPos), "Q"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "Q"+fmt.Sprint(rowPos), datosComplementarios["Responsable"])
 			SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "P"+fmt.Sprint(rowPos), "P"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontentC, stylecontentCS)
+			SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "Q"+fmt.Sprint(rowPos), "Q"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontentC, stylecontentCS)
 
 			rowPos += MaxRowsXActivity
 
@@ -3228,30 +3235,25 @@ func ConstruirExcelPlanAccionUnidad(esReporteAntiguo bool, datosReporte map[stri
 	return consolidadoExcelPlanAnual, nil
 }
 
-func ConstruirExcelPlanAccionGeneral(esReporteAntiguo bool, datosReporte map[string]interface{}) (*excelize.File, error) {
+func ConstruirExcelPlanAccionGeneral(planesFilter []map[string]interface{}, body map[string]interface{}) (*excelize.File, []map[string]interface{}, error) {
+	var res map[string]interface{}
+	var respuestaUnidad []map[string]interface{}
+	var respuestaEstado map[string]interface{}
+	var respuestaTipoPlan map[string]interface{}
+	var estado map[string]interface{}
+	var tipoPlan map[string]interface{}
+	var subgrupos []map[string]interface{}
+	var plan_id string
+	var actividadName string
+	var arregloPlanAnual []map[string]interface{}
+	var arregloInfoReportes []map[string]interface{}
+	var nombreUnidad string
+	var idUnidad string
+	var resPeriodo map[string]interface{}
+	var periodo []map[string]interface{}
+	var esReporteAntiguo bool = true
 	contadorGeneral := 4
-	rowPos := contadorGeneral + 5
-	planesFilter := datosReporte["planesFilter"].([]map[string]interface{})
-	arregloPlanAnual := datosReporte["arregloPlanAnual"].([]map[string]interface{})
-	periodo := datosReporte["periodo"].([]map[string]interface{})
-
-	unidadNombre := arregloPlanAnual[0]["nombreUnidad"].(string)
 	consolidadoExcelPlanAnual := excelize.NewFile()
-	sheetName := "REPORTE GENERAL"
-	indexPlan, _ := consolidadoExcelPlanAnual.NewSheet(sheetName)
-
-	if len(planesFilter) <= 0 {
-		return nil, errors.New("no hay planes")
-	}
-
-	consolidadoExcelPlanAnual.DeleteSheet("Sheet1")
-	consolidadoExcelPlanAnual.InsertCols("REPORTE GENERAL", "A", 1)
-	disable := false
-	if err := consolidadoExcelPlanAnual.SetSheetView(sheetName, -1, &excelize.ViewOptions{
-		ShowGridLines: &disable,
-	}); err != nil {
-		fmt.Println(err)
-	}
 
 	//? Estilos
 	styletitle, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
@@ -3388,471 +3390,765 @@ func ConstruirExcelPlanAccionGeneral(esReporteAntiguo bool, datosReporte map[str
 		},
 	})
 
-	if esReporteAntiguo {
-		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorGeneral+1), "P"+fmt.Sprint(contadorGeneral+1))
-		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorGeneral+2), "D"+fmt.Sprint(contadorGeneral+2))
-		consolidadoExcelPlanAnual.MergeCell(sheetName, "E"+fmt.Sprint(contadorGeneral+2), "G"+fmt.Sprint(contadorGeneral+2))
-		consolidadoExcelPlanAnual.MergeCell(sheetName, "H"+fmt.Sprint(contadorGeneral+2), "H"+fmt.Sprint(contadorGeneral+3))
-		consolidadoExcelPlanAnual.MergeCell(sheetName, "I"+fmt.Sprint(contadorGeneral+2), "I"+fmt.Sprint(contadorGeneral+3))
-		consolidadoExcelPlanAnual.MergeCell(sheetName, "J"+fmt.Sprint(contadorGeneral+2), "J"+fmt.Sprint(contadorGeneral+3))
-		consolidadoExcelPlanAnual.MergeCell(sheetName, "K"+fmt.Sprint(contadorGeneral+2), "K"+fmt.Sprint(contadorGeneral+3))
-		consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(contadorGeneral+2), "L"+fmt.Sprint(contadorGeneral+3))
-		consolidadoExcelPlanAnual.MergeCell(sheetName, "Q"+fmt.Sprint(contadorGeneral+2), "Q"+fmt.Sprint(contadorGeneral+3))
-		consolidadoExcelPlanAnual.MergeCell(sheetName, "M"+fmt.Sprint(contadorGeneral+2), "P"+fmt.Sprint(contadorGeneral+2))
-		consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+1, 20)
-		consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+2, 20)
-		consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+3, 20)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "B", "B", 19)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "P", 35)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "C", 13)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "E", "E", 16)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "H", "H", 6)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "I", "J", 12)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "K", "K", 30)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "L", "L", 35)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "M", "N", 52)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "O", "O", 30)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "P", "P", 10)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "Q", "Q", 30)
-		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contadorGeneral+1), "Q"+fmt.Sprint(contadorGeneral+1), stylehead)
-		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contadorGeneral+2), "Q"+fmt.Sprint(contadorGeneral+2), stylehead)
-		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contadorGeneral+3), "Q"+fmt.Sprint(contadorGeneral+3), styletitles)
-		consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+3, 30)
+	for _, planes := range planesFilter {
+		if idUnidad != planes["dependencia_id"].(string) {
+			if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=DependenciaId:"+planes["dependencia_id"].(string), &respuestaUnidad); err == nil {
+				planes["nombreUnidad"] = respuestaUnidad[0]["DependenciaId"].(map[string]interface{})["Nombre"].(string)
+				fmt.Sprintf("http://" + beego.AppConfig.String("OikosService") + "/dependencia_tipo_dependencia?query=DependenciaId:" + planes["dependencia_id"].(string))
+			} else {
+				panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+			}
+		}
+	}
 
-		var tituloExcel string
-		if periodo[0] != nil {
-			tituloExcel = "Plan de acción " + periodo[0]["Nombre"].(string) + " - " + unidadNombre
+	sort.SliceStable(planesFilter, func(i, j int) bool {
+		a := (planesFilter)[i]["nombreUnidad"].(string)
+		b := (planesFilter)[j]["nombreUnidad"].(string)
+		return a < b
+	})
+
+	consolidadoExcelPlanAnual.InsertCols("REPORTE GENERAL", "A", 1)
+	disable := false
+	sheetName := "REPORTE GENERAL"
+	indexPlan, _ := consolidadoExcelPlanAnual.NewSheet(sheetName)
+	if err := consolidadoExcelPlanAnual.SetSheetView(sheetName, -1, &excelize.ViewOptions{
+		ShowGridLines: &disable,
+	}); err != nil {
+		fmt.Println(err)
+	}
+	consolidadoExcelPlanAnual.DeleteSheet("Sheet1")
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+`/periodo?query=Id:`+body["vigencia"].(string), &resPeriodo); err == nil {
+		helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
+	}
+
+	anioPlan := periodo[0]["Year"].(float64)
+
+	if anioPlan > 2024 { //? Vigencias 2025 en adelante son reportes con nueva estructura
+		esReporteAntiguo = false
+	}
+
+	for planes := 0; planes < len(planesFilter); planes++ {
+		Limp()
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-plan/"+planesFilter[planes]["estado_plan_id"].(string), &respuestaEstado); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuestaEstado, &estado)
 		} else {
-			tituloExcel = "Plan de acción - " + unidadNombre
+			panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
 		}
 
-		// encabezado excel
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contadorGeneral+1), tituloExcel)
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contadorGeneral+2), "Armonización PED")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contadorGeneral+3), "Lineamiento")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contadorGeneral+3), "Meta")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contadorGeneral+3), "Estrategias")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contadorGeneral+2), "Armonización Plan Indicativo")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contadorGeneral+3), "Ejes transformadores")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(contadorGeneral+3), "Lineamientos de acción")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(contadorGeneral+3), "Estrategias")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(contadorGeneral+3), "N°.")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(contadorGeneral+3), "Ponderación de la actividad")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(contadorGeneral+3), "Periodo de ejecución")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(contadorGeneral+3), "Actividad")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(contadorGeneral+3), "Actividades específicas")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "M"+fmt.Sprint(contadorGeneral+2), "Indicador")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "M"+fmt.Sprint(contadorGeneral+3), "Nombre")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(contadorGeneral+3), "Fórmula")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "O"+fmt.Sprint(contadorGeneral+3), "Criterio del indicador")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "P"+fmt.Sprint(contadorGeneral+3), "Meta")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "Q"+fmt.Sprint(contadorGeneral+3), "Producto esperado")
-		consolidadoExcelPlanAnual.InsertRows(sheetName, 1, 1)
+		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-plan/"+planesFilter[planes]["tipo_plan_id"].(string), &respuestaTipoPlan); err == nil {
+			helpers.LimpiezaRespuestaRefactor(respuestaTipoPlan, &tipoPlan)
+		} else {
+			panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+		}
+		if esReporteAntiguo {
+			planesFilterData := planesFilter[planes]
+			plan_id = planesFilterData["_id"].(string)
+			infoReporte := make(map[string]interface{})
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id+"&fields=nombre,_id,hijos,activo", &res); err == nil {
+				helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
+				for i := 0; i < len(subgrupos); i++ {
+					if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") && strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "general") {
+						actividades := GetActividades(subgrupos[i]["_id"].(string))
+						var arregloLineamieto []map[string]interface{}
+						var arregloLineamietoPI []map[string]interface{}
+						sort.SliceStable(actividades, func(i int, j int) bool {
+							if _, ok := actividades[i]["index"].(float64); ok {
+								actividades[i]["index"] = fmt.Sprintf("%v", int(actividades[i]["index"].(float64)))
+							}
+							if _, ok := actividades[j]["index"].(float64); ok {
+								actividades[j]["index"] = fmt.Sprintf("%v", int(actividades[j]["index"].(float64)))
+							}
+							aux, _ := strconv.Atoi((actividades[i]["index"]).(string))
+							aux1, _ := strconv.Atoi((actividades[j]["index"]).(string))
+							return aux < aux1
+						})
+						LimpiarDetalles()
+						for j := 0; j < len(actividades); j++ {
+							arregloLineamieto = nil
+							arregloLineamietoPI = nil
+							actividad := actividades[j]
+							actividadName = actividad["dato"].(string)
+							index := actividad["index"].(string)
+							datosArmonizacion := make(map[string]interface{})
+							titulosArmonizacion := make(map[string]interface{})
 
-		for excelPlan := 0; excelPlan < len(arregloPlanAnual); excelPlan++ {
+							tree := BuildTreeFa(subgrupos, index)
+							treeDatos := tree[0]
+							treeDatas := tree[1]
+							treeArmo := tree[2]
+							armonizacionTercer := treeArmo[0]
+							var armonizacionTercerNivel interface{}
+							var armonizacionTercerNivelPI interface{}
+							if armonizacionTercer["armo"] != nil {
+								armonizacionTercerNivel = armonizacionTercer["armo"].(map[string]interface{})["armonizacionPED"]
+								armonizacionTercerNivelPI = armonizacionTercer["armo"].(map[string]interface{})["armonizacionPI"]
+							}
 
-			datosExcelPlan := arregloPlanAnual[excelPlan]
-			armoPED := datosExcelPlan["datosArmonizacion"].([]map[string]interface{})
-			armoPI := datosExcelPlan["datosArmonizacionPI"].([]map[string]interface{})
-			datosComplementarios := datosExcelPlan["datosComplementarios"].(map[string]interface{})
-			indicadores := datosComplementarios["indicadores"].(map[string]interface{})
+							for datoGeneral := 0; datoGeneral < len(treeDatos); datoGeneral++ {
+								treeDato := treeDatos[datoGeneral]
+								treeData := treeDatas[0]
+								if treeDato["sub"] == "" {
+									nombreMinuscula := strings.ToLower(treeDato["nombre"].(string))
+									if strings.Contains(nombreMinuscula, "ponderación") || strings.Contains(nombreMinuscula, "ponderacion") && strings.Contains(nombreMinuscula, "actividad") {
+										datosArmonizacion["Ponderación de la actividad"] = treeData[treeDato["id"].(string)]
+									} else if strings.Contains(nombreMinuscula, "período") || strings.Contains(nombreMinuscula, "periodo") && strings.Contains(nombreMinuscula, "ejecucion") || strings.Contains(nombreMinuscula, "ejecución") {
+										datosArmonizacion["Periodo de ejecución"] = treeData[treeDato["id"].(string)]
+									} else if strings.Contains(nombreMinuscula, "actividad") && strings.Contains(nombreMinuscula, "general") {
+										datosArmonizacion["Actividad general"] = treeData[treeDato["id"].(string)]
+									} else if strings.Contains(nombreMinuscula, "tarea") || strings.Contains(nombreMinuscula, "actividades específicas") {
+										datosArmonizacion["Tareas"] = treeData[treeDato["id"].(string)]
+									} else if strings.Contains(nombreMinuscula, "producto") {
+										datosArmonizacion["Producto esperado"] = treeData[treeDato["id"].(string)]
+									} else {
+										datosArmonizacion[treeDato["nombre"].(string)] = treeData[treeDato["id"].(string)]
+									}
+								}
+							}
+							var treeIndicador map[string]interface{}
+							auxTree := tree[0]
+							for i := 0; i < len(auxTree); i++ {
+								subgrupo := auxTree[i]
+								if strings.Contains(strings.ToLower(subgrupo["nombre"].(string)), "indicador") {
+									treeIndicador = auxTree[i]
+								}
+							}
 
-			MaxRowsXActivity := MinComMul_Armonization(armoPED, armoPI, len(indicadores))
+							subIndicador := treeIndicador["sub"].([]map[string]interface{})
+							for ind := 0; ind < len(subIndicador); ind++ {
+								subIndicadorRes := subIndicador[ind]
+								treeData := treeDatas[0]
+								dataIndicador := make(map[string]interface{})
+								auxSubIndicador := subIndicadorRes["sub"].([]map[string]interface{})
+								for subInd := 0; subInd < len(auxSubIndicador); subInd++ {
+									dataIndicador[auxSubIndicador[subInd]["nombre"].(string)] = treeData[auxSubIndicador[subInd]["id"].(string)]
+								}
+								titulosArmonizacion[subIndicadorRes["nombre"].(string)] = dataIndicador
+							}
 
-			y_lin := rowPos
-			h_lin := MaxRowsXActivity / len(armoPED)
-			for _, lin := range armoPED {
-				consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(y_lin), "B"+fmt.Sprint(y_lin+h_lin-1))
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(y_lin), lin["nombreLineamiento"])
-				SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "B"+fmt.Sprint(y_lin), "B"+fmt.Sprint(y_lin+h_lin-1), styleLineamiento, styleLineamientoSombra)
-				y_met := y_lin
-				h_met := h_lin / len(lin["meta"].([]map[string]interface{}))
-				for _, met := range lin["meta"].([]map[string]interface{}) {
-					consolidadoExcelPlanAnual.MergeCell(sheetName, "C"+fmt.Sprint(y_met), "C"+fmt.Sprint(y_met+h_met-1))
-					consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(y_met), met["nombreMeta"])
-					SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "C"+fmt.Sprint(y_met), "C"+fmt.Sprint(y_met+h_met-1), stylecontentC, stylecontentCS)
-					y_est := y_met
-					h_est := h_met / len(met["estrategias"].([]map[string]interface{}))
-					for _, est := range met["estrategias"].([]map[string]interface{}) {
-						consolidadoExcelPlanAnual.MergeCell(sheetName, "D"+fmt.Sprint(y_est), "D"+fmt.Sprint(y_est+h_est-1))
-						consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(y_est), est["descripcionEstrategia"])
-						if (est["nombreEstrategia"].(string) == "No seleccionado") || strings.Contains(strings.ToLower(est["nombreEstrategia"].(string)), "no aplica") {
-							SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(y_est), "D"+fmt.Sprint(y_est+h_est-1), stylecontentC, stylecontentCS)
-						} else {
-							SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(y_est), "D"+fmt.Sprint(y_est+h_est-1), stylecontent, stylecontentS)
+							datosArmonizacion["indicadores"] = titulosArmonizacion
+							arregloLineamieto = ArbolArmonizacionV2(armonizacionTercerNivel.(string))
+							arregloLineamietoPI = ArbolArmonizacionPIV2(armonizacionTercerNivelPI.(string))
+
+							generalData := make(map[string]interface{})
+							nombreUnidad = planesFilterData["nombreUnidad"].(string)
+
+							generalData["nombreUnidad"] = nombreUnidad
+							generalData["nombreActividad"] = actividadName
+							generalData["numeroActividad"] = index
+							generalData["datosArmonizacion"] = arregloLineamieto
+							generalData["datosArmonizacionPI"] = arregloLineamietoPI
+							generalData["datosComplementarios"] = datosArmonizacion
+							arregloPlanAnual = append(arregloPlanAnual, generalData)
 						}
-						y_est += h_est
+						break
 					}
-					y_met += h_met
 				}
-				y_lin += h_lin
+			} else {
+				panic(err)
 			}
 
-			y_eje := rowPos
-			h_eje := MaxRowsXActivity / len(armoPI)
-			for _, eje := range armoPI {
-				consolidadoExcelPlanAnual.MergeCell(sheetName, "E"+fmt.Sprint(y_eje), "E"+fmt.Sprint(y_eje+h_eje-1))
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(y_eje), eje["nombreFactor"])
-				SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "E"+fmt.Sprint(y_eje), "E"+fmt.Sprint(y_eje+h_eje-1), stylecontentC, stylecontentCS)
-				y_lin := y_eje
-				h_lin := h_eje / len(eje["lineamientos"].([]map[string]interface{}))
-				for _, lin := range eje["lineamientos"].([]map[string]interface{}) {
-					consolidadoExcelPlanAnual.MergeCell(sheetName, "F"+fmt.Sprint(y_lin), "F"+fmt.Sprint(y_lin+h_lin-1))
-					consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(y_lin), lin["nombreLineamiento"])
-					SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "F"+fmt.Sprint(y_lin), "F"+fmt.Sprint(y_lin+h_lin-1), stylecontentC, stylecontentCS)
-					y_est := y_lin
-					h_est := h_lin / len(lin["estrategias"].([]map[string]interface{}))
-					for _, est := range lin["estrategias"].([]map[string]interface{}) {
-						consolidadoExcelPlanAnual.MergeCell(sheetName, "G"+fmt.Sprint(y_est), "G"+fmt.Sprint(y_est+h_est-1))
-						consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(y_est), est["descripcionEstrategia"])
-						if (est["nombreEstrategia"].(string) == "No seleccionado") || strings.Contains(strings.ToLower(est["nombreEstrategia"].(string)), "no aplica") {
-							SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(y_est), "G"+fmt.Sprint(y_est+h_est-1), stylecontentC, stylecontentCS)
-						} else {
-							SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(y_est), "G"+fmt.Sprint(y_est+h_est-1), stylecontent, stylecontentS)
+			infoReporte["tipo_plan"] = tipoPlan["nombre"]
+			infoReporte["vigencia"] = body["vigencia"]
+			infoReporte["estado_plan"] = estado["nombre"]
+			infoReporte["nombre_unidad"] = nombreUnidad
+
+			arregloInfoReportes = append(arregloInfoReportes, infoReporte)
+
+			rowPos := contadorGeneral + 5
+
+			unidadNombre := arregloPlanAnual[0]["nombreUnidad"]
+
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorGeneral+1), "Q"+fmt.Sprint(contadorGeneral+1))
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorGeneral+2), "D"+fmt.Sprint(contadorGeneral+2))
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "E"+fmt.Sprint(contadorGeneral+2), "G"+fmt.Sprint(contadorGeneral+2))
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "H"+fmt.Sprint(contadorGeneral+2), "H"+fmt.Sprint(contadorGeneral+3))
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "I"+fmt.Sprint(contadorGeneral+2), "I"+fmt.Sprint(contadorGeneral+3))
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "J"+fmt.Sprint(contadorGeneral+2), "J"+fmt.Sprint(contadorGeneral+3))
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "K"+fmt.Sprint(contadorGeneral+2), "K"+fmt.Sprint(contadorGeneral+3))
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(contadorGeneral+2), "L"+fmt.Sprint(contadorGeneral+3))
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "Q"+fmt.Sprint(contadorGeneral+2), "Q"+fmt.Sprint(contadorGeneral+3))
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "M"+fmt.Sprint(contadorGeneral+2), "P"+fmt.Sprint(contadorGeneral+2))
+			consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+1, 20)
+			consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+2, 20)
+			consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+3, 20)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "B", "B", 19)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "P", 35)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "C", 13)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "E", "E", 16)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "H", "H", 6)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "I", "J", 12)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "K", "K", 30)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "L", "L", 35)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "M", "N", 52)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "O", "O", 30)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "P", "P", 10)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "Q", "Q", 25)
+			consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contadorGeneral+1), "Q"+fmt.Sprint(contadorGeneral+1), stylehead)
+			consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contadorGeneral+2), "Q"+fmt.Sprint(contadorGeneral+2), stylehead)
+			consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contadorGeneral+3), "Q"+fmt.Sprint(contadorGeneral+3), styletitles)
+			consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+3, 30)
+
+			var tituloExcel string
+			if periodo[0] != nil {
+				tituloExcel = "Plan de acción " + periodo[0]["Nombre"].(string) + " - " + unidadNombre.(string)
+			} else {
+				tituloExcel = "Plan de acción - " + unidadNombre.(string)
+			}
+
+			// encabezado excel
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contadorGeneral+1), tituloExcel)
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contadorGeneral+2), "Armonización PED")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contadorGeneral+3), "Lineamiento")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contadorGeneral+3), "Meta")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contadorGeneral+3), "Estrategias")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contadorGeneral+2), "Armonización Plan Indicativo")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contadorGeneral+3), "Ejes transformadores")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(contadorGeneral+3), "Lineamientos de acción")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(contadorGeneral+3), "Estrategias")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(contadorGeneral+3), "N°.")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(contadorGeneral+3), "Ponderación de la actividad")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(contadorGeneral+3), "Periodo de ejecución")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(contadorGeneral+3), "Actividad")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(contadorGeneral+3), "Actividades específicas")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "M"+fmt.Sprint(contadorGeneral+2), "Indicador")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "M"+fmt.Sprint(contadorGeneral+3), "Nombre")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(contadorGeneral+3), "Fórmula")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "O"+fmt.Sprint(contadorGeneral+3), "Criterio del indicador")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "P"+fmt.Sprint(contadorGeneral+3), "Meta")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "Q"+fmt.Sprint(contadorGeneral+3), "Producto esperado")
+			consolidadoExcelPlanAnual.InsertRows(sheetName, 1, 1)
+
+			for excelPlan := 0; excelPlan < len(arregloPlanAnual); excelPlan++ {
+
+				datosExcelPlan := arregloPlanAnual[excelPlan]
+				armoPED := datosExcelPlan["datosArmonizacion"].([]map[string]interface{})
+				armoPI := datosExcelPlan["datosArmonizacionPI"].([]map[string]interface{})
+				datosComplementarios := datosExcelPlan["datosComplementarios"].(map[string]interface{})
+				indicadores := datosComplementarios["indicadores"].(map[string]interface{})
+
+				MaxRowsXActivity := MinComMul_Armonization(armoPED, armoPI, len(indicadores))
+
+				y_lin := rowPos
+				h_lin := MaxRowsXActivity / len(armoPED)
+				for _, lin := range armoPED {
+					consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(y_lin), "B"+fmt.Sprint(y_lin+h_lin-1))
+					consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(y_lin), lin["nombreLineamiento"])
+					SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "B"+fmt.Sprint(y_lin), "B"+fmt.Sprint(y_lin+h_lin-1), styleLineamiento, styleLineamientoSombra)
+					y_met := y_lin
+					h_met := h_lin / len(lin["meta"].([]map[string]interface{}))
+					for _, met := range lin["meta"].([]map[string]interface{}) {
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "C"+fmt.Sprint(y_met), "C"+fmt.Sprint(y_met+h_met-1))
+						consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(y_met), met["nombreMeta"])
+						SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "C"+fmt.Sprint(y_met), "C"+fmt.Sprint(y_met+h_met-1), stylecontentC, stylecontentCS)
+						y_est := y_met
+						h_est := h_met / len(met["estrategias"].([]map[string]interface{}))
+						for _, est := range met["estrategias"].([]map[string]interface{}) {
+							consolidadoExcelPlanAnual.MergeCell(sheetName, "D"+fmt.Sprint(y_est), "D"+fmt.Sprint(y_est+h_est-1))
+							consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(y_est), est["descripcionEstrategia"])
+							if (est["nombreEstrategia"].(string) == "No seleccionado") || strings.Contains(strings.ToLower(est["nombreEstrategia"].(string)), "no aplica") {
+								SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(y_est), "D"+fmt.Sprint(y_est+h_est-1), stylecontentC, stylecontentCS)
+							} else {
+								SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(y_est), "D"+fmt.Sprint(y_est+h_est-1), stylecontent, stylecontentS)
+							}
+							y_est += h_est
 						}
-						y_est += h_est
+						y_met += h_met
 					}
 					y_lin += h_lin
 				}
-				y_eje += h_eje
+
+				y_eje := rowPos
+				h_eje := MaxRowsXActivity / len(armoPI)
+				for _, eje := range armoPI {
+					consolidadoExcelPlanAnual.MergeCell(sheetName, "E"+fmt.Sprint(y_eje), "E"+fmt.Sprint(y_eje+h_eje-1))
+					consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(y_eje), eje["nombreFactor"])
+					SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "E"+fmt.Sprint(y_eje), "E"+fmt.Sprint(y_eje+h_eje-1), stylecontentC, stylecontentCS)
+					y_lin := y_eje
+					h_lin := h_eje / len(eje["lineamientos"].([]map[string]interface{}))
+					for _, lin := range eje["lineamientos"].([]map[string]interface{}) {
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "F"+fmt.Sprint(y_lin), "F"+fmt.Sprint(y_lin+h_lin-1))
+						consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(y_lin), lin["nombreLineamiento"])
+						SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "F"+fmt.Sprint(y_lin), "F"+fmt.Sprint(y_lin+h_lin-1), stylecontentC, stylecontentCS)
+						y_est := y_lin
+						h_est := h_lin / len(lin["estrategias"].([]map[string]interface{}))
+						for _, est := range lin["estrategias"].([]map[string]interface{}) {
+							consolidadoExcelPlanAnual.MergeCell(sheetName, "G"+fmt.Sprint(y_est), "G"+fmt.Sprint(y_est+h_est-1))
+							consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(y_est), est["descripcionEstrategia"])
+							if (est["nombreEstrategia"].(string) == "No seleccionado") || strings.Contains(strings.ToLower(est["nombreEstrategia"].(string)), "no aplica") {
+								SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(y_est), "G"+fmt.Sprint(y_est+h_est-1), stylecontentC, stylecontentCS)
+							} else {
+								SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(y_est), "G"+fmt.Sprint(y_est+h_est-1), stylecontent, stylecontentS)
+							}
+							y_est += h_est
+						}
+						y_lin += h_lin
+					}
+					y_eje += h_eje
+				}
+
+				consolidadoExcelPlanAnual.MergeCell(sheetName, "H"+fmt.Sprint(rowPos), "H"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
+				consolidadoExcelPlanAnual.MergeCell(sheetName, "I"+fmt.Sprint(rowPos), "I"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
+				consolidadoExcelPlanAnual.MergeCell(sheetName, "J"+fmt.Sprint(rowPos), "J"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
+				consolidadoExcelPlanAnual.MergeCell(sheetName, "K"+fmt.Sprint(rowPos), "K"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
+				consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(rowPos), "L"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(rowPos), excelPlan+1)
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(rowPos), datosComplementarios["Ponderación de la actividad"])
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(rowPos), datosComplementarios["Periodo de ejecución"])
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(rowPos), datosComplementarios["Actividad general"])
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(rowPos), datosComplementarios["Tareas"])
+				SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(rowPos), "J"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontentC, stylecontentCS)
+				SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(rowPos), "L"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontent, stylecontentS)
+
+				y_ind := rowPos
+				h_ind := MaxRowsXActivity / len(indicadores)
+				idx := int(0)
+
+				var indicadoresVacios []map[string]interface{}
+				var indicadoresNoVacios []map[string]interface{}
+				var indicadoresOrdenados []map[string]interface{}
+
+				for _, indicador := range indicadores {
+					auxIndicador := indicador
+					var nombreIndicador interface{}
+					var formula interface{}
+					var criterio interface{}
+					var meta interface{}
+					for key, element := range auxIndicador.(map[string]interface{}) {
+						if strings.Contains(strings.ToLower(key), "nombre") {
+							nombreIndicador = element
+						}
+						if strings.Contains(strings.ToLower(key), "formula") || strings.Contains(strings.ToLower(key), "fórmula") {
+							formula = element
+						}
+						if strings.Contains(strings.ToLower(key), "criterio") {
+							criterio = element
+						}
+						if strings.Contains(strings.ToLower(key), "meta") {
+							meta = element
+						}
+					}
+					if (nombreIndicador == "" && formula == "" && criterio == "" && meta == "") || (nombreIndicador == nil && formula == nil && criterio == nil && meta == nil) {
+						indicadoresVacios = append(indicadoresVacios, auxIndicador.(map[string]interface{}))
+					} else {
+						indicadoresNoVacios = append(indicadoresNoVacios, auxIndicador.(map[string]interface{}))
+					}
+				}
+
+				indicadoresOrdenados = append(indicadoresNoVacios, indicadoresVacios...)
+				for _, indicador := range indicadoresOrdenados {
+					auxIndicador := indicador
+					var nombreIndicador interface{}
+					var formula interface{}
+					var criterio interface{}
+					var meta interface{}
+					for key, element := range auxIndicador {
+						if strings.Contains(strings.ToLower(key), "nombre") {
+							nombreIndicador = element
+						}
+						if strings.Contains(strings.ToLower(key), "formula") || strings.Contains(strings.ToLower(key), "fórmula") {
+							formula = element
+						}
+						if strings.Contains(strings.ToLower(key), "criterio") {
+							criterio = element
+						}
+						if strings.Contains(strings.ToLower(key), "meta") {
+							meta = element
+						}
+					}
+					consolidadoExcelPlanAnual.SetCellValue(sheetName, "M"+fmt.Sprint(y_ind), nombreIndicador)
+					consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(y_ind), formula)
+					consolidadoExcelPlanAnual.SetCellValue(sheetName, "O"+fmt.Sprint(y_ind), criterio)
+					consolidadoExcelPlanAnual.SetCellValue(sheetName, "P"+fmt.Sprint(y_ind), meta)
+					if (nombreIndicador == "" && formula == "" && criterio == "" && meta == "") || (nombreIndicador == nil && formula == nil && criterio == nil && meta == nil) {
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "M"+fmt.Sprint(y_ind-1), "M"+fmt.Sprint(y_ind+h_ind-1))
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "N"+fmt.Sprint(y_ind-1), "N"+fmt.Sprint(y_ind+h_ind-1))
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "O"+fmt.Sprint(y_ind-1), "O"+fmt.Sprint(y_ind+h_ind-1))
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "P"+fmt.Sprint(y_ind-1), "P"+fmt.Sprint(y_ind+h_ind-1))
+					} else {
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "M"+fmt.Sprint(y_ind), "M"+fmt.Sprint(y_ind+h_ind-1))
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "N"+fmt.Sprint(y_ind), "N"+fmt.Sprint(y_ind+h_ind-1))
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "O"+fmt.Sprint(y_ind), "O"+fmt.Sprint(y_ind+h_ind-1))
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "P"+fmt.Sprint(y_ind), "P"+fmt.Sprint(y_ind+h_ind-1))
+					}
+
+					idx++
+					if idx < len(indicadores) {
+						SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "M"+fmt.Sprint(y_ind), "P"+fmt.Sprint(y_ind+h_ind-1), stylecontentCL, stylecontentCLS)
+					} else {
+						SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "M"+fmt.Sprint(y_ind), "P"+fmt.Sprint(y_ind+h_ind-1), stylecontentCLD, stylecontentCLDS)
+					}
+					y_ind += h_ind
+				}
+
+				consolidadoExcelPlanAnual.MergeCell(sheetName, "Q"+fmt.Sprint(rowPos), "Q"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "Q"+fmt.Sprint(rowPos), datosComplementarios["Producto esperado"])
+				SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "Q"+fmt.Sprint(rowPos), "Q"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontentC, stylecontentCS)
+
+				rowPos += MaxRowsXActivity
+
+				contadorGeneral = rowPos - 2
+
+				consolidadoExcelPlanAnual.SetActiveSheet(indexPlan)
 			}
-
-			consolidadoExcelPlanAnual.MergeCell(sheetName, "H"+fmt.Sprint(rowPos), "H"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
-			consolidadoExcelPlanAnual.MergeCell(sheetName, "I"+fmt.Sprint(rowPos), "I"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
-			consolidadoExcelPlanAnual.MergeCell(sheetName, "J"+fmt.Sprint(rowPos), "J"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
-			consolidadoExcelPlanAnual.MergeCell(sheetName, "K"+fmt.Sprint(rowPos), "K"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
-			consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(rowPos), "L"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(rowPos), excelPlan+1)
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(rowPos), datosComplementarios["Ponderación de la actividad"])
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(rowPos), datosComplementarios["Periodo de ejecución"])
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(rowPos), datosComplementarios["Actividad general"])
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(rowPos), datosComplementarios["Tareas"])
-			SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(rowPos), "J"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontentC, stylecontentCS)
-			SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(rowPos), "L"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontent, stylecontentS)
-
-			y_ind := rowPos
-			h_ind := MaxRowsXActivity / len(indicadores)
-			idx := int(0)
-
-			var indicadoresVacios []map[string]interface{}
-			var indicadoresNoVacios []map[string]interface{}
-			var indicadoresOrdenados []map[string]interface{}
-
-			for _, indicador := range indicadores {
-				auxIndicador := indicador
-				var nombreIndicador interface{}
-				var formula interface{}
-				var criterio interface{}
-				var meta interface{}
-				for key, element := range auxIndicador.(map[string]interface{}) {
-					if strings.Contains(strings.ToLower(key), "nombre") {
-						nombreIndicador = element
-					}
-					if strings.Contains(strings.ToLower(key), "formula") || strings.Contains(strings.ToLower(key), "fórmula") {
-						formula = element
-					}
-					if strings.Contains(strings.ToLower(key), "criterio") {
-						criterio = element
-					}
-					if strings.Contains(strings.ToLower(key), "meta") {
-						meta = element
-					}
-				}
-				if (nombreIndicador == "" && formula == "" && criterio == "" && meta == "") || (nombreIndicador == nil && formula == nil && criterio == nil && meta == nil) {
-					indicadoresVacios = append(indicadoresVacios, auxIndicador.(map[string]interface{}))
-				} else {
-					indicadoresNoVacios = append(indicadoresNoVacios, auxIndicador.(map[string]interface{}))
-				}
-			}
-
-			indicadoresOrdenados = append(indicadoresNoVacios, indicadoresVacios...)
-			for _, indicador := range indicadoresOrdenados {
-				auxIndicador := indicador
-				var nombreIndicador interface{}
-				var formula interface{}
-				var criterio interface{}
-				var meta interface{}
-				for key, element := range auxIndicador {
-					if strings.Contains(strings.ToLower(key), "nombre") {
-						nombreIndicador = element
-					}
-					if strings.Contains(strings.ToLower(key), "formula") || strings.Contains(strings.ToLower(key), "fórmula") {
-						formula = element
-					}
-					if strings.Contains(strings.ToLower(key), "criterio") {
-						criterio = element
-					}
-					if strings.Contains(strings.ToLower(key), "meta") {
-						meta = element
-					}
-				}
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "M"+fmt.Sprint(y_ind), nombreIndicador)
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(y_ind), formula)
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "O"+fmt.Sprint(y_ind), criterio)
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "P"+fmt.Sprint(y_ind), meta)
-				if (nombreIndicador == "" && formula == "" && criterio == "" && meta == "") || (nombreIndicador == nil && formula == nil && criterio == nil && meta == nil) {
-					consolidadoExcelPlanAnual.MergeCell(sheetName, "M"+fmt.Sprint(y_ind-1), "M"+fmt.Sprint(y_ind+h_ind-1))
-					consolidadoExcelPlanAnual.MergeCell(sheetName, "N"+fmt.Sprint(y_ind-1), "N"+fmt.Sprint(y_ind+h_ind-1))
-					consolidadoExcelPlanAnual.MergeCell(sheetName, "O"+fmt.Sprint(y_ind-1), "O"+fmt.Sprint(y_ind+h_ind-1))
-					consolidadoExcelPlanAnual.MergeCell(sheetName, "P"+fmt.Sprint(y_ind-1), "P"+fmt.Sprint(y_ind+h_ind-1))
-				} else {
-					consolidadoExcelPlanAnual.MergeCell(sheetName, "M"+fmt.Sprint(y_ind), "M"+fmt.Sprint(y_ind+h_ind-1))
-					consolidadoExcelPlanAnual.MergeCell(sheetName, "N"+fmt.Sprint(y_ind), "N"+fmt.Sprint(y_ind+h_ind-1))
-					consolidadoExcelPlanAnual.MergeCell(sheetName, "O"+fmt.Sprint(y_ind), "O"+fmt.Sprint(y_ind+h_ind-1))
-					consolidadoExcelPlanAnual.MergeCell(sheetName, "P"+fmt.Sprint(y_ind), "P"+fmt.Sprint(y_ind+h_ind-1))
-				}
-
-				idx++
-				if idx < len(indicadores) {
-					SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "M"+fmt.Sprint(y_ind), "P"+fmt.Sprint(y_ind+h_ind-1), stylecontentCL, stylecontentCLS)
-				} else {
-					SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "M"+fmt.Sprint(y_ind), "P"+fmt.Sprint(y_ind+h_ind-1), stylecontentCLD, stylecontentCLDS)
-				}
-				y_ind += h_ind
-			}
-
-			consolidadoExcelPlanAnual.MergeCell(sheetName, "Q"+fmt.Sprint(rowPos), "Q"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "Q"+fmt.Sprint(rowPos), datosComplementarios["Producto esperado"])
-			SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "Q"+fmt.Sprint(rowPos), "Q"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontentC, stylecontentCS)
-
-			rowPos += MaxRowsXActivity
-
-			contadorGeneral = rowPos - 2
-
-			consolidadoExcelPlanAnual.SetActiveSheet(indexPlan)
-		}
-		arregloPlanAnual = nil
-		consolidadoExcelPlanAnual.RemoveRow(sheetName, 1)
-	} else {
-		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorGeneral+1), "P"+fmt.Sprint(contadorGeneral+1))
-		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorGeneral+2), "D"+fmt.Sprint(contadorGeneral+2))
-		consolidadoExcelPlanAnual.MergeCell(sheetName, "E"+fmt.Sprint(contadorGeneral+2), "G"+fmt.Sprint(contadorGeneral+2))
-		consolidadoExcelPlanAnual.MergeCell(sheetName, "H"+fmt.Sprint(contadorGeneral+2), "H"+fmt.Sprint(contadorGeneral+3))
-		consolidadoExcelPlanAnual.MergeCell(sheetName, "I"+fmt.Sprint(contadorGeneral+2), "I"+fmt.Sprint(contadorGeneral+3))
-		consolidadoExcelPlanAnual.MergeCell(sheetName, "J"+fmt.Sprint(contadorGeneral+2), "J"+fmt.Sprint(contadorGeneral+3))
-		consolidadoExcelPlanAnual.MergeCell(sheetName, "K"+fmt.Sprint(contadorGeneral+2), "K"+fmt.Sprint(contadorGeneral+3))
-		consolidadoExcelPlanAnual.MergeCell(sheetName, "P"+fmt.Sprint(contadorGeneral+2), "P"+fmt.Sprint(contadorGeneral+3))
-		consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(contadorGeneral+2), "O"+fmt.Sprint(contadorGeneral+2))
-		consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+1, 20)
-		consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+2, 20)
-		consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+3, 20)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "B", "B", 19)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "P", 35)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "C", 13)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "E", "E", 16)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "H", "H", 6)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "I", "J", 12)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "K", "K", 30)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "L", "M", 52)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "N", "N", 30)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "O", "O", 10)
-		consolidadoExcelPlanAnual.SetColWidth(sheetName, "P", "P", 30)
-		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contadorGeneral+1), "P"+fmt.Sprint(contadorGeneral+1), stylehead)
-		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contadorGeneral+2), "P"+fmt.Sprint(contadorGeneral+2), stylehead)
-		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contadorGeneral+3), "P"+fmt.Sprint(contadorGeneral+3), styletitles)
-		consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+3, 30)
-
-		var tituloExcel string
-		if periodo[0] != nil {
-			tituloExcel = "Plan de acción " + periodo[0]["Nombre"].(string) + " - " + unidadNombre
+			arregloPlanAnual = nil
+			consolidadoExcelPlanAnual.RemoveRow(sheetName, 1)
 		} else {
-			tituloExcel = "Plan de acción - " + unidadNombre
-		}
+			planesFilterData := planesFilter[planes]
+			plan_id = planesFilterData["_id"].(string)
+			infoReporte := make(map[string]interface{})
+			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id+"&fields=nombre,_id,hijos,activo", &res); err == nil {
+				helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
+				for i := 0; i < len(subgrupos); i++ {
+					if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") {
+						actividades := GetActividades(subgrupos[i]["_id"].(string))
+						var arregloLineamieto []map[string]interface{}
+						var arregloLineamietoPI []map[string]interface{}
+						sort.SliceStable(actividades, func(i int, j int) bool {
+							if _, ok := actividades[i]["index"].(float64); ok {
+								actividades[i]["index"] = fmt.Sprintf("%v", int(actividades[i]["index"].(float64)))
+							}
+							if _, ok := actividades[j]["index"].(float64); ok {
+								actividades[j]["index"] = fmt.Sprintf("%v", int(actividades[j]["index"].(float64)))
+							}
+							aux, _ := strconv.Atoi((actividades[i]["index"]).(string))
+							aux1, _ := strconv.Atoi((actividades[j]["index"]).(string))
+							return aux < aux1
+						})
+						LimpiarDetalles()
+						for j := 0; j < len(actividades); j++ {
+							arregloLineamieto = nil
+							arregloLineamietoPI = nil
+							actividad := actividades[j]
+							actividadName = actividad["dato"].(string)
+							index := actividad["index"].(string)
+							datosArmonizacion := make(map[string]interface{})
+							titulosArmonizacion := make(map[string]interface{})
 
-		// encabezado excel
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contadorGeneral+1), tituloExcel)
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contadorGeneral+2), "Armonización PED")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contadorGeneral+3), "Lineamiento")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contadorGeneral+3), "Meta")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contadorGeneral+3), "Estrategias")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contadorGeneral+2), "Armonización Plan Indicativo")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contadorGeneral+3), "Ejes transformadores")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(contadorGeneral+3), "Lineamientos de acción")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(contadorGeneral+3), "Estrategias")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(contadorGeneral+3), "N°.")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(contadorGeneral+3), "Peso (%)")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(contadorGeneral+3), "Periodo de ejecución")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(contadorGeneral+3), "Actividad")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(contadorGeneral+2), "Indicador")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(contadorGeneral+3), "Nombre")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(contadorGeneral+3), "Fórmula")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(contadorGeneral+3), "Criterio del indicador")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "O"+fmt.Sprint(contadorGeneral+3), "Meta")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "P"+fmt.Sprint(contadorGeneral+3), "Producto esperado")
-		consolidadoExcelPlanAnual.InsertRows(sheetName, 1, 1)
+							tree := BuildTreeFa(subgrupos, index)
+							treeDatos := tree[0]
+							treeDatas := tree[1]
+							treeArmo := tree[2]
+							armonizacionTercer := treeArmo[0]
+							var armonizacionTercerNivel interface{}
+							var armonizacionTercerNivelPI interface{}
+							if armonizacionTercer["armo"] != nil {
+								armonizacionTercerNivel = armonizacionTercer["armo"].(map[string]interface{})["armonizacionPED"]
+								armonizacionTercerNivelPI = armonizacionTercer["armo"].(map[string]interface{})["armonizacionPI"]
+							}
 
-		for excelPlan := 0; excelPlan < len(arregloPlanAnual); excelPlan++ {
+							for datoGeneral := 0; datoGeneral < len(treeDatos); datoGeneral++ {
+								treeDato := treeDatos[datoGeneral]
+								treeData := treeDatas[0]
+								if treeDato["sub"] == "" {
+									nombreMinuscula := strings.ToLower(treeDato["nombre"].(string))
+									if strings.Contains(nombreMinuscula, "ponderación") || strings.Contains(nombreMinuscula, "ponderacion") && strings.Contains(nombreMinuscula, "actividad") {
+										datosArmonizacion["Ponderación de la actividad"] = treeData[treeDato["id"].(string)]
+									} else if strings.Contains(nombreMinuscula, "período") || strings.Contains(nombreMinuscula, "periodo") && strings.Contains(nombreMinuscula, "ejecucion") || strings.Contains(nombreMinuscula, "ejecución") {
+										datosArmonizacion["Periodo de ejecución"] = treeData[treeDato["id"].(string)]
+									} else if strings.Contains(nombreMinuscula, "actividad") {
+										datosArmonizacion["Actividad general"] = treeData[treeDato["id"].(string)]
+									} else if strings.Contains(nombreMinuscula, "tarea") || strings.Contains(nombreMinuscula, "actividades específicas") {
+										datosArmonizacion["Tareas"] = treeData[treeDato["id"].(string)]
+									} else if strings.Contains(nombreMinuscula, "producto") {
+										datosArmonizacion["Producto esperado"] = treeData[treeDato["id"].(string)]
+									} else if strings.Contains(nombreMinuscula, "unidad") || strings.Contains(nombreMinuscula, "grupo") {
+										datosArmonizacion["Responsable"] = treeData[treeDato["id"].(string)]
+									} else {
+										datosArmonizacion[treeDato["nombre"].(string)] = treeData[treeDato["id"].(string)]
+									}
+								}
+							}
+							var treeIndicador map[string]interface{}
+							auxTree := tree[0]
+							for i := 0; i < len(auxTree); i++ {
+								subgrupo := auxTree[i]
+								if strings.Contains(strings.ToLower(subgrupo["nombre"].(string)), "indicador") {
+									treeIndicador = auxTree[i]
+								}
+							}
 
-			datosExcelPlan := arregloPlanAnual[excelPlan]
-			armoPED := datosExcelPlan["datosArmonizacion"].([]map[string]interface{})
-			armoPI := datosExcelPlan["datosArmonizacionPI"].([]map[string]interface{})
-			datosComplementarios := datosExcelPlan["datosComplementarios"].(map[string]interface{})
-			indicadores := datosComplementarios["indicadores"].(map[string]interface{})
+							subIndicador := treeIndicador["sub"].([]map[string]interface{})
+							for ind := 0; ind < len(subIndicador); ind++ {
+								subIndicadorRes := subIndicador[ind]
+								treeData := treeDatas[0]
+								dataIndicador := make(map[string]interface{})
+								auxSubIndicador := subIndicadorRes["sub"].([]map[string]interface{})
+								for subInd := 0; subInd < len(auxSubIndicador); subInd++ {
+									dataIndicador[auxSubIndicador[subInd]["nombre"].(string)] = treeData[auxSubIndicador[subInd]["id"].(string)]
+								}
+								titulosArmonizacion[subIndicadorRes["nombre"].(string)] = dataIndicador
+							}
 
-			MaxRowsXActivity := MinComMul_Armonization(armoPED, armoPI, len(indicadores))
+							datosArmonizacion["indicadores"] = titulosArmonizacion
+							arregloLineamieto = ArbolArmonizacionV2(armonizacionTercerNivel.(string))
+							arregloLineamietoPI = ArbolArmonizacionPIV2(armonizacionTercerNivelPI.(string))
 
-			y_lin := rowPos
-			h_lin := MaxRowsXActivity / len(armoPED)
-			for _, lin := range armoPED {
-				consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(y_lin), "B"+fmt.Sprint(y_lin+h_lin-1))
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(y_lin), lin["nombreLineamiento"])
-				SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "B"+fmt.Sprint(y_lin), "B"+fmt.Sprint(y_lin+h_lin-1), styleLineamiento, styleLineamientoSombra)
-				y_met := y_lin
-				h_met := h_lin / len(lin["meta"].([]map[string]interface{}))
-				for _, met := range lin["meta"].([]map[string]interface{}) {
-					consolidadoExcelPlanAnual.MergeCell(sheetName, "C"+fmt.Sprint(y_met), "C"+fmt.Sprint(y_met+h_met-1))
-					consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(y_met), met["nombreMeta"])
-					SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "C"+fmt.Sprint(y_met), "C"+fmt.Sprint(y_met+h_met-1), stylecontentC, stylecontentCS)
-					y_est := y_met
-					h_est := h_met / len(met["estrategias"].([]map[string]interface{}))
-					for _, est := range met["estrategias"].([]map[string]interface{}) {
-						consolidadoExcelPlanAnual.MergeCell(sheetName, "D"+fmt.Sprint(y_est), "D"+fmt.Sprint(y_est+h_est-1))
-						consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(y_est), est["descripcionEstrategia"])
-						if (est["nombreEstrategia"].(string) == "No seleccionado") || strings.Contains(strings.ToLower(est["nombreEstrategia"].(string)), "no aplica") {
-							SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(y_est), "D"+fmt.Sprint(y_est+h_est-1), stylecontentC, stylecontentCS)
-						} else {
-							SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(y_est), "D"+fmt.Sprint(y_est+h_est-1), stylecontent, stylecontentS)
+							generalData := make(map[string]interface{})
+							nombreUnidad = planesFilterData["nombreUnidad"].(string)
+
+							generalData["nombreUnidad"] = nombreUnidad
+							generalData["nombreActividad"] = actividadName
+							generalData["numeroActividad"] = index
+							generalData["datosArmonizacion"] = arregloLineamieto
+							generalData["datosArmonizacionPI"] = arregloLineamietoPI
+							generalData["datosComplementarios"] = datosArmonizacion
+							arregloPlanAnual = append(arregloPlanAnual, generalData)
 						}
-						y_est += h_est
+						break
 					}
-					y_met += h_met
 				}
-				y_lin += h_lin
+			} else {
+				panic(err)
 			}
 
-			y_eje := rowPos
-			h_eje := MaxRowsXActivity / len(armoPI)
-			for _, eje := range armoPI {
-				consolidadoExcelPlanAnual.MergeCell(sheetName, "E"+fmt.Sprint(y_eje), "E"+fmt.Sprint(y_eje+h_eje-1))
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(y_eje), eje["nombreFactor"])
-				SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "E"+fmt.Sprint(y_eje), "E"+fmt.Sprint(y_eje+h_eje-1), stylecontentC, stylecontentCS)
-				y_lin := y_eje
-				h_lin := h_eje / len(eje["lineamientos"].([]map[string]interface{}))
-				for _, lin := range eje["lineamientos"].([]map[string]interface{}) {
-					consolidadoExcelPlanAnual.MergeCell(sheetName, "F"+fmt.Sprint(y_lin), "F"+fmt.Sprint(y_lin+h_lin-1))
-					consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(y_lin), lin["nombreLineamiento"])
-					SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "F"+fmt.Sprint(y_lin), "F"+fmt.Sprint(y_lin+h_lin-1), stylecontentC, stylecontentCS)
-					y_est := y_lin
-					h_est := h_lin / len(lin["estrategias"].([]map[string]interface{}))
-					for _, est := range lin["estrategias"].([]map[string]interface{}) {
-						consolidadoExcelPlanAnual.MergeCell(sheetName, "G"+fmt.Sprint(y_est), "G"+fmt.Sprint(y_est+h_est-1))
-						consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(y_est), est["descripcionEstrategia"])
-						if (est["nombreEstrategia"].(string) == "No seleccionado") || strings.Contains(strings.ToLower(est["nombreEstrategia"].(string)), "no aplica") {
-							SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(y_est), "G"+fmt.Sprint(y_est+h_est-1), stylecontentC, stylecontentCS)
-						} else {
-							SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(y_est), "G"+fmt.Sprint(y_est+h_est-1), stylecontent, stylecontentS)
+			infoReporte["tipo_plan"] = tipoPlan["nombre"]
+			infoReporte["vigencia"] = body["vigencia"]
+			infoReporte["estado_plan"] = estado["nombre"]
+			infoReporte["nombre_unidad"] = nombreUnidad
+
+			arregloInfoReportes = append(arregloInfoReportes, infoReporte)
+
+			rowPos := contadorGeneral + 5
+
+			unidadNombre := arregloPlanAnual[0]["nombreUnidad"]
+
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorGeneral+1), "Q"+fmt.Sprint(contadorGeneral+1))
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorGeneral+2), "D"+fmt.Sprint(contadorGeneral+2))
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "E"+fmt.Sprint(contadorGeneral+2), "G"+fmt.Sprint(contadorGeneral+2))
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "H"+fmt.Sprint(contadorGeneral+2), "H"+fmt.Sprint(contadorGeneral+3))
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "I"+fmt.Sprint(contadorGeneral+2), "I"+fmt.Sprint(contadorGeneral+3))
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "J"+fmt.Sprint(contadorGeneral+2), "J"+fmt.Sprint(contadorGeneral+3))
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "K"+fmt.Sprint(contadorGeneral+2), "K"+fmt.Sprint(contadorGeneral+3))
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "P"+fmt.Sprint(contadorGeneral+2), "P"+fmt.Sprint(contadorGeneral+3))
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "Q"+fmt.Sprint(contadorGeneral+2), "Q"+fmt.Sprint(contadorGeneral+3))
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(contadorGeneral+2), "O"+fmt.Sprint(contadorGeneral+2))
+			consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+1, 20)
+			consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+2, 20)
+			consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+3, 20)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "B", "B", 19)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "P", 35)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "C", 13)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "E", "E", 16)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "H", "H", 6)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "I", "J", 12)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "K", "K", 30)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "L", "M", 52)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "N", "N", 30)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "O", "O", 10)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "P", "P", 25)
+			consolidadoExcelPlanAnual.SetColWidth(sheetName, "Q", "Q", 30)
+			consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contadorGeneral+1), "Q"+fmt.Sprint(contadorGeneral+1), stylehead)
+			consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contadorGeneral+2), "Q"+fmt.Sprint(contadorGeneral+2), stylehead)
+			consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contadorGeneral+3), "Q"+fmt.Sprint(contadorGeneral+3), styletitles)
+			consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+3, 30)
+
+			var tituloExcel string
+			if periodo[0] != nil {
+				tituloExcel = "Plan de acción " + periodo[0]["Nombre"].(string) + " - " + unidadNombre.(string)
+			} else {
+				tituloExcel = "Plan de acción - " + unidadNombre.(string)
+			}
+
+			// encabezado excel
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contadorGeneral+1), tituloExcel)
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contadorGeneral+2), "Armonización PED")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contadorGeneral+3), "Lineamiento")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contadorGeneral+3), "Meta")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contadorGeneral+3), "Estrategias")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contadorGeneral+2), "Armonización Plan Indicativo")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contadorGeneral+3), "Ejes transformadores")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(contadorGeneral+3), "Lineamientos de acción")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(contadorGeneral+3), "Estrategias")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(contadorGeneral+3), "N°.")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(contadorGeneral+3), "Peso (%)")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(contadorGeneral+3), "Periodo de ejecución")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(contadorGeneral+3), "Actividad")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(contadorGeneral+2), "Indicador")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(contadorGeneral+3), "Nombre")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "M"+fmt.Sprint(contadorGeneral+3), "Fórmula")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(contadorGeneral+3), "Criterio del indicador")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "O"+fmt.Sprint(contadorGeneral+3), "Meta")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "P"+fmt.Sprint(contadorGeneral+3), "Producto esperado")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "Q"+fmt.Sprint(contadorGeneral+3), "Unidad o grupo responsable")
+			consolidadoExcelPlanAnual.InsertRows(sheetName, 1, 1)
+
+			for excelPlan := 0; excelPlan < len(arregloPlanAnual); excelPlan++ {
+
+				datosExcelPlan := arregloPlanAnual[excelPlan]
+				armoPED := datosExcelPlan["datosArmonizacion"].([]map[string]interface{})
+				armoPI := datosExcelPlan["datosArmonizacionPI"].([]map[string]interface{})
+				datosComplementarios := datosExcelPlan["datosComplementarios"].(map[string]interface{})
+				indicadores := datosComplementarios["indicadores"].(map[string]interface{})
+
+				MaxRowsXActivity := MinComMul_Armonization(armoPED, armoPI, len(indicadores))
+
+				y_lin := rowPos
+				h_lin := MaxRowsXActivity / len(armoPED)
+				for _, lin := range armoPED {
+					consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(y_lin), "B"+fmt.Sprint(y_lin+h_lin-1))
+					consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(y_lin), lin["nombreLineamiento"])
+					SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "B"+fmt.Sprint(y_lin), "B"+fmt.Sprint(y_lin+h_lin-1), styleLineamiento, styleLineamientoSombra)
+					y_met := y_lin
+					h_met := h_lin / len(lin["meta"].([]map[string]interface{}))
+					for _, met := range lin["meta"].([]map[string]interface{}) {
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "C"+fmt.Sprint(y_met), "C"+fmt.Sprint(y_met+h_met-1))
+						consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(y_met), met["nombreMeta"])
+						SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "C"+fmt.Sprint(y_met), "C"+fmt.Sprint(y_met+h_met-1), stylecontentC, stylecontentCS)
+						y_est := y_met
+						h_est := h_met / len(met["estrategias"].([]map[string]interface{}))
+						for _, est := range met["estrategias"].([]map[string]interface{}) {
+							consolidadoExcelPlanAnual.MergeCell(sheetName, "D"+fmt.Sprint(y_est), "D"+fmt.Sprint(y_est+h_est-1))
+							consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(y_est), est["descripcionEstrategia"])
+							if (est["nombreEstrategia"].(string) == "No seleccionado") || strings.Contains(strings.ToLower(est["nombreEstrategia"].(string)), "no aplica") {
+								SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(y_est), "D"+fmt.Sprint(y_est+h_est-1), stylecontentC, stylecontentCS)
+							} else {
+								SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "D"+fmt.Sprint(y_est), "D"+fmt.Sprint(y_est+h_est-1), stylecontent, stylecontentS)
+							}
+							y_est += h_est
 						}
-						y_est += h_est
+						y_met += h_met
 					}
 					y_lin += h_lin
 				}
-				y_eje += h_eje
+
+				y_eje := rowPos
+				h_eje := MaxRowsXActivity / len(armoPI)
+				for _, eje := range armoPI {
+					consolidadoExcelPlanAnual.MergeCell(sheetName, "E"+fmt.Sprint(y_eje), "E"+fmt.Sprint(y_eje+h_eje-1))
+					consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(y_eje), eje["nombreFactor"])
+					SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "E"+fmt.Sprint(y_eje), "E"+fmt.Sprint(y_eje+h_eje-1), stylecontentC, stylecontentCS)
+					y_lin := y_eje
+					h_lin := h_eje / len(eje["lineamientos"].([]map[string]interface{}))
+					for _, lin := range eje["lineamientos"].([]map[string]interface{}) {
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "F"+fmt.Sprint(y_lin), "F"+fmt.Sprint(y_lin+h_lin-1))
+						consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(y_lin), lin["nombreLineamiento"])
+						SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "F"+fmt.Sprint(y_lin), "F"+fmt.Sprint(y_lin+h_lin-1), stylecontentC, stylecontentCS)
+						y_est := y_lin
+						h_est := h_lin / len(lin["estrategias"].([]map[string]interface{}))
+						for _, est := range lin["estrategias"].([]map[string]interface{}) {
+							consolidadoExcelPlanAnual.MergeCell(sheetName, "G"+fmt.Sprint(y_est), "G"+fmt.Sprint(y_est+h_est-1))
+							consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(y_est), est["descripcionEstrategia"])
+							if (est["nombreEstrategia"].(string) == "No seleccionado") || strings.Contains(strings.ToLower(est["nombreEstrategia"].(string)), "no aplica") {
+								SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(y_est), "G"+fmt.Sprint(y_est+h_est-1), stylecontentC, stylecontentCS)
+							} else {
+								SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "G"+fmt.Sprint(y_est), "G"+fmt.Sprint(y_est+h_est-1), stylecontent, stylecontentS)
+							}
+							y_est += h_est
+						}
+						y_lin += h_lin
+					}
+					y_eje += h_eje
+				}
+
+				consolidadoExcelPlanAnual.MergeCell(sheetName, "H"+fmt.Sprint(rowPos), "H"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
+				consolidadoExcelPlanAnual.MergeCell(sheetName, "I"+fmt.Sprint(rowPos), "I"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
+				consolidadoExcelPlanAnual.MergeCell(sheetName, "J"+fmt.Sprint(rowPos), "J"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
+				consolidadoExcelPlanAnual.MergeCell(sheetName, "K"+fmt.Sprint(rowPos), "K"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(rowPos), excelPlan+1)
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(rowPos), datosComplementarios["Ponderación de la actividad"])
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(rowPos), datosComplementarios["Periodo de ejecución"])
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(rowPos), datosExcelPlan["nombreActividad"])
+				SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(rowPos), "J"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontentC, stylecontentCS)
+				SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(rowPos), "K"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontent, stylecontentS)
+
+				y_ind := rowPos
+				h_ind := MaxRowsXActivity / len(indicadores)
+				idx := int(0)
+
+				var indicadoresVacios []map[string]interface{}
+				var indicadoresNoVacios []map[string]interface{}
+				var indicadoresOrdenados []map[string]interface{}
+
+				for _, indicador := range indicadores {
+					auxIndicador := indicador
+					var nombreIndicador interface{}
+					var formula interface{}
+					var criterio interface{}
+					var meta interface{}
+					for key, element := range auxIndicador.(map[string]interface{}) {
+						if strings.Contains(strings.ToLower(key), "nombre") {
+							nombreIndicador = element
+						}
+						if strings.Contains(strings.ToLower(key), "formula") || strings.Contains(strings.ToLower(key), "fórmula") {
+							formula = element
+						}
+						if strings.Contains(strings.ToLower(key), "criterio") {
+							criterio = element
+						}
+						if strings.Contains(strings.ToLower(key), "meta") {
+							meta = element
+						}
+					}
+					if (nombreIndicador == "" && formula == "" && criterio == "" && meta == "") || (nombreIndicador == nil && formula == nil && criterio == nil && meta == nil) {
+						indicadoresVacios = append(indicadoresVacios, auxIndicador.(map[string]interface{}))
+					} else {
+						indicadoresNoVacios = append(indicadoresNoVacios, auxIndicador.(map[string]interface{}))
+					}
+				}
+
+				indicadoresOrdenados = append(indicadoresNoVacios, indicadoresVacios...)
+				for _, indicador := range indicadoresOrdenados {
+					auxIndicador := indicador
+					var nombreIndicador interface{}
+					var formula interface{}
+					var criterio interface{}
+					var meta interface{}
+					for key, element := range auxIndicador {
+						if strings.Contains(strings.ToLower(key), "nombre") {
+							nombreIndicador = element
+						}
+						if strings.Contains(strings.ToLower(key), "formula") || strings.Contains(strings.ToLower(key), "fórmula") {
+							formula = element
+						}
+						if strings.Contains(strings.ToLower(key), "criterio") {
+							criterio = element
+						}
+						if strings.Contains(strings.ToLower(key), "meta") {
+							meta = element
+						}
+					}
+					consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(y_ind), nombreIndicador)
+					consolidadoExcelPlanAnual.SetCellValue(sheetName, "M"+fmt.Sprint(y_ind), formula)
+					consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(y_ind), criterio)
+					consolidadoExcelPlanAnual.SetCellValue(sheetName, "O"+fmt.Sprint(y_ind), meta)
+					if (nombreIndicador == "" && formula == "" && criterio == "" && meta == "") || (nombreIndicador == nil && formula == nil && criterio == nil && meta == nil) {
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(y_ind-1), "L"+fmt.Sprint(y_ind+h_ind-1))
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "M"+fmt.Sprint(y_ind-1), "M"+fmt.Sprint(y_ind+h_ind-1))
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "N"+fmt.Sprint(y_ind-1), "N"+fmt.Sprint(y_ind+h_ind-1))
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "O"+fmt.Sprint(y_ind-1), "O"+fmt.Sprint(y_ind+h_ind-1))
+					} else {
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(y_ind), "L"+fmt.Sprint(y_ind+h_ind-1))
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "M"+fmt.Sprint(y_ind), "M"+fmt.Sprint(y_ind+h_ind-1))
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "N"+fmt.Sprint(y_ind), "N"+fmt.Sprint(y_ind+h_ind-1))
+						consolidadoExcelPlanAnual.MergeCell(sheetName, "O"+fmt.Sprint(y_ind), "O"+fmt.Sprint(y_ind+h_ind-1))
+					}
+
+					idx++
+					if idx < len(indicadores) {
+						SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "L"+fmt.Sprint(y_ind), "O"+fmt.Sprint(y_ind+h_ind-1), stylecontentCL, stylecontentCLS)
+					} else {
+						SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "L"+fmt.Sprint(y_ind), "O"+fmt.Sprint(y_ind+h_ind-1), stylecontentCLD, stylecontentCLDS)
+					}
+					y_ind += h_ind
+				}
+
+				consolidadoExcelPlanAnual.MergeCell(sheetName, "P"+fmt.Sprint(rowPos), "P"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "P"+fmt.Sprint(rowPos), datosComplementarios["Producto esperado"])
+				consolidadoExcelPlanAnual.MergeCell(sheetName, "Q"+fmt.Sprint(rowPos), "Q"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "Q"+fmt.Sprint(rowPos), datosComplementarios["Responsable"])
+				SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "P"+fmt.Sprint(rowPos), "P"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontentC, stylecontentCS)
+				SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "Q"+fmt.Sprint(rowPos), "Q"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontentC, stylecontentCS)
+
+				rowPos += MaxRowsXActivity
+
+				contadorGeneral = rowPos - 2
+
+				consolidadoExcelPlanAnual.SetActiveSheet(indexPlan)
 			}
-
-			consolidadoExcelPlanAnual.MergeCell(sheetName, "H"+fmt.Sprint(rowPos), "H"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
-			consolidadoExcelPlanAnual.MergeCell(sheetName, "I"+fmt.Sprint(rowPos), "I"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
-			consolidadoExcelPlanAnual.MergeCell(sheetName, "J"+fmt.Sprint(rowPos), "J"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
-			consolidadoExcelPlanAnual.MergeCell(sheetName, "K"+fmt.Sprint(rowPos), "K"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(rowPos), excelPlan+1)
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(rowPos), datosComplementarios["Ponderación de la actividad"])
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(rowPos), datosComplementarios["Periodo de ejecución"])
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(rowPos), datosExcelPlan["nombreActividad"])
-			SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(rowPos), "J"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontentC, stylecontentCS)
-			SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(rowPos), "K"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontent, stylecontentS)
-
-			y_ind := rowPos
-			h_ind := MaxRowsXActivity / len(indicadores)
-			idx := int(0)
-
-			var indicadoresVacios []map[string]interface{}
-			var indicadoresNoVacios []map[string]interface{}
-			var indicadoresOrdenados []map[string]interface{}
-
-			for _, indicador := range indicadores {
-				auxIndicador := indicador
-				var nombreIndicador interface{}
-				var formula interface{}
-				var criterio interface{}
-				var meta interface{}
-				for key, element := range auxIndicador.(map[string]interface{}) {
-					if strings.Contains(strings.ToLower(key), "nombre") {
-						nombreIndicador = element
-					}
-					if strings.Contains(strings.ToLower(key), "formula") || strings.Contains(strings.ToLower(key), "fórmula") {
-						formula = element
-					}
-					if strings.Contains(strings.ToLower(key), "criterio") {
-						criterio = element
-					}
-					if strings.Contains(strings.ToLower(key), "meta") {
-						meta = element
-					}
-				}
-				if (nombreIndicador == "" && formula == "" && criterio == "" && meta == "") || (nombreIndicador == nil && formula == nil && criterio == nil && meta == nil) {
-					indicadoresVacios = append(indicadoresVacios, auxIndicador.(map[string]interface{}))
-				} else {
-					indicadoresNoVacios = append(indicadoresNoVacios, auxIndicador.(map[string]interface{}))
-				}
-			}
-
-			indicadoresOrdenados = append(indicadoresNoVacios, indicadoresVacios...)
-			for _, indicador := range indicadoresOrdenados {
-				auxIndicador := indicador
-				var nombreIndicador interface{}
-				var formula interface{}
-				var criterio interface{}
-				var meta interface{}
-				for key, element := range auxIndicador {
-					if strings.Contains(strings.ToLower(key), "nombre") {
-						nombreIndicador = element
-					}
-					if strings.Contains(strings.ToLower(key), "formula") || strings.Contains(strings.ToLower(key), "fórmula") {
-						formula = element
-					}
-					if strings.Contains(strings.ToLower(key), "criterio") {
-						criterio = element
-					}
-					if strings.Contains(strings.ToLower(key), "meta") {
-						meta = element
-					}
-				}
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(y_ind), nombreIndicador)
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "M"+fmt.Sprint(y_ind), formula)
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(y_ind), criterio)
-				consolidadoExcelPlanAnual.SetCellValue(sheetName, "O"+fmt.Sprint(y_ind), meta)
-				if (nombreIndicador == "" && formula == "" && criterio == "" && meta == "") || (nombreIndicador == nil && formula == nil && criterio == nil && meta == nil) {
-					consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(y_ind-1), "L"+fmt.Sprint(y_ind+h_ind-1))
-					consolidadoExcelPlanAnual.MergeCell(sheetName, "M"+fmt.Sprint(y_ind-1), "M"+fmt.Sprint(y_ind+h_ind-1))
-					consolidadoExcelPlanAnual.MergeCell(sheetName, "N"+fmt.Sprint(y_ind-1), "N"+fmt.Sprint(y_ind+h_ind-1))
-					consolidadoExcelPlanAnual.MergeCell(sheetName, "O"+fmt.Sprint(y_ind-1), "O"+fmt.Sprint(y_ind+h_ind-1))
-				} else {
-					consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(y_ind), "L"+fmt.Sprint(y_ind+h_ind-1))
-					consolidadoExcelPlanAnual.MergeCell(sheetName, "M"+fmt.Sprint(y_ind), "M"+fmt.Sprint(y_ind+h_ind-1))
-					consolidadoExcelPlanAnual.MergeCell(sheetName, "N"+fmt.Sprint(y_ind), "N"+fmt.Sprint(y_ind+h_ind-1))
-					consolidadoExcelPlanAnual.MergeCell(sheetName, "O"+fmt.Sprint(y_ind), "O"+fmt.Sprint(y_ind+h_ind-1))
-				}
-
-				idx++
-				if idx < len(indicadores) {
-					SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "L"+fmt.Sprint(y_ind), "O"+fmt.Sprint(y_ind+h_ind-1), stylecontentCL, stylecontentCLS)
-				} else {
-					SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "L"+fmt.Sprint(y_ind), "O"+fmt.Sprint(y_ind+h_ind-1), stylecontentCLD, stylecontentCLDS)
-				}
-				y_ind += h_ind
-			}
-
-			consolidadoExcelPlanAnual.MergeCell(sheetName, "P"+fmt.Sprint(rowPos), "P"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "P"+fmt.Sprint(rowPos), datosComplementarios["Producto esperado"])
-			SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "P"+fmt.Sprint(rowPos), "P"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontentC, stylecontentCS)
-
-			rowPos += MaxRowsXActivity
-
-			contadorGeneral = rowPos - 2
-
-			consolidadoExcelPlanAnual.SetActiveSheet(indexPlan)
+			arregloPlanAnual = nil
+			consolidadoExcelPlanAnual.RemoveRow(sheetName, 1)
 		}
-		arregloPlanAnual = nil
-		consolidadoExcelPlanAnual.RemoveRow(sheetName, 1)
 	}
 	consolidadoExcelPlanAnual.InsertRows("REPORTE GENERAL", 1, 3)
 	consolidadoExcelPlanAnual.MergeCell("REPORTE GENERAL", "C2", "P6")
@@ -3867,10 +4163,9 @@ func ConstruirExcelPlanAccionGeneral(esReporteAntiguo bool, datosReporte map[str
 		&excelize.GraphicOptions{ScaleX: 0.1, ScaleY: 0.1, Positioning: "oneCell", OffsetX: 10}); err != nil {
 		fmt.Println(err)
 	}
-
 	consolidadoExcelPlanAnual.SetColWidth("REPORTE GENERAL", "A", "A", 2)
 
-	return consolidadoExcelPlanAnual, nil
+	return consolidadoExcelPlanAnual, arregloInfoReportes, nil
 }
 
 func ConstruirExcelPlanAccionEvaluacion(esReporteAntiguo bool, datosReporte map[string]interface{}) (*excelize.File, error) {
