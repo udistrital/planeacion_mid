@@ -1069,7 +1069,7 @@ func calcMinCol(node *nodo, size int) bool {
 	return node.divisible
 }
 
-func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId string) *excelize.File {
+func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId string, esReporteAntiguo bool) *excelize.File {
 	var res map[string]interface{}
 	var identificaciones []map[string]interface{}
 	var recursos []map[string]interface{}
@@ -1347,10 +1347,10 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 			}
 		}
 	}
-	return construirTablas(consolidadoExcelPlanAnual, recursos, contratistas, docentes, rubro, nombreRubro)
+	return construirTablas(consolidadoExcelPlanAnual, recursos, contratistas, docentes, rubro, nombreRubro, esReporteAntiguo)
 }
 
-func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[string]interface{}, contratistas []map[string]interface{}, docentes map[string]interface{}, rubro string, nombreRubro string) *excelize.File {
+func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[string]interface{}, contratistas []map[string]interface{}, docentes map[string]interface{}, rubro string, nombreRubro string, esReporteAntiguo bool) *excelize.File {
 	stylecontent, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
 		Alignment: &excelize.Alignment{Horizontal: "justify", Vertical: "center", WrapText: true},
 		Border: []excelize.Border{{Type: "right", Color: "000000", Style: 1},
@@ -1404,7 +1404,36 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 			{Type: "left", Color: "000000", Style: 1},
 			{Type: "top", Color: "000000", Style: 1},
 			{Type: "bottom", Color: "000000", Style: 1}}})
-
+	stylecontentTotal, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "right", Vertical: "center", WrapText: true},
+		Font:      &excelize.Font{Bold: true},
+		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"D9D9D9"}},
+		Border: []excelize.Border{{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 6},
+			{Type: "bottom", Color: "000000", Style: 1}}})
+	stylecontentTotalCant, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"D9D9D9"}},
+		Border: []excelize.Border{{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 6},
+			{Type: "bottom", Color: "000000", Style: 1}}})
+	stylecontentTotalM, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+		NumFmt:    183,
+		Alignment: &excelize.Alignment{Horizontal: "right", Vertical: "center", WrapText: true},
+		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"D9D9D9"}},
+		Border: []excelize.Border{{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 6},
+			{Type: "bottom", Color: "000000", Style: 1}}})
+	stylecontentRubro, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "right", Vertical: "center"},
+		Font:      &excelize.Font{Bold: true},
+		Border: []excelize.Border{{Type: "right", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1}}})
 	sheetName := "Identificaciones"
 
 	consolidadoExcelPlanAnual.NewSheet(sheetName)
@@ -1463,135 +1492,207 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		contador++
 	}
 	contador++
-	consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "H"+fmt.Sprint(contador))
-	consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Identificación de contratistas")
-	consolidadoExcelPlanAnual.SetRowHeight(sheetName, contador+1, 7)
-	consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "H"+fmt.Sprint(contador), styletitles)
+	if (esReporteAntiguo) {
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "H"+fmt.Sprint(contador))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Identificación de contratistas")
+		consolidadoExcelPlanAnual.SetRowHeight(sheetName, contador+1, 7)
+		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "H"+fmt.Sprint(contador), styletitles)
 
-	contador++
-	contador++
+		contador++
+		contador++
 
-	consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "C"+fmt.Sprint(contador))
-	consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Descripción de la necesidad")
-	consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), "Perfil")
-	consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), "Cantidad")
-	consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(contador), "Valor Total")
-	consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(contador), "Valor Total Incremeto")
-	consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(contador), "Actividades")
-	consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "H"+fmt.Sprint(contador), stylehead)
-
-	contador++
-	var total float64 = 0
-	var valorTotal int = 0
-	var valorTotalInc int = 0
-	for i := 0; i < len(contratistas); i++ {
-		var respuestaParametro map[string]interface{}
-		var perfil map[string]interface{}
-
-		aux := contratistas[i]
-
-		total = total + aux["cantidad"].(float64)
-		aux1 := fmt.Sprintf("%v", aux["valorTotal"])
-		strValorTotal := strings.TrimLeft(aux1, "$")
-		strValorTotal = strings.ReplaceAll(strValorTotal, ",", "")
-		arrValorTotal := strings.Split(strValorTotal, ".")
-		auxValorTotal, err := strconv.Atoi(arrValorTotal[0])
-
-		if err == nil {
-			valorTotal = valorTotal + auxValorTotal
-		}
 		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "C"+fmt.Sprint(contador))
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), aux["descripcionNecesidad"])
-		if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro/"+fmt.Sprint(aux["perfil"]), &respuestaParametro); err == nil {
-			helpers.LimpiezaRespuestaRefactor(respuestaParametro, &perfil)
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), perfil["Nombre"])
-		}
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), aux["cantidad"])
-		aux2 := fmt.Sprintf("%v", aux["valorTotal"])
-		strValor := strings.TrimLeft(aux2, "$")
-		strValor = strings.ReplaceAll(strValor, ",", "")
-		arrValor := strings.Split(strValor, ".")
-		auxValor, err := strconv.Atoi(arrValor[0])
-		if err == nil {
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(contador), auxValor)
-		}
-		aux3 := fmt.Sprintf("%v", aux["valorTotalInc"])
-		strValorInc := strings.TrimLeft(aux3, "$")
-		strValorInc = strings.ReplaceAll(strValorInc, ",", "")
-		arrValorInc := strings.Split(strValorInc, ".")
-		auxValorInc, err := strconv.Atoi(arrValorInc[0])
-		if err == nil {
-			valorTotalInc = valorTotalInc + auxValorInc
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(contador), auxValorInc)
-		}
-		auxStrString := aux["actividades"].([]interface{})
-		var strActividades string
-		for j := 0; j < len(auxStrString); j++ {
-			if j != len(auxStrString)-1 {
-				strActividades = strActividades + " " + auxStrString[j].(string) + ","
-			} else {
-				strActividades = strActividades + " " + auxStrString[j].(string)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Descripción de la necesidad")
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), "Perfil")
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), "Cantidad")
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(contador), "Valor Total")
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(contador), "Valor Total Incremento")
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(contador), "Actividades")
+		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "H"+fmt.Sprint(contador), stylehead)
+	
+		contador++
+		var total float64 = 0
+		var valorTotal int = 0
+		var valorTotalInc int = 0
+		for i := 0; i < len(contratistas); i++ {
+			var respuestaParametro map[string]interface{}
+			var perfil map[string]interface{}
+
+			aux := contratistas[i]
+
+			total = total + aux["cantidad"].(float64)
+			aux1 := fmt.Sprintf("%v", aux["valorTotal"])
+			strValorTotal := strings.TrimLeft(aux1, "$")
+			strValorTotal = strings.ReplaceAll(strValorTotal, ",", "")
+			arrValorTotal := strings.Split(strValorTotal, ".")
+			auxValorTotal, err := strconv.Atoi(arrValorTotal[0])
+
+			if err == nil {
+				valorTotal = valorTotal + auxValorTotal
 			}
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "C"+fmt.Sprint(contador))
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), aux["descripcionNecesidad"])
+			if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro/"+fmt.Sprint(aux["perfil"]), &respuestaParametro); err == nil {
+				helpers.LimpiezaRespuestaRefactor(respuestaParametro, &perfil)
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), perfil["Nombre"])
+			}
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), aux["cantidad"])
+			aux2 := fmt.Sprintf("%v", aux["valorTotal"])
+			strValor := strings.TrimLeft(aux2, "$")
+			strValor = strings.ReplaceAll(strValor, ",", "")
+			arrValor := strings.Split(strValor, ".")
+			auxValor, err := strconv.Atoi(arrValor[0])
+			if err == nil {
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(contador), auxValor)
+			}
+			aux3 := fmt.Sprintf("%v", aux["valorTotalInc"])
+			strValorInc := strings.TrimLeft(aux3, "$")
+			strValorInc = strings.ReplaceAll(strValorInc, ",", "")
+			arrValorInc := strings.Split(strValorInc, ".")
+			auxValorInc, err := strconv.Atoi(arrValorInc[0])
+			if err == nil {
+				valorTotalInc = valorTotalInc + auxValorInc
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(contador), auxValorInc)
+			}
+			auxStrString := aux["actividades"].([]interface{})
+			var strActividades string
+			for j := 0; j < len(auxStrString); j++ {
+				if j != len(auxStrString)-1 {
+					strActividades = strActividades + " " + auxStrString[j].(string) + ","
+				} else {
+					strActividades = strActividades + " " + auxStrString[j].(string)
+				}
+			}
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(contador), strActividades)
+			SombrearCeldas(consolidadoExcelPlanAnual, i, sheetName, "B"+fmt.Sprint(contador), "H"+fmt.Sprint(contador), stylecontent, stylecontentS)
+			SombrearCeldas(consolidadoExcelPlanAnual, i, sheetName, "F"+fmt.Sprint(contador), "G"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+			SombrearCeldas(consolidadoExcelPlanAnual, i, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentC, stylecontentCS)
+			contador++
 		}
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(contador), strActividades)
-		SombrearCeldas(consolidadoExcelPlanAnual, i, sheetName, "B"+fmt.Sprint(contador), "H"+fmt.Sprint(contador), stylecontent, stylecontentS)
-		SombrearCeldas(consolidadoExcelPlanAnual, i, sheetName, "F"+fmt.Sprint(contador), "G"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
-		SombrearCeldas(consolidadoExcelPlanAnual, i, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentC, stylecontentCS)
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Total")
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), total)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(contador), valorTotal)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(contador), valorTotalInc)
+
+		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "G"+fmt.Sprint(contador), stylecontentTotal)
+		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentTotalCant)
+		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "F"+fmt.Sprint(contador), "G"+fmt.Sprint(contador), stylecontentTotalM)
+
+		contador++
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "C"+fmt.Sprint(contador))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Rubro")
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), rubro)
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "E"+fmt.Sprint(contador), "G"+fmt.Sprint(contador))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), nombreRubro)
+
+		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontentRubro)
+		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "D"+fmt.Sprint(contador), "G"+fmt.Sprint(contador), stylecontentC)
+
+		contador++
+		contador++
+	} else {
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "I"+fmt.Sprint(contador))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Identificación de contratistas")
+		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "I"+fmt.Sprint(contador), styletitles)
+
+		contador++
+		contador++
+
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "C"+fmt.Sprint(contador))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Descripción de la necesidad (objeto contractual)")
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), "Requisitos mínimos (formación académica y experiencia)")
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), "Perfil")
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(contador), "Cantidad")
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(contador), "Valor Total")
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(contador), "Valor Total Incremento")
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(contador), "Actividades")
+		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "I"+fmt.Sprint(contador), stylehead)
+
+		contador++
+		var total float64 = 0
+		var valorTotal int = 0
+		var valorTotalInc int = 0
+		for i := 0; i < len(contratistas); i++ {
+			var respuestaParametro map[string]interface{}
+			var perfil map[string]interface{}
+			
+			aux := contratistas[i]
+
+			total = total + aux["cantidad"].(float64)
+			aux1 := fmt.Sprintf("%v", aux["valorTotal"])
+			strValorTotal := strings.TrimLeft(aux1, "$")
+			strValorTotal = strings.ReplaceAll(strValorTotal, ",", "")
+			arrValorTotal := strings.Split(strValorTotal, ".")
+			auxValorTotal, err := strconv.Atoi(arrValorTotal[0])
+
+			if err == nil {
+				valorTotal = valorTotal + auxValorTotal
+			}
+			consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "C"+fmt.Sprint(contador))
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), aux["descripcionNecesidad"])
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), aux["requisitos"])
+			if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro/"+fmt.Sprint(aux["perfil"]), &respuestaParametro); err == nil {
+				helpers.LimpiezaRespuestaRefactor(respuestaParametro, &perfil)
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), perfil["Nombre"])
+			}
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(contador), aux["cantidad"])
+			aux2 := fmt.Sprintf("%v", aux["valorTotal"])
+			strValor := strings.TrimLeft(aux2, "$")
+			strValor = strings.ReplaceAll(strValor, ",", "")
+			arrValor := strings.Split(strValor, ".")
+			auxValor, err := strconv.Atoi(arrValor[0])
+			if err == nil {
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(contador), auxValor)
+			}
+			aux3 := fmt.Sprintf("%v", aux["valorTotalInc"])
+			strValorInc := strings.TrimLeft(aux3, "$")
+			strValorInc = strings.ReplaceAll(strValorInc, ",", "")
+			arrValorInc := strings.Split(strValorInc, ".")
+			auxValorInc, err := strconv.Atoi(arrValorInc[0])
+			if err == nil {
+				valorTotalInc = valorTotalInc + auxValorInc
+				consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(contador), auxValorInc)
+			}
+			auxStrString := aux["actividades"].([]interface{})
+			var strActividades string
+			for j := 0; j < len(auxStrString); j++ {
+				if j != len(auxStrString)-1 {
+					strActividades = strActividades + " " + auxStrString[j].(string) + ","
+				} else {
+					strActividades = strActividades + " " + auxStrString[j].(string)
+				}
+			}
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(contador), strActividades)
+			SombrearCeldas(consolidadoExcelPlanAnual, i, sheetName, "B"+fmt.Sprint(contador), "I"+fmt.Sprint(contador), stylecontent, stylecontentS)
+			SombrearCeldas(consolidadoExcelPlanAnual, i, sheetName, "G"+fmt.Sprint(contador), "H"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
+			SombrearCeldas(consolidadoExcelPlanAnual, i, sheetName, "F"+fmt.Sprint(contador), "F"+fmt.Sprint(contador), stylecontentC, stylecontentCS)
+			contador++
+		}
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "E"+fmt.Sprint(contador))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Total")
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(contador), total)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(contador), valorTotal)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(contador), valorTotalInc)
+
+		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentTotal)
+		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "F"+fmt.Sprint(contador), "F"+fmt.Sprint(contador), stylecontentTotalCant)
+		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "G"+fmt.Sprint(contador), "H"+fmt.Sprint(contador), stylecontentTotalM)
+
+		contador++
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "C"+fmt.Sprint(contador))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Rubro")
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), rubro)
+		consolidadoExcelPlanAnual.MergeCell(sheetName, "E"+fmt.Sprint(contador), "H"+fmt.Sprint(contador))
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), nombreRubro)
+
+		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontentRubro)
+		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "E"+fmt.Sprint(contador), "H"+fmt.Sprint(contador), stylecontentC)
+
+		contador++
 		contador++
 	}
-	consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador))
-	consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Total")
-	consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), total)
-	consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(contador), valorTotal)
-	consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(contador), valorTotalInc)
 
-	stylecontentTotal, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
-		Alignment: &excelize.Alignment{Horizontal: "right", Vertical: "center", WrapText: true},
-		Font:      &excelize.Font{Bold: true},
-		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"D9D9D9"}},
-		Border: []excelize.Border{{Type: "right", Color: "000000", Style: 1},
-			{Type: "left", Color: "000000", Style: 1},
-			{Type: "top", Color: "000000", Style: 6},
-			{Type: "bottom", Color: "000000", Style: 1}}})
-	stylecontentTotalCant, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
-		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
-		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"D9D9D9"}},
-		Border: []excelize.Border{{Type: "right", Color: "000000", Style: 1},
-			{Type: "left", Color: "000000", Style: 1},
-			{Type: "top", Color: "000000", Style: 6},
-			{Type: "bottom", Color: "000000", Style: 1}}})
-	stylecontentTotalM, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
-		NumFmt:    183,
-		Alignment: &excelize.Alignment{Horizontal: "right", Vertical: "center", WrapText: true},
-		Fill:      excelize.Fill{Type: "pattern", Pattern: 1, Color: []string{"D9D9D9"}},
-		Border: []excelize.Border{{Type: "right", Color: "000000", Style: 1},
-			{Type: "left", Color: "000000", Style: 1},
-			{Type: "top", Color: "000000", Style: 6},
-			{Type: "bottom", Color: "000000", Style: 1}}})
-
-	consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "G"+fmt.Sprint(contador), stylecontentTotal)
-	consolidadoExcelPlanAnual.SetCellStyle(sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentTotalCant)
-	consolidadoExcelPlanAnual.SetCellStyle(sheetName, "F"+fmt.Sprint(contador), "G"+fmt.Sprint(contador), stylecontentTotalM)
-
-	contador++
-	consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "C"+fmt.Sprint(contador))
-	consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Rubro")
-	consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), rubro)
-	consolidadoExcelPlanAnual.MergeCell(sheetName, "E"+fmt.Sprint(contador), "G"+fmt.Sprint(contador))
-	consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), nombreRubro)
-
-	stylecontentRubro, _ := consolidadoExcelPlanAnual.NewStyle(&excelize.Style{
-		Alignment: &excelize.Alignment{Horizontal: "right", Vertical: "center"},
-		Font:      &excelize.Font{Bold: true},
-		Border: []excelize.Border{{Type: "right", Color: "000000", Style: 1},
-			{Type: "left", Color: "000000", Style: 1},
-			{Type: "top", Color: "000000", Style: 1},
-			{Type: "bottom", Color: "000000", Style: 1}}})
-	consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "C"+fmt.Sprint(contador), stylecontentRubro)
-	consolidadoExcelPlanAnual.SetCellStyle(sheetName, "D"+fmt.Sprint(contador), "G"+fmt.Sprint(contador), stylecontentC)
-
-	contador++
-	contador++
 
 	if docentes != nil {
 		infoDocentes := TotalDocentes(docentes)["TotalesPorTipo"].(TotalesDocentes)
@@ -3206,7 +3307,7 @@ func ConstruirExcelPlanAccionUnidad(esReporteAntiguo bool, datosReporte map[stri
 		}
 	}
 
-	consolidadoExcelPlanAnual = TablaIdentificaciones(consolidadoExcelPlanAnual, plan_id)
+	consolidadoExcelPlanAnual = TablaIdentificaciones(consolidadoExcelPlanAnual, plan_id, esReporteAntiguo)
 
 	consolidadoExcelPlanAnual.InsertRows("Actividades del plan", 1, 7)
 	consolidadoExcelPlanAnual.MergeCell("Actividades del plan", "C2", "P6")
