@@ -205,7 +205,6 @@ func (c *FormulacionController) ClonarFormatoPAF() {
 		log.Fatalf("Error decodificado: %v", err)
 	}
 
-	// beego.Info("http://" + beego.AppConfig.String("PlanesService") + "/plan?query=nombre:" + valorParametroPAF["Valor"])
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=nombre:"+valorParametroPAF["Valor"], &respuesta); err != nil {
 		panic(map[string]interface{}{"funcion": "ClonarFormatoPAF", "err": "Error obteniendo el plan formato " + valorParametroPAF["Valor"], "status": "400", "log": err})
 	}
@@ -214,8 +213,6 @@ func (c *FormulacionController) ClonarFormatoPAF() {
 	if len(planFormato) != 1 || planFormato[0]["_id"] == nil {
 		panic(map[string]interface{}{"funcion": "ClonarFormatoPAF", "err": "No se encontró el plan formato ", "status": "404", "log": errors.New("no se encontró el plan formato ")})
 	}
-	beego.Info("planFormato: ", len(planFormato))
-	beego.Info("Parametros: ", body)
 
 	plan["nombre"] = body["nombre"].(string)
 	plan["descripcion"] = body["descripcion"].(string)
@@ -256,7 +253,13 @@ func (c *FormulacionController) ClonarFormatoPAF() {
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+planFormato[0]["_id"].(string), &respuestaHijos); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuestaHijos, &hijos)
-		formulacionhelper.ClonarHijos(hijos, padre)
+		hijosActivos := make([]map[string]interface{}, 0)
+		for _, hijo := range hijos {
+			if hijo["activo"] == true {
+				hijosActivos = append(hijosActivos, hijo)
+			}
+		}
+		formulacionhelper.ClonarHijos(hijosActivos, padre)
 	}
 
 	c.ServeJSON()

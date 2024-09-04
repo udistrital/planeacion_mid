@@ -798,7 +798,7 @@ func (c *SeguimientoController) GetActividadesGenerales() {
 				helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
 
 				for i := 0; i < len(subgrupos); i++ {
-					if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") && strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "general") {
+					if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") {
 
 						actividades := seguimientohelper.GetActividades(subgrupos[i]["_id"].(string))
 
@@ -2064,7 +2064,6 @@ func (c *SeguimientoController) RetornarActividad() {
 	estado := map[string]interface{}{}
 
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &body); err == nil {
-		beego.Info("Body: ", body)
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
 			aux := make([]map[string]interface{}, 1)
 			helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
@@ -2179,8 +2178,6 @@ func (c *SeguimientoController) RetornarActividadJefeDependencia() {
 	estado := map[string]interface{}{}
 
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &body); err == nil {
-		beego.Info("Body: ", body)
-		fmt.Println("Se encontro el detalle")
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
 
 			aux := make([]map[string]interface{}, 1)
