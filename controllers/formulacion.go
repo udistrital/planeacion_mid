@@ -213,8 +213,6 @@ func (c *FormulacionController) ClonarFormatoPAF() {
 	if len(planFormato) != 1 || planFormato[0]["_id"] == nil {
 		panic(map[string]interface{}{"funcion": "ClonarFormatoPAF", "err": "No se encontró el plan formato ", "status": "404", "log": errors.New("no se encontró el plan formato ")})
 	}
-	beego.Info("planFormato: ", len(planFormato))
-	beego.Info("Parametros: ", body)
 
 	plan["nombre"] = body["nombre"].(string)
 	plan["descripcion"] = body["descripcion"].(string)
