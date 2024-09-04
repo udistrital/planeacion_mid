@@ -2763,6 +2763,7 @@ func ConstruirExcelPlanAccionUnidad(esReporteAntiguo bool, datosReporte map[stri
 			{Type: "bottom", Color: "000000", Style: 1},
 		},
 	})
+	
 	if esReporteAntiguo {
 		consolidadoExcelPlanAnual.MergeCell(sheetName, "B1", "D1")
 		consolidadoExcelPlanAnual.MergeCell(sheetName, "E1", "G1")
@@ -2988,7 +2989,6 @@ func ConstruirExcelPlanAccionUnidad(esReporteAntiguo bool, datosReporte map[stri
 		consolidadoExcelPlanAnual.MergeCell(sheetName, "I1", "I2")
 		consolidadoExcelPlanAnual.MergeCell(sheetName, "J1", "J2")
 		consolidadoExcelPlanAnual.MergeCell(sheetName, "K1", "K2")
-		// consolidadoExcelPlanAnual.MergeCell(sheetName, "L1", "L2")
 		consolidadoExcelPlanAnual.MergeCell(sheetName, "P1", "P2")
 		consolidadoExcelPlanAnual.MergeCell(sheetName, "L1", "O1")
 		consolidadoExcelPlanAnual.SetColWidth(sheetName, "B", "B", 18)
@@ -2999,7 +2999,6 @@ func ConstruirExcelPlanAccionUnidad(esReporteAntiguo bool, datosReporte map[stri
 		consolidadoExcelPlanAnual.SetColWidth(sheetName, "H", "H", 6)
 		consolidadoExcelPlanAnual.SetColWidth(sheetName, "I", "J", 12)
 		consolidadoExcelPlanAnual.SetColWidth(sheetName, "K", "K", 30)
-		// consolidadoExcelPlanAnual.SetColWidth(sheetName, "L", "L", 35)
 		consolidadoExcelPlanAnual.SetColWidth(sheetName, "L", "M", 52)
 		consolidadoExcelPlanAnual.SetColWidth(sheetName, "N", "N", 30)
 		consolidadoExcelPlanAnual.SetColWidth(sheetName, "O", "O", 10)
@@ -3017,10 +3016,9 @@ func ConstruirExcelPlanAccionUnidad(esReporteAntiguo bool, datosReporte map[stri
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "F2", "Lineamientos de acción")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "G2", "Estrategias")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "H2", "N°.")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "I2", "Ponderación de la actividad")
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "I2", "Peso (%)")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "J2", "Periodo de ejecución")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "K2", "Actividad")
-		// consolidadoExcelPlanAnual.SetCellValue(sheetName, "L2", "Actividades específicas")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "L1", "Indicador")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "L2", "Nombre")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "M2", "Fórmula")
@@ -3108,7 +3106,6 @@ func ConstruirExcelPlanAccionUnidad(esReporteAntiguo bool, datosReporte map[stri
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(rowPos), datosComplementarios["Ponderación de la actividad"])
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(rowPos), datosComplementarios["Periodo de ejecución"])
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(rowPos), datosExcelPlan["nombreActividad"].(string))
-			// consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(rowPos), datosComplementarios["Tareas"])
 			SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(rowPos), "J"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontentC, stylecontentCS)
 			SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(rowPos), "L"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontent, stylecontentS)
 
@@ -3634,7 +3631,6 @@ func ConstruirExcelPlanAccionGeneral(esReporteAntiguo bool, datosReporte map[str
 		consolidadoExcelPlanAnual.MergeCell(sheetName, "I"+fmt.Sprint(contadorGeneral+2), "I"+fmt.Sprint(contadorGeneral+3))
 		consolidadoExcelPlanAnual.MergeCell(sheetName, "J"+fmt.Sprint(contadorGeneral+2), "J"+fmt.Sprint(contadorGeneral+3))
 		consolidadoExcelPlanAnual.MergeCell(sheetName, "K"+fmt.Sprint(contadorGeneral+2), "K"+fmt.Sprint(contadorGeneral+3))
-		// consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(contadorGeneral+2), "L"+fmt.Sprint(contadorGeneral+3))
 		consolidadoExcelPlanAnual.MergeCell(sheetName, "P"+fmt.Sprint(contadorGeneral+2), "P"+fmt.Sprint(contadorGeneral+3))
 		consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(contadorGeneral+2), "O"+fmt.Sprint(contadorGeneral+2))
 		consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+1, 20)
@@ -3647,7 +3643,6 @@ func ConstruirExcelPlanAccionGeneral(esReporteAntiguo bool, datosReporte map[str
 		consolidadoExcelPlanAnual.SetColWidth(sheetName, "H", "H", 6)
 		consolidadoExcelPlanAnual.SetColWidth(sheetName, "I", "J", 12)
 		consolidadoExcelPlanAnual.SetColWidth(sheetName, "K", "K", 30)
-		// consolidadoExcelPlanAnual.SetColWidth(sheetName, "L", "L", 35)
 		consolidadoExcelPlanAnual.SetColWidth(sheetName, "L", "M", 52)
 		consolidadoExcelPlanAnual.SetColWidth(sheetName, "N", "N", 30)
 		consolidadoExcelPlanAnual.SetColWidth(sheetName, "O", "O", 10)
@@ -3675,10 +3670,9 @@ func ConstruirExcelPlanAccionGeneral(esReporteAntiguo bool, datosReporte map[str
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(contadorGeneral+3), "Lineamientos de acción")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(contadorGeneral+3), "Estrategias")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(contadorGeneral+3), "N°.")
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(contadorGeneral+3), "Ponderación de la actividad")
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(contadorGeneral+3), "Peso (%)")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(contadorGeneral+3), "Periodo de ejecución")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(contadorGeneral+3), "Actividad")
-		// consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(contadorGeneral+3), "Actividades específicas")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(contadorGeneral+2), "Indicador")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(contadorGeneral+3), "Nombre")
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(contadorGeneral+3), "Fórmula")
@@ -3759,12 +3753,10 @@ func ConstruirExcelPlanAccionGeneral(esReporteAntiguo bool, datosReporte map[str
 			consolidadoExcelPlanAnual.MergeCell(sheetName, "I"+fmt.Sprint(rowPos), "I"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
 			consolidadoExcelPlanAnual.MergeCell(sheetName, "J"+fmt.Sprint(rowPos), "J"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
 			consolidadoExcelPlanAnual.MergeCell(sheetName, "K"+fmt.Sprint(rowPos), "K"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
-			// consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(rowPos), "L"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(rowPos), excelPlan+1)
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(rowPos), datosComplementarios["Ponderación de la actividad"])
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(rowPos), fmt.Sprint(datosComplementarios["Ponderación de la actividad"]) + "%")
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(rowPos), datosComplementarios["Periodo de ejecución"])
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(rowPos), datosExcelPlan["nombreActividad"])
-			// consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(rowPos), datosComplementarios["Tareas"])
 			SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(rowPos), "J"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontentC, stylecontentCS)
 			SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(rowPos), "K"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontent, stylecontentS)
 
@@ -4179,7 +4171,11 @@ func ConstruirExcelPlanAccionEvaluacion(esReporteAntiguo bool, datosReporte map[
 	consolidadoExcelEvaluacion.SetCellValue(sheetName, "B21", "Armonización PED")
 	consolidadoExcelEvaluacion.SetCellValue(sheetName, "E21", "Armonización Plan Indicativo")
 	consolidadoExcelEvaluacion.SetCellValue(sheetName, "H21", "No.")
-	consolidadoExcelEvaluacion.SetCellValue(sheetName, "I21", "Pond.")
+	if esReporteAntiguo {
+		consolidadoExcelEvaluacion.SetCellValue(sheetName, "I21", "Pond.")
+	} else {
+		consolidadoExcelEvaluacion.SetCellValue(sheetName, "I21", "Peso (%)")
+	}
 	consolidadoExcelEvaluacion.SetCellValue(sheetName, "J21", "Periodo de ejecución")
 	if esReporteAntiguo {
 		consolidadoExcelEvaluacion.SetCellValue(sheetName, "K21", "Actividad General")
