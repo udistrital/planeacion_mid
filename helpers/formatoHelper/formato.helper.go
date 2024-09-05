@@ -86,10 +86,10 @@ func ConstruirArbolFormato(hijos []models.Nodo, hijosID []map[string]interface{}
 func getChildren(children []string, activos bool) (childrenTree []map[string]interface{}) {
 	var res map[string]interface{}
 	var resp map[string]interface{}
-	var nodo models.Nodo
-	var nodoId map[string]interface{}
 	var detalle []models.NodoDetalle
 	for _, child := range children {
+		var nodo models.Nodo
+		var nodoId map[string]interface{}
 		forkData := make(map[string]interface{})
 		var id string
 		err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+child, &res)
