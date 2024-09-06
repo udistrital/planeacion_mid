@@ -787,6 +787,25 @@ paths:
             $ref: '#/definitions/models.Formulacion'
         "400":
           description: bad request
+  /formulacion/observaciones_plan/{id}:
+    get:
+      tags:
+      - formulacion
+      description: get Observaciones Planes en formulacion
+      operationId: FormulacionController.GetObservacionesPlanesEnFormulacion
+      parameters:
+      - in: path
+        name: id
+        description: The key for staticblock
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/models.Formulacion'
+        "403":
+          description: :id is empty
   /formulacion/obtener-fechas:
     post:
       tags:
