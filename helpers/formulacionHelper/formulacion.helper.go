@@ -2593,3 +2593,78 @@ func formatearFecha(fecha string) string {
 	// Formatear la fecha al nuevo formato
 	return parsedTime.Format(time.RFC3339)
 }
+
+func ObtenerObservacionesFormulacion(id string) (respuesta []map[string]interface{}, outputError map[string]interface{}) {
+  defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			outputError = map[string]interface{}{
+				"funcion": "ObtenerObservacionesFormulacion",
+				"err":     localError["err"],
+				"status":  localError["status"],
+			}
+			panic(outputError)
+		}
+	}()
+
+	var observaciones []map[string]interface{}
+  var actividades map[string]interface{}
+	var contenido_actividades []map[string]interface{}
+
+  var res map[string]interface{}
+	var hijos []map[string]interface{}
+	var tabla map[string]interface{}
+	var auxHijos []interface{}
+
+	LimpiaTabla()
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
+		helpers.LimpiezaRespuestaRefactor(res, &hijos)
+		for i := 0; i < len(hijos); i++ {
+			auxHijos = append(auxHijos, hijos[i]["_id"])
+		}
+		tabla = GetTabla(auxHijos)
+    actividades = tabla
+	} else {
+    panic(map[string]interface{}{
+      "err":    err,
+      "status": "404",
+    })
+	}
+
+  for i := 0; i < len(actividades["data_source"].([]map[string]interface{})); i++ {
+    var res1 map[string]interface{}
+    var hijos1 []map[string]interface{}
+
+    if err1 := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res1); err1 == nil {
+      helpers.LimpiezaRespuestaRefactor(res1, &hijos1)
+      Limpia()
+      tree := BuildTreeFa(hijos1, strconv.Itoa(i+1))
+      contenido_actividades = append(contenido_actividades, tree[1][0])
+    } else {
+      panic(map[string]interface{}{
+        "err":    err1,
+        "status": "404",
+      })
+    }
+  }
+
+  observacion := false
+
+  for ind, value := range contenido_actividades {
+    for key, subKey := range value {
+      if key[len(key)-2:] == "_o" && subKey != "" && subKey !=  "Sin observación" {
+        observacion = true
+      }
+    }
+
+    if observacion {
+      if actividades["data_source"].([]map[string]interface{})[ind]["activo"] == true {
+        observaciones = append(observaciones, actividades["data_source"].([]map[string]interface{})[ind])
+      }
+    }
+    observacion = false
+  }
+
+	
+	return observaciones, outputError
+}
