@@ -324,6 +324,15 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"],
         beego.ControllerComments{
+            Method: "ObtenerObservacionesFormulacion",
+            Router: "/observaciones_plan/:id",
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionController"],
+        beego.ControllerComments{
             Method: "ObtenerFechasParametrizadas",
             Router: "/obtener-fechas",
             AllowHTTPMethods: []string{"post"},

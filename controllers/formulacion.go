@@ -57,6 +57,7 @@ func (c *FormulacionController) URLMapping() {
 	c.Mapping("VinculacionTerceroByEmail", c.VinculacionTerceroByEmail)
 	c.Mapping("CambioCargoIdVinculacionTercero", c.CambioCargoIdVinculacionTercero)
 	c.Mapping("VinculacionTerceroByIdentificacion", c.VinculacionTerceroByIdentificacion)
+	c.Mapping("ObtenerObservacionesFormulacion", c.ObtenerObservacionesFormulacion)
 }
 
 // ClonarFormato ...
@@ -2260,5 +2261,26 @@ func (c *FormulacionController) GetPlanesUnidadesComun() {
 	} else {
 		panic(err)
 	}
+	c.ServeJSON()
+}
+
+// Get Observaciones Planes En Formulacion ...
+// @Title GetObservacionesPlanesEnFormulacion
+// @Description get Observaciones Planes en formulacion
+// @Param	id		path 	string	true		"The key for staticblock"
+// @Success 200 {object} models.Formulacion
+// @Failure 403 :id is empty
+// @router /observaciones_plan/:id [get]
+func (c *FormulacionController) ObtenerObservacionesFormulacion() {
+	defer helpers.ErrorController(c.Controller, "ObtenerObservacionesFormulacionController")
+
+  id := c.Ctx.Input.Param(":id")
+
+	if respuesta, err := formulacionhelper.ObtenerObservacionesFormulacion(id); err != nil {
+		panic(map[string]interface{}{"funcion": "ObtenerObservacionesFormulacionController", "err": err, "status": "400"})
+	} else {
+		c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": respuesta}
+	}
+
 	c.ServeJSON()
 }
