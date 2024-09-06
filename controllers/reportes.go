@@ -449,171 +449,13 @@ func (c *ReportesController) PlanAccionAnual() {
 	var body map[string]interface{}
 	var respuesta map[string]interface{}
 	var planesFilter []map[string]interface{}
-	var res map[string]interface{}
-	var respuestaUnidad []map[string]interface{}
-	var subgrupos []map[string]interface{}
-	var plan_id string
-	var actividadName string
-	var arregloPlanAnual []map[string]interface{}
-	var nombreUnidad string
-	var resPeriodo map[string]interface{}
-	var periodo []map[string]interface{}
-	var datosReporte map[string]interface{}
 	nombre := c.Ctx.Input.Param(":nombre")
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
 	if body["unidad_id"].(string) != "" {
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",dependencia_id:"+body["unidad_id"].(string)+",nombre:"+nombre, &respuesta); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
-			if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+`/periodo?query=Id:`+body["vigencia"].(string), &resPeriodo); err == nil {
-				helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
-			}
-			for planes := 0; planes < len(planesFilter); planes++ {
-				planesFilterData := planesFilter[planes]
-				plan_id = planesFilterData["_id"].(string)
-
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id+"&fields=nombre,_id,hijos,activo", &res); err == nil {
-					helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
-
-					for i := 0; i < len(subgrupos); i++ {
-						if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") {
-							actividades := reporteshelper.GetActividades(subgrupos[i]["_id"].(string))
-							var arregloLineamieto []map[string]interface{}
-							var arregloLineamietoPI []map[string]interface{}
-							if len(actividades) == 1 {
-								for index := range actividades {
-									if val, ok := actividades[index]["index"].(float64); ok {
-										actividades[index]["index"] = fmt.Sprintf("%v", int(val))
-									}
-								}
-							} else {
-								sort.SliceStable(actividades, func(i int, j int) bool {
-									if _, ok := actividades[i]["index"].(float64); ok {
-										actividades[i]["index"] = fmt.Sprintf("%v", int(actividades[i]["index"].(float64)))
-									}
-									if _, ok := actividades[j]["index"].(float64); ok {
-										actividades[j]["index"] = fmt.Sprintf("%v", int(actividades[j]["index"].(float64)))
-									}
-									aux, _ := strconv.Atoi((actividades[i]["index"]).(string))
-									aux1, _ := strconv.Atoi((actividades[j]["index"]).(string))
-									return aux < aux1
-								})
-							}
-
-							reporteshelper.LimpiarDetalles()
-							for j := 0; j < len(actividades); j++ {
-								arregloLineamieto = nil
-								arregloLineamietoPI = nil
-								actividad := actividades[j]
-								actividadName = actividad["dato"].(string)
-								index := actividad["index"].(string)
-								datosArmonizacion := make(map[string]interface{})
-								titulosArmonizacion := make(map[string]interface{})
-
-								reporteshelper.Limpia()
-								tree := reporteshelper.BuildTreeFa(subgrupos, index)
-								treeDatos := tree[0]
-								treeDatas := tree[1]
-								treeArmo := tree[2]
-								armonizacionTercer := treeArmo[0]
-								var armonizacionTercerNivel interface{}
-								var armonizacionTercerNivelPI interface{}
-
-								if armonizacionTercer["armo"] != nil {
-									armonizacionTercerNivel = armonizacionTercer["armo"].(map[string]interface{})["armonizacionPED"]
-									armonizacionTercerNivelPI = armonizacionTercer["armo"].(map[string]interface{})["armonizacionPI"]
-								}
-
-								for datoGeneral := 0; datoGeneral < len(treeDatos); datoGeneral++ {
-									treeDato := treeDatos[datoGeneral]
-									treeData := treeDatas[0]
-									if treeDato["sub"] == "" {
-										nombre := strings.ToLower(treeDato["nombre"].(string))
-										if strings.Contains(nombre, "ponderación") || strings.Contains(nombre, "ponderacion") && strings.Contains(nombre, "actividad") {
-											datosArmonizacion["Ponderación de la actividad"] = treeData[treeDato["id"].((string))]
-										} else if strings.Contains(nombre, "período") || strings.Contains(nombre, "periodo") && strings.Contains(nombre, "ejecucion") || strings.Contains(nombre, "ejecución") {
-											datosArmonizacion["Periodo de ejecución"] = treeData[treeDato["id"].(string)]
-										} else if strings.Contains(nombre, "actividad") && strings.Contains(nombre, "general") {
-											datosArmonizacion["Actividad general"] = treeData[treeDato["id"].(string)]
-										} else if strings.Contains(nombre, "tarea") || strings.Contains(nombre, "actividades específicas") {
-											datosArmonizacion["Tareas"] = treeData[treeDato["id"].(string)]
-										} else if strings.Contains(nombre, "unidad") || strings.Contains(nombre, "grupo") {
-											datosArmonizacion["Responsable"] = treeData[treeDato["id"].(string)]
-										} else {
-											datosArmonizacion[treeDato["nombre"].(string)] = treeData[treeDato["id"].(string)]
-										}
-									}
-								}
-								var treeIndicador map[string]interface{}
-								auxTree := tree[0]
-								for i := 0; i < len(auxTree); i++ {
-									subgrupo := auxTree[i]
-									if strings.Contains(strings.ToLower(subgrupo["nombre"].(string)), "indicador") {
-										treeIndicador = auxTree[i]
-									}
-								}
-
-								subIndicador := treeIndicador["sub"].([]map[string]interface{})
-								for ind := 0; ind < len(subIndicador); ind++ {
-									subIndicadorRes := subIndicador[ind]
-									treeData := treeDatas[0]
-									dataIndicador := make(map[string]interface{})
-									auxSubIndicador := subIndicadorRes["sub"].([]map[string]interface{})
-									for subInd := 0; subInd < len(auxSubIndicador); subInd++ {
-										if treeData[auxSubIndicador[subInd]["id"].(string)] == nil {
-											treeData[auxSubIndicador[subInd]["id"].(string)] = ""
-										}
-										dataIndicador[auxSubIndicador[subInd]["nombre"].(string)] = treeData[auxSubIndicador[subInd]["id"].(string)]
-									}
-									titulosArmonizacion[subIndicadorRes["nombre"].(string)] = dataIndicador
-								}
-
-								datosArmonizacion["indicadores"] = titulosArmonizacion
-								arregloLineamieto = reporteshelper.ArbolArmonizacionV2(armonizacionTercerNivel.(string))
-								arregloLineamietoPI = reporteshelper.ArbolArmonizacionPIV2(armonizacionTercerNivelPI.(string))
-
-								generalData := make(map[string]interface{})
-								if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=DependenciaId:"+body["unidad_id"].(string), &respuestaUnidad); err == nil {
-									aux := respuestaUnidad[0]
-									dependenciaNombre := aux["DependenciaId"].(map[string]interface{})
-									nombreUnidad = dependenciaNombre["Nombre"].(string)
-								} else {
-									panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
-								}
-
-								generalData["nombreUnidad"] = nombreUnidad
-								generalData["nombreActividad"] = actividadName
-								generalData["numeroActividad"] = index
-								generalData["datosArmonizacion"] = arregloLineamieto
-								generalData["datosArmonizacionPI"] = arregloLineamietoPI
-								generalData["datosComplementarios"] = datosArmonizacion
-
-								arregloPlanAnual = append(arregloPlanAnual, generalData)
-
-							}
-							break
-						}
-					}
-				} else {
-					panic(err)
-				}
-				datosReporte = map[string]interface{}{
-					"plan_id":          plan_id,
-					"planes":           planes,
-					"planesFilter":     planesFilter,
-					"periodo":          periodo,
-					"arregloPlanAnual": arregloPlanAnual,
-				}
-			}
-
-			anioPlan := periodo[0]["Year"].(float64)
-			var esReporteAntiguo bool = true
-
-			if anioPlan > 2024 { //? Vigencias 2025 en adelante son reportes con nueva estructura
-				esReporteAntiguo = false
-			}
-
-			reporteGenerado, errorReporte := reporteshelper.ConstruirExcelPlanAccionUnidad(esReporteAntiguo, datosReporte)
+			reporteGenerado, arregloPlanAnual, errorReporte := reporteshelper.ConstruirExcelPlanAccionUnidad(planesFilter, body)
 
 			if errorReporte != nil {
 				panic(map[string]interface{}{"funcion": "PlanAccionAnual", "err": "Error en la generación del excel", "status": "400", "log": err})
@@ -631,7 +473,6 @@ func (c *ReportesController) PlanAccionAnual() {
 		} else {
 			panic(err)
 		}
-
 	}
 
 	c.ServeJSON()
