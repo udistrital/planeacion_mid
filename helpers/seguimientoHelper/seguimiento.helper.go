@@ -15,9 +15,6 @@ import (
 	"github.com/udistrital/planeacion_mid/helpers"
 	comunhelper "github.com/udistrital/planeacion_mid/helpers/comunHelper"
 	"github.com/udistrital/utils_oas/request"
-	"golang.org/x/text/runes"
-	"golang.org/x/text/transform"
-	"golang.org/x/text/unicode/norm"
 )
 
 func GetTrimestres(vigencia string) []map[string]interface{} {
@@ -490,7 +487,7 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 										case strings.Contains(nombreDetalle, "fórmula"):
 											informacion["formula"] = dato_plan[index].(map[string]interface{})["dato"]
 											continue
-										case strings.Contains(normalize(nombreDetalle), "criterio"):
+										case strings.Contains(nombreDetalle, "criterio"):
 											informacion["denominador"] = dato_plan[index].(map[string]interface{})["dato"]
 											if informacion["denominador"] == "Denominador fijo" {
 												// informacion["reporteDenominador"] = GetDenominadorFijo(seguimiento, len(indicadores), index)
