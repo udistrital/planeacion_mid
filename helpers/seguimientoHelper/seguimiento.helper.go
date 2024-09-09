@@ -15,6 +15,9 @@ import (
 	"github.com/udistrital/planeacion_mid/helpers"
 	comunhelper "github.com/udistrital/planeacion_mid/helpers/comunHelper"
 	"github.com/udistrital/utils_oas/request"
+	"golang.org/x/text/runes"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 )
 
 func GetTrimestres(vigencia string) []map[string]interface{} {
@@ -467,7 +470,7 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 										dato_plan_str := subgrupo_detalle[0]["dato_plan"].(string)
 										json.Unmarshal([]byte(dato_plan_str), &dato_plan)
 										nombreDetalle := strings.ToLower(subgrupo_detalle[0]["nombre"].(string))
-										if dato_plan[index] == nil || dato_plan[index].(map[string]interface{})["dato"] == "" {
+										if dato_plan[index] == nil || dato_plan[index].(map[string]interface{})["dato"] == nil || dato_plan[index].(map[string]interface{})["dato"] == "" {
 											break
 										}
 
@@ -487,7 +490,7 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 										case strings.Contains(nombreDetalle, "fórmula"):
 											informacion["formula"] = dato_plan[index].(map[string]interface{})["dato"]
 											continue
-										case strings.Contains(nombreDetalle, "criterio"):
+										case strings.Contains(normalize(nombreDetalle), "criterio"):
 											informacion["denominador"] = dato_plan[index].(map[string]interface{})["dato"]
 											if informacion["denominador"] == "Denominador fijo" {
 												// informacion["reporteDenominador"] = GetDenominadorFijo(seguimiento, len(indicadores), index)
@@ -637,6 +640,11 @@ func GetRespuestaAnterior(dataSeg map[string]interface{}, index int, respuestas 
 										respuestas[index]["indicadorAcumulado"] = indicadorAcumulado
 										respuestas[index]["avanceAcumulado"] = avanceAcumulado
 										respuestas[index]["brechaExistente"] = brechaExistente
+										respuestas[index]["divisionCero"] = divisionCero
+										continue
+									}
+
+									if index+1 > len(detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})) {
 										respuestas[index]["divisionCero"] = divisionCero
 										continue
 									}
