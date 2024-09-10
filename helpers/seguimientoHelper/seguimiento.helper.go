@@ -1330,17 +1330,23 @@ func GetSeguimiento(planId string, indexActividad string, trimestreId string) (m
 
 	dato := make(map[string]interface{})
 
+	beego.Info("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestreId)
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestreId, &respuesta); err == nil {
 		aux := make([]map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
 		seguimiento = aux[0]
+		beego.Info("Seguimiento: ", seguimiento)
 
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/"+seguimiento["periodo_seguimiento_id"].(string), &resPeriodoSeguimiento); err == nil {
 			helpers.LimpiezaRespuestaRefactor(resPeriodoSeguimiento, &periodoSeguimiento)
+			beego.Info("periodoSeguimiento: ", periodoSeguimiento)
 
+			beego.Info("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+periodoSeguimiento["periodo_id"].(string))
 			if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+periodoSeguimiento["periodo_id"].(string), &resPeriodo); err == nil {
 				helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
+				beego.Info("periodo: ", periodo)
 				trimestre = periodo[0]["ParametroId"].(map[string]interface{})["CodigoAbreviacion"].(string)
+				beego.Info("trimestre: ", trimestre)
 			}
 		}
 
@@ -1348,13 +1354,16 @@ func GetSeguimiento(planId string, indexActividad string, trimestreId string) (m
 		json.Unmarshal([]byte(datoStr), &dato)
 
 		actividad, _ := json.Marshal(GetActividad(seguimiento, indexActividad, trimestre))
+		beego.Info("Actividad: ", actividad)
 		json.Unmarshal([]byte(string(actividad)), &seguimientoActividad)
+		beego.Info("seguimientoActividad: ", seguimientoActividad)
 		seguimientoActividad["_id"] = seguimiento["_id"].(string)
 		seguimientoActividad["id_actividad"] = id_actividad
 
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento/"+seguimiento["estado_seguimiento_id"].(string), &resEstado); err == nil {
 			seguimientoActividad["estadoSeguimiento"] = resEstado["Data"].(map[string]interface{})["nombre"].(string)
 		}
+		beego.Info("resEstado: ", resEstado["Data"].(map[string]interface{})["nombre"].(string))
 
 		return seguimientoActividad, nil
 	} else {
