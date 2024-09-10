@@ -471,35 +471,48 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 											break
 										}
 
+										beego.Info("nombreDetalle: ", nombreDetalle)
 										switch {
-										case strings.Contains(nombreDetalle, "nombre"):
-											informacion["nombre"] = dato_plan[index].(map[string]interface{})["dato"]
-											respuesta["nombre"] = dato_plan[index].(map[string]interface{})["dato"]
-											continue
-										case strings.Contains(nombreDetalle, "meta"):
-											informacion["meta"] = dato_plan[index].(map[string]interface{})["dato"]
-											if reflect.TypeOf(dato_plan[index].(map[string]interface{})["dato"]).String() == "string" {
-												respuesta["meta"], _ = strconv.ParseFloat(dato_plan[index].(map[string]interface{})["dato"].(string), 64)
-											} else {
-												respuesta["meta"] = dato_plan[index].(map[string]interface{})["dato"].(float64)
-											}
-											continue
-										case strings.Contains(nombreDetalle, "fórmula"):
-											informacion["formula"] = dato_plan[index].(map[string]interface{})["dato"]
-											continue
-										case strings.Contains(nombreDetalle, "criterio"):
-											informacion["denominador"] = dato_plan[index].(map[string]interface{})["dato"]
-											if informacion["denominador"] == "Denominador fijo" {
-												// informacion["reporteDenominador"] = GetDenominadorFijo(seguimiento, len(indicadores), index)
-											}
-											continue
-										case strings.Contains(nombreDetalle, "tendencia"):
-											informacion["tendencia"] = strings.Trim(dato_plan[index].(map[string]interface{})["dato"].(string), " ")
-											continue
-										case strings.Contains(nombreDetalle, "unidad de medida"):
-											informacion["unidad"] = strings.Trim(dato_plan[index].(map[string]interface{})["dato"].(string), " ")
-											respuesta["unidad"] = strings.Trim(dato_plan[index].(map[string]interface{})["dato"].(string), " ")
-											continue
+											case strings.Contains(nombreDetalle, "nombre"):
+												beego.Info("Entra case de strings.Contains(nombreDetalle, nombre): ", strings.Contains(nombreDetalle, "nombre"))
+												informacion["nombre"] = dato_plan[index].(map[string]interface{})["dato"]
+												beego.Info("informacion[nombre]: ", informacion["nombre"])
+												respuesta["nombre"] = dato_plan[index].(map[string]interface{})["dato"]
+												continue
+											case strings.Contains(nombreDetalle, "meta"):
+												beego.Info("Entra case de strings.Contains(nombreDetalle, meta): ", strings.Contains(nombreDetalle, "meta"))
+												informacion["meta"] = dato_plan[index].(map[string]interface{})["dato"]
+												beego.Info("informacion[meta]: ", informacion["meta"])
+												if reflect.TypeOf(dato_plan[index].(map[string]interface{})["dato"]).String() == "string" {
+													respuesta["meta"], _ = strconv.ParseFloat(dato_plan[index].(map[string]interface{})["dato"].(string), 64)
+												} else {
+													respuesta["meta"] = dato_plan[index].(map[string]interface{})["dato"].(float64)
+												}
+												continue
+											case strings.Contains(nombreDetalle, "fórmula"):
+												beego.Info("Entra case de strings.Contains(nombreDetalle, fórmula): ", strings.Contains(nombreDetalle, "fórmula"))
+												informacion["formula"] = dato_plan[index].(map[string]interface{})["dato"]
+												beego.Info("informacion[formula]: ", informacion["formula"])
+												continue
+											case strings.Contains(nombreDetalle, "criterio"):
+												beego.Info("Entra case de strings.Contains(nombreDetalle, criterio): ", strings.Contains(nombreDetalle, "criterio"))
+												informacion["denominador"] = dato_plan[index].(map[string]interface{})["dato"]
+												beego.Info("informacion[denominador]: ", informacion["denominador"])
+												if informacion["denominador"] == "Denominador fijo" {
+													// informacion["reporteDenominador"] = GetDenominadorFijo(seguimiento, len(indicadores), index)
+												}
+												continue
+											case strings.Contains(nombreDetalle, "tendencia"):
+												beego.Info("Entra case de strings.Contains(nombreDetalle, tendencia): ", strings.Contains(nombreDetalle, "tendencia"))
+												informacion["tendencia"] = strings.Trim(dato_plan[index].(map[string]interface{})["dato"].(string), " ")
+												beego.Info("informacion[tendencia]: ", informacion["tendencia"])
+												continue
+											case strings.Contains(nombreDetalle, "unidad de medida"):
+												beego.Info("Entra case de strings.Contains(nombreDetalle, unidad de medida): ", strings.Contains(nombreDetalle, "unidad de medida"))
+												informacion["unidad"] = strings.Trim(dato_plan[index].(map[string]interface{})["dato"].(string), " ")
+												beego.Info("informacion[unidad]: ", informacion["unidad"])
+												respuesta["unidad"] = strings.Trim(dato_plan[index].(map[string]interface{})["dato"].(string), " ")
+												continue
 										}
 									}
 								}
@@ -510,6 +523,7 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 							informacion["reporteDenominador"] = nil
 						}
 
+						beego.Info("Informacion: ", informacion)
 						if informacion["nombre"] != nil && informacion["nombre"] != "" {
 							indicadores = append(indicadores, informacion)
 							respuestas = append(respuestas, respuesta)
