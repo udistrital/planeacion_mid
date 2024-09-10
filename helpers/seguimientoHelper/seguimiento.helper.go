@@ -640,7 +640,20 @@ func GetRespuestaAnterior(dataSeg map[string]interface{}, index int, respuestas 
 										respuestas[index]["divisionCero"] = divisionCero
 										continue
 									}
-
+									
+									jsonByte, err := json.Marshal(detalle)
+									if err != nil{
+											log.Fatal(err)
+									}
+									jsonString := string(jsonByte)
+									beego.Info("Detalle Completo: ", jsonString)
+									
+									jsonByte2, err := json.Marshal(detalle["cuantitativo"])
+									if err != nil{
+											log.Fatal(err)
+									}
+									jsonString2 := string(jsonByte2)
+									beego.Info("Detalle cuantitativo: ",jsonString2)
 									if detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["indicadorAcumulado"] != nil {
 										indicadorAcumulado += detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["indicadorAcumulado"].(float64)
 									}
