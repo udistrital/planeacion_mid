@@ -432,57 +432,54 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 		helpers.LimpiezaRespuestaRefactor(resInformacion, &subgrupos)
 		for _, subgrupo := range subgrupos {
 			if strings.Contains(strings.ToLower(subgrupo["nombre"].(string)), "indicador") && subgrupo["activo"] == true {
-
 				hijos = subgrupo["hijos"].([]interface{})
 				hijos = append(hijos, subgrupo["_id"])
 
 				for _, hijo := range hijos {
 					var res map[string]interface{}
 					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+hijo.(string), &res); err == nil {
-						hijosIndicadores := res["Data"].(map[string]interface{})["hijos"].([]interface{})
+						activoHijo := res["Data"].(map[string]interface{})["activo"].(bool)
 
-						var dato_plan map[string]interface{}
+						if activoHijo {
+							hijosIndicadores := res["Data"].(map[string]interface{})["hijos"].([]interface{})
 
-						informacion := map[string]interface{}{
-							"detalleReporte": "",
-						}
+							var dato_plan map[string]interface{}
 
-						respuesta := map[string]interface{}{
-							"indicador":            0,
-							"indicadorAcumulado":   0,
-							"avanceAcumulado":      0,
-							"brechaExistente":      0,
-							"acumuladoNumerador":   0,
-							"acumuladoDenominador": 0,
-							"meta":                 0,
-						}
+							informacion := map[string]interface{}{
+								"detalleReporte": "",
+							}
 
-						for _, hijoI := range hijosIndicadores {
-							if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijoI.(string), &resDetalle); err == nil {
-								var subgrupo_detalle []map[string]interface{}
-								helpers.LimpiezaRespuestaRefactor(resDetalle, &subgrupo_detalle)
+							respuesta := map[string]interface{}{
+								"indicador":            0,
+								"indicadorAcumulado":   0,
+								"avanceAcumulado":      0,
+								"brechaExistente":      0,
+								"acumuladoNumerador":   0,
+								"acumuladoDenominador": 0,
+								"meta":                 0,
+							}
 
-								if len(subgrupo_detalle) > 0 {
-									if subgrupo_detalle[0]["dato_plan"] != nil {
-										dato_plan_str := subgrupo_detalle[0]["dato_plan"].(string)
-										json.Unmarshal([]byte(dato_plan_str), &dato_plan)
-										nombreDetalle := strings.ToLower(subgrupo_detalle[0]["nombre"].(string))
-										if dato_plan[index] == nil || dato_plan[index].(map[string]interface{})["dato"] == "" {
-											break
-										}
+							for _, hijoI := range hijosIndicadores {
+								if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijoI.(string), &resDetalle); err == nil {
+									var subgrupo_detalle []map[string]interface{}
+									helpers.LimpiezaRespuestaRefactor(resDetalle, &subgrupo_detalle)
 
-										beego.Info("nombreDetalle: ", nombreDetalle)
-										switch {
+									if len(subgrupo_detalle) > 0 {
+										if subgrupo_detalle[0]["dato_plan"] != nil && subgrupo_detalle[0]["activo"] == true {
+											dato_plan_str := subgrupo_detalle[0]["dato_plan"].(string)
+											json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+											nombreDetalle := strings.ToLower(subgrupo_detalle[0]["nombre"].(string))
+											if dato_plan[index] == nil || dato_plan[index].(map[string]interface{})["dato"] == "" {
+												break
+											}
+
+											switch {
 											case strings.Contains(nombreDetalle, "nombre"):
-												beego.Info("Entra case de strings.Contains(nombreDetalle, nombre): ", strings.Contains(nombreDetalle, "nombre"))
 												informacion["nombre"] = dato_plan[index].(map[string]interface{})["dato"]
-												beego.Info("informacion[nombre]: ", informacion["nombre"])
 												respuesta["nombre"] = dato_plan[index].(map[string]interface{})["dato"]
 												continue
 											case strings.Contains(nombreDetalle, "meta"):
-												beego.Info("Entra case de strings.Contains(nombreDetalle, meta): ", strings.Contains(nombreDetalle, "meta"))
 												informacion["meta"] = dato_plan[index].(map[string]interface{})["dato"]
-												beego.Info("informacion[meta]: ", informacion["meta"])
 												if reflect.TypeOf(dato_plan[index].(map[string]interface{})["dato"]).String() == "string" {
 													respuesta["meta"], _ = strconv.ParseFloat(dato_plan[index].(map[string]interface{})["dato"].(string), 64)
 												} else {
@@ -490,50 +487,42 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 												}
 												continue
 											case strings.Contains(nombreDetalle, "fórmula"):
-												beego.Info("Entra case de strings.Contains(nombreDetalle, fórmula): ", strings.Contains(nombreDetalle, "fórmula"))
 												informacion["formula"] = dato_plan[index].(map[string]interface{})["dato"]
-												beego.Info("informacion[formula]: ", informacion["formula"])
 												continue
 											case strings.Contains(nombreDetalle, "criterio"):
-												beego.Info("Entra case de strings.Contains(nombreDetalle, criterio): ", strings.Contains(nombreDetalle, "criterio"))
 												informacion["denominador"] = dato_plan[index].(map[string]interface{})["dato"]
-												beego.Info("informacion[denominador]: ", informacion["denominador"])
 												if informacion["denominador"] == "Denominador fijo" {
 													// informacion["reporteDenominador"] = GetDenominadorFijo(seguimiento, len(indicadores), index)
 												}
 												continue
 											case strings.Contains(nombreDetalle, "tendencia"):
-												beego.Info("Entra case de strings.Contains(nombreDetalle, tendencia): ", strings.Contains(nombreDetalle, "tendencia"))
 												informacion["tendencia"] = strings.Trim(dato_plan[index].(map[string]interface{})["dato"].(string), " ")
-												beego.Info("informacion[tendencia]: ", informacion["tendencia"])
 												continue
 											case strings.Contains(nombreDetalle, "unidad de medida"):
-												beego.Info("Entra case de strings.Contains(nombreDetalle, unidad de medida): ", strings.Contains(nombreDetalle, "unidad de medida"))
 												informacion["unidad"] = strings.Trim(dato_plan[index].(map[string]interface{})["dato"].(string), " ")
-												beego.Info("informacion[unidad]: ", informacion["unidad"])
 												respuesta["unidad"] = strings.Trim(dato_plan[index].(map[string]interface{})["dato"].(string), " ")
 												continue
+											}
 										}
 									}
 								}
 							}
-						}
 
-						if informacion["reporteDenominador"] == 1.0 {
-							informacion["reporteDenominador"] = nil
-						}
+							if informacion["reporteDenominador"] == 1.0 {
+								informacion["reporteDenominador"] = nil
+							}
 
-						beego.Info("Informacion: ", informacion)
-						if informacion["nombre"] != nil && informacion["nombre"] != "" {
-							indicadores = append(indicadores, informacion)
-							respuestas = append(respuestas, respuesta)
-						}
+							if informacion["nombre"] != nil && informacion["nombre"] != "" {
+								indicadores = append(indicadores, informacion)
+								respuestas = append(respuestas, respuesta)
+							}
 
-						if informacion["denominador"] == nil {
-							informacion["denominador"] = ""
-						}
+							if informacion["denominador"] == nil {
+								informacion["denominador"] = ""
+							}
 
-						respuestas = GetRespuestaAnterior(seguimiento, len(indicadores)-1, respuestas, index, trimestre)
+							respuestas = GetRespuestaAnterior(seguimiento, len(indicadores)-1, respuestas, index, trimestre)
+						}
 					}
 				}
 				break
@@ -655,20 +644,6 @@ func GetRespuestaAnterior(dataSeg map[string]interface{}, index int, respuestas 
 										continue
 									}
 									
-									jsonByte, err := json.Marshal(detalle)
-									if err != nil{
-											log.Fatal(err)
-									}
-									jsonString := string(jsonByte)
-									beego.Info("Detalle Completo: ", jsonString)
-
-									jsonByte2, err := json.Marshal(detalle["cuantitativo"])
-									if err != nil{
-											log.Fatal(err)
-									}
-									jsonString2 := string(jsonByte2)
-									beego.Info("Detalle cuantitativo: ",jsonString2)
-									beego.Info("Index: ", index)
 									if detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["indicadorAcumulado"] != nil {
 										indicadorAcumulado += detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["indicadorAcumulado"].(float64)
 									}
@@ -1358,23 +1333,17 @@ func GetSeguimiento(planId string, indexActividad string, trimestreId string) (m
 
 	dato := make(map[string]interface{})
 
-	beego.Info("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestreId)
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestreId, &respuesta); err == nil {
 		aux := make([]map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
 		seguimiento = aux[0]
-		beego.Info("Seguimiento: ", seguimiento)
 
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/"+seguimiento["periodo_seguimiento_id"].(string), &resPeriodoSeguimiento); err == nil {
 			helpers.LimpiezaRespuestaRefactor(resPeriodoSeguimiento, &periodoSeguimiento)
-			beego.Info("periodoSeguimiento: ", periodoSeguimiento)
 
-			beego.Info("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+periodoSeguimiento["periodo_id"].(string))
 			if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+periodoSeguimiento["periodo_id"].(string), &resPeriodo); err == nil {
 				helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
-				beego.Info("periodo: ", periodo)
 				trimestre = periodo[0]["ParametroId"].(map[string]interface{})["CodigoAbreviacion"].(string)
-				beego.Info("trimestre: ", trimestre)
 			}
 		}
 
@@ -1382,16 +1351,13 @@ func GetSeguimiento(planId string, indexActividad string, trimestreId string) (m
 		json.Unmarshal([]byte(datoStr), &dato)
 
 		actividad, _ := json.Marshal(GetActividad(seguimiento, indexActividad, trimestre))
-		beego.Info("Actividad: ", actividad)
 		json.Unmarshal([]byte(string(actividad)), &seguimientoActividad)
-		beego.Info("seguimientoActividad: ", seguimientoActividad)
 		seguimientoActividad["_id"] = seguimiento["_id"].(string)
 		seguimientoActividad["id_actividad"] = id_actividad
 
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento/"+seguimiento["estado_seguimiento_id"].(string), &resEstado); err == nil {
 			seguimientoActividad["estadoSeguimiento"] = resEstado["Data"].(map[string]interface{})["nombre"].(string)
 		}
-		beego.Info("resEstado: ", resEstado["Data"].(map[string]interface{})["nombre"].(string))
 
 		return seguimientoActividad, nil
 	} else {
