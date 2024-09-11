@@ -432,94 +432,97 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 		helpers.LimpiezaRespuestaRefactor(resInformacion, &subgrupos)
 		for _, subgrupo := range subgrupos {
 			if strings.Contains(strings.ToLower(subgrupo["nombre"].(string)), "indicador") && subgrupo["activo"] == true {
-
 				hijos = subgrupo["hijos"].([]interface{})
 				hijos = append(hijos, subgrupo["_id"])
 
 				for _, hijo := range hijos {
 					var res map[string]interface{}
 					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+hijo.(string), &res); err == nil {
-						hijosIndicadores := res["Data"].(map[string]interface{})["hijos"].([]interface{})
+						activoHijo := res["Data"].(map[string]interface{})["activo"].(bool)
 
-						var dato_plan map[string]interface{}
+						if activoHijo {
+							hijosIndicadores := res["Data"].(map[string]interface{})["hijos"].([]interface{})
 
-						informacion := map[string]interface{}{
-							"detalleReporte": "",
-						}
+							var dato_plan map[string]interface{}
 
-						respuesta := map[string]interface{}{
-							"indicador":            0,
-							"indicadorAcumulado":   0,
-							"avanceAcumulado":      0,
-							"brechaExistente":      0,
-							"acumuladoNumerador":   0,
-							"acumuladoDenominador": 0,
-							"meta":                 0,
-						}
+							informacion := map[string]interface{}{
+								"detalleReporte": "",
+							}
 
-						for _, hijoI := range hijosIndicadores {
-							if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijoI.(string), &resDetalle); err == nil {
-								var subgrupo_detalle []map[string]interface{}
-								helpers.LimpiezaRespuestaRefactor(resDetalle, &subgrupo_detalle)
+							respuesta := map[string]interface{}{
+								"indicador":            0,
+								"indicadorAcumulado":   0,
+								"avanceAcumulado":      0,
+								"brechaExistente":      0,
+								"acumuladoNumerador":   0,
+								"acumuladoDenominador": 0,
+								"meta":                 0,
+							}
 
-								if len(subgrupo_detalle) > 0 {
-									if subgrupo_detalle[0]["dato_plan"] != nil {
-										dato_plan_str := subgrupo_detalle[0]["dato_plan"].(string)
-										json.Unmarshal([]byte(dato_plan_str), &dato_plan)
-										nombreDetalle := strings.ToLower(subgrupo_detalle[0]["nombre"].(string))
-										if dato_plan[index] == nil || dato_plan[index].(map[string]interface{})["dato"] == "" {
-											break
-										}
+							for _, hijoI := range hijosIndicadores {
+								if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijoI.(string), &resDetalle); err == nil {
+									var subgrupo_detalle []map[string]interface{}
+									helpers.LimpiezaRespuestaRefactor(resDetalle, &subgrupo_detalle)
 
-										switch {
-										case strings.Contains(nombreDetalle, "nombre"):
-											informacion["nombre"] = dato_plan[index].(map[string]interface{})["dato"]
-											respuesta["nombre"] = dato_plan[index].(map[string]interface{})["dato"]
-											continue
-										case strings.Contains(nombreDetalle, "meta"):
-											informacion["meta"] = dato_plan[index].(map[string]interface{})["dato"]
-											if reflect.TypeOf(dato_plan[index].(map[string]interface{})["dato"]).String() == "string" {
-												respuesta["meta"], _ = strconv.ParseFloat(dato_plan[index].(map[string]interface{})["dato"].(string), 64)
-											} else {
-												respuesta["meta"] = dato_plan[index].(map[string]interface{})["dato"].(float64)
+									if len(subgrupo_detalle) > 0 {
+										if subgrupo_detalle[0]["dato_plan"] != nil && subgrupo_detalle[0]["activo"] == true {
+											dato_plan_str := subgrupo_detalle[0]["dato_plan"].(string)
+											json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+											nombreDetalle := strings.ToLower(subgrupo_detalle[0]["nombre"].(string))
+											if dato_plan[index] == nil || dato_plan[index].(map[string]interface{})["dato"] == "" {
+												break
 											}
-											continue
-										case strings.Contains(nombreDetalle, "fórmula"):
-											informacion["formula"] = dato_plan[index].(map[string]interface{})["dato"]
-											continue
-										case strings.Contains(nombreDetalle, "criterio"):
-											informacion["denominador"] = dato_plan[index].(map[string]interface{})["dato"]
-											if informacion["denominador"] == "Denominador fijo" {
-												// informacion["reporteDenominador"] = GetDenominadorFijo(seguimiento, len(indicadores), index)
+
+											switch {
+											case strings.Contains(nombreDetalle, "nombre"):
+												informacion["nombre"] = dato_plan[index].(map[string]interface{})["dato"]
+												respuesta["nombre"] = dato_plan[index].(map[string]interface{})["dato"]
+												continue
+											case strings.Contains(nombreDetalle, "meta"):
+												informacion["meta"] = dato_plan[index].(map[string]interface{})["dato"]
+												if reflect.TypeOf(dato_plan[index].(map[string]interface{})["dato"]).String() == "string" {
+													respuesta["meta"], _ = strconv.ParseFloat(dato_plan[index].(map[string]interface{})["dato"].(string), 64)
+												} else {
+													respuesta["meta"] = dato_plan[index].(map[string]interface{})["dato"].(float64)
+												}
+												continue
+											case strings.Contains(nombreDetalle, "fórmula"):
+												informacion["formula"] = dato_plan[index].(map[string]interface{})["dato"]
+												continue
+											case strings.Contains(nombreDetalle, "criterio"):
+												informacion["denominador"] = dato_plan[index].(map[string]interface{})["dato"]
+												if informacion["denominador"] == "Denominador fijo" {
+													// informacion["reporteDenominador"] = GetDenominadorFijo(seguimiento, len(indicadores), index)
+												}
+												continue
+											case strings.Contains(nombreDetalle, "tendencia"):
+												informacion["tendencia"] = strings.Trim(dato_plan[index].(map[string]interface{})["dato"].(string), " ")
+												continue
+											case strings.Contains(nombreDetalle, "unidad de medida"):
+												informacion["unidad"] = strings.Trim(dato_plan[index].(map[string]interface{})["dato"].(string), " ")
+												respuesta["unidad"] = strings.Trim(dato_plan[index].(map[string]interface{})["dato"].(string), " ")
+												continue
 											}
-											continue
-										case strings.Contains(nombreDetalle, "tendencia"):
-											informacion["tendencia"] = strings.Trim(dato_plan[index].(map[string]interface{})["dato"].(string), " ")
-											continue
-										case strings.Contains(nombreDetalle, "unidad de medida"):
-											informacion["unidad"] = strings.Trim(dato_plan[index].(map[string]interface{})["dato"].(string), " ")
-											respuesta["unidad"] = strings.Trim(dato_plan[index].(map[string]interface{})["dato"].(string), " ")
-											continue
 										}
 									}
 								}
 							}
-						}
 
-						if informacion["reporteDenominador"] == 1.0 {
-							informacion["reporteDenominador"] = nil
-						}
+							if informacion["reporteDenominador"] == 1.0 {
+								informacion["reporteDenominador"] = nil
+							}
 
-						if informacion["nombre"] != nil && informacion["nombre"] != "" {
-							indicadores = append(indicadores, informacion)
-							respuestas = append(respuestas, respuesta)
-						}
+							if informacion["nombre"] != nil && informacion["nombre"] != "" {
+								indicadores = append(indicadores, informacion)
+								respuestas = append(respuestas, respuesta)
+							}
 
-						if informacion["denominador"] == nil {
-							informacion["denominador"] = ""
-						}
+							if informacion["denominador"] == nil {
+								informacion["denominador"] = ""
+							}
 
-						respuestas = GetRespuestaAnterior(seguimiento, len(indicadores)-1, respuestas, index, trimestre)
+							respuestas = GetRespuestaAnterior(seguimiento, len(indicadores)-1, respuestas, index, trimestre)
+						}
 					}
 				}
 				break
