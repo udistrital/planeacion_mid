@@ -260,7 +260,7 @@ func (c *FormulacionController) ClonarFormatoPAF() {
 				hijosActivos = append(hijosActivos, hijo)
 			}
 		}
-		formulacionhelper.ClonarHijos(hijosActivos, padre)
+		formulacionhelper.ClonarHijosPAF(hijosActivos, padre)
 	}
 
 	c.ServeJSON()
