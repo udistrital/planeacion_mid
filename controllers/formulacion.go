@@ -1597,7 +1597,7 @@ func (c *FormulacionController) GetUnidades() {
 	var respuesta []map[string]interface{}
 	var unidades []map[string]interface{}
 
-	tiposDependencia := []string{"2", "3", "4", "5", "6", "7", "8", "11", "13", "15", "28", "33"}
+	tiposDependencia := []string{"2", "4", "5", "6", "7", "8", "28", "33"}
 	for _, tipoDep := range tiposDependencia {
 		respuesta = nil
 		err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?limit=0&query=TipoDependenciaId:"+tipoDep, &respuesta)
@@ -1623,9 +1623,9 @@ func (c *FormulacionController) GetUnidades() {
 
 	tipoDependenciaDependencia := map[string][]string{
 		"9":  {"223"},
-		"10": {"92", "96", "97", "209"},
-		"14": {"42", "171"},
-		"33": {"222"},
+		"10": {"92", "96", "97"},
+		"11": {"9"},
+		"14": {"42"},
 	}
 	for tipoDep, deps := range tipoDependenciaDependencia {
 		for _, dep := range deps {
