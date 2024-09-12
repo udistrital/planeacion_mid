@@ -1622,6 +1622,7 @@ func (c *FormulacionController) GetUnidades() {
 	}
 
 	tipoDependenciaDependencia := map[string][]string{
+		"9":  {"223"},
 		"10": {"92", "96", "97", "209"},
 		"14": {"42", "171"},
 		"33": {"222"},
