@@ -2598,7 +2598,6 @@ func ObtenerIdParametros() (float64, float64, float64, error) {
 
 	err := request.GetJson(baseURL+"CodigoAbreviacion:NR,TipoParametroId__CodigoAbreviacion:C,Activo:true", &ParametroNoRegistra)
 	IdNoRegistra, ok := ParametroNoRegistra["Data"].([]interface{})[0].(map[string]interface{})["Id"].(float64)
-
 	if err != nil || !ok {
 		panic(map[string]interface{}{"funcion": "VinculacionTercero", "err": "Error get ParametroNoRegistra", "status": "400", "log": err})
 	}
@@ -2616,6 +2615,19 @@ func ObtenerIdParametros() (float64, float64, float64, error) {
 	}
 
 	return IdNoRegistra, IdJefeOficina, IdAsistenteDependencia, nil
+}
+
+func ObtenerTipoVincEstudiante() (float64, error) {
+	var ParametroTipoVinEstudiante map[string]interface{}
+	baseURL := "http://" + beego.AppConfig.String("ParametrosService") + "/parametro?query="
+
+	err := request.GetJson(baseURL+"CodigoAbreviacion:EST,TipoParametroId__CodigoAbreviacion:TV,Activo:true", &ParametroTipoVinEstudiante)
+	IdTipoVincEstudiante, _ := ParametroTipoVinEstudiante["Data"].([]interface{})[0].(map[string]interface{})["Id"].(float64)
+	if err != nil || IdTipoVincEstudiante == 0 {
+		panic(map[string]interface{}{"funcion": "VinculacionTercero", "err": "Error get ParametroAsistenteDependencia", "status": "400", "log": err})
+	}
+
+	return IdTipoVincEstudiante, nil
 }
 
 func obtenerCorreoPlaneacion() (string, error) {

@@ -1777,6 +1777,11 @@ func (c *FormulacionController) VinculacionTerceroByIdentificacion() {
 		panic(map[string]interface{}{"funcion": "VinculacionTerceroByIdentificacion", "err": "Error get parametros", "status": "400", "log": err})
 	}
 
+	IdTipoVincEstudiante, err := formulacionhelper.ObtenerTipoVincEstudiante()
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "VinculacionTerceroByIdentificacion", "err": "Error get parametros", "status": "400", "log": err})
+	}
+
 	s := "Numero:" + identificacionTercero + ",Activo:true"
 	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/datos_identificacion?query="+url.QueryEscape(s), &tercero); err != nil || tercero[0].TerceroID.ID == 0 {
 		panic(map[string]interface{}{"funcion": "VinculacionTerceroByIdentificacion", "err": "Error get tercero", "status": "400", "log": err})
@@ -1788,7 +1793,11 @@ func (c *FormulacionController) VinculacionTerceroByIdentificacion() {
 	} else {
 		var vinculacionesResponse []models.Vinculacion
 		for i := 0; i < len(vinculaciones); i++ {
-			if vinculaciones[i].CargoId == int(idJefeOficina) || vinculaciones[i].CargoId == int(idAsistenteDependencia) || vinculaciones[i].CargoId == int(idNoRegistra) {
+			if vinculaciones[i].CargoId == int(idJefeOficina) || 
+				vinculaciones[i].CargoId == int(idAsistenteDependencia) || 
+				vinculaciones[i].CargoId == int(idNoRegistra) &&
+				vinculaciones[i].TipoVinculacionId != int(IdTipoVincEstudiante) &&
+				vinculaciones[i].DependenciaId != 0 {
 				vinculacionesResponse = append(vinculacionesResponse, vinculaciones[i])
 			}
 		}
