@@ -1625,6 +1625,7 @@ func (c *FormulacionController) GetUnidades() {
 		"9":  {"223"},
 		"10": {"92", "96", "97"},
 		"11": {"9"},
+		"12": {"48"},
 		"14": {"42"},
 	}
 	for tipoDep, deps := range tipoDependenciaDependencia {
