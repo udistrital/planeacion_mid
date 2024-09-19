@@ -1623,7 +1623,6 @@ func (c *FormulacionController) GetUnidades() {
 
 	tipoDependenciaDependencia := map[string][]string{
 		"9":  {"223"},
-		"10": {"92", "96", "97"},
 		"11": {"9"},
 		"12": {"48"},
 		"14": {"42"},
@@ -1687,7 +1686,7 @@ func (c *FormulacionController) VinculacionTercero() {
 	terceroId := c.Ctx.Input.Param(":tercero_id")
 	var vinculaciones []models.Vinculacion
 	var vinculacionesResponse []models.Vinculacion
-	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/vinculacion?query=Activo:true,TerceroPrincipalId:"+terceroId, &vinculaciones); err != nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/vinculacion?sortby=Id&order=asc&query=Activo:true,TerceroPrincipalId:"+terceroId, &vinculaciones); err != nil {
 		panic(map[string]interface{}{"funcion": "VinculacionTercero", "err": "Error get vinculacion", "status": "400", "log": err})
 	} else {
 		for i := 0; i < len(vinculaciones); i++ {
@@ -1789,7 +1788,7 @@ func (c *FormulacionController) VinculacionTerceroByIdentificacion() {
 	}
 
 	TerceroIdStr := fmt.Sprintf("%d", tercero[0].TerceroID.ID)
-	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/vinculacion?query=Activo:true,TerceroPrincipalId:"+TerceroIdStr, &vinculaciones); err != nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/vinculacion?sortby=Id&order=asc&query=Activo:true,TerceroPrincipalId:"+TerceroIdStr, &vinculaciones); err != nil {
 		panic(map[string]interface{}{"funcion": "VinculacionTerceroByIdentificacion", "err": "Error get vinculacion", "status": "400", "log": err})
 	} else {
 		var vinculacionesResponse []models.Vinculacion
