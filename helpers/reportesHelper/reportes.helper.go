@@ -4949,6 +4949,9 @@ func ConstruirExcelPlanAccionEvaluacion(esReporteAntiguo bool, datosReporte map[
 				for _, est := range met["estrategias"].([]map[string]interface{}) {
 					consolidadoExcelEvaluacion.MergeCell(sheetName, "D"+fmt.Sprint(y_est), "D"+fmt.Sprint(y_est+h_est-1))
 					consolidadoExcelEvaluacion.SetCellValue(sheetName, "D"+fmt.Sprint(y_est), est["descripcionEstrategia"])
+					longitudTexto := (len(est["descripcionEstrategia"].(string)))
+					consolidadoExcelEvaluacion.SetRowHeight(sheetName, y_est, float64(longitudTexto))
+					longitudTexto = 0;
 					if (est["nombreEstrategia"].(string) == "No seleccionado") || strings.Contains(strings.ToLower(est["nombreEstrategia"].(string)), "no aplica") {
 						SombrearCeldas(consolidadoExcelEvaluacion, posArmonizacion, sheetName, "D"+fmt.Sprint(y_est), "D"+fmt.Sprint(y_est+h_est-1), stylecontentC, stylecontentCS)
 					} else {
@@ -4978,6 +4981,9 @@ func ConstruirExcelPlanAccionEvaluacion(esReporteAntiguo bool, datosReporte map[
 				for _, est := range lin["estrategias"].([]map[string]interface{}) {
 					consolidadoExcelEvaluacion.MergeCell(sheetName, "G"+fmt.Sprint(y_est), "G"+fmt.Sprint(y_est+h_est-1))
 					consolidadoExcelEvaluacion.SetCellValue(sheetName, "G"+fmt.Sprint(y_est), est["descripcionEstrategia"])
+					longitudTexto := (len(est["descripcionEstrategia"].(string)))
+					consolidadoExcelEvaluacion.SetRowHeight(sheetName, y_est, float64(longitudTexto))
+					longitudTexto = 0;
 					if (est["nombreEstrategia"].(string) == "No seleccionado") || strings.Contains(strings.ToLower(est["nombreEstrategia"].(string)), "no aplica") {
 						SombrearCeldas(consolidadoExcelEvaluacion, posArmonizacion, sheetName, "G"+fmt.Sprint(y_est), "G"+fmt.Sprint(y_est+h_est-1), stylecontentC, stylecontentCS)
 					} else {
