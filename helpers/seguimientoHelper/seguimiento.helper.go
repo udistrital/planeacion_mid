@@ -10,11 +10,15 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
 	comunhelper "github.com/udistrital/planeacion_mid/helpers/comunHelper"
 	"github.com/udistrital/utils_oas/request"
+	"golang.org/x/text/runes"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 )
 
 func GetTrimestres(vigencia string) []map[string]interface{} {
@@ -489,7 +493,7 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 											case strings.Contains(nombreDetalle, "fórmula"):
 												informacion["formula"] = dato_plan[index].(map[string]interface{})["dato"]
 												continue
-											case strings.Contains(nombreDetalle, "criterio"):
+											case strings.Contains(normalize(nombreDetalle), "criterio"):
 												informacion["denominador"] = dato_plan[index].(map[string]interface{})["dato"]
 												if informacion["denominador"] == "Denominador fijo" {
 													// informacion["reporteDenominador"] = GetDenominadorFijo(seguimiento, len(indicadores), index)
@@ -1632,4 +1636,14 @@ func esReporteAntiguo(planId string) (bool, error) {
 	}
 
 	return esReporteAntiguo, nil
+}
+
+var normalizer = transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
+
+func normalize(str string) string {
+	s, _, err := transform.String(normalizer, str)
+	if err != nil {
+		return ""
+	}
+	return s
 }
