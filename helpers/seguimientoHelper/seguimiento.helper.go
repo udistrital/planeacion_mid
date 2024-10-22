@@ -10,11 +10,15 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
 	comunhelper "github.com/udistrital/planeacion_mid/helpers/comunHelper"
 	"github.com/udistrital/utils_oas/request"
+	"golang.org/x/text/runes"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 )
 
 func GetTrimestres(vigencia string) []map[string]interface{} {
@@ -489,7 +493,7 @@ func GetCuantitativoPlan(seguimiento map[string]interface{}, index string, trime
 											case strings.Contains(nombreDetalle, "fórmula"):
 												informacion["formula"] = dato_plan[index].(map[string]interface{})["dato"]
 												continue
-											case strings.Contains(nombreDetalle, "criterio"):
+											case strings.Contains(normalize(nombreDetalle), "criterio"):
 												informacion["denominador"] = dato_plan[index].(map[string]interface{})["dato"]
 												if informacion["denominador"] == "Denominador fijo" {
 													// informacion["reporteDenominador"] = GetDenominadorFijo(seguimiento, len(indicadores), index)
@@ -1091,7 +1095,7 @@ func auxSeguimientoAvalable(actividades []map[string]interface{}, datoPlan map[s
 	return avaladas, observaciones, dato
 }
 
-func SeguimientoVerificable(seguimiento map[string]interface{}) (bool, bool, map[string]interface{}) {
+func SeguimientoVerificable(seguimiento map[string]interface{}, reporteDirecto bool) (bool, bool, map[string]interface{}) {
 	var res map[string]interface{}
 	var subgrupos []map[string]interface{}
 	var datoPlan map[string]interface{}
@@ -1112,7 +1116,7 @@ func SeguimientoVerificable(seguimiento map[string]interface{}) (bool, bool, map
 					dato_plan_str := seguimiento["dato"].(string)
 					json.Unmarshal([]byte(dato_plan_str), &datoPlan)
 
-					avaladas, observaciones, dato = auxSeguimientoVerificable(actividades, datoPlan)
+					avaladas, observaciones, dato = auxSeguimientoVerificable(actividades, datoPlan, reporteDirecto)
 				}
 			} else {
 				if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") {
@@ -1121,7 +1125,7 @@ func SeguimientoVerificable(seguimiento map[string]interface{}) (bool, bool, map
 					dato_plan_str := seguimiento["dato"].(string)
 					json.Unmarshal([]byte(dato_plan_str), &datoPlan)
 
-					avaladas, observaciones, dato = auxSeguimientoVerificable(actividades, datoPlan)
+					avaladas, observaciones, dato = auxSeguimientoVerificable(actividades, datoPlan, reporteDirecto)
 				}
 			}
 		}
@@ -1134,7 +1138,7 @@ func SeguimientoVerificable(seguimiento map[string]interface{}) (bool, bool, map
 	return avaladas, observaciones, nil
 }
 
-func auxSeguimientoVerificable(actividades []map[string]interface{}, datoPlan map[string]interface{}) (bool, bool, map[string]interface{}) {
+func auxSeguimientoVerificable(actividades []map[string]interface{}, datoPlan map[string]interface{}, reporteDirecto bool) (bool, bool, map[string]interface{}) {
 	dato := make(map[string]interface{})
 	var resSeguimientoDetalle, detalle map[string]interface{}
 	var observaciones, avaladas bool
@@ -1150,12 +1154,14 @@ func auxSeguimientoVerificable(actividades []map[string]interface{}, datoPlan ma
 							helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
 							detalle = ConvertirStringJson(detalle)
 							estado = detalle["estado"].(map[string]interface{})
-							if estado["nombre"] != "Actividad Verificada" && estado["nombre"] != "Con observaciones" && estado["nombre"] != "Actividad avalada" {
+							if estado["nombre"] != "Actividad Verificada" && estado["nombre"] != "Con observaciones" && estado["nombre"] != "Actividad avalada" &&
+								!(estado["nombre"] == "Actividad reportada" && reporteDirecto) {
 								dato[indexActividad] = actividad["dato"]
 							}
 						}
 					} else {
-						if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad Verificada" && element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Con observaciones" {
+						if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad Verificada" && element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Con observaciones" &&
+							!(element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] == "Actividad reportada" && reporteDirecto) {
 							dato[indexActividad] = actividad["dato"]
 						}
 					}
@@ -1166,12 +1172,14 @@ func auxSeguimientoVerificable(actividades []map[string]interface{}, datoPlan ma
 						helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
 						detalle = ConvertirStringJson(detalle)
 						estado = detalle["estado"].(map[string]interface{})
-						if estado["nombre"] != "Actividad Verificada" && estado["nombre"] != "Con observaciones" && estado["nombre"] != "Actividad avalada" {
+						if estado["nombre"] != "Actividad Verificada" && estado["nombre"] != "Con observaciones" && estado["nombre"] != "Actividad avalada" &&
+							!(estado["nombre"] == "Actividad reportada" && reporteDirecto) {
 							dato[indexActividad] = actividad["dato"]
 						}
 					}
 				} else {
-					if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad Verificada" && element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Con observaciones" && element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad avalada" {
+					if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad Verificada" && element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Con observaciones" && element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad avalada" &&
+						!(element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad reportada" && reporteDirecto) {
 						dato[indexActividad] = actividad["dato"]
 					}
 				}
@@ -1183,7 +1191,8 @@ func auxSeguimientoVerificable(actividades []map[string]interface{}, datoPlan ma
 				observaciones = true
 			}
 
-			if estado["nombre"] == "Actividad Verificada" {
+			if estado["nombre"] == "Actividad Verificada" ||
+				(estado["nombre"] == "Actividad reportada" && reporteDirecto) {
 				avaladas = true
 			}
 		} else {
@@ -1191,7 +1200,8 @@ func auxSeguimientoVerificable(actividades []map[string]interface{}, datoPlan ma
 				observaciones = true
 			}
 
-			if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] == "Actividad Verificada" {
+			if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] == "Actividad Verificada" ||
+				(element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] == "Actividad reportada" && reporteDirecto) {
 				avaladas = true
 			}
 		}
@@ -1632,4 +1642,14 @@ func esReporteAntiguo(planId string) (bool, error) {
 	}
 
 	return esReporteAntiguo, nil
+}
+
+var normalizer = transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
+
+func normalize(str string) string {
+	s, _, err := transform.String(normalizer, str)
+	if err != nil {
+		return ""
+	}
+	return s
 }
