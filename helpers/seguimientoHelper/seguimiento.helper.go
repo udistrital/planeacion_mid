@@ -1095,7 +1095,7 @@ func auxSeguimientoAvalable(actividades []map[string]interface{}, datoPlan map[s
 	return avaladas, observaciones, dato
 }
 
-func SeguimientoVerificable(seguimiento map[string]interface{}) (bool, bool, map[string]interface{}) {
+func SeguimientoVerificable(seguimiento map[string]interface{}, reporteDirecto bool) (bool, bool, map[string]interface{}) {
 	var res map[string]interface{}
 	var subgrupos []map[string]interface{}
 	var datoPlan map[string]interface{}
@@ -1116,7 +1116,7 @@ func SeguimientoVerificable(seguimiento map[string]interface{}) (bool, bool, map
 					dato_plan_str := seguimiento["dato"].(string)
 					json.Unmarshal([]byte(dato_plan_str), &datoPlan)
 
-					avaladas, observaciones, dato = auxSeguimientoVerificable(actividades, datoPlan)
+					avaladas, observaciones, dato = auxSeguimientoVerificable(actividades, datoPlan, reporteDirecto)
 				}
 			} else {
 				if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") {
@@ -1125,7 +1125,7 @@ func SeguimientoVerificable(seguimiento map[string]interface{}) (bool, bool, map
 					dato_plan_str := seguimiento["dato"].(string)
 					json.Unmarshal([]byte(dato_plan_str), &datoPlan)
 
-					avaladas, observaciones, dato = auxSeguimientoVerificable(actividades, datoPlan)
+					avaladas, observaciones, dato = auxSeguimientoVerificable(actividades, datoPlan, reporteDirecto)
 				}
 			}
 		}
@@ -1138,7 +1138,7 @@ func SeguimientoVerificable(seguimiento map[string]interface{}) (bool, bool, map
 	return avaladas, observaciones, nil
 }
 
-func auxSeguimientoVerificable(actividades []map[string]interface{}, datoPlan map[string]interface{}) (bool, bool, map[string]interface{}) {
+func auxSeguimientoVerificable(actividades []map[string]interface{}, datoPlan map[string]interface{}, reporteDirecto bool) (bool, bool, map[string]interface{}) {
 	dato := make(map[string]interface{})
 	var resSeguimientoDetalle, detalle map[string]interface{}
 	var observaciones, avaladas bool
@@ -1154,12 +1154,14 @@ func auxSeguimientoVerificable(actividades []map[string]interface{}, datoPlan ma
 							helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
 							detalle = ConvertirStringJson(detalle)
 							estado = detalle["estado"].(map[string]interface{})
-							if estado["nombre"] != "Actividad Verificada" && estado["nombre"] != "Con observaciones" && estado["nombre"] != "Actividad avalada" {
+							if estado["nombre"] != "Actividad Verificada" && estado["nombre"] != "Con observaciones" && estado["nombre"] != "Actividad avalada" &&
+								!(estado["nombre"] == "Actividad reportada" && reporteDirecto) {
 								dato[indexActividad] = actividad["dato"]
 							}
 						}
 					} else {
-						if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad Verificada" && element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Con observaciones" {
+						if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad Verificada" && element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Con observaciones" &&
+							!(element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] == "Actividad reportada" && reporteDirecto) {
 							dato[indexActividad] = actividad["dato"]
 						}
 					}
@@ -1170,12 +1172,14 @@ func auxSeguimientoVerificable(actividades []map[string]interface{}, datoPlan ma
 						helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
 						detalle = ConvertirStringJson(detalle)
 						estado = detalle["estado"].(map[string]interface{})
-						if estado["nombre"] != "Actividad Verificada" && estado["nombre"] != "Con observaciones" && estado["nombre"] != "Actividad avalada" {
+						if estado["nombre"] != "Actividad Verificada" && estado["nombre"] != "Con observaciones" && estado["nombre"] != "Actividad avalada" &&
+							!(estado["nombre"] == "Actividad reportada" && reporteDirecto) {
 							dato[indexActividad] = actividad["dato"]
 						}
 					}
 				} else {
-					if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad Verificada" && element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Con observaciones" && element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad avalada" {
+					if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad Verificada" && element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Con observaciones" && element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad avalada" &&
+						!(element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] != "Actividad reportada" && reporteDirecto) {
 						dato[indexActividad] = actividad["dato"]
 					}
 				}
@@ -1187,7 +1191,8 @@ func auxSeguimientoVerificable(actividades []map[string]interface{}, datoPlan ma
 				observaciones = true
 			}
 
-			if estado["nombre"] == "Actividad Verificada" {
+			if estado["nombre"] == "Actividad Verificada" ||
+				(estado["nombre"] == "Actividad reportada" && reporteDirecto) {
 				avaladas = true
 			}
 		} else {
@@ -1195,7 +1200,8 @@ func auxSeguimientoVerificable(actividades []map[string]interface{}, datoPlan ma
 				observaciones = true
 			}
 
-			if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] == "Actividad Verificada" {
+			if element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] == "Actividad Verificada" ||
+				(element.(map[string]interface{})["estado"].(map[string]interface{})["nombre"] == "Actividad reportada" && reporteDirecto) {
 				avaladas = true
 			}
 		}
