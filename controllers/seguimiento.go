@@ -2022,7 +2022,7 @@ func (c *SeguimientoController) RevisarSeguimientoJefeDependencia() {
 		if avalado || observacion {
 			var codigo_abreviacion string
 
-			if observacion {
+			if observacion && !reporteAsistente {
 				codigo_abreviacion = "RVCO"
 			} else {
 				codigo_abreviacion = "RV"
