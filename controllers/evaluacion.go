@@ -108,7 +108,7 @@ func (c *EvaluacionController) GetEvaluacion() {
 	} else {
 		for posicionTrimestre, trimestre := range trimestres {
 			if trimestre["_id"] == periodoId {
-				evaluacion = evaluacionhelper.GetEvaluacion(plan, trimestres, posicionTrimestre)
+				evaluacion = evaluacionhelper.GetEvaluacion(plan, trimestres, posicionTrimestre, true)
 				break
 			}
 		}
