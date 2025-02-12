@@ -4222,7 +4222,15 @@ func ConstruirExcelPlanAccionGeneral(planesFilter []map[string]interface{}, body
 							arregloLineamietoPI = nil
 							actividad := actividades[j]
 							actividadName = actividad["dato"].(string)
-							index := actividad["index"].(string)
+							index, ok := actividad["index"].(string)
+							if !ok {
+								indexFloat, ok := actividad["index"].(float64)
+								if ok {
+									indexInt := int(indexFloat)
+									index = strconv.Itoa(indexInt)
+								}
+							}
+
 							datosArmonizacion := make(map[string]interface{})
 							titulosArmonizacion := make(map[string]interface{})
 
