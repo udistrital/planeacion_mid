@@ -1478,6 +1478,7 @@ func (c *FormulacionController) PonderacionActividades() {
 			}
 		}
 	}()
+
 	plan := c.Ctx.Input.Param(":plan")
 	var respuesta map[string]interface{}
 	var respuestaDetalle map[string]interface{}
@@ -1508,10 +1509,12 @@ func (c *FormulacionController) PonderacionActividades() {
 						ponderacionActividades := make(map[string]interface{})
 
 						for j, dato := range datoPlan {
-							if dato["activo"] != false && len(dato) != 0 {
-								ponderacionActividades["Actividad "+(j)] = dato["dato"]
-								suma += dato["dato"].(float64)
-								suma = math.Round(suma*100) / 100
+							if activo, ok := dato["activo"].(bool); ok && activo && len(dato) != 0 {
+								if num, ok := dato["dato"].(float64); ok {
+									suma += num
+									suma = math.Round(suma*100) / 100
+									ponderacionActividades["Actividad "+j] = num
+								}
 							}
 						}
 
@@ -1793,11 +1796,11 @@ func (c *FormulacionController) VinculacionTerceroByIdentificacion() {
 	} else {
 		var vinculacionesResponse []models.Vinculacion
 		for i := 0; i < len(vinculaciones); i++ {
-			if vinculaciones[i].CargoId == int(idJefeOficina) || 
-				vinculaciones[i].CargoId == int(idAsistenteDependencia) || 
+			if vinculaciones[i].CargoId == int(idJefeOficina) ||
+				vinculaciones[i].CargoId == int(idAsistenteDependencia) ||
 				vinculaciones[i].CargoId == int(idNoRegistra) &&
-				vinculaciones[i].TipoVinculacionId != int(IdTipoVincEstudiante) &&
-				vinculaciones[i].DependenciaId != 0 {
+					vinculaciones[i].TipoVinculacionId != int(IdTipoVincEstudiante) &&
+					vinculaciones[i].DependenciaId != 0 {
 				vinculacionesResponse = append(vinculacionesResponse, vinculaciones[i])
 			}
 		}
@@ -2284,7 +2287,7 @@ func (c *FormulacionController) GetPlanesUnidadesComun() {
 func (c *FormulacionController) ObtenerObservacionesFormulacion() {
 	defer helpers.ErrorController(c.Controller, "ObtenerObservacionesFormulacionController")
 
-  id := c.Ctx.Input.Param(":id")
+	id := c.Ctx.Input.Param(":id")
 
 	if respuesta, err := formulacionhelper.ObtenerObservacionesFormulacion(id); err != nil {
 		panic(map[string]interface{}{"funcion": "ObtenerObservacionesFormulacionController", "err": err, "status": "400"})
