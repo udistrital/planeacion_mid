@@ -92,6 +92,7 @@ func GetEvaluacionTrimestre(planId string, periodoId string, actividadId string)
 				"numerador":            indicadores[i].(map[string]interface{})["reporteNumerador"],
 				"denominador":          indicadores[i].(map[string]interface{})["reporteDenominador"],
 				"tipo_denominador":     indicadores[i].(map[string]interface{})["denominador"],
+				"activo":               indicadores[i].(map[string]interface{})["activo"],
 				"periodo":              resultados[i].(map[string]interface{})["indicador"],
 				"acumulado":            resultados[i].(map[string]interface{})["indicadorAcumulado"],
 				"meta":                 resultados[i].(map[string]interface{})["avanceAcumulado"],
@@ -105,7 +106,7 @@ func GetEvaluacionTrimestre(planId string, periodoId string, actividadId string)
 	return nil
 }
 
-func GetEvaluacion(planId string, trimestres []map[string]interface{}, posicionTrimestre int) []map[string]interface{} {
+func GetEvaluacion(planId string, trimestres []map[string]interface{}, posicionTrimestre int, inactivos bool) []map[string]interface{} {
 	var resSeguimiento map[string]interface{}
 	var seguimiento map[string]interface{}
 	var evaluacion []map[string]interface{}
@@ -173,6 +174,12 @@ func GetEvaluacion(planId string, trimestres []map[string]interface{}, posicionT
 			resIndicadores := GetEvaluacionTrimestre(planId, trimestre["_id"].(string), actividadId)
 			for _, resIndicador := range resIndicadores {
 				indice := -1
+				if !inactivos {
+					if val, ok := resIndicador["activo"]; ok && val == false {
+						continue
+					}
+				}
+
 				for index, eval := range evaluacion {
 					if eval["numero"] == actividad["informacion"].(map[string]interface{})["index"] && eval["indicador"] == resIndicador["indicador"] {
 						indice = index
@@ -711,7 +718,7 @@ func GetAvances(nombrePlan string, idVigencia string, idUnidad string) (respuest
 			for index, trimestre := range trimestres {
 				for _, periodo := range periodos {
 					if trimestre["_id"] == periodo["id"] {
-						actividades := GetEvaluacion(plan["id"].(string), trimestres, index)
+						actividades := GetEvaluacion(plan["id"].(string), trimestres, index, true)
 						var numeroActividad = "0"
 						for _, actividad := range actividades {
 							if numeroActividad != actividad["numero"] {
