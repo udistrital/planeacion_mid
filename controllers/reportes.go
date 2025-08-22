@@ -2468,7 +2468,7 @@ func (c *ReportesController) PlanAccionEvaluacion() {
 			trimestresConContenido := make([]map[string]interface{}, 0)
 
 			for indexTrimestre := 0; indexTrimestre <= len(trimestres)-1; indexTrimestre++ {
-				auxEvaluacion := evaluacionhelper.GetEvaluacion(planes[0]["_id"].(string), trimestres, indexTrimestre)
+				auxEvaluacion := evaluacionhelper.GetEvaluacion(planes[0]["_id"].(string), trimestres, indexTrimestre, false)
 				if fmt.Sprintf("%v", auxEvaluacion) != "[]" {
 					evaluacion = auxEvaluacion
 					trimestreDelAnio = trimestres[indexTrimestre]["codigo_trimestre"].(string)

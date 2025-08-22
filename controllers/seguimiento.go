@@ -1992,10 +1992,22 @@ func (c *SeguimientoController) RevisarSeguimiento() {
 func (c *SeguimientoController) RevisarSeguimientoJefeDependencia() {
 	seguimientoId := c.Ctx.Input.Param(":id")
 
+	var body map[string]interface{}
+	var reporteAsistente = false
 	var respuesta map[string]interface{}
 	var seguimiento map[string]interface{}
 	var resEstado map[string]interface{}
 	dato := make(map[string]interface{})
+
+	err_ := json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+	if err_ == nil {
+		val, ok := body["reporteAsistente"]
+		if ok {
+			if val_, ok := val.(bool); ok {
+				reporteAsistente = val_
+			}
+		}
+	}
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,_id:"+seguimientoId, &respuesta); err == nil {
 		aux := make([]map[string]interface{}, 1)
@@ -2005,12 +2017,12 @@ func (c *SeguimientoController) RevisarSeguimientoJefeDependencia() {
 		datoStr := seguimiento["dato"].(string)
 		json.Unmarshal([]byte(datoStr), &dato)
 
-		avalado, observacion, mensaje := seguimientohelper.SeguimientoVerificable(seguimiento)
+		avalado, observacion, mensaje := seguimientohelper.SeguimientoVerificable(seguimiento, reporteAsistente)
 
 		if avalado || observacion {
 			var codigo_abreviacion string
 
-			if observacion {
+			if observacion && !reporteAsistente {
 				codigo_abreviacion = "RVCO"
 			} else {
 				codigo_abreviacion = "RV"

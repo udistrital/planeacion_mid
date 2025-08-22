@@ -1170,6 +1170,7 @@ func ConstruirCuerpoRD(data map[string]interface{}) []map[string]interface{} {
 	resolucionDocente["Vigencia"] = data["vigencia"].(float64)
 	resolucionDocente["Categoria"] = data["categoria"].(string)
 	resolucionDocente["NivelAcademico"] = Pregrado
+	resolucionDocente["Semanas"] = data["semanas"].(float64)
 
 	if data["tipoDocente"].(string) == RHVPosgrado {
 		resolucionDocente["NivelAcademico"] = Posgrado
