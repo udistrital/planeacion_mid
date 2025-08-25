@@ -195,6 +195,7 @@ func (c *FormulacionController) ClonarFormatoPAF() {
 	if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=ParametroId.CodigoAbreviacion:"+CodigoAbreviacionParametroPAF+",ParametroId.TipoParametroId.CodigoAbreviacion:P_SISGPLAN,Activo:true", &respuestaParametroPlanFormato); err != nil {
 		panic(map[string]interface{}{"funcion": "ClonarFormatoPAF", "err": "Error obteniendo parámetro " + CodigoAbreviacionParametroPAF, "status": "400", "log": err})
 	}
+
 	helpers.LimpiezaRespuestaRefactor(respuestaParametroPlanFormato, &parametroPlanFormato)
 
 	if len(parametroPlanFormato) != 1 || parametroPlanFormato[0]["Id"] == nil {
@@ -211,12 +212,14 @@ func (c *FormulacionController) ClonarFormatoPAF() {
 	}
 	helpers.LimpiezaRespuestaRefactor(respuesta, &planFormato)
 
-	var candidatos []map[string]interface{}
+	// Filtrar sólo el plan que es plantilla (formato:true)
+	candidatos := make([]map[string]interface{}, 0, len(planFormato))
 	for _, p := range planFormato {
-		if p["formato"] == true {
+		if b, ok := p["formato"].(bool); ok && b {
 			candidatos = append(candidatos, p)
 		}
 	}
+
 	if len(candidatos) == 0 {
 		panic(map[string]interface{}{
 			"funcion": "ClonarFormatoPAF",
