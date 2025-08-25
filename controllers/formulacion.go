@@ -211,6 +211,21 @@ func (c *FormulacionController) ClonarFormatoPAF() {
 	}
 	helpers.LimpiezaRespuestaRefactor(respuesta, &planFormato)
 
+	var candidatos []map[string]interface{}
+	for _, p := range planFormato {
+		if p["formato"] == true {
+			candidatos = append(candidatos, p)
+		}
+	}
+	if len(candidatos) == 0 {
+		panic(map[string]interface{}{
+			"funcion": "ClonarFormatoPAF",
+			"err":     "No se encontró un plan formato con formato=true",
+			"status":  "404",
+		})
+	}
+	planFormato = candidatos
+
 	if len(planFormato) != 1 || planFormato[0]["_id"] == nil {
 		panic(map[string]interface{}{"funcion": "ClonarFormatoPAF", "err": "No se encontró el plan formato ", "status": "404", "log": errors.New("no se encontró el plan formato ")})
 	}
