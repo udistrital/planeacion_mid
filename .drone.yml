@@ -66,13 +66,12 @@ steps:
   image: golang:1.23
   commands:
   - go get -t
-  - go get github.com/smartystreets/goconvey/convey
-  - GO111MODULE=off go get -u gopkg.in/alecthomas/gometalinter.v1
-  - GO111MODULE=off gometalinter.v1 --install
-  - go get github.com/axw/gocov/...
-  - go get github.com/AlekSi/gocov-xml
-  - go get -u github.com/jstemmer/go-junit-report
-  - GO111MODULE=off gometalinter.v1 ./... --checkstyle | tee report.xml
+  - go install github.com/smartystreets/goconvey@latest
+  - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+  - go install github.com/axw/gocov/...@latest
+  - go install github.com/AlekSi/gocov-xml@latest
+  - go install github.com/jstemmer/go-junit-report@latest
+  - golangci-lint run --out-format=checkstyle --timeout=5m > report.xml || true
   # - gocov test ./... | gocov-xml > coverage.xml
   # - go test -v ./... | go-junit-report > test.xml
   when:
@@ -80,7 +79,6 @@ steps:
     - develop
     - feature/*
     - release/*
-   
     event:
     - push
 
