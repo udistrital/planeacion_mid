@@ -1073,7 +1073,14 @@ func ObtenerPlanesFormulacion() (resumenPlanes []map[string]interface{}, outputE
 // Obteniendo los valores de desagregado planeación
 func GetDesagregado(bodyResolucionesDocente []map[string]interface{}) (map[string]interface{}, error) {
 	var respuestaPost map[string]interface{}
+	fmt.Println("55555555555555555")
+	fmt.Println(bodyResolucionesDocente)
+	fmt.Println("55555555555555555")
 	err := request.SendJson("http://"+beego.AppConfig.String("ResolucionesDocentes")+"/services/desagregado_planeacion", "POST", &respuestaPost, bodyResolucionesDocente)
+	fmt.Println("ttttttttttttttttttt")
+	fmt.Println("http://" + beego.AppConfig.String("ResolucionesDocentes") + "/services/desagregado_planeacion")
+	fmt.Println(respuestaPost)
+	fmt.Println("ttttttttttttttttttt")
 	if err != nil || !respuestaPost["Success"].(bool) {
 		return nil, err
 	}
@@ -1131,7 +1138,7 @@ func GetCalculos(data map[string]interface{}) (map[string]interface{}, error) {
 		"primaVacaciones":          DataFinal(GetPrimaVacaciones(data)),
 		"vacaciones":               DataFinal(GetVacacionesProyeccion(data)),
 		"bonificacion":             DataFinal(GetBonificacionServicios(data)),
-		"interesesCesantias":       DataFinal(GetInteresesCesantias(data)),
+		"intereses":                DataFinal(GetInteresesCesantias(data)),
 		"cesantias":                DataFinal(GetCesantias(data)),
 		"totalCesantias":           DataFinal(GetTotalAportesCesantias(data, false)),
 		"totalCesantiasIndividual": DataFinal(GetTotalAportesCesantias(data, true)),
@@ -1168,9 +1175,9 @@ func ConstruirCuerpoRD(data map[string]interface{}) []map[string]interface{} {
 
 	resolucionDocente := make(map[string]interface{})
 	resolucionDocente["Vigencia"] = data["vigencia"].(float64)
+	resolucionDocente["Semanas"] = data["semanas"].(float64)
 	resolucionDocente["Categoria"] = data["categoria"].(string)
 	resolucionDocente["NivelAcademico"] = Pregrado
-	resolucionDocente["Semanas"] = data["semanas"].(float64)
 
 	if data["tipoDocente"].(string) == RHVPosgrado {
 		resolucionDocente["NivelAcademico"] = Posgrado
@@ -1407,7 +1414,7 @@ func GetInteresesCesantias(data map[string]interface{}) string {
 	horas, horasOk := data["horas"].(float64)
 	incremento, incrementoOk := data["incremento"].(float64)
 
-	var interesesCesantias float64
+	var intereses float64
 
 	if semanasOk && horasOk && incrementoOk {
 		resolucionDocente := data["resolucionDocente"].(map[string]interface{})
@@ -1416,13 +1423,13 @@ func GetInteresesCesantias(data map[string]interface{}) string {
 		if dedicacion == HCatedraHonorarios {
 			return NoAplica
 		}
-		interes_cesantias, interes_cesantiasOk := resolucionDocente["interesCesantias"].(float64)
+		interes_cesantias, interes_cesantiasOk := resolucionDocente["intereses"].(float64)
 		if !interes_cesantiasOk {
 			return ""
 		}
-		interesesCesantias = (float64(interes_cesantias) * horas) * semanas * (1 + incremento)
+		intereses = (float64(interes_cesantias) * horas) * semanas * (1 + incremento)
 	}
-	return strconv.FormatFloat(interesesCesantias, 'f', -1, 64)
+	return strconv.FormatFloat(intereses, 'f', -1, 64)
 }
 
 // Calcular cesantias
@@ -2713,7 +2720,7 @@ func formatearFecha(fecha string) string {
 }
 
 func ObtenerObservacionesFormulacion(id string) (respuesta []map[string]interface{}, outputError map[string]interface{}) {
-  defer func() {
+	defer func() {
 		if err := recover(); err != nil {
 			localError := err.(map[string]interface{})
 			outputError = map[string]interface{}{
@@ -2726,10 +2733,10 @@ func ObtenerObservacionesFormulacion(id string) (respuesta []map[string]interfac
 	}()
 
 	var observaciones []map[string]interface{}
-  var actividades map[string]interface{}
+	var actividades map[string]interface{}
 	var contenido_actividades []map[string]interface{}
 
-  var res map[string]interface{}
+	var res map[string]interface{}
 	var hijos []map[string]interface{}
 	var tabla map[string]interface{}
 	var auxHijos []interface{}
@@ -2741,48 +2748,47 @@ func ObtenerObservacionesFormulacion(id string) (respuesta []map[string]interfac
 			auxHijos = append(auxHijos, hijos[i]["_id"])
 		}
 		tabla = GetTabla(auxHijos)
-    actividades = tabla
+		actividades = tabla
 	} else {
-    panic(map[string]interface{}{
-      "err":    err,
-      "status": "404",
-    })
+		panic(map[string]interface{}{
+			"err":    err,
+			"status": "404",
+		})
 	}
 
-  for i := 0; i < len(actividades["data_source"].([]map[string]interface{})); i++ {
-    var res1 map[string]interface{}
-    var hijos1 []map[string]interface{}
+	for i := 0; i < len(actividades["data_source"].([]map[string]interface{})); i++ {
+		var res1 map[string]interface{}
+		var hijos1 []map[string]interface{}
 
-    if err1 := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res1); err1 == nil {
-      helpers.LimpiezaRespuestaRefactor(res1, &hijos1)
-      Limpia()
-      tree := BuildTreeFa(hijos1, strconv.Itoa(i+1))
-      contenido_actividades = append(contenido_actividades, tree[1][0])
-    } else {
-      panic(map[string]interface{}{
-        "err":    err1,
-        "status": "404",
-      })
-    }
-  }
+		if err1 := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res1); err1 == nil {
+			helpers.LimpiezaRespuestaRefactor(res1, &hijos1)
+			Limpia()
+			tree := BuildTreeFa(hijos1, strconv.Itoa(i+1))
+			contenido_actividades = append(contenido_actividades, tree[1][0])
+		} else {
+			panic(map[string]interface{}{
+				"err":    err1,
+				"status": "404",
+			})
+		}
+	}
 
-  observacion := false
+	observacion := false
 
-  for ind, value := range contenido_actividades {
-    for key, subKey := range value {
-      if key[len(key)-2:] == "_o" && subKey != "" && subKey !=  "Sin observación" {
-        observacion = true
-      }
-    }
+	for ind, value := range contenido_actividades {
+		for key, subKey := range value {
+			if key[len(key)-2:] == "_o" && subKey != "" && subKey != "Sin observación" {
+				observacion = true
+			}
+		}
 
-    if observacion {
-      if actividades["data_source"].([]map[string]interface{})[ind]["activo"] == true {
-        observaciones = append(observaciones, actividades["data_source"].([]map[string]interface{})[ind])
-      }
-    }
-    observacion = false
-  }
+		if observacion {
+			if actividades["data_source"].([]map[string]interface{})[ind]["activo"] == true {
+				observaciones = append(observaciones, actividades["data_source"].([]map[string]interface{})[ind])
+			}
+		}
+		observacion = false
+	}
 
-	
 	return observaciones, outputError
 }

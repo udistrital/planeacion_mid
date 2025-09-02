@@ -209,7 +209,28 @@ func (c *FormulacionController) ClonarFormatoPAF() {
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=nombre:"+valorParametroPAF["Valor"], &respuesta); err != nil {
 		panic(map[string]interface{}{"funcion": "ClonarFormatoPAF", "err": "Error obteniendo el plan formato " + valorParametroPAF["Valor"], "status": "400", "log": err})
 	}
+	fmt.Println("**************")
+	fmt.Println(respuesta)
+	fmt.Println("**************")
 	helpers.LimpiezaRespuestaRefactor(respuesta, &planFormato)
+
+	fmt.Println("**************")
+	fmt.Println(planFormato)
+	fmt.Println("**************")
+	var candidatos []map[string]interface{}
+	for _, p := range planFormato {
+		if p["formato"] == true {
+			candidatos = append(candidatos, p)
+		}
+	}
+	if len(candidatos) == 0 {
+		panic(map[string]interface{}{
+			"funcion": "ClonarFormatoPAF",
+			"err":     "No se encontró un plan formato con formato=true",
+			"status":  "404",
+		})
+	}
+	planFormato = candidatos
 
 	if len(planFormato) != 1 || planFormato[0]["_id"] == nil {
 		panic(map[string]interface{}{"funcion": "ClonarFormatoPAF", "err": "No se encontró el plan formato ", "status": "404", "log": errors.New("no se encontró el plan formato ")})
@@ -1600,7 +1621,7 @@ func (c *FormulacionController) GetUnidades() {
 	var respuesta []map[string]interface{}
 	var unidades []map[string]interface{}
 
-	tiposDependencia := []string{"2", "4", "5", "6", "7", "8", "33"}
+	tiposDependencia := []string{"2", "3", "4", "5", "6", "7", "8", "11", "13", "15", "28", "33"}
 	for _, tipoDep := range tiposDependencia {
 		respuesta = nil
 		err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?limit=0&query=TipoDependenciaId:"+tipoDep, &respuesta)
@@ -1625,10 +1646,9 @@ func (c *FormulacionController) GetUnidades() {
 	}
 
 	tipoDependenciaDependencia := map[string][]string{
-		"9":  {"223"},
-		"11": {"9"},
-		"12": {"48"},
-		"14": {"42"},
+		"10": {"92", "96", "97", "209"},
+		"14": {"42", "171"},
+		"33": {"222"},
 	}
 	for tipoDep, deps := range tipoDependenciaDependencia {
 		for _, dep := range deps {
@@ -1689,7 +1709,7 @@ func (c *FormulacionController) VinculacionTercero() {
 	terceroId := c.Ctx.Input.Param(":tercero_id")
 	var vinculaciones []models.Vinculacion
 	var vinculacionesResponse []models.Vinculacion
-	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/vinculacion?sortby=Id&order=asc&query=Activo:true,TerceroPrincipalId:"+terceroId, &vinculaciones); err != nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/vinculacion?query=Activo:true,TerceroPrincipalId:"+terceroId, &vinculaciones); err != nil {
 		panic(map[string]interface{}{"funcion": "VinculacionTercero", "err": "Error get vinculacion", "status": "400", "log": err})
 	} else {
 		for i := 0; i < len(vinculaciones); i++ {
@@ -1791,7 +1811,7 @@ func (c *FormulacionController) VinculacionTerceroByIdentificacion() {
 	}
 
 	TerceroIdStr := fmt.Sprintf("%d", tercero[0].TerceroID.ID)
-	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/vinculacion?sortby=Id&order=asc&query=Activo:true,TerceroPrincipalId:"+TerceroIdStr, &vinculaciones); err != nil {
+	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/vinculacion?query=Activo:true,TerceroPrincipalId:"+TerceroIdStr, &vinculaciones); err != nil {
 		panic(map[string]interface{}{"funcion": "VinculacionTerceroByIdentificacion", "err": "Error get vinculacion", "status": "400", "log": err})
 	} else {
 		var vinculacionesResponse []models.Vinculacion
@@ -2035,63 +2055,129 @@ func (c *FormulacionController) PlanesEnFormulacion() {
 // @Failure 403 :id is empty
 // @router /calculos_docentes [post]
 func (c *FormulacionController) CalculosDocentes() {
-
 	defer func() {
-		if err := recover(); err != nil {
-			localError := err.(map[string]interface{})
-			c.Data["mesaage"] = (beego.AppConfig.String("appname") + "/" + "FormulacionController" + "/" + (localError["funcion"]).(string))
-			c.Data["data"] = (localError["err"])
-			if status, ok := localError["status"]; ok {
-				c.Abort(status.(string))
-			} else {
-				c.Abort("404")
+		if r := recover(); r != nil {
+			app := beego.AppConfig.String("appname")
+			code := 500
+			msg := app + "/FormulacionController/unknown"
+			errStr := ""
+
+			switch v := r.(type) {
+			case map[string]interface{}:
+				if s, ok := v["status"].(string); ok {
+					if n, e := strconv.Atoi(s); e == nil {
+						code = n
+					}
+				}
+				funcName, _ := v["funcion"]
+				msg = fmt.Sprintf("%s/FormulacionController/%v", app, funcName)
+				if e, ok := v["err"]; ok && e != nil {
+					errStr = fmt.Sprint(e)
+				}
+			case error:
+				errStr = v.Error()
+			case string:
+				errStr = v
+			default:
+				errStr = fmt.Sprintf("%v", v)
+			}
+
+			if !c.Ctx.ResponseWriter.Started {
+				c.Ctx.Output.SetStatus(code)
+				c.Data["json"] = map[string]interface{}{
+					"Success": false,
+					"Status":  strconv.Itoa(code),
+					"Message": msg,
+					"Error":   errStr,
+				}
+				c.ServeJSON()
 			}
 		}
 	}()
 
-	//Obtener respuesta del body
 	var body map[string]interface{}
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &body); err != nil {
 		panic(map[string]interface{}{"funcion": "CalculosDocentes", "err": "Error al decodificar el cuerpo de la solicitud", "status": "400", "log": err})
 	}
 
-	// Obtener Desagregado
-	body["vigencia"] = body["vigencia"].(float64) - 1
-	bodyResolucionesDocente := formulacionhelper.ConstruirCuerpoRD(body)
-	respuestaPost, err := formulacionhelper.GetDesagregado(bodyResolucionesDocente)
+	rawVigencia, ok := body["vigencia"]
+	if !ok {
+		panic(map[string]interface{}{"funcion": "CalculosDocentes", "err": "Falta el campo 'vigencia'", "status": "400"})
+	}
+	vigencia, errCast := toFloat64(rawVigencia)
+	if errCast != nil {
+		panic(map[string]interface{}{"funcion": "CalculosDocentes", "err": "Formato inválido de 'vigencia'", "status": "400", "log": errCast})
+	}
+	body["vigencia"] = vigencia - 1
+
+	bodyRD := formulacionhelper.ConstruirCuerpoRD(body)
+	respuestaPost, err := formulacionhelper.GetDesagregado(bodyRD)
 	if err != nil {
 		panic(map[string]interface{}{"funcion": "CalculosDocentes", "err": "Error al obtener desagregado", "status": "400", "log": err})
 	}
-	result := respuestaPost["Data"].([]interface{})
 
-	//Peticion GET hacia Parametros Service
+	dataSlice, ok := respuestaPost["Data"].([]interface{})
+	if !ok || len(dataSlice) == 0 {
+		panic(map[string]interface{}{"funcion": "CalculosDocentes", "err": "Desagregado vacío o con formato inesperado", "status": "400"})
+	}
+	rd, ok := dataSlice[0].(map[string]interface{})
+	if !ok {
+		panic(map[string]interface{}{"funcion": "CalculosDocentes", "err": "Estructura de resolucionDocente inválida", "status": "400"})
+	}
 	vigenciaStr := strconv.FormatFloat(body["vigencia"].(float64), 'f', 0, 64)
-	salarioMinimo, err := formulacionhelper.GetSalarioMinimo(vigenciaStr)
+	sm, err := formulacionhelper.GetSalarioMinimo(vigenciaStr)
 	if err != nil {
-		panic(map[string]interface{}{"funcion": "CalculosDocentes", "err": "Error al obtener salario minimo", "status": "400", "log": err})
+		panic(map[string]interface{}{"funcion": "CalculosDocentes", "err": "Error al obtener salario mínimo", "status": "400", "log": err})
+	}
+	smVal, ok := sm["Valor"]
+	if !ok {
+		panic(map[string]interface{}{"funcion": "CalculosDocentes", "err": "Respuesta de salario mínimo sin 'Valor'", "status": "500"})
 	}
 
-	// Objeto para hacer los cálculos necesarios
-	data := body
-	data["resolucionDocente"] = result[0].(map[string]interface{})
-	data["salarioMinimo"] = salarioMinimo["Valor"]
-	delete(body, "vigencia")
-	delete(body, "categoria")
-	delete(body, "tipo")
+	data := map[string]interface{}{}
+	for k, v := range body {
+		data[k] = v
+	}
+	data["resolucionDocente"] = rd
+	data["salarioMinimo"] = smVal
+	delete(data, "vigencia")
+	delete(data, "categoria")
+	delete(data, "tipo")
 
-	// Realizar los calculos
 	dataFinal, err := formulacionhelper.GetCalculos(data)
 	if err != nil {
-		panic(map[string]interface{}{"funcion": "CalculosDocentes", "err": "Error al intentar realizar los calculos", "status": "400", "log": err})
+		panic(map[string]interface{}{"funcion": "CalculosDocentes", "err": "Error al intentar realizar los cálculos", "status": "400", "log": err})
 	}
 
-	c.Data["json"] = map[string]interface{}{
-		"Success": true,
-		"Status":  "200",
-		"Message": "Successful",
-		"Data":    dataFinal,
+	if !c.Ctx.ResponseWriter.Started {
+		c.Ctx.Output.SetStatus(200)
+		c.Data["json"] = map[string]interface{}{
+			"Success": true,
+			"Status":  "200",
+			"Message": "Successful",
+			"Data":    dataFinal,
+		}
+		c.ServeJSON()
 	}
-	c.ServeJSON()
+}
+
+func toFloat64(v interface{}) (float64, error) {
+	switch t := v.(type) {
+	case float64:
+		return t, nil
+	case float32:
+		return float64(t), nil
+	case int:
+		return float64(t), nil
+	case int64:
+		return float64(t), nil
+	case json.Number:
+		return t.Float64()
+	case string:
+		return strconv.ParseFloat(t, 64)
+	default:
+		return 0, fmt.Errorf("tipo no soportado: %T", v)
+	}
 }
 
 // EstructuraPlanes ...
