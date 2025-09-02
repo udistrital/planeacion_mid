@@ -1073,14 +1073,7 @@ func ObtenerPlanesFormulacion() (resumenPlanes []map[string]interface{}, outputE
 // Obteniendo los valores de desagregado planeación
 func GetDesagregado(bodyResolucionesDocente []map[string]interface{}) (map[string]interface{}, error) {
 	var respuestaPost map[string]interface{}
-	fmt.Println("55555555555555555")
-	fmt.Println(bodyResolucionesDocente)
-	fmt.Println("55555555555555555")
 	err := request.SendJson("http://"+beego.AppConfig.String("ResolucionesDocentes")+"/services/desagregado_planeacion", "POST", &respuestaPost, bodyResolucionesDocente)
-	fmt.Println("ttttttttttttttttttt")
-	fmt.Println("http://" + beego.AppConfig.String("ResolucionesDocentes") + "/services/desagregado_planeacion")
-	fmt.Println(respuestaPost)
-	fmt.Println("ttttttttttttttttttt")
 	if err != nil || !respuestaPost["Success"].(bool) {
 		return nil, err
 	}
@@ -1309,7 +1302,7 @@ func GetPrimaServicios(data map[string]interface{}) string {
 		if meses < 6 {
 			return "0"
 		}
-		prima_servicios, primaServiciosOk := resolucionDocente["prima_servicios"].(float64)
+		prima_servicios, primaServiciosOk := resolucionDocente["primaServicios"].(float64)
 		if !primaServiciosOk {
 			return ""
 		}
