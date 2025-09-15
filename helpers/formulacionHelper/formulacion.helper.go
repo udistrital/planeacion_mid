@@ -1655,7 +1655,7 @@ func GetCajaCompensacion(data map[string]interface{}) string {
 			return NoAplica
 		}
 		salarioBasico := resolucionDocente["salarioBasico"].(float64)
-		primaVacaciones, primaVacacionesOk := resolucionDocente["primaVacaciones"].(float64)
+		primaVacaciones, primaVacacionesOk := resolucionDocente["vacaciones"].(float64)
 		if !primaVacacionesOk {
 			return ""
 		}
@@ -1714,7 +1714,7 @@ func GetIcbf(data map[string]interface{}) string {
 			icbf = resultado * (1 + incremento)
 		} else {
 			salarioBasico := resolucionDocente["salarioBasico"].(float64)
-			primaVacaciones, primaVacacionesOk := resolucionDocente["primaVacaciones"].(float64)
+			primaVacaciones, primaVacacionesOk := resolucionDocente["vacaciones"].(float64)
 			if !primaVacacionesOk {
 				return ""
 			}
