@@ -6,7 +6,7 @@ require (
 	github.com/astaxie/beego v1.12.3
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/udistrital/administrativa_mid_api v0.0.0-20230714214518-86d8006a1b9f
-	github.com/udistrital/utils_oas v0.0.0-20250909064503-7a4adc67f2ab
+	github.com/udistrital/utils_oas v0.0.0-20250917065514-c74562ac40b4
 	github.com/xuri/excelize/v2 v2.9.1
 	golang.org/x/text v0.29.0
 )
