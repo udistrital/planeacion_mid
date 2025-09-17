@@ -1199,16 +1199,15 @@ func ConstruirCuerpoRD(data map[string]interface{}) []map[string]interface{} {
 
 // Redondear valores de los calculos
 func DataFinal(numeroStr string) string {
-	if numeroStr != NoAplica {
-		numeroDecimal, err := strconv.ParseFloat(numeroStr, 64)
-		if err != nil {
-			return ""
-		}
-		numeroRedondeado := math.Round(numeroDecimal)
-		numeroRedondeadoStr := strconv.FormatFloat(numeroRedondeado, 'f', -1, 64)
-		return numeroRedondeadoStr
+	if numeroStr == NoAplica {
+		return numeroStr
 	}
-	return numeroStr
+	numeroDecimal, err := strconv.ParseFloat(numeroStr, 64)
+	if err != nil {
+		return ""
+	}
+	// Formatea con 2 decimales
+	return strconv.FormatFloat(numeroDecimal, 'f', 2, 64)
 }
 
 // Calcular el total de horas
