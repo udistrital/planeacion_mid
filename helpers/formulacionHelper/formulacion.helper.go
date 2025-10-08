@@ -1106,7 +1106,7 @@ func GetSalarioMinimo(vigenciaStr string) (map[string]interface{}, error) {
 	err := json.Unmarshal([]byte(salarioMinimo), &valorSalarioMinimo)
 
 	if !valorParametroOk || len(valorParametro) == 0 || !primerElementoOk || !salarioMinimoOk || err != nil {
-		return nil, fmt.Errorf("no se pudo obtener el valor de salario mínimo")
+		return nil, fmt.Errorf("no se pudo obtener el valor de salario mínimo: %w", err)
 	}
 
 	return valorSalarioMinimo, nil
@@ -2428,7 +2428,7 @@ func ObtenerArrayPlanesInteres(body map[string]interface{}) ([]map[string]interf
 	var planesInteres []interface{}
 	err := json.Unmarshal([]byte(planesInteresString), &planesInteres)
 	if err != nil {
-		return nil, fmt.Errorf("Error al decodificar la lista de planes de interés: %v", err)
+		return nil, fmt.Errorf("Error al decodificar la lista de planes de interés:  %w", err)
 	}
 
 	// Almacenar los planes de interés en un array
@@ -2486,7 +2486,7 @@ func CodificarPlanesInteres(planes []map[string]interface{}) ([]string, error) {
 	for _, plan := range planes {
 		planJSON, err := json.Marshal(plan)
 		if err != nil {
-			return nil, fmt.Errorf("Error al codificar un elemento del array de planes de interés: %v", err)
+			return nil, fmt.Errorf("Error al codificar un elemento del array de planes de interés: %w", err)
 		}
 		planesJSON = append(planesJSON, string(planJSON))
 	}
@@ -2642,7 +2642,7 @@ func obtenerCorreoPlaneacion() (string, error) {
 	}
 	err1 := json.Unmarshal([]byte(jsonData), &correoPlaneacion)
 	if err1 != nil {
-		return "", fmt.Errorf("Error al deserializar el JSON de Correo Oficina Planeacion: ", err)
+		return "", fmt.Errorf("Error al deserializar el JSON de Correo Oficina Planeacion: %w", err)
 	}
 	return correoPlaneacion["Valor"].(string), nil
 }
