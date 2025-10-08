@@ -1075,7 +1075,6 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 	var data_identi []map[string]interface{}
 	var rubro string
 	var nombreRubro string
-
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+planId, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &identificaciones)
 	}
@@ -1691,7 +1690,6 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		contador++
 		contador++
 	}
-
 	if docentes != nil {
 		infoDocentes := TotalDocentes(docentes)["TotalesPorTipo"].(TotalesDocentes)
 		rubros := docentes["rubros"].([]map[string]interface{})
@@ -1700,7 +1698,6 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Identificación docente")
 		consolidadoExcelPlanAnual.SetRowHeight(sheetName, contador+1, 7)
 		consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), styletitles)
-
 		contador++
 		contador++
 
@@ -1719,7 +1716,6 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 
 		code := ""
 		nombre := ""
-
 		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+1))
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Salario básico")
 		code = codigoRubrosDocentes(rubros, "Salario básico")
@@ -1767,7 +1763,6 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
 		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
 		contador++
-
 		consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contador), "B"+fmt.Sprint(contador+1))
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "B"+fmt.Sprint(contador), "Prima de navidad")
 		code = codigoRubrosDocentes(rubros, "Prima de navidad")
@@ -2004,7 +1999,6 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
 		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
 		contador++
-
 	}
 
 	consolidadoExcelPlanAnual.InsertRows(sheetName, 1, 7)
@@ -2070,7 +2064,6 @@ type TotalesDocentes struct {
 }
 
 func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
-
 	var rhf []map[string]interface{}
 	var rhvPre []map[string]interface{}
 	var rhvPos []map[string]interface{}
@@ -2086,7 +2079,6 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 	}
 
 	totalDocentes := make(map[string]interface{})
-
 	totales := TotalesDocentes{}
 
 	sueldoBasico := 0
@@ -2103,7 +2095,6 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 	arl := 0
 	caja := 0
 	icbf := 0
-
 	for i := 0; i < len(rhf); i++ {
 		aux := rhf[i]
 
@@ -2162,8 +2153,8 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			}
 		}
 
-		if aux["interesesCesantias"] != nil || aux["interesesCesantias"] != "N/A" {
-			strInteresesCesantias := strings.TrimLeft(aux["interesesCesantias"].(string), "$")
+		if aux["cesantias"] != nil || aux["cesantias"] != "N/A" {
+			strInteresesCesantias := strings.TrimLeft(aux["cesantias"].(string), "$")
 			strInteresesCesantias = strings.ReplaceAll(strInteresesCesantias, ",", "")
 			arrInteresesCesantias := strings.Split(strInteresesCesantias, ".")
 			auxInteresesCesantias, err := strconv.Atoi(arrInteresesCesantias[0])
@@ -2321,8 +2312,8 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			}
 		}
 
-		if aux["interesesCesantias"] != nil || aux["interesesCesantias"] != "N/A" {
-			strInteresesCesantias := strings.TrimLeft(aux["interesesCesantias"].(string), "$")
+		if aux["cesantias"] != nil || aux["cesantias"] != "N/A" {
+			strInteresesCesantias := strings.TrimLeft(aux["cesantias"].(string), "$")
 			strInteresesCesantias = strings.ReplaceAll(strInteresesCesantias, ",", "")
 			arrInteresesCesantias := strings.Split(strInteresesCesantias, ".")
 			auxInteresesCesantias, err := strconv.Atoi(arrInteresesCesantias[0])
@@ -2480,8 +2471,8 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			}
 		}
 
-		if aux["interesesCesantias"] != nil || aux["interesesCesantias"] != "N/A" {
-			strInteresesCesantias := strings.TrimLeft(aux["interesesCesantias"].(string), "$")
+		if aux["cesantias"] != nil || aux["cesantias"] != "N/A" {
+			strInteresesCesantias := strings.TrimLeft(aux["cesantias"].(string), "$")
 			strInteresesCesantias = strings.ReplaceAll(strInteresesCesantias, ",", "")
 			arrInteresesCesantias := strings.Split(strInteresesCesantias, ".")
 			auxInteresesCesantias, err := strconv.Atoi(arrInteresesCesantias[0])
@@ -2586,7 +2577,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 	totalDocentes["primaNavidad"] = primaNavidad
 	totalDocentes["primaVacaciones"] = primaVacaciones
 	totalDocentes["bonificacion"] = bonificacion
-	totalDocentes["interesesCesantias"] = interesesCesantias
+	totalDocentes["cesantias"] = interesesCesantias
 	totalDocentes["cesantiasPublicas"] = cesantiasPublicas
 	totalDocentes["cesantiasPrivadas"] = cesantiasPrivadas
 	totalDocentes["salud"] = salud
@@ -3581,7 +3572,6 @@ func ConstruirExcelPlanAccionUnidad(planesFilter []map[string]interface{}, body 
 		}
 	}
 	consolidadoExcelPlanAnual = TablaIdentificaciones(consolidadoExcelPlanAnual, plan_id, esReporteAntiguo)
-
 	consolidadoExcelPlanAnual.InsertRows("Actividades del plan", 1, 7)
 	consolidadoExcelPlanAnual.MergeCell("Actividades del plan", "C2", "P6")
 	consolidadoExcelPlanAnual.SetCellStyle("Actividades del plan", "C2", "P6", styletitle)
@@ -3597,6 +3587,7 @@ func ConstruirExcelPlanAccionUnidad(planesFilter []map[string]interface{}, body 
 
 	if err := consolidadoExcelPlanAnual.AddPicture("Actividades del plan", "B1", "static/img/UDEscudo2.png",
 		&excelize.GraphicOptions{ScaleX: 0.1, ScaleY: 0.1, Positioning: "oneCell", OffsetX: 10}); err != nil {
+
 		fmt.Println(err)
 	}
 	if err := consolidadoExcelPlanAnual.AddPicture("Identificaciones", "B1", "static/img/UDEscudo2.png",
@@ -3605,7 +3596,6 @@ func ConstruirExcelPlanAccionUnidad(planesFilter []map[string]interface{}, body 
 	}
 
 	consolidadoExcelPlanAnual.SetColWidth("Actividades del plan", "A", "A", 2)
-
 	return consolidadoExcelPlanAnual, arregloPlanAnual, nil
 }
 
