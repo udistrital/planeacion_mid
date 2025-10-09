@@ -3756,11 +3756,19 @@ func ConstruirExcelPlanAccionGeneral(planesFilter []map[string]interface{}, body
 
 	for _, planes := range planesFilter {
 		if idUnidad != planes["dependencia_id"].(string) {
-			if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=DependenciaId:"+planes["dependencia_id"].(string), &respuestaUnidad); err == nil {
+			if err := request.GetJson(
+				"http://"+beego.AppConfig.String("OikosService")+
+					"/dependencia_tipo_dependencia?query=DependenciaId:"+planes["dependencia_id"].(string),
+				&respuestaUnidad,
+			); err == nil {
 				planes["nombreUnidad"] = respuestaUnidad[0]["DependenciaId"].(map[string]interface{})["Nombre"].(string)
-				fmt.Sprintf("http://" + beego.AppConfig.String("OikosService") + "/dependencia_tipo_dependencia?query=DependenciaId:" + planes["dependencia_id"].(string))
 			} else {
-				panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+				panic(map[string]interface{}{
+					"funcion": "GetUnidades",
+					"err":     "Error al consultar Oikos",
+					"status":  "400",
+					"log":     err,
+				})
 			}
 		}
 	}
