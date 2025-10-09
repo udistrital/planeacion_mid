@@ -5,7 +5,7 @@ import (
 )
 
 type Nodo struct {
-	Id                 string    `bson:"_id" json: "_id, omitempty" `
+	Id                 string    `bson:"_id" json: "_id,omitempty" `
 	Nombre             string    `json:"nombre" `
 	Descripcion        string    `json:"descripcion" `
 	Hijos              []string  `json:"hijos" `
