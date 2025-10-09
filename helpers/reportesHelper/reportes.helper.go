@@ -2009,8 +2009,8 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		contador++
 	}
 
-	consolidadoExcelPlanAnual.InsertRows(sheetName, 1, 7)
-	consolidadoExcelPlanAnual.MergeCell(sheetName, "C2", "G6")
+	_ = consolidadoExcelPlanAnual.InsertRows(sheetName, 1, 7)
+	_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "C2", "G6")
 
 	return consolidadoExcelPlanAnual
 }
@@ -2991,7 +2991,7 @@ func ConstruirExcelPlanAccionUnidad(planesFilter []map[string]interface{}, body 
 			indexPlan, _ := consolidadoExcelPlanAnual.NewSheet(sheetName)
 
 			if planes == 0 {
-				consolidadoExcelPlanAnual.DeleteSheet("Sheet1")
+				_ = consolidadoExcelPlanAnual.DeleteSheet("Sheet1")
 
 				disable := false
 				if err := consolidadoExcelPlanAnual.SetSheetView(sheetName, -1, &excelize.ViewOptions{
@@ -3350,7 +3350,7 @@ func ConstruirExcelPlanAccionUnidad(planesFilter []map[string]interface{}, body 
 			indexPlan, _ := consolidadoExcelPlanAnual.NewSheet(sheetName)
 
 			if planes == 0 {
-				consolidadoExcelPlanAnual.DeleteSheet("Sheet1")
+				_ = consolidadoExcelPlanAnual.DeleteSheet("Sheet1")
 
 				disable := false
 				if err := consolidadoExcelPlanAnual.SetSheetView(sheetName, -1, &excelize.ViewOptions{
@@ -3580,17 +3580,17 @@ func ConstruirExcelPlanAccionUnidad(planesFilter []map[string]interface{}, body 
 		}
 	}
 	consolidadoExcelPlanAnual = TablaIdentificaciones(consolidadoExcelPlanAnual, plan_id, esReporteAntiguo)
-	consolidadoExcelPlanAnual.InsertRows("Actividades del plan", 1, 7)
-	consolidadoExcelPlanAnual.MergeCell("Actividades del plan", "C2", "P6")
-	consolidadoExcelPlanAnual.SetCellStyle("Actividades del plan", "C2", "P6", styletitle)
-	consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "C2", "G6", styletitle)
+	_ = consolidadoExcelPlanAnual.InsertRows("Actividades del plan", 1, 7)
+	_ = consolidadoExcelPlanAnual.MergeCell("Actividades del plan", "C2", "P6")
+	_ = consolidadoExcelPlanAnual.SetCellStyle("Actividades del plan", "C2", "P6", styletitle)
+	_ = consolidadoExcelPlanAnual.SetCellStyle("Identificaciones", "C2", "G6", styletitle)
 
 	if periodo[0] != nil {
-		consolidadoExcelPlanAnual.SetCellValue("Actividades del plan", "C2", "Plan de Acción "+periodo[0]["Nombre"].(string)+"\n"+unidadNombre)
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C2", "Proyección de necesidades "+periodo[0]["Nombre"].(string)+"\n"+unidadNombre)
+		_ = consolidadoExcelPlanAnual.SetCellValue("Actividades del plan", "C2", "Plan de Acción "+periodo[0]["Nombre"].(string)+"\n"+unidadNombre)
+		_ = consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C2", "Proyección de necesidades "+periodo[0]["Nombre"].(string)+"\n"+unidadNombre)
 	} else {
-		consolidadoExcelPlanAnual.SetCellValue("Actividades del plan", "C2", "Plan de Acción")
-		consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C2", "Proyección de necesidades")
+		_ = consolidadoExcelPlanAnual.SetCellValue("Actividades del plan", "C2", "Plan de Acción")
+		_ = consolidadoExcelPlanAnual.SetCellValue("Identificaciones", "C2", "Proyección de necesidades")
 	}
 
 	if err := consolidadoExcelPlanAnual.AddPicture("Actividades del plan", "B1", "static/img/UDEscudo2.png",
@@ -3764,6 +3764,17 @@ func ConstruirExcelPlanAccionGeneral(planesFilter []map[string]interface{}, body
 
 	for _, planes := range planesFilter {
 		if idUnidad != planes["dependencia_id"].(string) {
+			if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia_tipo_dependencia?query=DependenciaId:"+planes["dependencia_id"].(string), &respuestaUnidad); err == nil {
+				planes["nombreUnidad"] = respuestaUnidad[0]["DependenciaId"].(map[string]interface{})["Nombre"].(string)
+				fmt.Sprintf("http://" + beego.AppConfig.String("OikosService") + "/dependencia_tipo_dependencia?query=DependenciaId:" + planes["dependencia_id"].(string))
+			} else {
+				panic(map[string]interface{}{"funcion": "GetUnidades", "err": "Error ", "status": "400", "log": err})
+			}
+		}
+	}
+
+	for _, planes := range planesFilter {
+		if idUnidad != planes["dependencia_id"].(string) {
 			if err := request.GetJson(
 				"http://"+beego.AppConfig.String("OikosService")+
 					"/dependencia_tipo_dependencia?query=DependenciaId:"+planes["dependencia_id"].(string),
@@ -3796,7 +3807,7 @@ func ConstruirExcelPlanAccionGeneral(planesFilter []map[string]interface{}, body
 	}); err != nil {
 		fmt.Println(err)
 	}
-	consolidadoExcelPlanAnual.DeleteSheet("Sheet1")
+	_ = consolidadoExcelPlanAnual.DeleteSheet("Sheet1")
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+`/periodo?query=Id:`+body["vigencia"].(string), &resPeriodo); err == nil {
 		helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
@@ -3997,7 +4008,7 @@ func ConstruirExcelPlanAccionGeneral(planesFilter []map[string]interface{}, body
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "O"+fmt.Sprint(contadorGeneral+3), "Criterio del indicador")
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "P"+fmt.Sprint(contadorGeneral+3), "Meta")
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "Q"+fmt.Sprint(contadorGeneral+3), "Producto esperado")
-			consolidadoExcelPlanAnual.InsertRows(sheetName, 1, 1)
+			_ = consolidadoExcelPlanAnual.InsertRows(sheetName, 1, 1)
 
 			for excelPlan := 0; excelPlan < len(arregloPlanAnual); excelPlan++ {
 
@@ -4172,7 +4183,7 @@ func ConstruirExcelPlanAccionGeneral(planesFilter []map[string]interface{}, body
 				consolidadoExcelPlanAnual.SetActiveSheet(indexPlan)
 			}
 			arregloPlanAnual = nil
-			consolidadoExcelPlanAnual.RemoveRow(sheetName, 1)
+			_ = consolidadoExcelPlanAnual.RemoveRow(sheetName, 1)
 		} else {
 			planesFilterData := planesFilter[planes]
 			plan_id = planesFilterData["_id"].(string)
@@ -4349,7 +4360,7 @@ func ConstruirExcelPlanAccionGeneral(planesFilter []map[string]interface{}, body
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "O"+fmt.Sprint(contadorGeneral+3), "Meta")
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "P"+fmt.Sprint(contadorGeneral+3), "Producto esperado")
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "Q"+fmt.Sprint(contadorGeneral+3), "Unidad o grupo responsable")
-			consolidadoExcelPlanAnual.InsertRows(sheetName, 1, 1)
+			_ = consolidadoExcelPlanAnual.InsertRows(sheetName, 1, 1)
 
 			for excelPlan := 0; excelPlan < len(arregloPlanAnual); excelPlan++ {
 
@@ -4526,11 +4537,11 @@ func ConstruirExcelPlanAccionGeneral(planesFilter []map[string]interface{}, body
 				consolidadoExcelPlanAnual.SetActiveSheet(indexPlan)
 			}
 			arregloPlanAnual = nil
-			consolidadoExcelPlanAnual.RemoveRow(sheetName, 1)
+			_ = consolidadoExcelPlanAnual.RemoveRow(sheetName, 1)
 		}
 	}
-	consolidadoExcelPlanAnual.InsertRows("REPORTE GENERAL", 1, 3)
-	consolidadoExcelPlanAnual.MergeCell("REPORTE GENERAL", "C2", "P6")
+	_ = consolidadoExcelPlanAnual.InsertRows("REPORTE GENERAL", 1, 3)
+	_ = consolidadoExcelPlanAnual.MergeCell("REPORTE GENERAL", "C2", "P6")
 	consolidadoExcelPlanAnual.SetCellStyle("REPORTE GENERAL", "C2", "P6", styletitle)
 	if periodo[0] != nil {
 		consolidadoExcelPlanAnual.SetCellValue("REPORTE GENERAL", "C2", "Plan de Acción Anual "+periodo[0]["Nombre"].(string)+"\nUniversidad Distrital Franciso José de Caldas")
@@ -4556,7 +4567,7 @@ func ConstruirExcelPlanAccionEvaluacion(esReporteAntiguo bool, datosReporte map[
 	consolidadoExcelEvaluacion := excelize.NewFile()
 	sheetName := "Evaluación"
 	consolidadoExcelEvaluacion.NewSheet(sheetName)
-	consolidadoExcelEvaluacion.DeleteSheet("Sheet1")
+	_ = consolidadoExcelEvaluacion.DeleteSheet("Sheet1")
 
 	disable := false
 	if err := consolidadoExcelEvaluacion.SetSheetView(sheetName, -1, &excelize.ViewOptions{
