@@ -5,7 +5,7 @@ import (
 )
 
 type NodoDetalle struct {
-	Id                 string    `bson:"_id" json: "_id, omitempty" `
+	Id                 string    `bson:"_id" json: "_id,omitempty" `
 	Subgrupo_id        string    `json:"subgrupo_id" `
 	Nombre             string    `json:"nombre" `
 	Descripcion        string    `json:"descripcion" `
@@ -16,6 +16,6 @@ type NodoDetalle struct {
 }
 
 type Dato struct {
-	Type     string `json: 'type' `
-	Required string `json: 'required' `
+	Type     string `json:'type' `
+	Required string `json:'required' `
 }
