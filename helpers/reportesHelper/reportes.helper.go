@@ -3,7 +3,7 @@ package reporteshelper
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"os"
 	"reflect"
 	"sort"
 	"strconv"
@@ -1710,9 +1710,17 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		contador++
 
 		//Cuerpo Tabla
-		content, _ := ioutil.ReadFile("static/json/rubros.json")
+		content, err := os.ReadFile("static/json/rubros.json")
+		if err != nil {
+			beego.Error("error leyendo archivo rubros.json:", err)
+			return nil
+		}
+
 		rubrosJson := []map[string]interface{}{}
-		_ = json.Unmarshal(content, &rubrosJson)
+		if err := json.Unmarshal(content, &rubrosJson); err != nil {
+			beego.Error("error decodificando rubros.json:", err)
+			return nil
+		}
 
 		code := ""
 		nombre := ""
