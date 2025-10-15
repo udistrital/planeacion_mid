@@ -83,7 +83,7 @@ func ClonarHijos(hijos []map[string]interface{}, padre string) {
 			log.Fatalf("Error leyendo peticion: %v", err)
 		}
 
-		json.Unmarshal(cuerpoRespuesta, &resPost)
+		_ = json.Unmarshal(cuerpoRespuesta, &resPost)
 		resLimpia = resPost["Data"].(map[string]interface{})
 
 		var respuestaHijos map[string]interface{}
@@ -146,7 +146,7 @@ func ClonarHijosPAF(hijos []map[string]interface{}, padre string) {
 				log.Fatalf("Error leyendo peticion: %v", err)
 			}
 
-			json.Unmarshal(cuerpoRespuesta, &resPost)
+			_ = json.Unmarshal(cuerpoRespuesta, &resPost)
 			resLimpia = resPost["Data"].(map[string]interface{})
 
 			var respuestaHijos map[string]interface{}
@@ -203,7 +203,7 @@ func ClonarHijosDetalle(subHijosDetalle []map[string]interface{}, subgrupo_id st
 			log.Fatalf("Error leyendo peticion: %v", err)
 		}
 
-		json.Unmarshal(cuerpoRespuesta, &resPost)
+		_ = json.Unmarshal(cuerpoRespuesta, &resPost)
 
 	}
 }
@@ -245,7 +245,7 @@ func ClonarHijosDetallePAF(subHijosDetalle []map[string]interface{}, subgrupo_id
 				log.Fatalf("Error leyendo peticion: %v", err)
 			}
 
-			json.Unmarshal(cuerpoRespuesta, &resPost)
+			_ = json.Unmarshal(cuerpoRespuesta, &resPost)
 		}
 	}
 }
@@ -268,7 +268,7 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 			forkData["id"] = hijos[i]["_id"]
 			forkData["nombre"] = hijos[i]["nombre"]
 			jsonString, _ := json.Marshal(hijos[i]["_id"])
-			json.Unmarshal(jsonString, &id)
+			_ = json.Unmarshal(jsonString, &id)
 
 			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id, &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &resLimpia)
@@ -280,7 +280,7 @@ func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]in
 
 					var deta map[string]interface{}
 					dato_str := nodo["dato"].(string)
-					json.Unmarshal([]byte(dato_str), &deta)
+					_ = json.Unmarshal([]byte(dato_str), &deta)
 					if (deta["type"] != nil) && (deta["required"] != nil) && (deta["options"] == nil) {
 						forkData["type"] = deta["type"]
 						forkData["required"] = deta["required"]
@@ -334,7 +334,7 @@ func getChildren(children []interface{}) (childrenTree []map[string]interface{})
 			forkData["id"] = nodo["_id"]
 			forkData["nombre"] = nodo["nombre"]
 			jsonString, _ := json.Marshal(nodo["_id"])
-			json.Unmarshal(jsonString, &id)
+			_ = json.Unmarshal(jsonString, &id)
 			if err_ := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+id, &resp); err_ == nil {
 				helpers.LimpiezaRespuestaRefactor(resp, &detalle)
 				if len(detalle) == 0 {
@@ -343,7 +343,7 @@ func getChildren(children []interface{}) (childrenTree []map[string]interface{})
 				} else {
 					var deta map[string]interface{}
 					dato_str := fmt.Sprintf("%v", detalle[0]["dato"])
-					json.Unmarshal([]byte(dato_str), &deta)
+					_ = json.Unmarshal([]byte(dato_str), &deta)
 					// forkData["type"] = deta["type"]
 					// forkData["required"] = deta["required"]
 					if (deta["type"] != nil) && (deta["required"] != nil) && (deta["options"] == nil) {
@@ -406,7 +406,7 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 			if len(subgrupo_detalle) > 0 {
 				if subgrupo_detalle[0]["armonizacion_dato"] != nil {
 					dato_armonizacion_str := subgrupo_detalle[0]["armonizacion_dato"].(string)
-					json.Unmarshal([]byte(dato_armonizacion_str), &dato_armonizacion)
+					_ = json.Unmarshal([]byte(dato_armonizacion_str), &dato_armonizacion)
 					aux := dato_armonizacion[index]
 					if aux != nil {
 						armonizacion["armo"] = dato_armonizacion[index].(map[string]interface{})["armonizacionPED"]
@@ -420,7 +420,7 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 				}
 				if subgrupo_detalle[0]["dato_plan"] != nil {
 					dato_plan_str := subgrupo_detalle[0]["dato_plan"].(string)
-					json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+					_ = json.Unmarshal([]byte(dato_plan_str), &dato_plan)
 					if dato_plan[index] == nil {
 						forkData[v] = ""
 					} else {
@@ -516,7 +516,7 @@ func desactivarActividad(subgrupo_id string, index string) {
 		if subgrupoDetalle["dato_plan"] != nil {
 			actividad := make(map[string]interface{})
 			dato_plan_str := subgrupoDetalle["dato_plan"].(string)
-			json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+			_ = json.Unmarshal([]byte(dato_plan_str), &dato_plan)
 			for index_actividad := range dato_plan {
 				if index_actividad == index {
 					aux_actividad := dato_plan[index_actividad].(map[string]interface{})
@@ -593,7 +593,7 @@ func getActividadTabla(subgrupo map[string]interface{}) {
 		if data_source == nil {
 			if subgrupo_detalle["dato_plan"] != nil {
 				dato_plan_str := subgrupo_detalle["dato_plan"].(string)
-				json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+				_ = json.Unmarshal([]byte(dato_plan_str), &dato_plan)
 				for key := range dato_plan {
 					actividad := make(map[string]interface{})
 					element := dato_plan[key].(map[string]interface{})
@@ -608,7 +608,7 @@ func getActividadTabla(subgrupo map[string]interface{}) {
 				if subgrupo_detalle["dato_plan"] != nil {
 					var data = data_source[i]
 					dato_plan_str := subgrupo_detalle["dato_plan"].(string)
-					json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+					_ = json.Unmarshal([]byte(dato_plan_str), &dato_plan)
 					if dato_plan[data["index"].(string)] != nil {
 						element := dato_plan[data["index"].(string)].(map[string]interface{})
 						data[subgrupo["nombre"].(string)] = element["dato"]
@@ -853,7 +853,7 @@ func GetIndexActividad(entrada map[string]interface{}) int {
 				maxIndex = 0
 			} else {
 				dato_plan_str := subgrupo_detalle["dato_plan"].(string)
-				json.Unmarshal([]byte(dato_plan_str), &dato_plan)
+				_ = json.Unmarshal([]byte(dato_plan_str), &dato_plan)
 				for key2 := range dato_plan {
 					index, err := strconv.Atoi(key2)
 					if err != nil {
