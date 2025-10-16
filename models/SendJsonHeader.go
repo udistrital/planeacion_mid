@@ -1,7 +1,5 @@
 package models
 
-//package request
-
 import (
 	"bytes"
 	"encoding/json"
@@ -17,46 +15,56 @@ var global *context.Context
 func SendJson(urlp string, trequest string, target interface{}, datajson interface{}) error {
 	b := new(bytes.Buffer)
 	if datajson != nil {
-		json.NewEncoder(b).Encode(datajson)
+		if err := json.NewEncoder(b).Encode(datajson); err != nil {
+			beego.Warn("Error codificando JSON en SendJson:", err)
+		}
 	}
 
 	client := &http.Client{}
 	req, err := http.NewRequest(trequest, urlp, b)
+	if err != nil {
+		beego.Error("Error creando request:", err)
+		return err
+	}
+
 	req.Header.Set("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
 
-	//Se intenta acceder a cabecera, si no existe, se realiza peticion normal.
 	defer func() {
-		//Catch
 		if r := recover(); r != nil {
-
 			client := &http.Client{}
 			resp, err := client.Do(req)
 			if err != nil {
-				beego.Error("Error reading response. ", err)
+				beego.Error("Error leyendo respuesta en defer:", err)
+				return
 			}
-
 			defer resp.Body.Close()
-			json.NewDecoder(resp.Body).Decode(target)
+
+			if err := json.NewDecoder(resp.Body).Decode(target); err != nil {
+				beego.Warn("Error decodificando respuesta en defer:", err)
+			}
 		}
 	}()
 
-	//try
 	header := GetHeader().Request.Header
 	req.Header.Set("Authorization", header["Authorization"][0])
 
 	resp, err := client.Do(req)
 	if err != nil {
-		beego.Error("Error reading response. ", err)
+		beego.Error("Error leyendo respuesta:", err)
+		return err
 	}
-
 	defer resp.Body.Close()
-	return json.NewDecoder(resp.Body).Decode(target)
+
+	if err := json.NewDecoder(resp.Body).Decode(target); err != nil {
+		beego.Warn("Error decodificando respuesta JSON:", err)
+		return err
+	}
+	return nil
 }
 
 func SetHeader(ctx *context.Context) {
 	global = ctx
-
 }
 
 func GetHeader() (ctx *context.Context) {
@@ -64,49 +72,59 @@ func GetHeader() (ctx *context.Context) {
 }
 
 func GetJson(urlp string, target interface{}) error {
-
 	req, err := http.NewRequest("GET", urlp, nil)
 	if err != nil {
-		beego.Error("Error reading request. ", err)
+		beego.Error("Error creando request:", err)
+		return err
 	}
 
 	defer func() {
-		//Catch
 		if r := recover(); r != nil {
-
 			client := &http.Client{}
 			resp, err := client.Do(req)
 			if err != nil {
-				beego.Error("Error reading response. ", err)
+				beego.Error("Error leyendo respuesta en defer GetJson:", err)
+				return
 			}
-
 			defer resp.Body.Close()
-			json.NewDecoder(resp.Body).Decode(target)
+
+			if err := json.NewDecoder(resp.Body).Decode(target); err != nil {
+				beego.Warn("Error decodificando respuesta en defer GetJson:", err)
+			}
 		}
 	}()
 
-	//try
 	header := GetHeader().Request.Header
 	req.Header.Set("Authorization", header["Authorization"][0])
-	client := &http.Client{}
 
+	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		beego.Error("Error reading response. ", err)
+		beego.Error("Error ejecutando request en GetJson:", err)
+		return err
 	}
-
 	defer resp.Body.Close()
-	return json.NewDecoder(resp.Body).Decode(target)
+
+	if err := json.NewDecoder(resp.Body).Decode(target); err != nil {
+		beego.Warn("Error decodificando respuesta JSON en GetJson:", err)
+		return err
+	}
+	return nil
 }
 
 func GetJsonTest(url string, target interface{}) (response *http.Response, err error) {
-	var myClient = &http.Client{Timeout: 10 * time.Second}
-	response, err = myClient.Get(url)
+	client := &http.Client{Timeout: 10 * time.Second}
+	response, err = client.Get(url)
 	if err != nil {
 		return nil, err
 	}
 	defer response.Body.Close()
-	return response, json.NewDecoder(response.Body).Decode(target)
+
+	if err := json.NewDecoder(response.Body).Decode(target); err != nil {
+		beego.Warn("Error decodificando respuesta JSON en GetJsonTest:", err)
+		return response, err
+	}
+	return response, nil
 }
 
 func diff(a, b time.Time) (year, month, day int) {
@@ -123,10 +141,7 @@ func diff(a, b time.Time) (year, month, day int) {
 	month = int(M2 - M1)
 	day = int(d2 - d1)
 
-	// Normalize negative values
-
 	if day < 0 {
-		// days in month:
 		t := time.Date(y1, M1, 32, 0, 0, 0, 0, time.UTC)
 		day += 32 - t.Day()
 		month--
@@ -135,6 +150,5 @@ func diff(a, b time.Time) (year, month, day int) {
 		month += 12
 		year--
 	}
-
 	return
 }
