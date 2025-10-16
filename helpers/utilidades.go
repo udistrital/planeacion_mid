@@ -55,7 +55,7 @@ func SendJson(url string, trequest string, target interface{}, datajson interfac
 			if err != nil {
 				logs.Error(err)
 			}
-			json.Unmarshal(e, &target)
+			_ = json.Unmarshal(e, &target)
 		}
 	}()
 
@@ -326,7 +326,7 @@ func LimpiezaRespuestaRefactor(respuesta map[string]interface{}, v interface{}) 
 	if err != nil {
 		panic(err)
 	}
-	json.Unmarshal(b, &v)
+	_ = json.Unmarshal(b, &v)
 }
 
 func GuardarDocumento(documentos []interface{}) []interface{} {
