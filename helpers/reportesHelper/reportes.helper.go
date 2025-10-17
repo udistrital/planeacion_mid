@@ -546,7 +546,7 @@ func ArbolArmonizacion(armonizacion string) []map[string]interface{} {
 				break
 			}
 		}
-		if bandera == false {
+		if !bandera {
 			lineamiento := make(map[string]interface{})
 			var arregloMetas []map[string]interface{}
 			arregloMetas = append(arregloMetas, meta)
@@ -911,7 +911,7 @@ func ArbolArmonizacionPI(armonizacion interface{}) []map[string]interface{} {
 					break
 				}
 			}
-			if bandera == false {
+			if !bandera {
 				factor := make(map[string]interface{})
 				var arregloLineamientos []map[string]interface{}
 				arregloLineamientos = append(arregloLineamientos, lineamiento)
