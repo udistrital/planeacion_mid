@@ -55,7 +55,7 @@ func getChildren(children []string) (childrenTree []map[string]interface{}) {
 		forkData["id"] = nodoId["_id"]
 		forkData["nombre"] = nodo.Nombre
 		forkData["descripcion"] = nodo.Descripcion
-		if nodo.Activo == true {
+		if nodo.Activo {
 			forkData["activo"] = "activo"
 		} else {
 			forkData["activo"] = "inactivo"
