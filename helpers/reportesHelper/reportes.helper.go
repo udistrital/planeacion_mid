@@ -2689,11 +2689,11 @@ func SombrearCeldas(excel *excelize.File, idActividad int, sheetName string, hCe
 }
 
 func Convert2Num(value interface{}) interface{} {
-	switch value.(type) {
+	switch v := value.(type) {
 	case float64:
-		return value.(float64)
+		return v
 	case string:
-		num, _ := strconv.ParseFloat(value.(string), 64)
+		num, _ := strconv.ParseFloat(v, 64)
 		return num
 	default:
 		return "-"
