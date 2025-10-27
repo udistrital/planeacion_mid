@@ -7,7 +7,7 @@ import (
 	apistatus "github.com/udistrital/utils_oas/apiStatusLib"
 	auditoria "github.com/udistrital/utils_oas/auditoria"
 	"github.com/udistrital/utils_oas/customerrorv2"
-	"github.com/udistrital/utils_oas/security"
+	security "github.com/udistrital/utils_oas/security"
 	"github.com/udistrital/utils_oas/xray"
 )
 

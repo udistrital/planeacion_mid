@@ -1,14 +1,14 @@
 module github.com/udistrital/planeacion_mid
 
-go 1.24.2
+go 1.24.3
 
 require (
 	github.com/astaxie/beego v1.12.3
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/udistrital/administrativa_mid_api v0.0.0-20230714214518-86d8006a1b9f
-	github.com/udistrital/utils_oas v0.0.0-20250917065514-c74562ac40b4
-	github.com/xuri/excelize/v2 v2.9.1
-	golang.org/x/text v0.29.0
+	github.com/udistrital/utils_oas v0.0.0-20251024162318-71adf5d9947e
+	github.com/xuri/excelize/v2 v2.10.0
+	golang.org/x/text v0.30.0
 )
 
 require (
@@ -38,14 +38,14 @@ require (
 	github.com/richardlehane/msoleps v1.0.4 // indirect
 	github.com/shiena/ansicolor v0.0.0-20200904210342-c7312218db18 // indirect
 	github.com/smarty/assertions v1.15.0 // indirect
-	github.com/tiendc/go-deepcopy v1.6.0 // indirect
+	github.com/tiendc/go-deepcopy v1.7.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.34.0 // indirect
 	github.com/xuri/efp v0.0.1 // indirect
-	github.com/xuri/nfp v0.0.1 // indirect
-	golang.org/x/crypto v0.38.0 // indirect
-	golang.org/x/net v0.40.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
+	github.com/xuri/nfp v0.0.2-0.20250530014748-2ddeb826f9a9 // indirect
+	golang.org/x/crypto v0.43.0 // indirect
+	golang.org/x/net v0.46.0 // indirect
+	golang.org/x/sys v0.37.0 // indirect
 	google.golang.org/genproto v0.0.0-20210114201628-6edceaf6022f // indirect
 	google.golang.org/grpc v1.35.0 // indirect
 	google.golang.org/protobuf v1.26.0 // indirect
