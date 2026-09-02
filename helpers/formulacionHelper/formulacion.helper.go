@@ -1,14 +1,12 @@
 package formulacionhelper
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"math"
-	"net/http"
 	"net/url"
 	"sort"
 	"strconv"
@@ -42,9 +40,7 @@ func Limpia() {
 	validDataT = []string{}
 }
 
-func ClonarHijos(hijos []map[string]interface{}, padre string) {
-
-	clienteHttp := &http.Client{}
+func ClonarHijos(ctx context.Context, hijos []map[string]interface{}, padre string) error {
 	url := "http://" + beego.AppConfig.String("PlanesService") + "/subgrupo/registrar_nodo/"
 
 	for i := 0; i < len(hijos); i++ {
@@ -60,30 +56,9 @@ func ClonarHijos(hijos []map[string]interface{}, padre string) {
 		var resPost map[string]interface{}
 		var resLimpia map[string]interface{}
 
-		aux, err := json.Marshal(hijo)
-		if err != nil {
-			log.Fatalf("Error codificado: %v", err)
+		if _, err := request.PostWithContext(ctx, url, hijo, &resPost); err != nil {
+			return err
 		}
-
-		peticion, err := http.NewRequest("POST", url, bytes.NewBuffer(aux))
-		if err != nil {
-			log.Fatalf("Error creando peticion: %v", err)
-		}
-
-		peticion.Header.Set("Content-Type", "application/json; charset=UTF-8")
-		respuesta, err := clienteHttp.Do(peticion)
-		if err != nil {
-			log.Fatalf("Error haciendo peticion: %v", err)
-		}
-
-		defer respuesta.Body.Close()
-
-		cuerpoRespuesta, err := io.ReadAll(respuesta.Body)
-		if err != nil {
-			log.Fatalf("Error leyendo peticion: %v", err)
-		}
-
-		_ = json.Unmarshal(cuerpoRespuesta, &resPost)
 		resLimpia = resPost["Data"].(map[string]interface{})
 
 		var respuestaHijos map[string]interface{}
@@ -91,22 +66,25 @@ func ClonarHijos(hijos []map[string]interface{}, padre string) {
 		var subHijos []map[string]interface{}
 		var subHijosDetalle []map[string]interface{}
 
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijos[i]["_id"].(string), &respuestaHijosDetalle); err == nil {
+		if _, err := request.GetWithContext(ctx, "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijos[i]["_id"].(string), &respuestaHijosDetalle); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuestaHijosDetalle, &subHijosDetalle)
-			ClonarHijosDetalle(subHijosDetalle, resLimpia["_id"].(string))
+			if err := ClonarHijosDetalle(ctx, subHijosDetalle, resLimpia["_id"].(string)); err != nil {
+				return err
+			}
 		}
 
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+hijos[i]["_id"].(string), &respuestaHijos); err == nil {
+		if _, err := request.GetWithContext(ctx, "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+hijos[i]["_id"].(string), &respuestaHijos); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuestaHijos, &subHijos)
-			ClonarHijos(subHijos, resLimpia["_id"].(string))
+			if err := ClonarHijos(ctx, subHijos, resLimpia["_id"].(string)); err != nil {
+				return err
+			}
 		}
 
 	}
+	return nil
 }
 
-func ClonarHijosPAF(hijos []map[string]interface{}, padre string) {
-
-	clienteHttp := &http.Client{}
+func ClonarHijosPAF(ctx context.Context, hijos []map[string]interface{}, padre string) error {
 	url := "http://" + beego.AppConfig.String("PlanesService") + "/subgrupo/registrar_nodo/"
 
 	for i := 0; i < len(hijos); i++ {
@@ -123,30 +101,9 @@ func ClonarHijosPAF(hijos []map[string]interface{}, padre string) {
 			var resPost map[string]interface{}
 			var resLimpia map[string]interface{}
 
-			aux, err := json.Marshal(hijo)
-			if err != nil {
-				log.Fatalf("Error codificado: %v", err)
+			if _, err := request.PostWithContext(ctx, url, hijo, &resPost); err != nil {
+				return err
 			}
-
-			peticion, err := http.NewRequest("POST", url, bytes.NewBuffer(aux))
-			if err != nil {
-				log.Fatalf("Error creando peticion: %v", err)
-			}
-
-			peticion.Header.Set("Content-Type", "application/json; charset=UTF-8")
-			respuesta, err := clienteHttp.Do(peticion)
-			if err != nil {
-				log.Fatalf("Error haciendo peticion: %v", err)
-			}
-
-			defer respuesta.Body.Close()
-
-			cuerpoRespuesta, err := io.ReadAll(respuesta.Body)
-			if err != nil {
-				log.Fatalf("Error leyendo peticion: %v", err)
-			}
-
-			_ = json.Unmarshal(cuerpoRespuesta, &resPost)
 			resLimpia = resPost["Data"].(map[string]interface{})
 
 			var respuestaHijos map[string]interface{}
@@ -154,21 +111,25 @@ func ClonarHijosPAF(hijos []map[string]interface{}, padre string) {
 			var subHijos []map[string]interface{}
 			var subHijosDetalle []map[string]interface{}
 
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijos[i]["_id"].(string), &respuestaHijosDetalle); err == nil {
+			if _, err := request.GetWithContext(ctx, "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo-detalle/detalle/"+hijos[i]["_id"].(string), &respuestaHijosDetalle); err == nil {
 				helpers.LimpiezaRespuestaRefactor(respuestaHijosDetalle, &subHijosDetalle)
-				ClonarHijosDetallePAF(subHijosDetalle, resLimpia["_id"].(string))
+				if err := ClonarHijosDetallePAF(ctx, subHijosDetalle, resLimpia["_id"].(string)); err != nil {
+					return err
+				}
 			}
 
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+hijos[i]["_id"].(string), &respuestaHijos); err == nil {
+			if _, err := request.GetWithContext(ctx, "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+hijos[i]["_id"].(string), &respuestaHijos); err == nil {
 				helpers.LimpiezaRespuestaRefactor(respuestaHijos, &subHijos)
-				ClonarHijosPAF(subHijos, resLimpia["_id"].(string))
+				if err := ClonarHijosPAF(ctx, subHijos, resLimpia["_id"].(string)); err != nil {
+					return err
+				}
 			}
 		}
 	}
+	return nil
 }
 
-func ClonarHijosDetalle(subHijosDetalle []map[string]interface{}, subgrupo_id string) {
-	clienteHttp := &http.Client{}
+func ClonarHijosDetalle(ctx context.Context, subHijosDetalle []map[string]interface{}, subgrupo_id string) error {
 	url := "http://" + beego.AppConfig.String("PlanesService") + "/subgrupo-detalle/"
 
 	for i := 0; i < len(subHijosDetalle); i++ {
@@ -180,36 +141,15 @@ func ClonarHijosDetalle(subHijosDetalle []map[string]interface{}, subgrupo_id st
 		hijoDetalle["dato"] = subHijosDetalle[i]["dato"]
 
 		var resPost map[string]interface{}
-		aux, err := json.Marshal(hijoDetalle)
-		if err != nil {
-			log.Fatalf("Error codificado: %v", err)
+		if _, err := request.PostWithContext(ctx, url, hijoDetalle, &resPost); err != nil {
+			return err
 		}
-
-		peticion, err := http.NewRequest("POST", url, bytes.NewBuffer(aux))
-		if err != nil {
-			log.Fatalf("Error creando peticion: %v", err)
-		}
-
-		peticion.Header.Set("Content-Type", "application/json; charset=UTF-8")
-		respuesta, err := clienteHttp.Do(peticion)
-		if err != nil {
-			log.Fatalf("Error haciendo peticion: %v", err)
-		}
-
-		defer respuesta.Body.Close()
-
-		cuerpoRespuesta, err := io.ReadAll(respuesta.Body)
-		if err != nil {
-			log.Fatalf("Error leyendo peticion: %v", err)
-		}
-
-		_ = json.Unmarshal(cuerpoRespuesta, &resPost)
 
 	}
+	return nil
 }
 
-func ClonarHijosDetallePAF(subHijosDetalle []map[string]interface{}, subgrupo_id string) {
-	clienteHttp := &http.Client{}
+func ClonarHijosDetallePAF(ctx context.Context, subHijosDetalle []map[string]interface{}, subgrupo_id string) error {
 	url := "http://" + beego.AppConfig.String("PlanesService") + "/subgrupo-detalle/"
 
 	for i := 0; i < len(subHijosDetalle); i++ {
@@ -222,32 +162,12 @@ func ClonarHijosDetallePAF(subHijosDetalle []map[string]interface{}, subgrupo_id
 			hijoDetalle["dato"] = subHijosDetalle[i]["dato"]
 
 			var resPost map[string]interface{}
-			aux, err := json.Marshal(hijoDetalle)
-			if err != nil {
-				log.Fatalf("Error codificado: %v", err)
+			if _, err := request.PostWithContext(ctx, url, hijoDetalle, &resPost); err != nil {
+				return err
 			}
-
-			peticion, err := http.NewRequest("POST", url, bytes.NewBuffer(aux))
-			if err != nil {
-				log.Fatalf("Error creando peticion: %v", err)
-			}
-
-			peticion.Header.Set("Content-Type", "application/json; charset=UTF-8")
-			respuesta, err := clienteHttp.Do(peticion)
-			if err != nil {
-				log.Fatalf("Error haciendo peticion: %v", err)
-			}
-
-			defer respuesta.Body.Close()
-
-			cuerpoRespuesta, err := io.ReadAll(respuesta.Body)
-			if err != nil {
-				log.Fatalf("Error leyendo peticion: %v", err)
-			}
-
-			_ = json.Unmarshal(cuerpoRespuesta, &resPost)
 		}
 	}
+	return nil
 }
 
 func BuildTreeFa(hijos []map[string]interface{}, index string) [][]map[string]interface{} {
@@ -2175,6 +2095,80 @@ func ActualizarEstructuraPlan(listaFormato, listaPlan []map[string]interface{}, 
 				return err
 			}
 			listaPlan = nuevaLista
+		}
+	}
+	return nil
+}
+
+// SincronizarOrdenEstructura aplica en cada subgrupo padre el orden definido
+// por la plantilla. El primer nivel se omite porque su padre es un plan y su
+// orden se resuelve en planes_crud por fecha_creacion e _id.
+func SincronizarOrdenEstructura(ctx context.Context, listaFormato, listaPlan []map[string]interface{}, idFormato string) error {
+	planPorReferencia := make(map[string]map[string]interface{})
+	for _, nodoPlan := range listaPlan {
+		if referencia, ok := nodoPlan["ref"].(string); ok {
+			planPorReferencia[referencia] = nodoPlan
+		}
+	}
+
+	hijosPorPadre := make(map[string][]string)
+	ordenPadres := make([]string, 0)
+	for _, nodoFormato := range listaFormato {
+		padreFormato, ok := nodoFormato["padre"].(string)
+		if !ok || padreFormato == idFormato {
+			continue
+		}
+		idFormatoNodo, ok := nodoFormato["id"].(string)
+		if !ok {
+			return fmt.Errorf("nodo de plantilla sin identificador válido")
+		}
+		nodoPlan, existe := planPorReferencia[idFormatoNodo]
+		if !existe {
+			return fmt.Errorf("no se encontró en el plan el nodo con referencia %s", idFormatoNodo)
+		}
+		idPlanNodo, ok := nodoPlan["id"].(string)
+		if !ok {
+			return fmt.Errorf("nodo del plan sin identificador válido")
+		}
+		if _, existe := hijosPorPadre[padreFormato]; !existe {
+			ordenPadres = append(ordenPadres, padreFormato)
+		}
+		hijosPorPadre[padreFormato] = append(hijosPorPadre[padreFormato], idPlanNodo)
+	}
+
+	for _, padreFormato := range ordenPadres {
+		padrePlan, existe := planPorReferencia[padreFormato]
+		if !existe {
+			return fmt.Errorf("no se encontró en el plan el padre con referencia %s", padreFormato)
+		}
+		idPadrePlan, ok := padrePlan["id"].(string)
+		if !ok {
+			return fmt.Errorf("padre del plan sin identificador válido")
+		}
+		hijosOrdenados := append([]string(nil), hijosPorPadre[padreFormato]...)
+		incluidos := make(map[string]struct{}, len(hijosOrdenados))
+		for _, id := range hijosOrdenados {
+			incluidos[id] = struct{}{}
+		}
+		// Conservar al final nodos propios del plan que no estén presentes en
+		// la plantilla; el PUT exige la colección completa de hermanos.
+		for _, nodoPlan := range listaPlan {
+			padreNodo, _ := nodoPlan["padre"].(string)
+			idNodo, _ := nodoPlan["id"].(string)
+			if padreNodo == idPadrePlan && idNodo != "" {
+				if _, existe := incluidos[idNodo]; !existe {
+					hijosOrdenados = append(hijosOrdenados, idNodo)
+					incluidos[idNodo] = struct{}{}
+				}
+			}
+		}
+		var respuesta map[string]interface{}
+		body := map[string]interface{}{"hijos": hijosOrdenados}
+		if _, err := request.PutWithContext(ctx, "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+idPadrePlan, body, &respuesta); err != nil {
+			return err
+		}
+		if success, ok := respuesta["Success"].(bool); ok && !success {
+			return fmt.Errorf("planes_crud rechazó el orden del subgrupo %s", idPadrePlan)
 		}
 	}
 	return nil

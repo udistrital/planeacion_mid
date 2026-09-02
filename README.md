@@ -1,5 +1,10 @@
 # planeacion_mid
 Api Mid para el sistema de planeación universidad Distrital
+
+## Documentación funcional
+
+- [Persistencia y consumo del orden del formato](documentacion/orden-formato.md)
+
 ## Especificaciones Técnicas
 
 ### Tecnologías Implementadas y Versiones
