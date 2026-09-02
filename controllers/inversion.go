@@ -431,9 +431,11 @@ func (c *InversionController) CrearPlan() {
 		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/", "POST", &respuestaPost, plan); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuestaPost, &planSubgrupo)
 			padre := planSubgrupo["_id"].(string)
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &respuestaHijos); err == nil {
+			if _, err := request.GetWithContext(c.Ctx.Request.Context(), "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &respuestaHijos); err == nil {
 				helpers.LimpiezaRespuestaRefactor(respuestaHijos, &hijos)
-				formulacionhelper.ClonarHijos(hijos, padre)
+				if err := formulacionhelper.ClonarHijos(c.Ctx.Request.Context(), hijos, padre); err != nil {
+					panic(map[string]interface{}{"funcion": "CrearPlan", "err": "Error clonando estructura del formato", "status": "500", "log": err})
+				}
 			}
 			// subgrupoMetas["padre"] = planSubgrupo["_id"]
 			// subgrupoMetas["activo"] = true
@@ -1556,9 +1558,11 @@ func (c *InversionController) CrearGrupoMeta() {
 		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/", "POST", &respuestaPost, plan); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuestaPost, &planSubgrupo)
 			padre := planSubgrupo["_id"].(string)
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &respuestaHijos); err == nil {
+			if _, err := request.GetWithContext(c.Ctx.Request.Context(), "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &respuestaHijos); err == nil {
 				helpers.LimpiezaRespuestaRefactor(respuestaHijos, &hijos)
-				formulacionhelper.ClonarHijos(hijos, padre)
+				if err := formulacionhelper.ClonarHijos(c.Ctx.Request.Context(), hijos, padre); err != nil {
+					panic(map[string]interface{}{"funcion": "CrearPlan", "err": "Error clonando estructura del formato", "status": "500", "log": err})
+				}
 			}
 
 		} else {

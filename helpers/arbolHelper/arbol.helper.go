@@ -21,6 +21,7 @@ func BuildTree(hijos []models.Nodo, hijosID []map[string]interface{}) []map[stri
 		forkData["id"] = hijosID[i]["_id"]
 		forkData["nombre"] = hijos[i].Nombre
 		forkData["descripcion"] = hijos[i].Descripcion
+		forkData["orden"] = i
 		if hijos[i].Activo {
 			forkData["activo"] = "activo"
 		} else {
@@ -42,7 +43,7 @@ func getChildren(children []string) (childrenTree []map[string]interface{}) {
 	var res map[string]interface{}
 	var nodo models.Nodo
 	var nodoId map[string]interface{}
-	for _, child := range children {
+	for orden, child := range children {
 		forkData := make(map[string]interface{})
 
 		err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+child, &res)
@@ -55,6 +56,7 @@ func getChildren(children []string) (childrenTree []map[string]interface{}) {
 		forkData["id"] = nodoId["_id"]
 		forkData["nombre"] = nodo.Nombre
 		forkData["descripcion"] = nodo.Descripcion
+		forkData["orden"] = orden
 		if nodo.Activo {
 			forkData["activo"] = "activo"
 		} else {

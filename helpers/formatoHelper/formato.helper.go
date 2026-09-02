@@ -34,6 +34,7 @@ func ConstruirArbolFormato(hijos []models.Nodo, hijosID []map[string]interface{}
 	var nodo []models.NodoDetalle
 	var res map[string]interface{}
 	var result [][]map[string]interface{}
+	ordenVisible := 0
 
 	for i := 0; i < len(hijos); i++ {
 		if activos || hijos[i].Activo {
@@ -41,6 +42,8 @@ func ConstruirArbolFormato(hijos []models.Nodo, hijosID []map[string]interface{}
 			var id string
 			forkData["id"] = hijosID[i]["_id"]
 			forkData["nombre"] = hijos[i].Nombre
+			forkData["orden"] = ordenVisible
+			ordenVisible++
 			forkData["ref"] = hijosID[i]["ref"]
 			jsonString, _ := json.Marshal(hijosID[i]["_id"])
 			json.Unmarshal(jsonString, &id)
@@ -101,6 +104,7 @@ func getChildren(children []string, activos bool) (childrenTree []map[string]int
 		if activos || nodo.Activo {
 			forkData["id"] = nodoId["_id"]
 			forkData["nombre"] = nodo.Nombre
+			forkData["orden"] = len(childrenTree)
 			forkData["ref"] = nodoId["ref"]
 			jsonString, _ := json.Marshal(nodoId["_id"])
 			json.Unmarshal(jsonString, &id)

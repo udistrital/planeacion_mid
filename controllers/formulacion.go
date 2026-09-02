@@ -142,9 +142,11 @@ func (c *FormulacionController) ClonarFormato() {
 		padre := resLimpia["_id"].(string)
 		c.Data["json"] = resPost
 
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &respuestaHijos); err == nil {
+		if _, err := request.GetWithContext(c.Ctx.Request.Context(), "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &respuestaHijos); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuestaHijos, &hijos)
-			formulacionhelper.ClonarHijos(hijos, padre)
+			if err := formulacionhelper.ClonarHijos(c.Ctx.Request.Context(), hijos, padre); err != nil {
+				panic(map[string]interface{}{"funcion": "ClonarFormato", "err": "Error clonando estructura del formato", "status": "500", "log": err})
+			}
 		}
 
 	}
@@ -270,7 +272,7 @@ func (c *FormulacionController) ClonarFormatoPAF() {
 	padre := resLimpia["_id"].(string)
 	c.Data["json"] = resPost
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+planFormato[0]["_id"].(string), &respuestaHijos); err == nil {
+	if _, err := request.GetWithContext(c.Ctx.Request.Context(), "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+planFormato[0]["_id"].(string), &respuestaHijos); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuestaHijos, &hijos)
 		hijosActivos := make([]map[string]interface{}, 0)
 		for _, hijo := range hijos {
@@ -278,7 +280,9 @@ func (c *FormulacionController) ClonarFormatoPAF() {
 				hijosActivos = append(hijosActivos, hijo)
 			}
 		}
-		formulacionhelper.ClonarHijosPAF(hijosActivos, padre)
+		if err := formulacionhelper.ClonarHijosPAF(c.Ctx.Request.Context(), hijosActivos, padre); err != nil {
+			panic(map[string]interface{}{"funcion": "ClonarFormatoPAF", "err": "Error clonando estructura del formato", "status": "500", "log": err})
+		}
 	}
 
 	c.ServeJSON()
@@ -360,9 +364,11 @@ func (c *FormulacionController) ClonarPI_PED() {
 		padre := resLimpia["_id"].(string)
 		c.Data["json"] = resPost
 
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &respuestaHijos); err == nil {
+		if _, err := request.GetWithContext(c.Ctx.Request.Context(), "http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &respuestaHijos); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuestaHijos, &hijos)
-			formulacionhelper.ClonarHijos(hijos, padre)
+			if err := formulacionhelper.ClonarHijos(c.Ctx.Request.Context(), hijos, padre); err != nil {
+				panic(map[string]interface{}{"funcion": "ClonarPI_PED", "err": "Error clonando estructura del formato", "status": "500", "log": err})
+			}
 		}
 
 	}
@@ -2165,8 +2171,22 @@ func (c *FormulacionController) EstructuraPlanes() {
 			panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error al obtener formato de plan", "status": "400", "log": err})
 		}
 		listaPlan, err := formulacionhelper.ConvArbolAListaPlana(formatoPlan[0], planId, false)
-		if err == nil {
-			formulacionhelper.ActualizarEstructuraPlan(listaPlantilla, listaPlan, planId)
+		if err != nil {
+			panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error convirtiendo formato del plan", "status": "400", "log": err})
+		}
+		if err := formulacionhelper.ActualizarEstructuraPlan(listaPlantilla, listaPlan, planId); err != nil {
+			panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error actualizando estructura del plan", "status": "500", "log": err})
+		}
+		formatoPlanActualizado, err := formulacionhelper.GetFormato(planId)
+		if err != nil {
+			panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error consultando estructura actualizada", "status": "500", "log": err})
+		}
+		listaPlanActualizada, err := formulacionhelper.ConvArbolAListaPlana(formatoPlanActualizado[0], planId, false)
+		if err != nil {
+			panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error convirtiendo estructura actualizada", "status": "500", "log": err})
+		}
+		if err := formulacionhelper.SincronizarOrdenEstructura(c.Ctx.Request.Context(), listaPlantilla, listaPlanActualizada, id); err != nil {
+			panic(map[string]interface{}{"funcion": "EstructuraPlanes", "err": "Error sincronizando orden del plan", "status": "500", "log": err})
 		}
 	}
 
