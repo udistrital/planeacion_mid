@@ -1,14 +1,9 @@
 workspace:
   base: /go
-  path: src/github.com/udistrital/${DRONE_REPO##udistrital/}
-  when:
-      branch:
-      - develop
-      - release/*
-      - master
+  path: src/github.com/${DRONE_REPO}
 
 kind: pipeline
-name: oas_api_ci
+name: oati_golang_api_ci
 
 steps:
 - name: check_readme
@@ -47,8 +42,8 @@ steps:
     event:
     - push
 
-- name: go_build
-  image: golang:1.24
+- name: build
+  image: golang:1.25
   commands:
   - GOOS=linux GOARCH=amd64 go build -o main
   when:
@@ -56,43 +51,46 @@ steps:
     - develop
     - release/*
     - feature/*
+    - hotfix/*
     - master
     event:
     - push
 
 - name: go_run_test
-  image: golang:1.24
+  image: golang:1.25
   commands:
-  - go get -t
-  - go install github.com/smartystreets/goconvey@latest
+  - go vet ./...
+  - go fmt ./... && git diff --exit-code || (echo "Go fmt detected formatting issues! Please run 'go fmt' to format the code." && exit 1)
   - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-  - go install github.com/axw/gocov/...@latest
-  - go install github.com/AlekSi/gocov-xml@latest
-  - go install github.com/jstemmer/go-junit-report@latest
-  - golangci-lint run --out-format=checkstyle --timeout=5m > report.xml || true
-  - cat report.xml
-  # - gocov test ./... | gocov-xml > coverage.xml
-  # - go test -v ./... | go-junit-report > test.xml
+  - golangci-lint run --out-format=checkstyle --timeout=5m > lint_report.xml || true
+  - cat lint_report.xml
   when:
     branch:
     - develop
     - feature/*
-    - release/*
+    - hotfix/*
     event:
     - push
 
 - name: run_sonar_scanner
-  image: aosapps/drone-sonar-plugin
-  settings:
-    sonar_host:
+  image: sonarsource/sonar-scanner-cli:latest
+  environment:
+    SONAR_HOST_URL:
       from_secret: SONAR_HOST
-    sonar_token:
+    SONAR_TOKEN:
       from_secret: SONAR_TOKEN
+    SONAR_SCANNER_OPTS: "-Dsonar.working.directory=/tmp/.scannerwork"
+  commands:
+  - sonar-scanner
   when:
     branch:
     - develop
     - feature/*
     - release/*
+    - hotfix/*
+    - master
+    event:
+    - push
 
 - name: publish_to_ecr_release
   image: plugins/ecr
@@ -103,7 +101,8 @@ steps:
       from_secret: AWS_SECRET_ACCESS_KEY
     region:
       from_secret: AWS_REGION
-    repo: ${DRONE_REPO##udistrital/}
+    repo: ${DRONE_REPO_NAME}
+    create_repository: true
     tags:
       - ${DRONE_COMMIT:0:7}
       - release
@@ -113,7 +112,7 @@ steps:
     event:
     - push
 
-- name: publish_to_ecr_master
+- name: publish_to_ecr_prod
   image: plugins/ecr
   settings:
     access_key:
@@ -122,7 +121,8 @@ steps:
       from_secret: AWS_SECRET_ACCESS_KEY
     region:
       from_secret: AWS_REGION
-    repo: ${DRONE_REPO##udistrital/}
+    repo: ${DRONE_REPO_NAME}
+    create_repository: true
     tags:
       - ${DRONE_COMMIT:0:7}
       - latest

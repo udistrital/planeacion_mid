@@ -720,7 +720,6 @@ func (c *InversionController) GuardarMeta() {
 				b, _ := json.Marshal(dato_plan)
 				str := string(b)
 				subgrupo_detalle["dato_plan"] = str
-				fmt.Sprintln(subgrupo_detalle["dato_plan"], "dato plan")
 				//if !dataProyectIn {
 				armonizacion_dato := make(map[string]interface{})
 				aux := make(map[string]interface{})

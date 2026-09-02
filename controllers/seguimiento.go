@@ -1261,7 +1261,7 @@ func (c *SeguimientoController) GuardarDocumentos() {
 				if evidencia.(map[string]interface{})["Enlace"] != nil {
 					evidencias = append(evidencias, evidencia.(map[string]interface{}))
 					if ((evidencia.(map[string]interface{})["Observacion_dependencia"] != nil && evidencia.(map[string]interface{})["Observacion_dependencia"] != "Sin observación" && evidencia.(map[string]interface{})["Observacion_dependencia"] != "") ||
-						(evidencia.(map[string]interface{})["Observacion_planeacion"] != nil && evidencia.(map[string]interface{})["Observacion_planeacion"] != "Sin observación" && evidencia.(map[string]interface{})["Observacion_planeacion"] != "")) && 
+						(evidencia.(map[string]interface{})["Observacion_planeacion"] != nil && evidencia.(map[string]interface{})["Observacion_planeacion"] != "Sin observación" && evidencia.(map[string]interface{})["Observacion_planeacion"] != "")) &&
 						evidencia.(map[string]interface{})["Activo"] == true {
 						comentario = true
 					}
@@ -1282,8 +1282,8 @@ func (c *SeguimientoController) GuardarDocumentos() {
 							"codigoAbreviacion": doc.(map[string]interface{})["TipoDocumento"].(map[string]interface{})["CodigoAbreviacion"],
 						},
 						"Observacion_dependencia": "",
-						"Observacion_planeacion": "",
-						"Activo":      true,
+						"Observacion_planeacion":  "",
+						"Activo":                  true,
 					})
 				}
 			}
