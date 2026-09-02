@@ -205,7 +205,7 @@ func GetEvaluacion(planId string, trimestres []map[string]interface{}, posicionT
 					evaluacionAux[trimestreNom] = map[string]interface{}{
 						"acumulado":            resIndicador["acumulado"],
 						"denominador":          resIndicador["denominador"],
-						"tipo_denominador":		resIndicador["tipo_denominador"],
+						"tipo_denominador":     resIndicador["tipo_denominador"],
 						"meta":                 resIndicador["meta"],
 						"numerador":            resIndicador["numerador"],
 						"periodo":              resIndicador["periodo"],
@@ -219,7 +219,7 @@ func GetEvaluacion(planId string, trimestres []map[string]interface{}, posicionT
 					evaluacion[indice][trimestreNom] = map[string]interface{}{
 						"acumulado":            resIndicador["acumulado"],
 						"denominador":          resIndicador["denominador"],
-						"tipo_denominador":		resIndicador["tipo_denominador"],
+						"tipo_denominador":     resIndicador["tipo_denominador"],
 						"meta":                 resIndicador["meta"],
 						"numerador":            resIndicador["numerador"],
 						"periodo":              resIndicador["periodo"],
@@ -250,8 +250,8 @@ func GetEvaluacion(planId string, trimestres []map[string]interface{}, posicionT
 		for _, i := range idxs {
 			if fmt.Sprintf("%v", evaluacion[i]["trimestre1"]) != "map[]" {
 				//CALCULO DEL INDICADOR ACUMULADO PARA DENOMINADOR VARIABLE
-				if(evaluacion[i]["trimestre1"].(map[string]interface{})["tipo_denominador"] == "Denominador variable"){
-					if(evaluacion[i]["trimestre1"].(map[string]interface{})["numeradorAcumulado"].(float64) != 0 && evaluacion[i]["trimestre1"].(map[string]interface{})["denominadorAcumulado"].(float64) != 0){
+				if evaluacion[i]["trimestre1"].(map[string]interface{})["tipo_denominador"] == "Denominador variable" {
+					if evaluacion[i]["trimestre1"].(map[string]interface{})["numeradorAcumulado"].(float64) != 0 && evaluacion[i]["trimestre1"].(map[string]interface{})["denominadorAcumulado"].(float64) != 0 {
 						evaluacion[i]["trimestre1"].(map[string]interface{})["acumulado"] = (evaluacion[i]["trimestre1"].(map[string]interface{})["numeradorAcumulado"].(float64) / evaluacion[i]["trimestre1"].(map[string]interface{})["denominadorAcumulado"].(float64)) * 0.25
 					} else {
 						evaluacion[i]["trimestre1"].(map[string]interface{})["acumulado"] = 1 * 0.25
@@ -267,8 +267,8 @@ func GetEvaluacion(planId string, trimestres []map[string]interface{}, posicionT
 			}
 			if fmt.Sprintf("%v", evaluacion[i]["trimestre2"]) != "map[]" {
 				//CALCULO DEL INDICADOR ACUMULADO PARA DENOMINADOR VARIABLE
-				if(evaluacion[i]["trimestre2"].(map[string]interface{})["tipo_denominador"] == "Denominador variable"){
-					if(evaluacion[i]["trimestre2"].(map[string]interface{})["numeradorAcumulado"].(float64) != 0 && evaluacion[i]["trimestre2"].(map[string]interface{})["denominadorAcumulado"].(float64) != 0){
+				if evaluacion[i]["trimestre2"].(map[string]interface{})["tipo_denominador"] == "Denominador variable" {
+					if evaluacion[i]["trimestre2"].(map[string]interface{})["numeradorAcumulado"].(float64) != 0 && evaluacion[i]["trimestre2"].(map[string]interface{})["denominadorAcumulado"].(float64) != 0 {
 						evaluacion[i]["trimestre2"].(map[string]interface{})["acumulado"] = (evaluacion[i]["trimestre2"].(map[string]interface{})["numeradorAcumulado"].(float64) / evaluacion[i]["trimestre2"].(map[string]interface{})["denominadorAcumulado"].(float64)) * 0.50
 					} else {
 						evaluacion[i]["trimestre2"].(map[string]interface{})["acumulado"] = (evaluacion[i]["trimestre2"].(map[string]interface{})["acumulado"].(float64) + 0.25) * 0.50
@@ -284,8 +284,8 @@ func GetEvaluacion(planId string, trimestres []map[string]interface{}, posicionT
 			}
 			if fmt.Sprintf("%v", evaluacion[i]["trimestre3"]) != "map[]" {
 				//CALCULO DEL INDICADOR ACUMULADO PARA DENOMINADOR VARIABLE
-				if(evaluacion[i]["trimestre3"].(map[string]interface{})["tipo_denominador"] == "Denominador variable"){
-					if(evaluacion[i]["trimestre3"].(map[string]interface{})["numeradorAcumulado"].(float64) != 0 && evaluacion[i]["trimestre3"].(map[string]interface{})["denominadorAcumulado"].(float64) != 0){
+				if evaluacion[i]["trimestre3"].(map[string]interface{})["tipo_denominador"] == "Denominador variable" {
+					if evaluacion[i]["trimestre3"].(map[string]interface{})["numeradorAcumulado"].(float64) != 0 && evaluacion[i]["trimestre3"].(map[string]interface{})["denominadorAcumulado"].(float64) != 0 {
 						evaluacion[i]["trimestre3"].(map[string]interface{})["acumulado"] = (evaluacion[i]["trimestre3"].(map[string]interface{})["numeradorAcumulado"].(float64) / evaluacion[i]["trimestre3"].(map[string]interface{})["denominadorAcumulado"].(float64)) * 0.75
 					} else {
 						evaluacion[i]["trimestre3"].(map[string]interface{})["acumulado"] = (evaluacion[i]["trimestre3"].(map[string]interface{})["acumulado"].(float64) + 0.25) * 0.75
@@ -301,8 +301,8 @@ func GetEvaluacion(planId string, trimestres []map[string]interface{}, posicionT
 			}
 			if fmt.Sprintf("%v", evaluacion[i]["trimestre4"]) != "map[]" {
 				//CALCULO DEL INDICADOR ACUMULADO PARA DENOMINADOR VARIABLE
-				if(evaluacion[i]["trimestre4"].(map[string]interface{})["tipo_denominador"] == "Denominador variable"){
-					if(evaluacion[i]["trimestre4"].(map[string]interface{})["numeradorAcumulado"].(float64) != 0 && evaluacion[i]["trimestre4"].(map[string]interface{})["denominadorAcumulado"].(float64) != 0){
+				if evaluacion[i]["trimestre4"].(map[string]interface{})["tipo_denominador"] == "Denominador variable" {
+					if evaluacion[i]["trimestre4"].(map[string]interface{})["numeradorAcumulado"].(float64) != 0 && evaluacion[i]["trimestre4"].(map[string]interface{})["denominadorAcumulado"].(float64) != 0 {
 						evaluacion[i]["trimestre4"].(map[string]interface{})["acumulado"] = (evaluacion[i]["trimestre4"].(map[string]interface{})["numeradorAcumulado"].(float64) / evaluacion[i]["trimestre4"].(map[string]interface{})["denominadorAcumulado"].(float64))
 					} else {
 						evaluacion[i]["trimestre4"].(map[string]interface{})["acumulado"] = (evaluacion[i]["trimestre4"].(map[string]interface{})["acumulado"].(float64) + 0.25)
@@ -389,7 +389,7 @@ func GetPeriodosPlan(vigenciaId string, plan_id string) []map[string]interface{}
 
 	plan_interes := []interface{}{
 		map[string]interface{}{
-			"_id": plan_formato["_id"],
+			"_id":    plan_formato["_id"],
 			"nombre": plan_formato["nombre"],
 		},
 	}
@@ -403,12 +403,12 @@ func GetPeriodosPlan(vigenciaId string, plan_id string) []map[string]interface{}
 				defer wg.Done()
 				trimestreId := int(trimestre["Id"].(float64))
 				codigoAbreviacion := (trimestre["ParametroId"].(map[string]interface{}))["CodigoAbreviacion"].(string)
-				
+
 				body := map[string]interface{}{
 					"tipo_seguimiento_id": "61f236f525e40c582a0840d0",
-					"periodo_id":      fmt.Sprintf("%v", trimestreId),
-					"unidades_interes":  string(unidades_interes_json),
-					"planes_interes":  string(plan_interes_json),
+					"periodo_id":          fmt.Sprintf("%v", trimestreId),
+					"unidades_interes":    string(unidades_interes_json),
+					"planes_interes":      string(plan_interes_json),
 				}
 
 				var respuestaPeriodoSeguimiento map[string]interface{}

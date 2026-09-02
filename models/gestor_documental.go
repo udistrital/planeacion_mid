@@ -17,7 +17,6 @@ func RegistrarPDF(documento []map[string]interface{}) (status interface{}, outpu
 
 }
 
-
 func RegistrarDoc(documento []map[string]interface{}) (status interface{}, outputError interface{}) {
 
 	var resultadoRegistro map[string]interface{}

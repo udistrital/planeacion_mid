@@ -55,7 +55,7 @@ func GetPeriodosPlan(vigenciaId string, plan_id string) []map[string]interface{}
 
 	plan_interes := []interface{}{
 		map[string]interface{}{
-			"_id": plan_formato["_id"],
+			"_id":    plan_formato["_id"],
 			"nombre": plan_formato["nombre"],
 		},
 	}
@@ -69,12 +69,12 @@ func GetPeriodosPlan(vigenciaId string, plan_id string) []map[string]interface{}
 				defer wg.Done()
 				trimestreId := int(trimestre["Id"].(float64))
 				codigoAbreviacion := (trimestre["ParametroId"].(map[string]interface{}))["CodigoAbreviacion"].(string)
-				
+
 				body := map[string]interface{}{
 					"tipo_seguimiento_id": "61f236f525e40c582a0840d0",
-					"periodo_id":      fmt.Sprintf("%v", trimestreId),
-					"unidades_interes":  string(unidades_interes_json),
-					"planes_interes":  string(plan_interes_json),
+					"periodo_id":          fmt.Sprintf("%v", trimestreId),
+					"unidades_interes":    string(unidades_interes_json),
+					"planes_interes":      string(plan_interes_json),
 				}
 
 				var respuestaPeriodoSeguimiento map[string]interface{}

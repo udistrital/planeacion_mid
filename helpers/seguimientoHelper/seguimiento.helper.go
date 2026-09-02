@@ -647,7 +647,7 @@ func GetRespuestaAnterior(dataSeg map[string]interface{}, index int, respuestas 
 										respuestas[index]["divisionCero"] = divisionCero
 										continue
 									}
-									
+
 									if detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["indicadorAcumulado"] != nil {
 										indicadorAcumulado += detalle["cuantitativo"].(map[string]interface{})["resultados"].([]interface{})[index].(map[string]interface{})["indicadorAcumulado"].(float64)
 									}
@@ -1005,7 +1005,7 @@ func SeguimientoAvalable(seguimiento map[string]interface{}) (bool, bool, map[st
 		for i := 0; i < len(subgrupos); i++ {
 			if esReporteAntiguo {
 				if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") && strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "general") {
-					actividades := GetActividades(subgrupos[i]["_id"].(string))	
+					actividades := GetActividades(subgrupos[i]["_id"].(string))
 					dato_plan_str := seguimiento["dato"].(string)
 					json.Unmarshal([]byte(dato_plan_str), &datoPlan)
 
@@ -1013,7 +1013,7 @@ func SeguimientoAvalable(seguimiento map[string]interface{}) (bool, bool, map[st
 				}
 			} else {
 				if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "actividad") {
-					actividades := GetActividades(subgrupos[i]["_id"].(string))	
+					actividades := GetActividades(subgrupos[i]["_id"].(string))
 					dato_plan_str := seguimiento["dato"].(string)
 					json.Unmarshal([]byte(dato_plan_str), &datoPlan)
 
@@ -1559,7 +1559,7 @@ func ObtenerPromedioBrechayEstado(requestBody []byte) (respuesta []map[string]in
 								suma += numero
 							}
 							if len(brechasT1) > 0 {
-								prod = ((suma / float64(len(brechasT1))))
+								prod = (suma / float64(len(brechasT1)))
 							}
 
 							prodFormatted := fmt.Sprintf("%.2f", prod*100)
@@ -1569,7 +1569,7 @@ func ObtenerPromedioBrechayEstado(requestBody []byte) (respuesta []map[string]in
 								suma += numero
 							}
 							if len(brechasT2) > 0 {
-								prod = ((suma / float64(len(brechasT2))))
+								prod = (suma / float64(len(brechasT2)))
 							}
 
 							prodFormatted := fmt.Sprintf("%.2f", prod*100)
@@ -1579,7 +1579,7 @@ func ObtenerPromedioBrechayEstado(requestBody []byte) (respuesta []map[string]in
 								suma += numero
 							}
 							if len(brechasT3) > 0 {
-								prod = ((suma / float64(len(brechasT3))))
+								prod = (suma / float64(len(brechasT3)))
 							}
 
 							prodFormatted := fmt.Sprintf("%.2f", prod*100)
@@ -1589,7 +1589,7 @@ func ObtenerPromedioBrechayEstado(requestBody []byte) (respuesta []map[string]in
 								suma += numero
 							}
 							if len(brechasT4) > 0 {
-								prod = ((suma / float64(len(brechasT4))))
+								prod = (suma / float64(len(brechasT4)))
 							}
 
 							prodFormatted := fmt.Sprintf("%.2f", prod*100)

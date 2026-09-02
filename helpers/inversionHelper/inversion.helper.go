@@ -376,7 +376,7 @@ func convert(valid []string, index string) ([]map[string]interface{}, map[string
 						actividad = dato_plan[index].(map[string]interface{})
 						if v != "" {
 							forkData[v] = actividad["dato"]
-							if actividad["observacion"] != nil || actividad["observacion"] != ""{
+							if actividad["observacion"] != nil || actividad["observacion"] != "" {
 								keyObservacion := v + "_o"
 								forkData[keyObservacion] = getObservacion(actividad)
 							} else {

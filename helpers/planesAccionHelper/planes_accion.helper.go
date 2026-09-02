@@ -32,11 +32,12 @@ func obtenerEstadosSeguimiento() map[string]string {
 
 /*
 Retornar planes con:
- - Unidad Académica y / o Administrativa (Nombre)
- - Vigencia
- - Plan de acción (Nombre)
- - Estado del plan de acción (Formulación / Seguimiento)
- - Versión en el caso de Formulación (N/A para los demás casos)
+  - Unidad Académica y / o Administrativa (Nombre)
+  - Vigencia
+  - Plan de acción (Nombre)
+  - Estado del plan de acción (Formulación / Seguimiento)
+  - Versión en el caso de Formulación (N/A para los demás casos)
+
 @return Un arreglo con los id's y datos más relevantes
 */
 func ObtenerPlanesAccion() (resumenPlanes []map[string]interface{}, outputError map[string]interface{}) {
