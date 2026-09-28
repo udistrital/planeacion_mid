@@ -1717,7 +1717,7 @@ func (c *FormulacionController) VinculacionTercero() {
 		panic(map[string]interface{}{"funcion": "VinculacionTercero", "err": "Error get vinculacion", "status": "400", "log": err})
 	} else {
 		for i := 0; i < len(vinculaciones); i++ {
-			if vinculaciones[i].CargoId == 319 || vinculaciones[i].CargoId == 312 || vinculaciones[i].CargoId == 320 {
+			if vinculaciones[i].CargoId == 319 || vinculaciones[i].CargoId == 312 || vinculaciones[i].CargoId == 320 || vinculaciones[i].CargoId == 300 {
 				vinculacionesResponse = append(vinculacionesResponse, vinculaciones[i])
 			}
 		}
