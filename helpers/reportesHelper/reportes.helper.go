@@ -2700,6 +2700,29 @@ func Convert2Num(value interface{}) interface{} {
 	}
 }
 
+// FiltrarPlanesPorDependencias conserva únicamente los planes cuya dependencia
+// fue seleccionada para el reporte general. Un arreglo vacío produce un resultado
+// vacío; la compatibilidad cuando el filtro no viene se controla en el controller.
+func FiltrarPlanesPorDependencias(planes []map[string]interface{}, dependenciasIDs []string) []map[string]interface{} {
+	seleccionadas := make(map[string]struct{}, len(dependenciasIDs))
+	for _, dependenciaID := range dependenciasIDs {
+		seleccionadas[dependenciaID] = struct{}{}
+	}
+
+	planesFiltrados := make([]map[string]interface{}, 0, len(planes))
+	for _, plan := range planes {
+		dependenciaID, ok := plan["dependencia_id"].(string)
+		if !ok {
+			continue
+		}
+		if _, seleccionada := seleccionadas[dependenciaID]; seleccionada {
+			planesFiltrados = append(planesFiltrados, plan)
+		}
+	}
+
+	return planesFiltrados
+}
+
 func ConstruirExcelPlanAccionUnidad(planesFilter []map[string]interface{}, body map[string]interface{}) (*excelize.File, []map[string]interface{}, error) {
 	var res map[string]interface{}
 	var respuestaUnidad []map[string]interface{}
