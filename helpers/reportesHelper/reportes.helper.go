@@ -635,7 +635,7 @@ func ArbolArmonizacionPIV2(armonizacion string) []map[string]interface{} {
 					nombre := strings.ToLower(respuestaSubgrupo["nombre"].(string))
 					if (strings.Contains(nombre, "eje") || strings.Contains(nombre, "transformador")) || strings.Contains(nombre, "nivel 1") {
 						factores = append(factores, respuestaSubgrupo)
-					} else if strings.Contains(nombre, "lineamientos") || strings.Contains(nombre, "lineamiento") || strings.Contains(nombre, "nivel 2") {
+					} else if strings.Contains(nombre, "lineamientos") || strings.Contains(nombre, "lineamiento") || strings.Contains(nombre, "programa") || strings.Contains(nombre, "nivel 2") {
 						lineamientos = append(lineamientos, respuestaSubgrupo)
 					} else if strings.Contains(nombre, "estrategia") || strings.Contains(nombre, "proyecto") || strings.Contains(nombre, "nivel 3") {
 						estrategias = append(estrategias, respuestaSubgrupo)
@@ -2700,6 +2700,29 @@ func Convert2Num(value interface{}) interface{} {
 	}
 }
 
+// FiltrarPlanesPorDependencias conserva únicamente los planes cuya dependencia
+// fue seleccionada para el reporte general. Un arreglo vacío produce un resultado
+// vacío; la compatibilidad cuando el filtro no viene se controla en el controller.
+func FiltrarPlanesPorDependencias(planes []map[string]interface{}, dependenciasIDs []string) []map[string]interface{} {
+	seleccionadas := make(map[string]struct{}, len(dependenciasIDs))
+	for _, dependenciaID := range dependenciasIDs {
+		seleccionadas[dependenciaID] = struct{}{}
+	}
+
+	planesFiltrados := make([]map[string]interface{}, 0, len(planes))
+	for _, plan := range planes {
+		dependenciaID, ok := plan["dependencia_id"].(string)
+		if !ok {
+			continue
+		}
+		if _, seleccionada := seleccionadas[dependenciaID]; seleccionada {
+			planesFiltrados = append(planesFiltrados, plan)
+		}
+	}
+
+	return planesFiltrados
+}
+
 func ConstruirExcelPlanAccionUnidad(planesFilter []map[string]interface{}, body map[string]interface{}) (*excelize.File, []map[string]interface{}, error) {
 	var res map[string]interface{}
 	var respuestaUnidad []map[string]interface{}
@@ -4245,6 +4268,18 @@ func ConstruirExcelPlanAccionGeneral(planesFilter []map[string]interface{}, body
 									} else {
 										datosArmonizacion[treeDato["nombre"].(string)] = treeData[treeDato["id"].(string)]
 									}
+								} else if nombre, ok := treeDato["nombre"].(string); ok &&
+									strings.Contains(strings.ToLower(nombre), "programaci") &&
+									strings.Contains(strings.ToLower(nombre), "meta") {
+									if trimestres, ok := treeDato["sub"].([]map[string]interface{}); ok {
+										for _, trimestre := range trimestres {
+											trimestreNombre, nombreOk := trimestre["nombre"].(string)
+											trimestreID, idOk := trimestre["id"].(string)
+											if nombreOk && idOk {
+												datosArmonizacion[trimestreNombre] = treeData[trimestreID]
+											}
+										}
+									}
 								}
 							}
 							var treeIndicador map[string]interface{}
@@ -4301,34 +4336,41 @@ func ConstruirExcelPlanAccionGeneral(planesFilter []map[string]interface{}, body
 
 			unidadNombre := arregloPlanAnual[0]["nombreUnidad"]
 
-			_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorGeneral+1), "Q"+fmt.Sprint(contadorGeneral+1))
+			_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorGeneral+1), "X"+fmt.Sprint(contadorGeneral+1))
 			_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "B"+fmt.Sprint(contadorGeneral+2), "D"+fmt.Sprint(contadorGeneral+2))
 			_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "E"+fmt.Sprint(contadorGeneral+2), "G"+fmt.Sprint(contadorGeneral+2))
 			_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "H"+fmt.Sprint(contadorGeneral+2), "H"+fmt.Sprint(contadorGeneral+3))
 			_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "I"+fmt.Sprint(contadorGeneral+2), "I"+fmt.Sprint(contadorGeneral+3))
 			_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "J"+fmt.Sprint(contadorGeneral+2), "J"+fmt.Sprint(contadorGeneral+3))
 			_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "K"+fmt.Sprint(contadorGeneral+2), "K"+fmt.Sprint(contadorGeneral+3))
-			_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "P"+fmt.Sprint(contadorGeneral+2), "P"+fmt.Sprint(contadorGeneral+3))
-			_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "Q"+fmt.Sprint(contadorGeneral+2), "Q"+fmt.Sprint(contadorGeneral+3))
-			_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(contadorGeneral+2), "O"+fmt.Sprint(contadorGeneral+2))
+			_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(contadorGeneral+2), "L"+fmt.Sprint(contadorGeneral+3))
+			_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "M"+fmt.Sprint(contadorGeneral+2), "M"+fmt.Sprint(contadorGeneral+3))
+			_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "N"+fmt.Sprint(contadorGeneral+2), "Q"+fmt.Sprint(contadorGeneral+2))
+			_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "R"+fmt.Sprint(contadorGeneral+2), "U"+fmt.Sprint(contadorGeneral+2))
+			_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "V"+fmt.Sprint(contadorGeneral+2), "V"+fmt.Sprint(contadorGeneral+3))
+			_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "W"+fmt.Sprint(contadorGeneral+2), "W"+fmt.Sprint(contadorGeneral+3))
+			_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "X"+fmt.Sprint(contadorGeneral+2), "X"+fmt.Sprint(contadorGeneral+3))
 			_ = consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+1, 20)
 			_ = consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+2, 20)
 			_ = consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+3, 20)
 			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "B", "B", 19)
-			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "P", 35)
+			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "X", 35)
 			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "C", "C", 13)
 			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "E", "E", 16)
-			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "H", "H", 6)
-			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "I", "J", 12)
-			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "K", "K", 30)
-			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "L", "M", 52)
-			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "N", "N", 30)
-			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "O", "O", 10)
-			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "P", "P", 25)
-			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "Q", "Q", 30)
-			_ = consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contadorGeneral+1), "Q"+fmt.Sprint(contadorGeneral+1), stylehead)
-			_ = consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contadorGeneral+2), "Q"+fmt.Sprint(contadorGeneral+2), stylehead)
-			_ = consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contadorGeneral+3), "Q"+fmt.Sprint(contadorGeneral+3), styletitles)
+			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "H", "H", 20)
+			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "I", "I", 6)
+			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "J", "J", 30)
+			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "K", "L", 14)
+			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "M", "M", 30)
+			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "N", "O", 52)
+			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "P", "P", 30)
+			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "Q", "Q", 10)
+			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "R", "U", 12)
+			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "V", "V", 14)
+			_ = consolidadoExcelPlanAnual.SetColWidth(sheetName, "W", "X", 30)
+			_ = consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contadorGeneral+1), "X"+fmt.Sprint(contadorGeneral+1), stylehead)
+			_ = consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contadorGeneral+2), "X"+fmt.Sprint(contadorGeneral+2), stylehead)
+			_ = consolidadoExcelPlanAnual.SetCellStyle(sheetName, "B"+fmt.Sprint(contadorGeneral+3), "X"+fmt.Sprint(contadorGeneral+3), styletitles)
 			_ = consolidadoExcelPlanAnual.SetRowHeight(sheetName, contadorGeneral+3, 30)
 
 			var tituloExcel string
@@ -4345,20 +4387,28 @@ func ConstruirExcelPlanAccionGeneral(planesFilter []map[string]interface{}, body
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contadorGeneral+3), "Meta")
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contadorGeneral+3), "Estrategias")
 			consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contadorGeneral+2), "Armonización Plan Indicativo")
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contadorGeneral+3), "Ejes transformadores")
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(contadorGeneral+3), "Lineamientos de acción")
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(contadorGeneral+3), "Estrategias")
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(contadorGeneral+3), "N°.")
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(contadorGeneral+3), "Peso (%)")
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(contadorGeneral+3), "Periodo de ejecución")
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(contadorGeneral+3), "Actividad")
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(contadorGeneral+2), "Indicador")
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(contadorGeneral+3), "Nombre")
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "M"+fmt.Sprint(contadorGeneral+3), "Fórmula")
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(contadorGeneral+3), "Criterio del indicador")
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "O"+fmt.Sprint(contadorGeneral+3), "Meta")
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "P"+fmt.Sprint(contadorGeneral+3), "Producto esperado")
-			consolidadoExcelPlanAnual.SetCellValue(sheetName, "Q"+fmt.Sprint(contadorGeneral+3), "Unidad o grupo responsable")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contadorGeneral+3), "Ejes")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "F"+fmt.Sprint(contadorGeneral+3), "Programas")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "G"+fmt.Sprint(contadorGeneral+3), "Proyectos Estratégicos")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(contadorGeneral+2), "Fuente")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(contadorGeneral+2), "N°.")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(contadorGeneral+2), "Actividad")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(contadorGeneral+2), "Fecha de Inicio")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(contadorGeneral+2), "Fecha de finalización")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "M"+fmt.Sprint(contadorGeneral+2), "Producto o resultado final")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(contadorGeneral+2), "Indicador")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(contadorGeneral+3), "Nombre")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "O"+fmt.Sprint(contadorGeneral+3), "Fórmula")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "P"+fmt.Sprint(contadorGeneral+3), "Criterio del indicador")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "Q"+fmt.Sprint(contadorGeneral+3), "Meta")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "R"+fmt.Sprint(contadorGeneral+2), "Programación de la meta")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "R"+fmt.Sprint(contadorGeneral+3), "Trimestre I")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "S"+fmt.Sprint(contadorGeneral+3), "Trimestre II")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "T"+fmt.Sprint(contadorGeneral+3), "Trimestre III")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "U"+fmt.Sprint(contadorGeneral+3), "Trimestre IV")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "V"+fmt.Sprint(contadorGeneral+2), "Ponderación")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "W"+fmt.Sprint(contadorGeneral+2), "Unidad o grupo responsable")
+			consolidadoExcelPlanAnual.SetCellValue(sheetName, "X"+fmt.Sprint(contadorGeneral+2), "Proceso")
 			_ = consolidadoExcelPlanAnual.InsertRows(sheetName, 1, 1)
 
 			for excelPlan := 0; excelPlan < len(arregloPlanAnual); excelPlan++ {
@@ -4433,12 +4483,18 @@ func ConstruirExcelPlanAccionGeneral(planesFilter []map[string]interface{}, body
 				_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "I"+fmt.Sprint(rowPos), "I"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
 				_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "J"+fmt.Sprint(rowPos), "J"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
 				_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "K"+fmt.Sprint(rowPos), "K"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
-				_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(rowPos), excelPlan+1)
-				_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(rowPos), datosComplementarios["Ponderación de la actividad"])
-				_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(rowPos), datosComplementarios["Periodo de ejecución"])
-				_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(rowPos), datosExcelPlan["nombreActividad"])
-				SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(rowPos), "J"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontentC, stylecontentCS)
-				SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(rowPos), "K"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontent, stylecontentS)
+				_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(rowPos), "L"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
+				_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "M"+fmt.Sprint(rowPos), "M"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
+				_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "H"+fmt.Sprint(rowPos), datosComplementarios["Fuente"])
+				_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "I"+fmt.Sprint(rowPos), datosExcelPlan["numeroActividad"])
+				_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "J"+fmt.Sprint(rowPos), datosExcelPlan["nombreActividad"])
+				_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "K"+fmt.Sprint(rowPos), datosComplementarios["Fecha de inicio"])
+				_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(rowPos), datosComplementarios["Fecha de finalización"])
+				_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "M"+fmt.Sprint(rowPos), datosComplementarios["Producto esperado"])
+				SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "H"+fmt.Sprint(rowPos), "I"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontentC, stylecontentCS)
+				SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "J"+fmt.Sprint(rowPos), "J"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontent, stylecontentS)
+				SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "K"+fmt.Sprint(rowPos), "L"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontentC, stylecontentCS)
+				SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "M"+fmt.Sprint(rowPos), "M"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontent, stylecontentS)
 
 				y_ind := rowPos
 				h_ind := MaxRowsXActivity / len(indicadores)
@@ -4497,37 +4553,43 @@ func ConstruirExcelPlanAccionGeneral(planesFilter []map[string]interface{}, body
 						}
 					}
 					if (nombreIndicador == "" && formula == "" && criterio == "" && meta == "") || (nombreIndicador == nil && formula == nil && criterio == nil && meta == nil) {
-						_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(y_ind-1), "L"+fmt.Sprint(y_ind+h_ind-1))
-						_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "M"+fmt.Sprint(y_ind-1), "M"+fmt.Sprint(y_ind+h_ind-1))
 						_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "N"+fmt.Sprint(y_ind-1), "N"+fmt.Sprint(y_ind+h_ind-1))
 						_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "O"+fmt.Sprint(y_ind-1), "O"+fmt.Sprint(y_ind+h_ind-1))
+						_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "P"+fmt.Sprint(y_ind-1), "P"+fmt.Sprint(y_ind+h_ind-1))
+						_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "Q"+fmt.Sprint(y_ind-1), "Q"+fmt.Sprint(y_ind+h_ind-1))
 					} else {
-						_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "L"+fmt.Sprint(y_ind), "L"+fmt.Sprint(y_ind+h_ind-1))
-						_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "M"+fmt.Sprint(y_ind), "M"+fmt.Sprint(y_ind+h_ind-1))
 						_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "N"+fmt.Sprint(y_ind), "N"+fmt.Sprint(y_ind+h_ind-1))
 						_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "O"+fmt.Sprint(y_ind), "O"+fmt.Sprint(y_ind+h_ind-1))
+						_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "P"+fmt.Sprint(y_ind), "P"+fmt.Sprint(y_ind+h_ind-1))
+						_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "Q"+fmt.Sprint(y_ind), "Q"+fmt.Sprint(y_ind+h_ind-1))
 
-						_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "L"+fmt.Sprint(y_ind), nombreIndicador)
-						_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "M"+fmt.Sprint(y_ind), formula)
-						_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(y_ind), criterio)
-						_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "O"+fmt.Sprint(y_ind), meta)
+						_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "N"+fmt.Sprint(y_ind), nombreIndicador)
+						_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "O"+fmt.Sprint(y_ind), formula)
+						_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "P"+fmt.Sprint(y_ind), criterio)
+						_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "Q"+fmt.Sprint(y_ind), meta)
 					}
 
 					idx++
 					if idx < len(indicadores) {
-						SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "L"+fmt.Sprint(y_ind), "O"+fmt.Sprint(y_ind+h_ind-1), stylecontentCL, stylecontentCLS)
+						SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "N"+fmt.Sprint(y_ind), "Q"+fmt.Sprint(y_ind+h_ind-1), stylecontentCL, stylecontentCLS)
 					} else {
-						SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "L"+fmt.Sprint(y_ind), "O"+fmt.Sprint(y_ind+h_ind-1), stylecontentCLD, stylecontentCLDS)
+						SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "N"+fmt.Sprint(y_ind), "Q"+fmt.Sprint(y_ind+h_ind-1), stylecontentCLD, stylecontentCLDS)
 					}
 					y_ind += h_ind
 				}
 
-				_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "P"+fmt.Sprint(rowPos), "P"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
-				_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "P"+fmt.Sprint(rowPos), datosComplementarios["Producto esperado"])
-				_ = consolidadoExcelPlanAnual.MergeCell(sheetName, "Q"+fmt.Sprint(rowPos), "Q"+fmt.Sprint(rowPos+MaxRowsXActivity-1))
-				_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "Q"+fmt.Sprint(rowPos), datosComplementarios["Responsable"])
-				SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "P"+fmt.Sprint(rowPos), "P"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontentC, stylecontentCS)
-				SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "Q"+fmt.Sprint(rowPos), "Q"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontentC, stylecontentCS)
+				for _, columna := range []string{"R", "S", "T", "U", "V", "W", "X"} {
+					_ = consolidadoExcelPlanAnual.MergeCell(sheetName, columna+fmt.Sprint(rowPos), columna+fmt.Sprint(rowPos+MaxRowsXActivity-1))
+				}
+				_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "R"+fmt.Sprint(rowPos), datosComplementarios["Trimestre 1"])
+				_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "S"+fmt.Sprint(rowPos), datosComplementarios["Trimestre 2"])
+				_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "T"+fmt.Sprint(rowPos), datosComplementarios["Trimestre 3"])
+				_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "U"+fmt.Sprint(rowPos), datosComplementarios["Trimestre 4"])
+				_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "V"+fmt.Sprint(rowPos), datosComplementarios["Ponderación de la actividad"])
+				_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "W"+fmt.Sprint(rowPos), datosComplementarios["Responsable"])
+				_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "X"+fmt.Sprint(rowPos), datosComplementarios["Proceso asociado"])
+				SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "R"+fmt.Sprint(rowPos), "V"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontentC, stylecontentCS)
+				SombrearCeldas(consolidadoExcelPlanAnual, excelPlan, sheetName, "W"+fmt.Sprint(rowPos), "X"+fmt.Sprint(rowPos+MaxRowsXActivity-1), stylecontent, stylecontentS)
 
 				rowPos += MaxRowsXActivity
 
@@ -4540,8 +4602,12 @@ func ConstruirExcelPlanAccionGeneral(planesFilter []map[string]interface{}, body
 		}
 	}
 	_ = consolidadoExcelPlanAnual.InsertRows("REPORTE GENERAL", 1, 3)
-	_ = consolidadoExcelPlanAnual.MergeCell("REPORTE GENERAL", "C2", "P6")
-	consolidadoExcelPlanAnual.SetCellStyle("REPORTE GENERAL", "C2", "P6", styletitle)
+	tituloFin := "P6"
+	if !esReporteAntiguo {
+		tituloFin = "W6"
+	}
+	_ = consolidadoExcelPlanAnual.MergeCell("REPORTE GENERAL", "C2", tituloFin)
+	consolidadoExcelPlanAnual.SetCellStyle("REPORTE GENERAL", "C2", tituloFin, styletitle)
 	if periodo[0] != nil {
 		consolidadoExcelPlanAnual.SetCellValue("REPORTE GENERAL", "C2", "Plan de Acción Anual "+periodo[0]["Nombre"].(string)+"\nUniversidad Distrital Franciso José de Caldas")
 	} else {
