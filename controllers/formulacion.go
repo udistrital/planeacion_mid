@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,6 +26,39 @@ import (
 // FormulacionController operations for Formulacion
 type FormulacionController struct {
 	beego.Controller
+}
+
+func guardarIdentificacionNoDocente(ctx context.Context, planesService, id string, identificacion, entrada map[string]interface{}) error {
+	dato, err := json.Marshal(entrada)
+	if err != nil {
+		return fmt.Errorf("serializando identificación: %w", err)
+	}
+
+	identificacion["dato"] = string(dato)
+	var respuestaCRUD map[string]interface{}
+	status, err := request.PutWithContext(
+		ctx,
+		"http://"+planesService+"/identificacion/"+id,
+		identificacion,
+		&respuestaCRUD,
+	)
+	if err != nil {
+		return fmt.Errorf("actualizando identificación en planes_crud: %w", err)
+	}
+	if status != http.StatusOK {
+		return fmt.Errorf("planes_crud respondió con estado HTTP %d", status)
+	}
+
+	exito, ok := respuestaCRUD["Success"].(bool)
+	if !ok || !exito || fmt.Sprint(respuestaCRUD["Status"]) != strconv.Itoa(http.StatusOK) {
+		mensaje := fmt.Sprint(respuestaCRUD["Message"])
+		if mensaje == "<nil>" || mensaje == "" {
+			mensaje = "planes_crud rechazó la actualización"
+		}
+		return errors.New(mensaje)
+	}
+
+	return nil
 }
 
 // URLMapping ...
@@ -793,15 +827,25 @@ func (c *FormulacionController) GuardarIdentificacion() {
 	tipoIdenti := c.Ctx.Input.Param(":idTipo")
 	var entrada map[string]interface{}
 	var res map[string]interface{}
-	var resJ map[string]interface{}
 	var respuesta []map[string]interface{}
 	var idStr string
 	var identificacion map[string]interface{}
 
-	json.Unmarshal(c.Ctx.Input.RequestBody, &entrada)
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &entrada); err != nil || entrada == nil {
+		c.Ctx.Output.SetStatus(http.StatusBadRequest)
+		c.Data["json"] = map[string]interface{}{"Success": false, "Status": "400", "Message": "El cuerpo de la identificación no contiene un JSON válido", "Data": nil}
+		c.ServeJSON()
+		return
+	}
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id+",tipo_identificacion_id:"+tipoIdenti, &res); err == nil {
+	if _, err := request.GetWithContext(c.Ctx.Request.Context(), "http://"+beego.AppConfig.String("PlanesService")+"/identificacion?query=plan_id:"+id+",tipo_identificacion_id:"+tipoIdenti, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &respuesta)
+		if len(respuesta) == 0 {
+			c.Ctx.Output.SetStatus(http.StatusNotFound)
+			c.Data["json"] = map[string]interface{}{"Success": false, "Status": "404", "Message": "No existe una identificación para el plan y tipo indicados", "Data": nil}
+			c.ServeJSON()
+			return
+		}
 
 		if tipoIdenti == "61897518f6fc97091727c3c3" { // ? Recurso docente unicamente
 			if len(respuesta) > 0 {
@@ -970,16 +1014,19 @@ func (c *FormulacionController) GuardarIdentificacion() {
 				panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error sin dato identificacion", "status": "400", "log": err})
 			}
 		} else {
-			jsonString, _ := json.Marshal(respuesta[0]["_id"])
-			json.Unmarshal(jsonString, &idStr)
-
+			idStr, _ = respuesta[0]["_id"].(string)
+			if idStr == "" {
+				c.Ctx.Output.SetStatus(http.StatusBadGateway)
+				c.Data["json"] = map[string]interface{}{"Success": false, "Status": "502", "Message": "planes_crud devolvió una identificación sin id", "Data": nil}
+				c.ServeJSON()
+				return
+			}
 			identificacion = respuesta[0]
-			b, _ := json.Marshal(entrada)
-			str := string(b)
-
-			identificacion["dato"] = str
-			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/identificacion/"+idStr, "PUT", &resJ, identificacion); err != nil {
-				panic(map[string]interface{}{"funcion": "GuardarIdentificacion", "err": "Error actualizando identificacion \"idStr\"", "status": "400", "log": err})
+			if err := guardarIdentificacionNoDocente(c.Ctx.Request.Context(), beego.AppConfig.String("PlanesService"), idStr, identificacion, entrada); err != nil {
+				c.Ctx.Output.SetStatus(http.StatusBadGateway)
+				c.Data["json"] = map[string]interface{}{"Success": false, "Status": "502", "Message": err.Error(), "Data": nil}
+				c.ServeJSON()
+				return
 			}
 			c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": "Registro de identificación"}
 		}
