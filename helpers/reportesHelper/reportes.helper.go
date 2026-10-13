@@ -1081,6 +1081,9 @@ func TablaIdentificaciones(consolidadoExcelPlanAnual *excelize.File, planId stri
 
 	for i := 0; i < len(identificaciones); i++ {
 		identificacion := identificaciones[i]
+		if activo, existe := identificacion["activo"].(bool); existe && !activo {
+			continue
+		}
 		nombre := strings.ToLower(identificacion["nombre"].(string))
 		if strings.Contains(nombre, "recurso") {
 			if identificacion["dato"] != nil {
@@ -2105,6 +2108,10 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 	icbf := 0
 	for i := 0; i < len(rhf); i++ {
 		aux := rhf[i]
+		if activo, existe := aux["activo"].(bool); existe && !activo {
+			continue
+		}
+		cantidad := int(aux["cantidad"].(float64))
 
 		if aux["sueldoBasico"] != nil {
 			strSueldoBasico := strings.TrimLeft(aux["sueldoBasico"].(string), "$")
@@ -2112,8 +2119,8 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			arrSueldoBasico := strings.Split(strSueldoBasico, ".")
 			auxSueldoBasico, err := strconv.Atoi(arrSueldoBasico[0])
 			if err == nil {
-				sueldoBasico += auxSueldoBasico * int(aux["cantidad"].(float64))
-				totales.Rhf.SalarioBasico += auxSueldoBasico * int(aux["cantidad"].(float64))
+				sueldoBasico += auxSueldoBasico
+				totales.Rhf.SalarioBasico += auxSueldoBasico
 			}
 		}
 
@@ -2123,8 +2130,8 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			arrPrimaServicios := strings.Split(strPrimaServicios, ".")
 			auxPrimaServicios, err := strconv.Atoi(arrPrimaServicios[0])
 			if err == nil {
-				primaServicios += auxPrimaServicios
-				totales.Rhf.PrimaServicios += auxPrimaServicios
+				primaServicios += auxPrimaServicios * cantidad
+				totales.Rhf.PrimaServicios += auxPrimaServicios * cantidad
 			}
 		}
 
@@ -2134,8 +2141,8 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			arrPrimaNavidad := strings.Split(strPrimaNavidad, ".")
 			auxPrimaNavidad, err := strconv.Atoi(arrPrimaNavidad[0])
 			if err == nil {
-				primaNavidad += auxPrimaNavidad
-				totales.Rhf.PrimaNavidad += auxPrimaNavidad
+				primaNavidad += auxPrimaNavidad * cantidad
+				totales.Rhf.PrimaNavidad += auxPrimaNavidad * cantidad
 			}
 		}
 
@@ -2145,30 +2152,30 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			arrPrimaVacaiones := strings.Split(strPrimaVacaciones, ".")
 			auxPrimaVacaciones, err := strconv.Atoi(arrPrimaVacaiones[0])
 			if err == nil {
-				primaVacaciones += auxPrimaVacaciones
-				totales.Rhf.PrimaVacaciones += auxPrimaVacaciones
+				primaVacaciones += auxPrimaVacaciones * cantidad
+				totales.Rhf.PrimaVacaciones += auxPrimaVacaciones * cantidad
 			}
 		}
 
-		if aux["bonificacion"] != nil || aux["bonificacion"] != "N/A" {
+		if aux["bonificacion"] != nil && aux["bonificacion"] != "N/A" {
 			strBonificacion := strings.TrimLeft(aux["bonificacion"].(string), "$")
 			strBonificacion = strings.ReplaceAll(strBonificacion, ",", "")
 			arrBonificacion := strings.Split(strBonificacion, ".")
 			auxBonificacion, err := strconv.Atoi(arrBonificacion[0])
 			if err == nil {
-				bonificacion += auxBonificacion
-				totales.Rhf.Bonificacion += auxBonificacion
+				bonificacion += auxBonificacion * cantidad
+				totales.Rhf.Bonificacion += auxBonificacion * cantidad
 			}
 		}
 
-		if aux["cesantias"] != nil || aux["cesantias"] != "N/A" {
-			strInteresesCesantias := strings.TrimLeft(aux["cesantias"].(string), "$")
+		if aux["intereses"] != nil && aux["intereses"] != "N/A" {
+			strInteresesCesantias := strings.TrimLeft(aux["intereses"].(string), "$")
 			strInteresesCesantias = strings.ReplaceAll(strInteresesCesantias, ",", "")
 			arrInteresesCesantias := strings.Split(strInteresesCesantias, ".")
 			auxInteresesCesantias, err := strconv.Atoi(arrInteresesCesantias[0])
 			if err == nil {
-				interesesCesantias += auxInteresesCesantias
-				totales.Rhf.InteresesCesantias += auxInteresesCesantias
+				interesesCesantias += auxInteresesCesantias * cantidad
+				totales.Rhf.InteresesCesantias += auxInteresesCesantias * cantidad
 			}
 		}
 
@@ -2233,8 +2240,8 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			arrCaja := strings.Split(strCaja, ".")
 			auxCaja, err := strconv.Atoi(arrCaja[0])
 			if err == nil {
-				caja += auxCaja
-				totales.Rhf.Caja += auxCaja
+				caja += auxCaja * cantidad
+				totales.Rhf.Caja += auxCaja * cantidad
 			}
 
 		}
@@ -2256,14 +2263,18 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			arrIcbf := strings.Split(strIcbf, ".")
 			auxIcbf, err := strconv.Atoi(arrIcbf[0])
 			if err == nil {
-				icbf += auxIcbf
-				totales.Rhf.Icbf += auxIcbf
+				icbf += auxIcbf * cantidad
+				totales.Rhf.Icbf += auxIcbf * cantidad
 			}
 		}
 	}
 
 	for i := 0; i < len(rhvPre); i++ {
 		aux := rhvPre[i]
+		if activo, existe := aux["activo"].(bool); existe && !activo {
+			continue
+		}
+		cantidad := int(aux["cantidad"].(float64))
 
 		if aux["sueldoBasico"] != nil {
 			strSueldoBasico := strings.TrimLeft(aux["sueldoBasico"].(string), "$")
@@ -2271,8 +2282,8 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			arrSueldoBasico := strings.Split(strSueldoBasico, ".")
 			auxSueldoBasico, err := strconv.Atoi(arrSueldoBasico[0])
 			if err == nil {
-				sueldoBasico += auxSueldoBasico * int(aux["cantidad"].(float64))
-				totales.Rhv_pre.SalarioBasico += auxSueldoBasico * int(aux["cantidad"].(float64))
+				sueldoBasico += auxSueldoBasico
+				totales.Rhv_pre.SalarioBasico += auxSueldoBasico
 			}
 		}
 
@@ -2282,8 +2293,8 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			arrPrimaServicios := strings.Split(strPrimaServicios, ".")
 			auxPrimaServicios, err := strconv.Atoi(arrPrimaServicios[0])
 			if err == nil {
-				primaServicios += auxPrimaServicios
-				totales.Rhv_pre.PrimaServicios += auxPrimaServicios
+				primaServicios += auxPrimaServicios * cantidad
+				totales.Rhv_pre.PrimaServicios += auxPrimaServicios * cantidad
 			}
 		}
 
@@ -2293,8 +2304,8 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			arrPrimaNavidad := strings.Split(strPrimaNavidad, ".")
 			auxPrimaNavidad, err := strconv.Atoi(arrPrimaNavidad[0])
 			if err == nil {
-				primaNavidad += auxPrimaNavidad
-				totales.Rhv_pre.PrimaNavidad += auxPrimaNavidad
+				primaNavidad += auxPrimaNavidad * cantidad
+				totales.Rhv_pre.PrimaNavidad += auxPrimaNavidad * cantidad
 			}
 		}
 
@@ -2304,30 +2315,30 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			arrPrimaVacaiones := strings.Split(strPrimaVacaciones, ".")
 			auxPrimaVacaciones, err := strconv.Atoi(arrPrimaVacaiones[0])
 			if err == nil {
-				primaVacaciones += auxPrimaVacaciones
-				totales.Rhv_pre.PrimaVacaciones += auxPrimaVacaciones
+				primaVacaciones += auxPrimaVacaciones * cantidad
+				totales.Rhv_pre.PrimaVacaciones += auxPrimaVacaciones * cantidad
 			}
 		}
 
-		if aux["bonificacion"] != nil || aux["bonificacion"] != "N/A" {
+		if aux["bonificacion"] != nil && aux["bonificacion"] != "N/A" {
 			strBonificacion := strings.TrimLeft(aux["bonificacion"].(string), "$")
 			strBonificacion = strings.ReplaceAll(strBonificacion, ",", "")
 			arrBonificacion := strings.Split(strBonificacion, ".")
 			auxBonificacion, err := strconv.Atoi(arrBonificacion[0])
 			if err == nil {
-				bonificacion += auxBonificacion
-				totales.Rhv_pre.Bonificacion += auxBonificacion
+				bonificacion += auxBonificacion * cantidad
+				totales.Rhv_pre.Bonificacion += auxBonificacion * cantidad
 			}
 		}
 
-		if aux["cesantias"] != nil || aux["cesantias"] != "N/A" {
-			strInteresesCesantias := strings.TrimLeft(aux["cesantias"].(string), "$")
+		if aux["intereses"] != nil && aux["intereses"] != "N/A" {
+			strInteresesCesantias := strings.TrimLeft(aux["intereses"].(string), "$")
 			strInteresesCesantias = strings.ReplaceAll(strInteresesCesantias, ",", "")
 			arrInteresesCesantias := strings.Split(strInteresesCesantias, ".")
 			auxInteresesCesantias, err := strconv.Atoi(arrInteresesCesantias[0])
 			if err == nil {
-				interesesCesantias += auxInteresesCesantias
-				totales.Rhv_pre.InteresesCesantias += auxInteresesCesantias
+				interesesCesantias += auxInteresesCesantias * cantidad
+				totales.Rhv_pre.InteresesCesantias += auxInteresesCesantias * cantidad
 			}
 		}
 
@@ -2392,8 +2403,8 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			arrCaja := strings.Split(strCaja, ".")
 			auxCaja, err := strconv.Atoi(arrCaja[0])
 			if err == nil {
-				caja += auxCaja
-				totales.Rhv_pre.Caja += auxCaja
+				caja += auxCaja * cantidad
+				totales.Rhv_pre.Caja += auxCaja * cantidad
 			}
 
 		}
@@ -2415,14 +2426,18 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			arrIcbf := strings.Split(strIcbf, ".")
 			auxIcbf, err := strconv.Atoi(arrIcbf[0])
 			if err == nil {
-				icbf += auxIcbf
-				totales.Rhv_pre.Icbf += auxIcbf
+				icbf += auxIcbf * cantidad
+				totales.Rhv_pre.Icbf += auxIcbf * cantidad
 			}
 		}
 	}
 
 	for i := 0; i < len(rhvPos); i++ {
 		aux := rhvPos[i]
+		if activo, existe := aux["activo"].(bool); existe && !activo {
+			continue
+		}
+		cantidad := int(aux["cantidad"].(float64))
 
 		if aux["sueldoBasico"] != nil {
 			strSueldoBasico := strings.TrimLeft(aux["sueldoBasico"].(string), "$")
@@ -2430,8 +2445,8 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			arrSueldoBasico := strings.Split(strSueldoBasico, ".")
 			auxSueldoBasico, err := strconv.Atoi(arrSueldoBasico[0])
 			if err == nil {
-				sueldoBasico += auxSueldoBasico * int(aux["cantidad"].(float64))
-				totales.Rhv_pos.SalarioBasico += auxSueldoBasico * int(aux["cantidad"].(float64))
+				sueldoBasico += auxSueldoBasico
+				totales.Rhv_pos.SalarioBasico += auxSueldoBasico
 			}
 		}
 
@@ -2441,8 +2456,8 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			arrPrimaServicios := strings.Split(strPrimaServicios, ".")
 			auxPrimaServicios, err := strconv.Atoi(arrPrimaServicios[0])
 			if err == nil {
-				primaServicios += auxPrimaServicios
-				totales.Rhv_pos.PrimaServicios += auxPrimaServicios
+				primaServicios += auxPrimaServicios * cantidad
+				totales.Rhv_pos.PrimaServicios += auxPrimaServicios * cantidad
 			}
 		}
 
@@ -2452,8 +2467,8 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			arrPrimaNavidad := strings.Split(strPrimaNavidad, ".")
 			auxPrimaNavidad, err := strconv.Atoi(arrPrimaNavidad[0])
 			if err == nil {
-				primaNavidad += auxPrimaNavidad
-				totales.Rhv_pos.PrimaNavidad += auxPrimaNavidad
+				primaNavidad += auxPrimaNavidad * cantidad
+				totales.Rhv_pos.PrimaNavidad += auxPrimaNavidad * cantidad
 			}
 		}
 
@@ -2463,30 +2478,30 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			arrPrimaVacaiones := strings.Split(strPrimaVacaciones, ".")
 			auxPrimaVacaciones, err := strconv.Atoi(arrPrimaVacaiones[0])
 			if err == nil {
-				primaVacaciones += auxPrimaVacaciones
-				totales.Rhv_pos.PrimaVacaciones += auxPrimaVacaciones
+				primaVacaciones += auxPrimaVacaciones * cantidad
+				totales.Rhv_pos.PrimaVacaciones += auxPrimaVacaciones * cantidad
 			}
 		}
 
-		if aux["bonificacion"] != nil || aux["bonificacion"] != "N/A" {
+		if aux["bonificacion"] != nil && aux["bonificacion"] != "N/A" {
 			strBonificacion := strings.TrimLeft(aux["bonificacion"].(string), "$")
 			strBonificacion = strings.ReplaceAll(strBonificacion, ",", "")
 			arrBonificacion := strings.Split(strBonificacion, ".")
 			auxBonificacion, err := strconv.Atoi(arrBonificacion[0])
 			if err == nil {
-				bonificacion += auxBonificacion
-				totales.Rhv_pos.Bonificacion += auxBonificacion
+				bonificacion += auxBonificacion * cantidad
+				totales.Rhv_pos.Bonificacion += auxBonificacion * cantidad
 			}
 		}
 
-		if aux["cesantias"] != nil || aux["cesantias"] != "N/A" {
-			strInteresesCesantias := strings.TrimLeft(aux["cesantias"].(string), "$")
+		if aux["intereses"] != nil && aux["intereses"] != "N/A" {
+			strInteresesCesantias := strings.TrimLeft(aux["intereses"].(string), "$")
 			strInteresesCesantias = strings.ReplaceAll(strInteresesCesantias, ",", "")
 			arrInteresesCesantias := strings.Split(strInteresesCesantias, ".")
 			auxInteresesCesantias, err := strconv.Atoi(arrInteresesCesantias[0])
 			if err == nil {
-				interesesCesantias += auxInteresesCesantias
-				totales.Rhv_pos.InteresesCesantias += auxInteresesCesantias
+				interesesCesantias += auxInteresesCesantias * cantidad
+				totales.Rhv_pos.InteresesCesantias += auxInteresesCesantias * cantidad
 			}
 		}
 
@@ -2551,8 +2566,8 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			arrCaja := strings.Split(strCaja, ".")
 			auxCaja, err := strconv.Atoi(arrCaja[0])
 			if err == nil {
-				caja += auxCaja
-				totales.Rhv_pos.Caja += auxCaja
+				caja += auxCaja * cantidad
+				totales.Rhv_pos.Caja += auxCaja * cantidad
 			}
 
 		}
@@ -2574,8 +2589,8 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			arrIcbf := strings.Split(strIcbf, ".")
 			auxIcbf, err := strconv.Atoi(arrIcbf[0])
 			if err == nil {
-				icbf += auxIcbf
-				totales.Rhv_pos.Icbf += auxIcbf
+				icbf += auxIcbf * cantidad
+				totales.Rhv_pos.Icbf += auxIcbf * cantidad
 			}
 		}
 	}
