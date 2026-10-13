@@ -1733,19 +1733,19 @@ func construirTablas(consolidadoExcelPlanAnual *excelize.File, recursos []map[st
 		nombre = NombreRubroByCodigo(rubrosJson, code)
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
 		consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
-		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhf.SalarioBasico+infoDocentes.Rhv_pre.SalarioBasico)
+		consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhf.SalarioBasico+infoDocentes.Rhf.Vacaciones+infoDocentes.Rhv_pre.SalarioBasico+infoDocentes.Rhv_pre.Vacaciones)
 		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
 		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
 		contador++
 		code = codigoRubrosDocentes(rubros_pos, "Salario básico")
 		nombre = NombreRubroByCodigo(rubrosJson, code)
 		_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "C"+fmt.Sprint(contador), code)
-		if code == "No definido" && infoDocentes.Rhv_pos.SalarioBasico <= 0 {
+		if code == "No definido" && infoDocentes.Rhv_pos.SalarioBasico+infoDocentes.Rhv_pos.Vacaciones <= 0 {
 			_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre+" Posgrado")
 			_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), "N/A")
 		} else {
 			_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "D"+fmt.Sprint(contador), nombre)
-			_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhv_pos.SalarioBasico)
+			_ = consolidadoExcelPlanAnual.SetCellValue(sheetName, "E"+fmt.Sprint(contador), infoDocentes.Rhv_pos.SalarioBasico+infoDocentes.Rhv_pos.Vacaciones)
 		}
 		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "B"+fmt.Sprint(contador), "D"+fmt.Sprint(contador), stylecontent, stylecontentS)
 		SombrearCeldas(consolidadoExcelPlanAnual, contador, sheetName, "E"+fmt.Sprint(contador), "E"+fmt.Sprint(contador), stylecontentMR, stylecontentMRS)
@@ -2053,6 +2053,7 @@ func codigoRubrosDocentes(rubros []map[string]interface{}, categoria string) str
 
 type TotalDocentVal struct {
 	SalarioBasico      int
+	Vacaciones         int
 	PrimaServicios     int
 	PrimaNavidad       int
 	PrimaVacaciones    int
@@ -2093,6 +2094,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 	totales := TotalesDocentes{}
 
 	sueldoBasico := 0
+	vacaciones := 0
 	primaServicios := 0
 	primaNavidad := 0
 	primaVacaciones := 0
@@ -2121,6 +2123,17 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			if err == nil {
 				sueldoBasico += auxSueldoBasico
 				totales.Rhf.SalarioBasico += auxSueldoBasico
+			}
+		}
+
+		if aux["vacaciones"] != nil {
+			strVacaciones := strings.TrimLeft(aux["vacaciones"].(string), "$")
+			strVacaciones = strings.ReplaceAll(strVacaciones, ",", "")
+			arrVacaciones := strings.Split(strVacaciones, ".")
+			auxVacaciones, err := strconv.Atoi(arrVacaciones[0])
+			if err == nil {
+				vacaciones += auxVacaciones * cantidad
+				totales.Rhf.Vacaciones += auxVacaciones * cantidad
 			}
 		}
 
@@ -2287,6 +2300,17 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			}
 		}
 
+		if aux["vacaciones"] != nil {
+			strVacaciones := strings.TrimLeft(aux["vacaciones"].(string), "$")
+			strVacaciones = strings.ReplaceAll(strVacaciones, ",", "")
+			arrVacaciones := strings.Split(strVacaciones, ".")
+			auxVacaciones, err := strconv.Atoi(arrVacaciones[0])
+			if err == nil {
+				vacaciones += auxVacaciones * cantidad
+				totales.Rhv_pre.Vacaciones += auxVacaciones * cantidad
+			}
+		}
+
 		if aux["primaServicios"] != nil {
 			strPrimaServicios := strings.TrimLeft(aux["primaServicios"].(string), "$")
 			strPrimaServicios = strings.ReplaceAll(strPrimaServicios, ",", "")
@@ -2450,6 +2474,17 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 			}
 		}
 
+		if aux["vacaciones"] != nil {
+			strVacaciones := strings.TrimLeft(aux["vacaciones"].(string), "$")
+			strVacaciones = strings.ReplaceAll(strVacaciones, ",", "")
+			arrVacaciones := strings.Split(strVacaciones, ".")
+			auxVacaciones, err := strconv.Atoi(arrVacaciones[0])
+			if err == nil {
+				vacaciones += auxVacaciones * cantidad
+				totales.Rhv_pos.Vacaciones += auxVacaciones * cantidad
+			}
+		}
+
 		if aux["primaServicios"] != nil {
 			strPrimaServicios := strings.TrimLeft(aux["primaServicios"].(string), "$")
 			strPrimaServicios = strings.ReplaceAll(strPrimaServicios, ",", "")
@@ -2596,6 +2631,7 @@ func TotalDocentes(docentes map[string]interface{}) map[string]interface{} {
 	}
 
 	totalDocentes["sueldoBasico"] = sueldoBasico
+	totalDocentes["vacaciones"] = vacaciones
 	totalDocentes["primaServicios"] = primaServicios
 	totalDocentes["primaNavidad"] = primaNavidad
 	totalDocentes["primaVacaciones"] = primaVacaciones
