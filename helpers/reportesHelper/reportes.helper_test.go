@@ -6,6 +6,7 @@ func docenteParaTotales(cantidad float64) map[string]interface{} {
 	return map[string]interface{}{
 		"cantidad":         cantidad,
 		"sueldoBasico":     "$1,000.00",
+		"vacaciones":       "$140.00",
 		"primaServicios":   "$100.00",
 		"primaNavidad":     "$200.00",
 		"primaVacaciones":  "$300.00",
@@ -25,6 +26,7 @@ func docenteParaTotales(cantidad float64) map[string]interface{} {
 func TestTotalDocentesDistingueValoresTotalesEIndividuales(t *testing.T) {
 	esperados := map[string]int{
 		"sueldoBasico":      1000,
+		"vacaciones":        280,
 		"primaServicios":    200,
 		"primaNavidad":      400,
 		"primaVacaciones":   600,
@@ -70,7 +72,7 @@ func TestTotalDocentesDistingueValoresTotalesEIndividuales(t *testing.T) {
 			case "rhv_pos":
 				totalGrupo = totales.Rhv_pos
 			}
-			if totalGrupo.SalarioBasico != 1000 || totalGrupo.PrimaServicios != 200 || totalGrupo.InteresesCesantias != 100 {
+			if totalGrupo.SalarioBasico != 1000 || totalGrupo.Vacaciones != 280 || totalGrupo.PrimaServicios != 200 || totalGrupo.InteresesCesantias != 100 {
 				t.Errorf("los totales de %s no respetan la misma regla: %#v", grupo, totalGrupo)
 			}
 		})
