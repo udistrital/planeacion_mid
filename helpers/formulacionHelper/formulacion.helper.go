@@ -1544,15 +1544,15 @@ func evaluarCajaPrestacional(infoPrestacional map[string]interface{}, data map[s
 	horas, horasOk := data["horas"].(float64)
 	salarioMinimo, salarioMinimoOk := data["salarioMinimo"].(float64)
 	salarioBasico, salarioBasicoOk := infoPrestacional["salarioBasico"].(float64)
-	primaVacaciones, primaVacacionesOk := infoPrestacional["primaVacaciones"].(float64)
+	vacaciones, vacacionesOk := infoPrestacional["vacaciones"].(float64)
 
 	var resultado float64
 
-	if semanasOk && horasOk && salarioMinimoOk && salarioBasicoOk && primaVacacionesOk {
+	if semanasOk && horasOk && salarioMinimoOk && salarioBasicoOk && vacacionesOk {
 		if (salarioBasico * horas * 4) >= salarioMinimo {
-			resultado = (salarioBasico + primaVacaciones) * horas * semanas * 0.04
+			resultado = (salarioBasico + vacaciones) * horas * semanas * 0.04
 		} else {
-			resultado = (salarioMinimo * (semanas / 4) * 0.04) + (primaVacaciones * horas * semanas * 0.04)
+			resultado = (salarioMinimo * (semanas / 4) * 0.04) + (vacaciones * horas * semanas * 0.04)
 		}
 	}
 	return resultado
@@ -1574,14 +1574,14 @@ func GetCajaCompensacion(data map[string]interface{}) string {
 			return NoAplica
 		}
 		salarioBasico := resolucionDocente["salarioBasico"].(float64)
-		primaVacaciones, primaVacacionesOk := resolucionDocente["vacaciones"].(float64)
-		if !primaVacacionesOk {
+		vacaciones, vacacionesOk := resolucionDocente["vacaciones"].(float64)
+		if !vacacionesOk {
 			return ""
 		}
 		if dedicacion == HCatedraPrestacional {
 			cajaCompensacion = evaluarCajaPrestacional(resolucionDocente, data) * (1 + incremento)
 		} else {
-			cajaCompensacion = (((salarioBasico + primaVacaciones) * horas) * semanas) * 0.04 * (1 + incremento)
+			cajaCompensacion = (((salarioBasico + vacaciones) * horas) * semanas) * 0.04 * (1 + incremento)
 		}
 	}
 	return strconv.FormatFloat(cajaCompensacion, 'f', -1, 64)
