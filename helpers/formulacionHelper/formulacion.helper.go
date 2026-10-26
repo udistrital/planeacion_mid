@@ -1592,18 +1592,18 @@ func evaluarIcbfPrestacional(infoPrestacional map[string]interface{}, data map[s
 	horas, horasOk := data["horas"].(float64)
 	salarioMinimo, salarioMinimoOk := data["salarioMinimo"].(float64)
 	salarioBasico, salarioBasicoOk := infoPrestacional["salarioBasico"].(float64)
+	vacaciones, vacacionesOk := infoPrestacional["vacaciones"].(float64)
 
 	var resultado float64
 
 	if semanasOk && horasOk && salarioMinimoOk && salarioBasicoOk {
+		if !vacacionesOk {
+			return -1
+		}
 		if (salarioBasico * horas * 4) >= salarioMinimo {
-			primaVacaciones, primaVacacionesOk := infoPrestacional["primaVacaciones"].(float64)
-			if !primaVacacionesOk {
-				return -1
-			}
-			resultado = (salarioBasico + primaVacaciones) * horas * semanas * 0.03
+			resultado = (salarioBasico + vacaciones) * horas * semanas * 0.03
 		} else {
-			resultado = salarioMinimo * (semanas / 4) * 0.03
+			resultado = (salarioMinimo * (semanas / 4) * 0.03) + (vacaciones * horas * semanas * 0.03)
 		}
 	}
 	return resultado
@@ -1633,11 +1633,11 @@ func GetIcbf(data map[string]interface{}) string {
 			icbf = resultado * (1 + incremento)
 		} else {
 			salarioBasico := resolucionDocente["salarioBasico"].(float64)
-			primaVacaciones, primaVacacionesOk := resolucionDocente["vacaciones"].(float64)
-			if !primaVacacionesOk {
+			vacaciones, vacacionesOk := resolucionDocente["vacaciones"].(float64)
+			if !vacacionesOk {
 				return ""
 			}
-			icbf = (((salarioBasico + primaVacaciones) * horas) * semanas) * 0.03 * (1 + incremento)
+			icbf = (((salarioBasico + vacaciones) * horas) * semanas) * 0.03 * (1 + incremento)
 		}
 	}
 	return strconv.FormatFloat(icbf, 'f', -1, 64)
