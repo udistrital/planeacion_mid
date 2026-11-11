@@ -412,6 +412,114 @@ func init() {
 			Filters:          nil,
 			Params:           nil})
 
+	beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"],
+		beego.ControllerComments{
+			Method:           "ObtenerCatalogo",
+			Router:           "/catalogos/:nombre",
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"],
+		beego.ControllerComments{
+			Method:           "ListarIniciativas",
+			Router:           "/iniciativas",
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"],
+		beego.ControllerComments{
+			Method:           "CrearIniciativa",
+			Router:           "/iniciativas",
+			AllowHTTPMethods: []string{"post"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"],
+		beego.ControllerComments{
+			Method:           "ObtenerIniciativa",
+			Router:           "/iniciativas/:id",
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"],
+		beego.ControllerComments{
+			Method:           "EjecutarAccion",
+			Router:           "/iniciativas/:id/acciones/:accion",
+			AllowHTTPMethods: []string{"put"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"],
+		beego.ControllerComments{
+			Method:           "ObtenerDefinicion",
+			Router:           "/iniciativas/:id/definicion",
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"],
+		beego.ControllerComments{
+			Method:           "ObtenerSubmodulo",
+			Router:           "/iniciativas/:id/submodulos/:clave",
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"],
+		beego.ControllerComments{
+			Method:           "GuardarSubmodulo",
+			Router:           "/iniciativas/:id/submodulos/:clave",
+			AllowHTTPMethods: []string{"put"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"],
+		beego.ControllerComments{
+			Method:           "AgregarObservacion",
+			Router:           "/iniciativas/:id/submodulos/:clave/observaciones",
+			AllowHTTPMethods: []string{"post"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"],
+		beego.ControllerComments{
+			Method:           "RevisarSubmodulo",
+			Router:           "/iniciativas/:id/submodulos/:clave/revision",
+			AllowHTTPMethods: []string{"put"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"],
+		beego.ControllerComments{
+			Method:           "ListarPlantillas",
+			Router:           "/plantillas",
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
+	beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:IniciativaInversionController"],
+		beego.ControllerComments{
+			Method:           "ObtenerUnidades",
+			Router:           "/unidades/:documento",
+			AllowHTTPMethods: []string{"get"},
+			MethodParams:     param.Make(),
+			Filters:          nil,
+			Params:           nil})
+
 	beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:InversionController"],
 		beego.ControllerComments{
 			Method:           "ActualizarSubgrupoDetalle",

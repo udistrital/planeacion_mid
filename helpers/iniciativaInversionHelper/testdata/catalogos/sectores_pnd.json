@@ -1,0 +1,27 @@
+{
+  "catalogo": "sectores_pnd",
+  "nombre": "Sectores del Plan Nacional de Desarrollo",
+  "modulo": "Identificación",
+  "fuente": "Hoja 'Articulación PND+' E15:E32",
+  "observaciones": [],
+  "items": [
+    {"codigo":"04","nombre":"INFORMACIÓN ESTADÍSTICA"},
+    {"codigo":"12","nombre":"JUSTICIA Y DEL DERECHO"},
+    {"codigo":"17","nombre":"AGRICULTURA Y DESARROLLO RURAL"},
+    {"codigo":"19","nombre":"SALUD Y PROTECCIÓN SOCIAL"},
+    {"codigo":"21","nombre":"MINAS Y ENERGÍA"},
+    {"codigo":"22","nombre":"EDUCACIÓN"},
+    {"codigo":"23","nombre":"TECNOLOGÍAS DE LA INFORMACIÓN Y LAS COMUNICACIONES"},
+    {"codigo":"24","nombre":"TRANSPORTE"},
+    {"codigo":"25","nombre":"ORGANISMOS DE CONTROL"},
+    {"codigo":"32","nombre":"AMBIENTE Y DESARROLLO SOSTENIBLE"},
+    {"codigo":"33","nombre":"CULTURA"},
+    {"codigo":"35","nombre":"COMERCIO, INDUSTRIA Y TURISMO"},
+    {"codigo":"36","nombre":"TRABAJO"},
+    {"codigo":"39","nombre":"CIENCIA, TECNOLOGÍA E INNOVACIÓN"},
+    {"codigo":"40","nombre":"VIVIENDA, CIUDAD Y TERRITORIO"},
+    {"codigo":"41","nombre":"INCLUSIÓN SOCIAL Y RECONCILIACIÓN"},
+    {"codigo":"43","nombre":"DEPORTE Y RECREACIÓN"},
+    {"codigo":"45","nombre":"GOBIERNO TERRRITORIAL"}
+  ]
+}

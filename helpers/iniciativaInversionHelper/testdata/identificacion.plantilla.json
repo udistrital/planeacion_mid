@@ -1,0 +1,505 @@
+{
+  "version": "Iniciativas de Inversión v1.0",
+  "tipo_plan": {
+    "codigo_abreviacion": "IPI_SP"
+  },
+  "plan": {
+    "nombre": "Iniciativa de inversión",
+    "descripcion": "Plantilla del instrumento de formulación de iniciativas para proyectos de inversión"
+  },
+  "nodos": [
+    {
+      "nombre": "Identificación",
+      "descripcion": "Módulo de identificación",
+      "dato": { "clave": "identificacion", "modulo": true },
+      "hijos": [
+        {
+          "nombre": "Nombre",
+          "descripcion": "Nombre del proyecto. Todos los campos son obligatorios.",
+          "dato": { "clave": "nombre" },
+          "hijos": [
+            {
+              "nombre": "Proceso",
+              "descripcion": "Acción que realiza el proyecto (verbo del catálogo de procesos).",
+              "dato": { "clave": "proceso", "type": "catalogo", "required": "true", "catalogo": "procesos" }
+            },
+            {
+              "nombre": "Objeto",
+              "descripcion": "Sobre qué recae la acción del proyecto.",
+              "dato": { "clave": "objeto", "type": "input", "required": "true", "multilinea": true, "maxlength": 500 }
+            },
+            {
+              "nombre": "Localización",
+              "descripcion": "Lugar donde se ejecuta el proyecto.",
+              "dato": { "clave": "localizacion", "type": "select", "required": "true", "options": [{ "valor": "Bogotá D.C." }] }
+            },
+            {
+              "nombre": "Producto principal del proyecto",
+              "descripcion": "Producto del catálogo de productos que entrega el proyecto.",
+              "dato": { "clave": "producto_principal", "type": "catalogo", "required": "true", "catalogo": "productos" }
+            },
+            {
+              "nombre": "Nombre del proyecto",
+              "descripcion": "Se propone como PROCESO + OBJETO + LOCALIZACIÓN; puede modificarlo. Se guarda en mayúsculas.",
+              "bandera_tabla": true,
+              "dato": {
+                "clave": "nombre_proyecto",
+                "type": "calculado",
+                "required": "true",
+                "plantilla": "{proceso} {objeto} {localizacion}",
+                "transformar": "mayusculas",
+                "editable": true,
+                "maxlength": 500,
+                "nombre_plan": true
+              }
+            }
+          ]
+        },
+        {
+          "nombre": "Articulación con el Plan Nacional de Desarrollo",
+          "descripcion": "Contribución del proyecto al Plan Nacional de Desarrollo.",
+          "dato": { "clave": "articulacion_pnd" },
+          "hijos": [
+            {
+              "nombre": "Sector",
+              "descripcion": "Sector del Plan Nacional de Desarrollo.",
+              "dato": { "clave": "sector", "type": "catalogo", "required": "true", "catalogo": "sectores_pnd" }
+            },
+            {
+              "nombre": "Programa",
+              "descripcion": "Programa del sector seleccionado.",
+              "dato": { "clave": "programa", "type": "catalogo", "required": "true", "catalogo": "programas_pnd", "depende_de": "sector" }
+            }
+          ]
+        },
+        {
+          "nombre": "Problemática",
+          "descripcion": "Análisis de la situación inicial (árbol de problemas).",
+          "dato": { "clave": "problematica" },
+          "hijos": [
+            {
+              "nombre": "Problema central",
+              "descripcion": "Situación negativa que el proyecto busca resolver.",
+              "dato": { "clave": "problema_central", "type": "input", "required": "true", "multilinea": true }
+            },
+            {
+              "nombre": "Indicador de línea base",
+              "descripcion": "Indicador con el que se mide hoy el problema central.",
+              "dato": { "clave": "indicador_linea_base", "type": "input", "required": "true", "multilinea": true }
+            },
+            {
+              "nombre": "Causas directas",
+              "descripcion": "Causas que generan directamente el problema central.",
+              "dato": { "clave": "causas_directas", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Causa directa" },
+              "hijos": [
+                {
+                  "nombre": "Descripción",
+                  "descripcion": "Descripción de la causa directa.",
+                  "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
+                },
+                {
+                  "nombre": "Línea base",
+                  "descripcion": "Situación actual medible de la causa directa.",
+                  "dato": { "clave": "linea_base", "type": "input", "required": "true", "multilinea": true }
+                },
+                {
+                  "nombre": "Causas indirectas",
+                  "descripcion": "Causas que originan esta causa directa.",
+                  "dato": { "clave": "causas_indirectas", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Causa indirecta" },
+                  "hijos": [
+                    {
+                      "nombre": "Descripción",
+                      "descripcion": "Descripción de la causa indirecta.",
+                      "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
+                    },
+                    {
+                      "nombre": "Línea base",
+                      "descripcion": "Situación actual medible de la causa indirecta.",
+                      "dato": { "clave": "linea_base", "type": "input", "required": "false", "multilinea": true }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "nombre": "Efectos directos",
+              "descripcion": "Consecuencias directas del problema central.",
+              "dato": { "clave": "efectos_directos", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Efecto directo" },
+              "hijos": [
+                {
+                  "nombre": "Descripción",
+                  "descripcion": "Descripción del efecto directo.",
+                  "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
+                },
+                {
+                  "nombre": "Línea base",
+                  "descripcion": "Situación actual medible del efecto directo.",
+                  "dato": { "clave": "linea_base", "type": "input", "required": "true", "multilinea": true }
+                },
+                {
+                  "nombre": "Efectos indirectos",
+                  "descripcion": "Consecuencias que se derivan de este efecto directo.",
+                  "dato": { "clave": "efectos_indirectos", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Efecto indirecto" },
+                  "hijos": [
+                    {
+                      "nombre": "Descripción",
+                      "descripcion": "Descripción del efecto indirecto.",
+                      "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
+                    },
+                    {
+                      "nombre": "Línea base",
+                      "descripcion": "Situación actual medible del efecto indirecto.",
+                      "dato": { "clave": "linea_base", "type": "input", "required": "false", "multilinea": true }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "nombre": "Descripción de la situación problemática",
+              "descripcion": "Contexto y explicación del problema.",
+              "dato": { "clave": "descripcion_situacion", "type": "input", "required": "true", "multilinea": true }
+            },
+            {
+              "nombre": "Magnitud actual del problema e indicadores de referencia",
+              "descripcion": "Cifras e indicadores que dimensionan el problema hoy.",
+              "dato": { "clave": "magnitud_indicadores", "type": "input", "required": "true", "multilinea": true }
+            }
+          ]
+        },
+        {
+          "nombre": "Participantes",
+          "descripcion": "Identificación y análisis de los participantes del proyecto.",
+          "dato": { "clave": "participantes" },
+          "hijos": [
+            {
+              "nombre": "Identificación de los participantes",
+              "descripcion": "Actores relacionados con el proyecto. Se deben ingresar mínimo 2.",
+              "dato": { "clave": "actores", "type": "repetible", "required": "true", "min": 2, "max": null, "etiqueta_fila": "Participante" },
+              "hijos": [
+                {
+                  "nombre": "Actor",
+                  "descripcion": "Nivel del actor.",
+                  "dato": {
+                    "clave": "actor",
+                    "type": "select",
+                    "required": "true",
+                    "options": [
+                      { "valor": "Departamental" },
+                      { "valor": "Distrital" },
+                      { "valor": "Embajada" },
+                      { "valor": "Municipal" },
+                      { "valor": "Nacional" },
+                      { "valor": "Otro" }
+                    ]
+                  }
+                },
+                {
+                  "nombre": "Entidad",
+                  "descripcion": "Entidad o grupo que participa.",
+                  "dato": { "clave": "entidad", "type": "input", "required": "true", "maxlength": 500 }
+                },
+                {
+                  "nombre": "Posición",
+                  "descripcion": "Posición del actor frente al proyecto.",
+                  "dato": {
+                    "clave": "posicion",
+                    "type": "select",
+                    "required": "true",
+                    "options": [
+                      { "valor": "Cooperante" },
+                      { "valor": "Beneficiario" },
+                      { "valor": "Oponente" },
+                      { "valor": "Perjudicado" }
+                    ]
+                  }
+                },
+                {
+                  "nombre": "Intereses o expectativas",
+                  "descripcion": "Qué espera el actor del proyecto.",
+                  "dato": { "clave": "intereses_expectativas", "type": "input", "required": "true", "multilinea": true }
+                },
+                {
+                  "nombre": "Contribución o gestión",
+                  "descripcion": "Qué aporta o gestiona el actor.",
+                  "dato": { "clave": "contribucion_gestion", "type": "input", "required": "true", "multilinea": true }
+                }
+              ]
+            },
+            {
+              "nombre": "Análisis de participantes",
+              "descripcion": "Análisis general de los participantes.",
+              "dato": { "clave": "analisis", "type": "input", "required": "true", "multilinea": true }
+            }
+          ]
+        },
+        {
+          "nombre": "Población",
+          "descripcion": "Población afectada por el problema y población objetivo de la intervención.",
+          "dato": { "clave": "poblacion" },
+          "hijos": [
+            {
+              "nombre": "Población afectada por el problema",
+              "descripcion": "Número de personas por grupo de edad y característica.",
+              "dato": {
+                "clave": "afectada",
+                "type": "matriz",
+                "required": "true",
+                "tipo_celda": "numeric",
+                "min": 0,
+                "decimales": 0,
+                "totales": { "filas": true, "columnas": true },
+                "filas": [
+                  { "clave": "primera_infancia", "nombre": "Primera infancia 0 - 5 años" },
+                  { "clave": "infancia", "nombre": "Infancia 6 - 11 años" },
+                  { "clave": "adolescencia", "nombre": "Adolescencia 12 - 18 años" },
+                  { "clave": "juventud", "nombre": "Juventud 19 - 26 años" },
+                  { "clave": "adultez", "nombre": "Adultez 27 - 59 años" },
+                  { "clave": "vejez", "nombre": "Vejez 60 años y más" },
+                  { "clave": "de_0_a_14", "nombre": "0 a 14 años" },
+                  { "clave": "de_15_a_19", "nombre": "15 a 19 años" },
+                  { "clave": "de_20_a_59", "nombre": "20 a 59 años" },
+                  { "clave": "mayor_60", "nombre": "Mayor de 60 años" }
+                ],
+                "grupos_columnas": [
+                  {
+                    "nombre": "Género",
+                    "columnas": [
+                      { "clave": "mujeres", "nombre": "Mujeres" },
+                      { "clave": "hombres", "nombre": "Hombres" }
+                    ]
+                  },
+                  {
+                    "nombre": "Localización geográfica",
+                    "columnas": [
+                      { "clave": "rural", "nombre": "Rural" },
+                      { "clave": "urbano", "nombre": "Urbano" },
+                      { "clave": "indigena", "nombre": "Indígena" }
+                    ]
+                  },
+                  {
+                    "nombre": "Grupo étnico",
+                    "columnas": [
+                      { "clave": "pueblos_indigenas", "nombre": "Pueblos Indígenas" },
+                      { "clave": "afrocolombianas", "nombre": "Comunidades Afrocolombianas" },
+                      { "clave": "negras", "nombre": "Comunidades Negras" },
+                      { "clave": "raizales", "nombre": "Comunidades Raizales" },
+                      { "clave": "rrom", "nombre": "Pueblos Rrom" },
+                      { "clave": "palenqueras", "nombre": "Comunidades Palenqueras" },
+                      { "clave": "mestiza", "nombre": "Población Mestiza" }
+                    ]
+                  },
+                  {
+                    "nombre": "Condición",
+                    "columnas": [
+                      { "clave": "reincorporacion", "nombre": "Personas en Reincorporación (Acuerdos de Paz)" },
+                      { "clave": "reintegracion", "nombre": "Personas en Reintegración exintegrantes de Grupos Armados Organizados y otros en tránsito a la vida civil" },
+                      { "clave": "desplazados", "nombre": "Desplazados" },
+                      { "clave": "discapacidad", "nombre": "Personas con discapacidad" },
+                      { "clave": "victimas_otros_hechos", "nombre": "Víctimas de otros hechos diferentes al desplazamiento" }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "nombre": "Población objetivo de la intervención",
+              "descripcion": "Número de personas por grupo de edad y característica.",
+              "dato": {
+                "clave": "objetivo",
+                "type": "matriz",
+                "required": "true",
+                "tipo_celda": "numeric",
+                "min": 0,
+                "decimales": 0,
+                "totales": { "filas": true, "columnas": true },
+                "filas": [
+                  { "clave": "primera_infancia", "nombre": "Primera infancia 0 - 5 años" },
+                  { "clave": "infancia", "nombre": "Infancia 6 - 11 años" },
+                  { "clave": "adolescencia", "nombre": "Adolescencia 12 - 18 años" },
+                  { "clave": "juventud", "nombre": "Juventud 14 - 26 años" },
+                  { "clave": "adultez", "nombre": "Adultez 27 - 59 años" },
+                  { "clave": "vejez", "nombre": "Vejez 60 años y más" },
+                  { "clave": "de_0_a_14", "nombre": "0 a 14 años" },
+                  { "clave": "de_15_a_19", "nombre": "15 a 19 años" },
+                  { "clave": "de_20_a_59", "nombre": "20 a 59 años" },
+                  { "clave": "mayor_60", "nombre": "Mayor de 60 años" }
+                ],
+                "grupos_columnas": [
+                  {
+                    "nombre": "Género",
+                    "columnas": [
+                      { "clave": "mujeres", "nombre": "Mujeres" },
+                      { "clave": "hombres", "nombre": "Hombres" }
+                    ]
+                  },
+                  {
+                    "nombre": "Localización geográfica",
+                    "columnas": [
+                      { "clave": "rural", "nombre": "Rural" },
+                      { "clave": "urbano", "nombre": "Urbano" },
+                      { "clave": "indigena", "nombre": "Indígena" }
+                    ]
+                  },
+                  {
+                    "nombre": "Grupo étnico",
+                    "columnas": [
+                      { "clave": "pueblos_indigenas", "nombre": "Pueblos Indígenas" },
+                      { "clave": "afrocolombianas", "nombre": "Comunidades Afrocolombianas" },
+                      { "clave": "negras", "nombre": "Comunidades Negras" },
+                      { "clave": "raizales", "nombre": "Comunidades Raizales" },
+                      { "clave": "rrom", "nombre": "Pueblos Rrom" },
+                      { "clave": "palenqueras", "nombre": "Comunidades Palenqueras" },
+                      { "clave": "mestiza", "nombre": "Población Mestiza" }
+                    ]
+                  },
+                  {
+                    "nombre": "Condición",
+                    "columnas": [
+                      { "clave": "reincorporacion", "nombre": "Personas en Reincorporación (Acuerdos de Paz)" },
+                      { "clave": "reintegracion", "nombre": "Personas en Reintegración exintegrantes de Grupos Armados Organizados y otros en tránsito a la vida civil" },
+                      { "clave": "desplazados", "nombre": "Desplazados" },
+                      { "clave": "discapacidad", "nombre": "Personas con discapacidad" },
+                      { "clave": "victimas_otros_hechos", "nombre": "Víctimas de otros hechos diferentes al desplazamiento" }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "nombre": "Objetivos generales y específicos",
+          "descripcion": "Árbol de objetivos. Se redacta teniendo en cuenta el árbol de problemas, sin relacionar causas ni efectos.",
+          "dato": { "clave": "objetivos" },
+          "hijos": [
+            {
+              "nombre": "Objetivo central",
+              "descripcion": "Situación positiva que se alcanza al resolver el problema central.",
+              "dato": { "clave": "objetivo_central", "type": "input", "required": "true", "multilinea": true }
+            },
+            {
+              "nombre": "Indicador de propósito",
+              "descripcion": "Indicador con el que se mide el logro del objetivo central.",
+              "dato": { "clave": "indicador_proposito", "type": "input", "required": "true", "multilinea": true }
+            },
+            {
+              "nombre": "Meta",
+              "descripcion": "Valor esperado del indicador de propósito.",
+              "dato": { "clave": "meta", "type": "numeric", "required": "true", "decimales": 2 }
+            },
+            {
+              "nombre": "Tipo de fuente de verificación",
+              "descripcion": "Tipo de documento con el que se verifica el indicador (por ejemplo, informe).",
+              "dato": { "clave": "tipo_fuente_verificacion", "type": "input", "required": "true", "maxlength": 200 }
+            },
+            {
+              "nombre": "Fuente de verificación",
+              "descripcion": "Documento concreto con el que se verifica el indicador.",
+              "dato": { "clave": "fuente_verificacion", "type": "input", "required": "true", "multilinea": true }
+            },
+            {
+              "nombre": "Objetivos específicos",
+              "descripcion": "Objetivos específicos del proyecto. Tenga en cuenta las causas directas de la Problemática al redactarlos.",
+              "dato": { "clave": "objetivos_especificos", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Objetivo específico" },
+              "hijos": [
+                {
+                  "nombre": "Objetivo específico",
+                  "descripcion": "Objetivo que contribuye al objetivo central.",
+                  "dato": { "clave": "objetivo_especifico", "type": "input", "required": "true", "multilinea": true }
+                },
+                {
+                  "nombre": "Línea base",
+                  "descripcion": "Situación actual medible del objetivo específico.",
+                  "dato": { "clave": "linea_base", "type": "input", "required": "true", "multilinea": true }
+                },
+                {
+                  "nombre": "Medios",
+                  "descripcion": "Medios para lograr el objetivo específico. Tenga en cuenta las causas indirectas de la Problemática.",
+                  "dato": { "clave": "medios", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Medio" },
+                  "hijos": [
+                    {
+                      "nombre": "Medio",
+                      "descripcion": "Acción con la que se logra el objetivo específico.",
+                      "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
+                    },
+                    {
+                      "nombre": "Línea base",
+                      "descripcion": "Situación actual medible del medio.",
+                      "dato": { "clave": "linea_base", "type": "input", "required": "false", "multilinea": true }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "nombre": "Resultados esperados",
+              "descripcion": "Resultados esperados del proyecto. Tenga en cuenta los efectos directos de la Problemática al redactarlos.",
+              "dato": { "clave": "resultados_esperados", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Resultado esperado" },
+              "hijos": [
+                {
+                  "nombre": "Resultado esperado",
+                  "descripcion": "Cambio esperado al lograr el objetivo central.",
+                  "dato": { "clave": "resultado_esperado", "type": "input", "required": "true", "multilinea": true }
+                },
+                {
+                  "nombre": "Indicador de resultado",
+                  "descripcion": "Indicador con el que se mide el resultado.",
+                  "dato": { "clave": "indicador_resultado", "type": "input", "required": "false", "multilinea": true }
+                },
+                {
+                  "nombre": "Impactos esperados",
+                  "descripcion": "Impactos que se derivan de este resultado. Tenga en cuenta los efectos indirectos de la Problemática.",
+                  "dato": { "clave": "impactos", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Impacto esperado" },
+                  "hijos": [
+                    {
+                      "nombre": "Impacto esperado",
+                      "descripcion": "Cambio esperado en el mediano o largo plazo.",
+                      "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
+                    },
+                    {
+                      "nombre": "Indicador de impacto",
+                      "descripcion": "Indicador con el que se mide el impacto.",
+                      "dato": { "clave": "indicador_impacto", "type": "input", "required": "false", "multilinea": true }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nombre": "Alternativas de solución",
+          "descripcion": "Actividades por objetivo específico y descripción de la alternativa.",
+          "dato": { "clave": "alternativas" },
+          "hijos": [
+            {
+              "nombre": "Actividades por objetivo específico",
+              "descripcion": "Una fila por cada objetivo específico.",
+              "dato": {
+                "clave": "actividades_por_objetivo",
+                "type": "repetible",
+                "required": "true",
+                "espejo_de": "objetivos.objetivos_especificos",
+                "mostrar": "objetivo_especifico",
+                "etiqueta_fila": "Objetivo específico"
+              },
+              "hijos": [
+                {
+                  "nombre": "Actividades",
+                  "descripcion": "Actividades con las que se cumple el objetivo específico.",
+                  "dato": { "clave": "actividades", "type": "input", "required": "true", "multilinea": true }
+                }
+              ]
+            },
+            {
+              "nombre": "Descripción de la alternativa de solución",
+              "descripcion": "Descripción general de la alternativa seleccionada.",
+              "dato": { "clave": "descripcion_alternativa", "type": "input", "required": "true", "multilinea": true }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

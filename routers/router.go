@@ -58,6 +58,11 @@ func init() {
 				&controllers.PlanesAccionController{},
 			),
 		),
+		beego.NSNamespace("/iniciativa-inversion",
+			beego.NSInclude(
+				&controllers.IniciativaInversionController{},
+			),
+		),
 	)
 	beego.AddNamespace(ns)
 }

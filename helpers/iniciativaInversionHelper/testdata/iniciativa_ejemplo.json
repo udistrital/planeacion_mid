@@ -1,0 +1,710 @@
+{
+  "nombre": {
+    "proceso": "Implementación",
+    "objeto": "de la Política de Espacio Público para la generación de más y mejores áreas para encuentro, cuidado y disfrute en",
+    "localizacion": "Bogotá D.C.",
+    "producto_principal": "4103008"
+  },
+  "articulacion_pnd": {
+    "sector": "45",
+    "programa": "4599"
+  },
+  "problematica": {
+    "problema_central": "Bajas capacidades de componentes tecnológicos para la implementación del modelo de transformación digital en la institución para los procesos soportados por las áreas de tecnología",
+    "indicador_linea_base": "Cobertura de proyectos frente a las condiciones de TI de la universidad en un 25%",
+    "causas_directas": [
+      {
+        "id": "cd-1",
+        "descripcion": "Capacidad limitada y obsolescencia acumulada de la infraestructura de telecomunicaciones, seguridad, almacenamiento, procesamiento, Data center y equipos destinados a procesos de apoyo en actividades administrativas gestionados por OATI.",
+        "linea_base": "La infraestructura tecnológica a cargo de la OATI presenta una obsolescencia general del 54,6%; el porcentaje de uso de la capacidad instalada es del 82%.",
+        "causas_indirectas": [
+          {
+            "id": "ci-1",
+            "descripcion": "Fallas y/o disminución en la capacidad de los equipos, licenciamiento y componentes de infraestructura de telecomunicaciones, datacenter, seguridad, almacenamiento (nube privada), respaldo y procesamiento.",
+            "linea_base": "Para el año 2024 el 32,4% de los equipos de comunicaciones unificadas estará obsoleto."
+          },
+          {
+            "id": "ci-2",
+            "descripcion": "Limitaciones en capacidad de los sistemas de almacenamiento (nube privada), sistema de respaldo y ciberseguridad.",
+            "linea_base": "La solución de almacenamiento está compuesta por dos sistemas NetApp y el respaldo COMMVAULT."
+          },
+          {
+            "id": "ci-3",
+            "descripcion": "Falta de mantenimiento y soporte oportuno de equipos, por asignación parcial de recursos necesarios para la sostenibilidad de equipos.",
+            "linea_base": "Para el año 2024 el 47% de los equipos de networking se encuentran sin soporte."
+          }
+        ]
+      },
+      {
+        "id": "cd-2",
+        "descripcion": "Infraestructura y herramientas insuficientes para el fortalecimiento en procesos de enseñanza y aprendizaje que permitan el adecuado funcionamiento apoyado por las TIC en programas académicos.",
+        "linea_base": "La infraestructura que apoya las actividades académicas se encuentra en un nivel de obsolescencia del 100%.",
+        "causas_indirectas": [
+          {
+            "id": "ci-4",
+            "descripcion": "Recursos insuficientes para brindar una capacidad de infraestructura tecnológica que permita la ampliación de cobertura y herramientas de fortalecimiento a procesos de enseñanza y aprendizaje.",
+            "linea_base": "Para el año 2024 el 100% de los equipos de soporte técnico y pedagógico presentan obsolescencia."
+          },
+          {
+            "id": "ci-5",
+            "descripcion": "Limitación en la adquisición, renovación y desarrollo de software, recursos tecnológicos y humanos, orientados al apoyo de programas académicos a través de las TIC.",
+            "linea_base": "Para el año 2024 no se implementan herramientas basadas en IA para el apoyo de los programas académicos."
+          }
+        ]
+      },
+      {
+        "id": "cd-3",
+        "descripcion": "Componentes tecnológicos rezagados de las necesidades institucionales, que no permiten la optimización requerida en el soporte tecnológico a los procesos de la institución.",
+        "linea_base": "Nivel de 1,32 en la madurez de apropiación de la arquitectura institucional.",
+        "causas_indirectas": [
+          {
+            "id": "ci-6",
+            "descripcion": "Falta de adopción de mejores prácticas en seguridad de la información aplicadas a los procesos de la universidad.",
+            "linea_base": "Brecha de seguridad del 54%; MSPI 45% en el PHVA; 38% de controles ISO 27001."
+          },
+          {
+            "id": "ci-7",
+            "descripcion": "Desconexión entre las necesidades actuales y las soluciones tecnológicas existentes, lo que limita la adopción de tecnologías disruptivas y arquitecturas modernas.",
+            "linea_base": "Sistemas de información montados en arquitecturas monolíticas con tecnologías legadas en un 50%."
+          },
+          {
+            "id": "ci-8",
+            "descripcion": "Desarticulación entre áreas y unidades académico-administrativas en la gestión de datos, que dificulta la interoperabilidad.",
+            "linea_base": "Implementación en 0% de las directrices del plan nacional de infraestructura de datos."
+          }
+        ]
+      }
+    ],
+    "efectos_directos": [
+      {
+        "id": "ed-1",
+        "descripcion": "Interrupción en la continuidad de los servicios para los miembros de la comunidad. Pérdida de información y limitaciones en los servicios prestados.",
+        "linea_base": "Disponibilidad de los servicios OATI 99%, cobertura de ciberseguridad 60% y cobertura de la capacidad de almacenamiento de la nube privada de 10%.",
+        "efectos_indirectos": [
+          {
+            "id": "ei-1",
+            "descripcion": "Interrupción en los procesos académico-administrativos y baja calidad en la prestación de servicios.",
+            "linea_base": "Disponibilidad de servicios de telecomunicaciones: 98,5%."
+          },
+          {
+            "id": "ei-2",
+            "descripcion": "Afectación de los procesos académico-administrativos de la universidad y reproceso de actividades realizadas por usuarios finales.",
+            "linea_base": "Disponibilidad de servicios de telecomunicaciones: 98,5%."
+          },
+          {
+            "id": "ei-3",
+            "descripcion": "Sobrecostos por mantenimientos correctivos no programados.",
+            "linea_base": "Equipos sin mantenimiento: 47%."
+          }
+        ]
+      },
+      {
+        "id": "ed-2",
+        "descripcion": "Dificultad para soportar tecnológicamente la cobertura académica de la universidad, obstaculizando el cumplimiento de los requerimientos de los programas académicos.",
+        "linea_base": "Cobertura tecnológica para virtualización de contenidos en un 30% y para soporte de usuarios en un 25%.",
+        "efectos_indirectos": [
+          {
+            "id": "ei-4",
+            "descripcion": "Aumento en la brecha digital relacionado con las TIC que apoyan los procesos de formación y la misionalidad académica de la institución.",
+            "linea_base": "Solo se atienden el 40% de las solicitudes de creación de contenidos."
+          },
+          {
+            "id": "ei-5",
+            "descripcion": "Imposibilidad de atender nuevas necesidades tecnológicas de la universidad a la vanguardia de las tecnologías de la información y comunicaciones.",
+            "linea_base": "Se desarrollan el 50% de los proyectos enfocados al apoyo académico."
+          }
+        ]
+      },
+      {
+        "id": "ed-3",
+        "descripcion": "Carencia en procesos de TI y formalización de los lineamientos referentes a la arquitectura institucional.",
+        "linea_base": "Documento Plan Estratégico de las Tecnologías de la Información.",
+        "efectos_indirectos": [
+          {
+            "id": "ei-6",
+            "descripcion": "Procesos no automatizados.",
+            "linea_base": ""
+          },
+          {
+            "id": "ei-7",
+            "descripcion": "Falta de integridad en los datos para soporte a la toma de decisiones.",
+            "linea_base": ""
+          },
+          {
+            "id": "ei-8",
+            "descripcion": "Falta de lineamientos en los procesos referentes a la seguridad de la información.",
+            "linea_base": ""
+          }
+        ]
+      }
+    ],
+    "descripcion_situacion": "En los ejercicios de arquitectura institucional desarrollados a la fecha se ha determinado que diversas áreas de la universidad tienen un nivel de desarrollo tecnológico aceptable, que podría potencializarse a nivel institucional con la articulación de los procesos de TI.",
+    "magnitud_indicadores": "1. Porcentaje de uso de la capacidad de almacenamiento: 82%. 2. Porcentaje de obsolescencia de la infraestructura: 54,6%. 3. Nivel de madurez de implementación de arquitectura institucional: 2,3."
+  },
+  "participantes": {
+    "actores": [
+      {
+        "id": "pa-1",
+        "actor": "Distrital",
+        "entidad": "Universidad Distrital Francisco José de Caldas",
+        "posicion": "Beneficiario",
+        "intereses_expectativas": "Modernizar la infraestructura tecnológica de telecomunicaciones, almacenamiento, procesamiento, seguridad y datacenter para mejorar la calidad y cobertura de los servicios.",
+        "contribucion_gestion": "Gestión de los recursos para el desarrollo de planes y proyectos en pro del mejoramiento de los servicios prestados a la comunidad universitaria."
+      },
+      {
+        "id": "pa-2",
+        "actor": "Distrital",
+        "entidad": "Universidad Distrital Francisco José de Caldas (Planeación)",
+        "posicion": "Cooperante",
+        "intereses_expectativas": "Cobertura amplia en la prestación de los servicios prestados por la OATI.",
+        "contribucion_gestion": "Asignación de recursos financieros para inversión y sostenibilidad (mantenimientos) en infraestructura tecnológica."
+      },
+      {
+        "id": "pa-3",
+        "actor": "Otro",
+        "entidad": "Usuarios con resistencia al cambio tecnológico",
+        "posicion": "Oponente",
+        "intereses_expectativas": "Miedo a la utilización de nuevas tecnologías por desconocimiento o resistencia a experimentar.",
+        "contribucion_gestion": "Realizar planes de capacitación a usuarios en el uso y beneficios de nuevas tecnologías."
+      },
+      {
+        "id": "pa-4",
+        "actor": "Nacional",
+        "entidad": "Ministerio de Educación",
+        "posicion": "Cooperante",
+        "intereses_expectativas": "Desarrollar programas académicos en modalidad de educación virtual como estrategia de ampliación de cobertura.",
+        "contribucion_gestion": "El proyecto contribuye a la aplicación e innovación tecnológica y pedagógica que aporta al desarrollo humano y social."
+      }
+    ],
+    "analisis": "Se requiere la participación activa de la alta dirección en la decisión referente a la implementación de la transformación digital y la continuidad de los ejercicios de Arquitectura Institucional."
+  },
+  "poblacion": {
+    "afectada": {
+      "primera_infancia": {
+        "mujeres": 0,
+        "hombres": 0,
+        "rural": 0,
+        "urbano": 0,
+        "indigena": 0,
+        "pueblos_indigenas": 0,
+        "afrocolombianas": 0,
+        "negras": 0,
+        "raizales": 0,
+        "rrom": 0,
+        "palenqueras": 0,
+        "mestiza": 0,
+        "reincorporacion": 0,
+        "reintegracion": 0,
+        "desplazados": 0,
+        "discapacidad": 0,
+        "victimas_otros_hechos": 0
+      },
+      "infancia": {
+        "mujeres": 0,
+        "hombres": 0,
+        "rural": 0,
+        "urbano": 0,
+        "indigena": 0,
+        "pueblos_indigenas": 0,
+        "afrocolombianas": 0,
+        "negras": 0,
+        "raizales": 0,
+        "rrom": 0,
+        "palenqueras": 0,
+        "mestiza": 0,
+        "reincorporacion": 0,
+        "reintegracion": 0,
+        "desplazados": 0,
+        "discapacidad": 0,
+        "victimas_otros_hechos": 0
+      },
+      "adolescencia": {
+        "mujeres": 0,
+        "hombres": 0,
+        "rural": 0,
+        "urbano": 0,
+        "indigena": 0,
+        "pueblos_indigenas": 0,
+        "afrocolombianas": 0,
+        "negras": 0,
+        "raizales": 0,
+        "rrom": 0,
+        "palenqueras": 0,
+        "mestiza": 0,
+        "reincorporacion": 0,
+        "reintegracion": 0,
+        "desplazados": 0,
+        "discapacidad": 0,
+        "victimas_otros_hechos": 0
+      },
+      "juventud": {
+        "mujeres": 0,
+        "hombres": 0,
+        "rural": 0,
+        "urbano": 0,
+        "indigena": 0,
+        "pueblos_indigenas": 0,
+        "afrocolombianas": 0,
+        "negras": 0,
+        "raizales": 0,
+        "rrom": 0,
+        "palenqueras": 0,
+        "mestiza": 0,
+        "reincorporacion": 0,
+        "reintegracion": 0,
+        "desplazados": 0,
+        "discapacidad": 0,
+        "victimas_otros_hechos": 0
+      },
+      "adultez": {
+        "mujeres": 0,
+        "hombres": 0,
+        "rural": 0,
+        "urbano": 0,
+        "indigena": 0,
+        "pueblos_indigenas": 0,
+        "afrocolombianas": 0,
+        "negras": 0,
+        "raizales": 0,
+        "rrom": 0,
+        "palenqueras": 0,
+        "mestiza": 0,
+        "reincorporacion": 0,
+        "reintegracion": 0,
+        "desplazados": 0,
+        "discapacidad": 0,
+        "victimas_otros_hechos": 0
+      },
+      "vejez": {
+        "mujeres": 0,
+        "hombres": 0,
+        "rural": 0,
+        "urbano": 0,
+        "indigena": 0,
+        "pueblos_indigenas": 0,
+        "afrocolombianas": 0,
+        "negras": 0,
+        "raizales": 0,
+        "rrom": 0,
+        "palenqueras": 0,
+        "mestiza": 0,
+        "reincorporacion": 0,
+        "reintegracion": 0,
+        "desplazados": 0,
+        "discapacidad": 0,
+        "victimas_otros_hechos": 0
+      },
+      "de_0_a_14": {
+        "mujeres": 0,
+        "hombres": 0,
+        "rural": 0,
+        "urbano": 0,
+        "indigena": 0,
+        "pueblos_indigenas": 0,
+        "afrocolombianas": 0,
+        "negras": 0,
+        "raizales": 0,
+        "rrom": 0,
+        "palenqueras": 0,
+        "mestiza": 0,
+        "reincorporacion": 0,
+        "reintegracion": 0,
+        "desplazados": 0,
+        "discapacidad": 0,
+        "victimas_otros_hechos": 0
+      },
+      "de_15_a_19": {
+        "mujeres": 0,
+        "hombres": 0,
+        "rural": 0,
+        "urbano": 0,
+        "indigena": 0,
+        "pueblos_indigenas": 0,
+        "afrocolombianas": 0,
+        "negras": 0,
+        "raizales": 0,
+        "rrom": 0,
+        "palenqueras": 0,
+        "mestiza": 0,
+        "reincorporacion": 0,
+        "reintegracion": 0,
+        "desplazados": 0,
+        "discapacidad": 0,
+        "victimas_otros_hechos": 0
+      },
+      "de_20_a_59": {
+        "mujeres": 0,
+        "hombres": 0,
+        "rural": 0,
+        "urbano": 0,
+        "indigena": 0,
+        "pueblos_indigenas": 0,
+        "afrocolombianas": 0,
+        "negras": 0,
+        "raizales": 0,
+        "rrom": 0,
+        "palenqueras": 0,
+        "mestiza": 0,
+        "reincorporacion": 0,
+        "reintegracion": 0,
+        "desplazados": 0,
+        "discapacidad": 0,
+        "victimas_otros_hechos": 0
+      },
+      "mayor_60": {
+        "mujeres": 0,
+        "hombres": 0,
+        "rural": 0,
+        "urbano": 0,
+        "indigena": 0,
+        "pueblos_indigenas": 0,
+        "afrocolombianas": 0,
+        "negras": 0,
+        "raizales": 0,
+        "rrom": 0,
+        "palenqueras": 0,
+        "mestiza": 0,
+        "reincorporacion": 0,
+        "reintegracion": 0,
+        "desplazados": 0,
+        "discapacidad": 0,
+        "victimas_otros_hechos": 0
+      }
+    },
+    "objetivo": {
+      "primera_infancia": {
+        "mujeres": 0,
+        "hombres": 0,
+        "rural": 0,
+        "urbano": 0,
+        "indigena": 0,
+        "pueblos_indigenas": 0,
+        "afrocolombianas": 0,
+        "negras": 0,
+        "raizales": 0,
+        "rrom": 0,
+        "palenqueras": 0,
+        "mestiza": 0,
+        "reincorporacion": 0,
+        "reintegracion": 0,
+        "desplazados": 0,
+        "discapacidad": 0,
+        "victimas_otros_hechos": 0
+      },
+      "infancia": {
+        "mujeres": 0,
+        "hombres": 0,
+        "rural": 0,
+        "urbano": 0,
+        "indigena": 0,
+        "pueblos_indigenas": 0,
+        "afrocolombianas": 0,
+        "negras": 0,
+        "raizales": 0,
+        "rrom": 0,
+        "palenqueras": 0,
+        "mestiza": 0,
+        "reincorporacion": 0,
+        "reintegracion": 0,
+        "desplazados": 0,
+        "discapacidad": 0,
+        "victimas_otros_hechos": 0
+      },
+      "adolescencia": {
+        "mujeres": 0,
+        "hombres": 0,
+        "rural": 0,
+        "urbano": 0,
+        "indigena": 0,
+        "pueblos_indigenas": 0,
+        "afrocolombianas": 0,
+        "negras": 0,
+        "raizales": 0,
+        "rrom": 0,
+        "palenqueras": 0,
+        "mestiza": 0,
+        "reincorporacion": 0,
+        "reintegracion": 0,
+        "desplazados": 0,
+        "discapacidad": 0,
+        "victimas_otros_hechos": 0
+      },
+      "juventud": {
+        "mujeres": 0,
+        "hombres": 0,
+        "rural": 0,
+        "urbano": 0,
+        "indigena": 0,
+        "pueblos_indigenas": 0,
+        "afrocolombianas": 0,
+        "negras": 0,
+        "raizales": 0,
+        "rrom": 0,
+        "palenqueras": 0,
+        "mestiza": 0,
+        "reincorporacion": 0,
+        "reintegracion": 0,
+        "desplazados": 0,
+        "discapacidad": 0,
+        "victimas_otros_hechos": 0
+      },
+      "adultez": {
+        "mujeres": 0,
+        "hombres": 0,
+        "rural": 0,
+        "urbano": 0,
+        "indigena": 0,
+        "pueblos_indigenas": 0,
+        "afrocolombianas": 0,
+        "negras": 0,
+        "raizales": 0,
+        "rrom": 0,
+        "palenqueras": 0,
+        "mestiza": 0,
+        "reincorporacion": 0,
+        "reintegracion": 0,
+        "desplazados": 0,
+        "discapacidad": 0,
+        "victimas_otros_hechos": 0
+      },
+      "vejez": {
+        "mujeres": 0,
+        "hombres": 0,
+        "rural": 0,
+        "urbano": 0,
+        "indigena": 0,
+        "pueblos_indigenas": 0,
+        "afrocolombianas": 0,
+        "negras": 0,
+        "raizales": 0,
+        "rrom": 0,
+        "palenqueras": 0,
+        "mestiza": 0,
+        "reincorporacion": 0,
+        "reintegracion": 0,
+        "desplazados": 0,
+        "discapacidad": 0,
+        "victimas_otros_hechos": 0
+      },
+      "de_0_a_14": {
+        "mujeres": 0,
+        "hombres": 0,
+        "rural": 0,
+        "urbano": 0,
+        "indigena": 0,
+        "pueblos_indigenas": 0,
+        "afrocolombianas": 0,
+        "negras": 0,
+        "raizales": 0,
+        "rrom": 0,
+        "palenqueras": 0,
+        "mestiza": 0,
+        "reincorporacion": 0,
+        "reintegracion": 0,
+        "desplazados": 0,
+        "discapacidad": 0,
+        "victimas_otros_hechos": 0
+      },
+      "de_15_a_19": {
+        "mujeres": 0,
+        "hombres": 0,
+        "rural": 0,
+        "urbano": 0,
+        "indigena": 0,
+        "pueblos_indigenas": 0,
+        "afrocolombianas": 0,
+        "negras": 0,
+        "raizales": 0,
+        "rrom": 0,
+        "palenqueras": 0,
+        "mestiza": 0,
+        "reincorporacion": 0,
+        "reintegracion": 0,
+        "desplazados": 0,
+        "discapacidad": 0,
+        "victimas_otros_hechos": 0
+      },
+      "de_20_a_59": {
+        "mujeres": 0,
+        "hombres": 0,
+        "rural": 0,
+        "urbano": 0,
+        "indigena": 0,
+        "pueblos_indigenas": 0,
+        "afrocolombianas": 0,
+        "negras": 0,
+        "raizales": 0,
+        "rrom": 0,
+        "palenqueras": 0,
+        "mestiza": 0,
+        "reincorporacion": 0,
+        "reintegracion": 0,
+        "desplazados": 0,
+        "discapacidad": 0,
+        "victimas_otros_hechos": 0
+      },
+      "mayor_60": {
+        "mujeres": 0,
+        "hombres": 0,
+        "rural": 0,
+        "urbano": 0,
+        "indigena": 0,
+        "pueblos_indigenas": 0,
+        "afrocolombianas": 0,
+        "negras": 0,
+        "raizales": 0,
+        "rrom": 0,
+        "palenqueras": 0,
+        "mestiza": 0,
+        "reincorporacion": 0,
+        "reintegracion": 0,
+        "desplazados": 0,
+        "discapacidad": 0,
+        "victimas_otros_hechos": 0
+      }
+    }
+  },
+  "objetivos": {
+    "objetivo_central": "Fortalecer los componentes tecnológicos logrando la Transformación Digital en la institución, enfocados a los procesos respaldados por las áreas de tecnología",
+    "indicador_proposito": "Ejecutar los proyectos identificados para la vigencia enmarcados en el modelo de transformación digital",
+    "meta": 0.5,
+    "tipo_fuente_verificacion": "Informe",
+    "fuente_verificacion": "Informe de avance de proyectos identificados en el PETI para la vigencia, Universidad Distrital Francisco José de Caldas",
+    "objetivos_especificos": [
+      {
+        "id": "oe-1",
+        "objetivo_especifico": "Fortalecer y modernizar la infraestructura de telecomunicaciones, seguridad, almacenamiento, procesamiento y Data center con el fin de garantizar el funcionamiento, la capacidad y la disponibilidad de los servicios.",
+        "linea_base": "Modernizar el 23% de la infraestructura de conectividad, seguridad, almacenamiento, procesamiento y Data center administrada por la OATI.",
+        "medios": [
+          {
+            "id": "me-1",
+            "descripcion": "Modernizar y ampliar la infraestructura de telecomunicaciones, data center y la capacidad de almacenamiento y procesamiento que soporta los servicios tecnológicos.",
+            "linea_base": "Para el año 2028 se modernizará el 22% de los equipos de networking obsoletos."
+          },
+          {
+            "id": "me-2",
+            "descripcion": "Contar con capacidad de los sistemas de almacenamiento, sistema de respaldo y ciberseguridad de acuerdo con las necesidades de la Universidad.",
+            "linea_base": "Para el año 2028 no es posible aumentar la capacidad de almacenamiento."
+          }
+        ]
+      },
+      {
+        "id": "oe-2",
+        "objetivo_especifico": "Fortalecer los procesos de enseñanza y aprendizaje mediante la mejora de la infraestructura, herramientas tecnológicas y desarrollos para los programas académicos.",
+        "linea_base": "Modernizar el 30% de los equipos de cómputo usados para el apoyo de programas académicos a través de las TIC.",
+        "medios": [
+          {
+            "id": "me-3",
+            "descripcion": "Renovar y aumentar la infraestructura tecnológica que apoya los procesos académicos para ampliar la cobertura y las herramientas de enseñanza y aprendizaje.",
+            "linea_base": "Para el año 2028 se modernizará el 30% de los equipos de soporte técnico y pedagógico."
+          },
+          {
+            "id": "me-4",
+            "descripcion": "Potenciar la adquisición, renovación y desarrollo de software, recursos tecnológicos y capital humano para apoyar los programas académicos mediante las TIC.",
+            "linea_base": "Para el año 2028 no es posible aumentar la capacidad de licencias de software."
+          }
+        ]
+      },
+      {
+        "id": "oe-3",
+        "objetivo_especifico": "Fortalecer los componentes tecnológicos según las necesidades institucionales, que permiten la optimización requerida en el soporte tecnológico a los procesos de la institución.",
+        "linea_base": "Alinear en un 2,5% la arquitectura de los sistemas de información con las necesidades de transformación digital.",
+        "medios": [
+          {
+            "id": "me-5",
+            "descripcion": "Implementar las mejores prácticas en seguridad de la información para proteger la infraestructura tecnológica de la universidad.",
+            "linea_base": "Brecha de seguridad 100%; MSPI 90% en el PHVA; 82% de controles ISO 27001."
+          },
+          {
+            "id": "me-6",
+            "descripcion": "Mantener actualizada la Estrategia de TI con base en las necesidades, requerimientos, metas y normatividad vigente.",
+            "linea_base": "Sistemas de información desarrollados en un 70% con nuevas tecnologías."
+          },
+          {
+            "id": "me-7",
+            "descripcion": "Implementar una plataforma centralizada de gestión de datos que permita la articulación con el plan nacional de infraestructura de datos.",
+            "linea_base": "Implementación en 80% de las directrices del plan nacional de infraestructura de datos."
+          }
+        ]
+      }
+    ],
+    "resultados_esperados": [
+      {
+        "id": "re-1",
+        "resultado_esperado": "Optimización de la infraestructura tecnológica, mayor calidad y ampliación de los servicios prestados.",
+        "indicador_resultado": "",
+        "impactos": [
+          {
+            "id": "im-1",
+            "descripcion": "Mayor cubrimiento de las necesidades de servicios tecnológicos a los usuarios.",
+            "indicador_impacto": ""
+          },
+          {
+            "id": "im-2",
+            "descripcion": "Mayor nivel de disponibilidad y capacidad de los servicios; usuarios con acceso permanente a los servicios.",
+            "indicador_impacto": ""
+          }
+        ]
+      },
+      {
+        "id": "re-2",
+        "resultado_esperado": "Soportar tecnológicamente la cobertura estudiantil de la universidad, mejorando e innovando los servicios implementados.",
+        "indicador_resultado": "",
+        "impactos": [
+          {
+            "id": "im-3",
+            "descripcion": "Brindar garantías tecnológicas que permitan soportar la cobertura académica.",
+            "indicador_impacto": ""
+          },
+          {
+            "id": "im-4",
+            "descripcion": "Mejorar e innovar los servicios prestados a los diferentes programas académicos.",
+            "indicador_impacto": ""
+          }
+        ]
+      },
+      {
+        "id": "re-3",
+        "resultado_esperado": "Existencia de procesos de TI y formalización de los lineamientos referentes a la arquitectura institucional.",
+        "indicador_resultado": "",
+        "impactos": [
+          {
+            "id": "im-5",
+            "descripcion": "Procesos automatizados.",
+            "indicador_impacto": ""
+          },
+          {
+            "id": "im-6",
+            "descripcion": "Integridad en los datos para soporte a la toma de decisiones.",
+            "indicador_impacto": ""
+          },
+          {
+            "id": "im-7",
+            "descripcion": "Lineamientos en los procesos referentes a la seguridad de la información.",
+            "indicador_impacto": ""
+          }
+        ]
+      }
+    ]
+  },
+  "alternativas": {
+    "actividades_por_objetivo": [
+      {
+        "id": "ao-1",
+        "origen": "oe-1",
+        "actividades": "Adquisición de equipos, componentes y demás sistemas para la dotación de infraestructura tecnológica e implementación de las soluciones."
+      },
+      {
+        "id": "ao-2",
+        "origen": "oe-2",
+        "actividades": "Desarrollar herramientas digitales enfocadas en el aprovechamiento de las TIC en los procesos académicos y garantizar la renovación de las licencias para la virtualización de contenidos."
+      },
+      {
+        "id": "ao-3",
+        "origen": "oe-3",
+        "actividades": "Definir el alcance del marco de gestión de la información, incluidos los tipos de información a gestionar, los procesos involucrados y las partes interesadas."
+      }
+    ],
+    "descripcion_alternativa": "Fortalecer los componentes tecnológicos para lograr la Transformación Digital en la institución, especialmente en los procesos respaldados por las áreas de tecnología."
+  }
+}
