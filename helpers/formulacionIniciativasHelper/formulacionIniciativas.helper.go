@@ -2,13 +2,10 @@ package formulacionIniciativasHelper
 
 import (
 	"encoding/json"
-	"strconv"
 	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
-	"github.com/udistrital/planeacion_mid/models"
-	"github.com/udistrital/utils_oas/request"
 )
 
 func DefinirFechasIniciativasFormulacion(body map[string]interface{}) []interface{} {
@@ -58,17 +55,6 @@ func DefinirFechasIniciativasFormulacion(body map[string]interface{}) []interfac
 							panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Error agregaron periodo-seguimiento", "status": "400", "log": err})
 						}
 						respuestasAcumuladas = append(respuestasAcumuladas, res["Data"])
-					}
-
-					//? Actualiza registros de seguimiento en caso de que hayan planes avalados con el formato_id igual al id del plan_interes del body
-					if body["tipo_seguimiento_id"] == "6af3a20c160752e5dee28c65" {
-						periodoSeguimientoIdAntiguo := registro["_id"].(string)
-						periodoSeguimientoIdNuevo := res["Data"].(map[string]interface{})["_id"].(string)
-						unidadesBody, err := ObtenerArrayUnidadesInteres(body)
-						if err != nil {
-							panic(map[string]interface{}{"funcion": "manejarUnidades", "err": "Error en la decodificación JSON", "status": "400"})
-						}
-						CambiarFechasSeguimiento("", unidadesBody, periodoSeguimientoIdAntiguo, periodoSeguimientoIdNuevo)
 					}
 				}
 			}
@@ -193,48 +179,4 @@ func eliminarUnidad(unidades []map[string]interface{}, id int) []map[string]inte
 		}
 	}
 	return unidades
-}
-
-func CambiarFechasSeguimiento(planInteresString string, unidadesInteres []map[string]interface{}, periodoSeguimientoIdAntiguo string, periodoSeguimientoIdNuevo string) {
-	var resPlanesAvalados map[string]interface{}
-	var resSeguimientos map[string]interface{}
-	var planesAvalados []map[string]interface{}
-	var seguimiento []map[string]interface{}
-	var seguimientoActualizado map[string]interface{}
-	var estadoAvaladoId = "6153355601c7a2365b2fb2a1"
-	var planInteres models.PlanInteres
-
-	for _, unidad := range unidadesInteres {
-		idUnidad := strconv.Itoa(unidad["Id"].(int))
-
-		// 1. Se buscan planes avalados con el _id de la plantilla
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=formato_id:"+planInteres.Id+",estado_plan_id:"+estadoAvaladoId+",dependencia_id:"+idUnidad+",activo:true", &resPlanesAvalados); err != nil {
-			panic(map[string]interface{}{"funcion": "CambiarFechasSeguimiento", "err": "Error en la peticion", "status": "400", "log": err})
-		}
-		helpers.LimpiezaRespuestaRefactor(resPlanesAvalados, &planesAvalados)
-
-		if len(planesAvalados) < 1 { //? No se encontraron planes avalados con el formato_id del id del plan_interes
-			continue
-		}
-
-		// 2. Se buscan los registro de seguimiento en caso de que la respuesta anterior contenga registros
-
-		for _, planAvalado := range planesAvalados {
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=plan_id:"+planAvalado["_id"].(string)+",periodo_seguimiento_id:"+periodoSeguimientoIdAntiguo+",activo:true", &resSeguimientos); err != nil {
-				panic(map[string]interface{}{"funcion": "CambiarFechasSeguimiento", "err": "Error en la peticion", "status": "400", "log": err})
-			}
-			helpers.LimpiezaRespuestaRefactor(resSeguimientos, &seguimiento)
-
-			if len(seguimiento) < 1 { //? No se encontraron registros de seguimiento
-				continue
-			}
-
-			// 3. Se actualizan los registros de seguimiento
-			seguimientoRegistro := seguimiento[0]
-			seguimientoRegistro["periodo_seguimiento_id"] = periodoSeguimientoIdNuevo
-			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento[0]["_id"].(string), "PUT", &seguimientoActualizado, seguimientoRegistro); err != nil {
-				panic(map[string]interface{}{"funcion": "CambiarFechasSeguimiento", "err": "Error actualizando seguimiento", "status": "400", "log": err})
-			}
-		}
-	}
 }
