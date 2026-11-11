@@ -58,6 +58,11 @@ func init() {
 				&controllers.PlanesAccionController{},
 			),
 		),
+		beego.NSNamespace("/formulacion_iniciativas",
+			beego.NSInclude(
+				&controllers.FormulacionIniciativasController{},
+			),
+		),
 	)
 	beego.AddNamespace(ns)
 }
