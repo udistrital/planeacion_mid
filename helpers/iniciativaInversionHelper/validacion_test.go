@@ -37,6 +37,14 @@ func TestLasAlternativasExigenUnaFilaPorCadaObjetivoEspecifico(t *testing.T) {
 	exigirError(t, errores, "actividades_por_objetivo", "Fortalecer los componentes tecnológicos según")
 }
 
+func TestCadaObjetivoDeLasAlternativasExigeSuDescripcion(t *testing.T) {
+	iniciativa := iniciativaDeEjemplo(t)
+	delete(filaConID(t, filasEn(t, iniciativa["alternativas"], "actividades_por_objetivo"), "ao-2"), "descripcion_alternativa")
+
+	errores := validarIniciativa(t, definicionDePrueba(t), iniciativa)["alternativas"]
+	exigirError(t, errores, "actividades_por_objetivo[ao-2].descripcion_alternativa", "es obligatorio")
+}
+
 func TestLasAlternativasRechazanFilasDeObjetivosQueYaNoExisten(t *testing.T) {
 	iniciativa := iniciativaDeEjemplo(t)
 	filaConID(t, filasEn(t, iniciativa["alternativas"], "actividades_por_objetivo"), "ao-3")["origen"] = "oe-9"

@@ -692,19 +692,21 @@
       {
         "id": "ao-1",
         "origen": "oe-1",
-        "actividades": "Adquisición de equipos, componentes y demás sistemas para la dotación de infraestructura tecnológica e implementación de las soluciones."
+        "actividades": "Adquisición de equipos, componentes y demás sistemas para la dotación de infraestructura tecnológica e implementación de las soluciones.",
+        "descripcion_alternativa": "Fortalecer los componentes tecnológicos para lograr la Transformación Digital en la institución, especialmente en los procesos respaldados por las áreas de tecnología."
       },
       {
         "id": "ao-2",
         "origen": "oe-2",
-        "actividades": "Desarrollar herramientas digitales enfocadas en el aprovechamiento de las TIC en los procesos académicos y garantizar la renovación de las licencias para la virtualización de contenidos."
+        "actividades": "Desarrollar herramientas digitales enfocadas en el aprovechamiento de las TIC en los procesos académicos y garantizar la renovación de las licencias para la virtualización de contenidos.",
+        "descripcion_alternativa": "Fortalecer los componentes tecnológicos para lograr la Transformación Digital en la institución, especialmente en los procesos respaldados por las áreas de tecnología."
       },
       {
         "id": "ao-3",
         "origen": "oe-3",
-        "actividades": "Definir el alcance del marco de gestión de la información, incluidos los tipos de información a gestionar, los procesos involucrados y las partes interesadas."
+        "actividades": "Definir el alcance del marco de gestión de la información, incluidos los tipos de información a gestionar, los procesos involucrados y las partes interesadas.",
+        "descripcion_alternativa": "Fortalecer los componentes tecnológicos para lograr la Transformación Digital en la institución, especialmente en los procesos respaldados por las áreas de tecnología."
       }
-    ],
-    "descripcion_alternativa": "Fortalecer los componentes tecnológicos para lograr la Transformación Digital en la institución, especialmente en los procesos respaldados por las áreas de tecnología."
+    ]
   }
 }

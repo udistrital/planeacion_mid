@@ -1,5 +1,5 @@
 {
-  "version": "Iniciativas de Inversión v1.0",
+  "version": "Iniciativas de Inversión v1.1",
   "tipo_plan": {
     "codigo_abreviacion": "IPI_SP"
   },
@@ -400,7 +400,7 @@
             },
             {
               "nombre": "Objetivos específicos",
-              "descripcion": "Objetivos específicos del proyecto. Tenga en cuenta las causas directas de la Problemática al redactarlos.",
+              "descripcion": "Objetivos específicos del proyecto.",
               "dato": { "clave": "objetivos_especificos", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Objetivo específico" },
               "hijos": [
                 {
@@ -415,7 +415,7 @@
                 },
                 {
                   "nombre": "Medios",
-                  "descripcion": "Medios para lograr el objetivo específico. Tenga en cuenta las causas indirectas de la Problemática.",
+                  "descripcion": "Medios para lograr el objetivo específico.",
                   "dato": { "clave": "medios", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Medio" },
                   "hijos": [
                     {
@@ -434,7 +434,7 @@
             },
             {
               "nombre": "Resultados esperados",
-              "descripcion": "Resultados esperados del proyecto. Tenga en cuenta los efectos directos de la Problemática al redactarlos.",
+              "descripcion": "Resultados esperados del proyecto.",
               "dato": { "clave": "resultados_esperados", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Resultado esperado" },
               "hijos": [
                 {
@@ -449,7 +449,7 @@
                 },
                 {
                   "nombre": "Impactos esperados",
-                  "descripcion": "Impactos que se derivan de este resultado. Tenga en cuenta los efectos indirectos de la Problemática.",
+                  "descripcion": "Impactos que se derivan de este resultado.",
                   "dato": { "clave": "impactos", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Impacto esperado" },
                   "hijos": [
                     {
@@ -470,7 +470,7 @@
         },
         {
           "nombre": "Alternativas de solución",
-          "descripcion": "Actividades por objetivo específico y descripción de la alternativa.",
+          "descripcion": "Actividades y descripción de la alternativa por cada objetivo específico.",
           "dato": { "clave": "alternativas" },
           "hijos": [
             {
@@ -489,13 +489,13 @@
                   "nombre": "Actividades",
                   "descripcion": "Actividades con las que se cumple el objetivo específico.",
                   "dato": { "clave": "actividades", "type": "input", "required": "true", "multilinea": true }
+                },
+                {
+                  "nombre": "Descripción de la alternativa de solución",
+                  "descripcion": "Descripción de la alternativa de solución para este objetivo específico.",
+                  "dato": { "clave": "descripcion_alternativa", "type": "input", "required": "true", "multilinea": true }
                 }
               ]
-            },
-            {
-              "nombre": "Descripción de la alternativa de solución",
-              "descripcion": "Descripción general de la alternativa seleccionada.",
-              "dato": { "clave": "descripcion_alternativa", "type": "input", "required": "true", "multilinea": true }
             }
           ]
         }
