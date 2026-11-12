@@ -506,8 +506,32 @@ func (c *ReportesController) PlanAccionAnualGeneral() {
 
 	nombre := c.Ctx.Input.Param(":nombre")
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",nombre:"+nombre+"&fields=_id,dependencia_id,estado_plan_id,tipo_plan_id", &respuesta); err == nil {
+	ctx := c.Ctx.Request.Context()
+	_, err := request.GetWithContext(ctx, "http://"+beego.AppConfig.String("PlanesService")+"/plan?query=activo:true,tipo_plan_id:"+body["tipo_plan_id"].(string)+",vigencia:"+body["vigencia"].(string)+",estado_plan_id:"+body["estado_plan_id"].(string)+",nombre:"+nombre+"&fields=_id,dependencia_id,estado_plan_id,tipo_plan_id", &respuesta)
+	if err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planesFilter)
+
+		if dependenciasRaw, existeFiltro := body["dependencias_ids"]; existeFiltro {
+			dependencias, formatoValido := dependenciasRaw.([]interface{})
+			if !formatoValido {
+				panic(map[string]interface{}{"funcion": "PlanAccionAnualGeneral", "err": "El filtro dependencias_ids debe ser un arreglo", "status": "400"})
+			}
+
+			dependenciasIDs := make([]string, 0, len(dependencias))
+			for _, dependencia := range dependencias {
+				dependenciaID, ok := dependencia.(string)
+				if !ok || dependenciaID == "" {
+					continue
+				}
+				dependenciasIDs = append(dependenciasIDs, dependenciaID)
+			}
+			planesFilter = reporteshelper.FiltrarPlanesPorDependencias(planesFilter, dependenciasIDs)
+		}
+
+		if len(planesFilter) == 0 {
+			panic(map[string]interface{}{"funcion": "PlanAccionAnualGeneral", "err": "No hay dependencias disponibles para los filtros seleccionados", "status": "404"})
+		}
+
 		reporteGenerado, arregloInfoReportes, errorReporte := reporteshelper.ConstruirExcelPlanAccionGeneral(planesFilter, body)
 
 		if errorReporte != nil {

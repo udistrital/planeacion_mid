@@ -139,7 +139,6 @@ func (c *SeguimientoController) AvalarPlan() {
 	var plan map[string]interface{}
 	plan_id := c.Ctx.Input.Param(":idPlan")
 	id_estado_avalado := "6153355601c7a2365b2fb2a1"
-	id_estado_preaval := "614d3b4401c7a222052fac05"
 
 	// Get plan
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+plan_id, &resPlan); err != nil {
@@ -150,25 +149,9 @@ func (c *SeguimientoController) AvalarPlan() {
 	}
 	helpers.LimpiezaRespuestaRefactor(resPlan, &plan)
 
-	// Cambiar estado plan a avalado
-	respuesta, err := seguimientohelper.CambiarEstadoPlan(plan, id_estado_avalado)
-	if err != nil {
-		panic(err)
-	}
-	if respuesta["Success"] == false {
-		panic(map[string]interface{}{"funcion": "AvalarPlan", "err": respuesta["Message"], "status": "400"})
-	}
-
 	// Obtener trimestres de la vigencia
 	trimestres, err := seguimientohelper.ObtenerTrimestres(plan["vigencia"].(string))
 	if err != nil {
-		respuesta, err := seguimientohelper.CambiarEstadoPlan(plan, id_estado_preaval)
-		if err != nil {
-			panic(map[string]interface{}{"funcion": "AvalarPlan", "err": err, "status": "400"})
-		}
-		if respuesta["Success"] == false {
-			panic(map[string]interface{}{"funcion": "AvalarPlan", "err": respuesta["Message"], "status": "400"})
-		}
 		panic(map[string]interface{}{"funcion": "AvalarPlan", "err": "Error al obtener trimestres", "status": "400"})
 	}
 
@@ -352,13 +335,6 @@ func (c *SeguimientoController) AvalarPlan() {
 				}
 
 				if respuestaRegistro["Data"] == nil {
-					respuesta, err := seguimientohelper.CambiarEstadoPlan(plan, id_estado_preaval)
-					if err != nil {
-						panic(map[string]interface{}{"funcion": "AvalarPlan", "err": err, "status": "400"})
-					}
-					if respuesta["Success"] == false {
-						panic(map[string]interface{}{"funcion": "AvalarPlan", "err": respuesta["Message"], "status": "400"})
-					}
 					panic(map[string]interface{}{"funcion": "CrearReportes", "err": "No se encontró el periodo-seguimiento", "status": "400"})
 				}
 
@@ -426,6 +402,19 @@ func (c *SeguimientoController) AvalarPlan() {
 				respuestaPost = nil
 			}
 		}
+	}
+
+	if len(arrReportes) == 0 {
+		panic(map[string]interface{}{"funcion": "AvalarPlan", "err": "No se crearon reportes de seguimiento", "status": "400"})
+	}
+
+	// El plan queda avalado solo cuando ya existen reportes de seguimiento.
+	respuesta, err := seguimientohelper.CambiarEstadoPlan(plan, id_estado_avalado)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "AvalarPlan", "err": err, "status": "400"})
+	}
+	if respuesta["Success"] != true {
+		panic(map[string]interface{}{"funcion": "AvalarPlan", "err": respuesta["Message"], "status": "400"})
 	}
 
 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": arrReportes}
