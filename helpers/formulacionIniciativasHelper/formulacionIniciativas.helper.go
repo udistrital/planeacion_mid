@@ -3,9 +3,11 @@ package formulacionIniciativasHelper
 import (
 	"encoding/json"
 	"time"
+	"fmt"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/helpers"
+	"github.com/udistrital/utils_oas/request"
 )
 
 func DefinirFechasIniciativasFormulacion(body map[string]interface{}) []interface{} {
@@ -80,6 +82,75 @@ func DefinirFechasIniciativasFormulacion(body map[string]interface{}) []interfac
 		panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Error en la peticion", "status": "400", "log": err})
 	}
 	return respuestasAcumuladas
+}
+
+func ValidarFechasIniciativasFormulacion(body map[string]interface{}) map[string]interface{} {
+	var resFechas map[string]interface{}
+	var resTipoSeguimiento map[string]interface{}
+	var fechas []map[string]interface{}
+	var tipoSeguimiento []map[string]interface{}
+	respuesta := map[string]interface{}{"unidadEncontrada": false, "habilitado": false}
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-seguimiento/?query=codigo_abreviacion:FIPI_SP", &resTipoSeguimiento); err != nil {
+		panic(map[string]interface{}{"funcion": "ValidarFechasIniciativasFormulacion", "err": "Error al obtener el tipo de seguimiento", "status": "400", "log": err})
+	}
+	helpers.LimpiezaRespuestaRefactor(resTipoSeguimiento, &tipoSeguimiento)
+	if len(tipoSeguimiento) == 0 {
+		panic(map[string]interface{}{"funcion": "ValidarFechasIniciativasFormulacion", "err": "No se encontró el tipo de seguimiento", "status": "404"})
+	}
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/?query=tipo_seguimiento_id:"+tipoSeguimiento[0]["_id"].(string)+",activo:true", &resFechas); err != nil {
+		panic(map[string]interface{}{"funcion": "ValidarFechasIniciativasFormulacion", "err": "Error al obtener las fechas", "status": "400", "log": err})
+	}
+	helpers.LimpiezaRespuestaRefactor(resFechas, &fechas)
+	if len(fechas) == 0 {
+		panic(map[string]interface{}{"funcion": "ValidarFechasIniciativasFormulacion", "err": "No hay periodos activos", "status": "404"})
+	}
+
+	unidadesFechas, err := ObtenerArrayUnidadesInteres(fechas[0])
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "ValidarFechasIniciativasFormulacion", "err": "Error en la decodificación JSON", "status": "400"})
+	}
+
+	// 1. Validar que la unidad esté; si no, se descarta todo el proceso
+	unidadEncontrada := false
+	for _, unidad := range unidadesFechas {
+		if fmt.Sprint(body["dependenciaId"]) == fmt.Sprint(unidad["Id"]) {
+			unidadEncontrada = true
+			break
+		}
+	}
+	if !unidadEncontrada {
+		return respuesta
+	}
+	respuesta["unidadEncontrada"] = true
+
+	// 2. Comparar la fecha de hoy con el rango
+	bogota := time.FixedZone("COT", -5*60*60)
+	ahora := time.Now().In(bogota)
+	hoy := time.Date(ahora.Year(), ahora.Month(), ahora.Day(), 0, 0, 0, 0, bogota)
+
+	inicio, err := parseFecha(fmt.Sprint(fechas[0]["fecha_inicio"]), bogota)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "ValidarFechasIniciativasFormulacion", "err": "fecha_inicio inválida", "status": "400", "log": err})
+	}
+	fin, err := parseFecha(fmt.Sprint(fechas[0]["fecha_fin"]), bogota)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "ValidarFechasIniciativasFormulacion", "err": "fecha_fin inválida", "status": "400", "log": err})
+	}
+
+	// Inclusivo: hoy >= inicio y hoy <= fin
+	respuesta["habilitado"] = !hoy.Before(inicio) && !hoy.After(fin)
+
+	return respuesta
+}
+
+// Toma solo la parte YYYY-MM-DD para comparar por día y evitar desfases de zona horaria
+func parseFecha(valor string, loc *time.Location) (time.Time, error) {
+	if len(valor) < 10 {
+		return time.Time{}, fmt.Errorf("fecha inválida: %q", valor)
+	}
+	return time.ParseInLocation("2006-01-02", valor[:10], loc)
 }
 
 func manejarUnidades(body map[string]interface{}, registro map[string]interface{}, caso int) map[string]interface{} {
