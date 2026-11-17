@@ -1945,9 +1945,20 @@ func (c *FormulacionController) Planes() {
 	var plan map[string]interface{}
 	var arregloPlanes []map[string]interface{}
 	var auxArregloPlanes []map[string]interface{}
+	const tipoPlanExcluido = "6af545fd0e872508973601a4"
 
 	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=formato:true", &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planes)
+
+		// Excluir planes del tipo indicado
+		planesFiltrados := make([]map[string]interface{}, 0, len(planes))
+		for _, p := range planes {
+			if id, ok := p["tipo_plan_id"].(string); ok && id == tipoPlanExcluido {
+				continue
+			}
+			planesFiltrados = append(planesFiltrados, p)
+		}
+		planes = planesFiltrados
 
 		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=tipo_plan_id:6239117116511e20405d408b", &respuesta); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &planesPI)
