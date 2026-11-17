@@ -52,10 +52,11 @@ func NuevoValidador(catalogos ProveedorCatalogos) *Validador {
 		TipoNumerico:   validarNumerico,
 		TipoSelect:     validarSelect,
 		TipoCatalogo:   validarCatalogo,
-		TipoCalculado:  validarTexto, // ya calculado (o escrito, si es editable): se valida como texto
+		TipoCalculado:  validarCalculado,
 		TipoRepetible:  validarRepetible,
 		TipoReferencia: validarReferencia,
 		TipoMatriz:     validarMatriz,
+		TipoCasilla:    validarCasilla,
 	}
 	return v
 }
@@ -93,7 +94,7 @@ func (e *ejecucion) objeto(nodos []*Nodo, valores Datos, ruta string, padre alca
 	actual := alcance{hermanos: valores, campos: nodos, filaOrigen: padre.filaOrigen}
 	for _, nodo := range nodos {
 		clave := nodo.Clave()
-		if clave == "" {
+		if clave == "" || !nodo.visible(valores) {
 			continue
 		}
 		valor := valores[clave]
@@ -165,6 +166,37 @@ func revisarNumero(numero float64, dato Dato) string {
 	return ""
 }
 
+// validarCalculado: el valor ya lo resolvió el normalizador. El de texto (o el escrito, si es
+// editable) se valida como texto; el numérico solo exige que la operación esté bien definida.
+func validarCalculado(e *ejecucion, nodo *Nodo, valor interface{}, existe bool, ruta string, alcance alcance) {
+	if nodo.Dato.Desde != "" {
+		return // solo muestra un valor de otro submódulo; no se guarda
+	}
+	if nodo.Dato.Operacion == "" {
+		validarTexto(e, nodo, valor, existe, ruta, alcance)
+		return
+	}
+	if !operacionValida(nodo.Dato) {
+		e.malConfigurado(nodo, ruta, "la operación %q con %d operandos no está soportada", nodo.Dato.Operacion, len(nodo.Dato.Operandos))
+		return
+	}
+	if !existe {
+		e.faltaObligatorio(nodo, ruta)
+	}
+}
+
+// validarCasilla: marcada (true) o sin marcar (false o ausente). Si es obligatoria debe quedar
+// marcada, salvo con unica: entonces lo obligatorio es marcarla en una fila de la lista (casillasUnicas).
+func validarCasilla(e *ejecucion, nodo *Nodo, valor interface{}, existe bool, ruta string, _ alcance) {
+	marcada, esBooleano := valor.(bool)
+	switch {
+	case existe && !esBooleano:
+		e.agregar(ruta, "%s: debe quedar marcada o sin marcar.", nodo.Nombre)
+	case !marcada && !nodo.Dato.Unica:
+		e.faltaObligatorio(nodo, ruta)
+	}
+}
+
 func validarSelect(e *ejecucion, nodo *Nodo, valor interface{}, existe bool, ruta string, _ alcance) {
 	texto, esTexto := comoTexto(valor)
 	if !existe || (esTexto && texto == "") {
@@ -180,6 +212,10 @@ func validarSelect(e *ejecucion, nodo *Nodo, valor interface{}, existe bool, rut
 }
 
 func validarCatalogo(e *ejecucion, nodo *Nodo, valor interface{}, existe bool, ruta string, alcance alcance) {
+	if nodo.Dato.Multiple {
+		e.catalogoMultiple(nodo, valor, existe, ruta)
+		return
+	}
 	codigo, esTexto := comoTexto(valor)
 	if !existe || (esTexto && codigo == "") {
 		e.faltaObligatorio(nodo, ruta)
@@ -208,6 +244,44 @@ func validarCatalogo(e *ejecucion, nodo *Nodo, valor interface{}, existe bool, r
 		e.agregar(ruta, "%s: primero seleccione %s.", nodo.Nombre, alcance.campoHermano(nodo.Dato.DependeDe))
 	} else if item.Padre != padre {
 		e.agregar(ruta, "%s: «%s» no pertenece a la opción seleccionada en %s.", nodo.Nombre, item.Nombre, alcance.campoHermano(nodo.Dato.DependeDe))
+	}
+}
+
+// catalogoMultiple valida un catálogo con multiple: una lista de códigos sin repetir, todos del
+// catálogo (p. ej. las sedes marcadas). Si es obligatorio, al menos uno.
+func (e *ejecucion) catalogoMultiple(nodo *Nodo, valor interface{}, existe bool, ruta string) {
+	lista, esLista := comoLista(valor)
+	switch {
+	case existe && !esLista:
+		e.agregar(ruta, "%s: debe ser una lista de opciones.", nodo.Nombre)
+		return
+	case nodo.Dato.DependeDe != "":
+		e.malConfigurado(nodo, ruta, "un catálogo multiple no admite depende_de")
+		return
+	case len(lista) == 0:
+		e.faltaObligatorio(nodo, ruta)
+		return
+	}
+	catalogo, err := e.validador.catalogos.Catalogo(nodo.Dato.Catalogo)
+	if err != nil {
+		logs.Warn("iniciativaInversion: no se pudo consultar el catálogo %s para %s: %v", nodo.Dato.Catalogo, ruta, err)
+		e.agregar(ruta, "%s: no se pudieron consultar las opciones del campo. Intente de nuevo más tarde.", nodo.Nombre)
+		return
+	}
+	vistos := map[string]bool{}
+	for _, elemento := range lista {
+		codigo, esTexto := comoTexto(elemento)
+		switch {
+		case !esTexto || codigo == "":
+			e.agregar(ruta, "%s: hay una opción vacía o inválida.", nodo.Nombre)
+		case vistos[codigo]:
+			e.agregar(ruta, "%s: «%s» está marcada dos veces.", nodo.Nombre, codigo)
+		default:
+			if _, existeItem := catalogo.Buscar(codigo); !existeItem {
+				e.agregar(ruta, "%s: «%s» ya no está en la lista; desmárquela.", nodo.Nombre, codigo)
+			}
+		}
+		vistos[codigo] = true
 	}
 }
 
@@ -254,6 +328,7 @@ func validarRepetible(e *ejecucion, nodo *Nodo, valor interface{}, existe bool, 
 		return
 	}
 	filas := e.filasValidas(nodo, lista, ruta)
+	e.casillasUnicas(nodo, filas, ruta)
 	if nodo.EsEspejo() {
 		e.espejo(nodo, filas, ruta)
 		return
@@ -263,6 +338,28 @@ func validarRepetible(e *ejecucion, nodo *Nodo, valor interface{}, existe bool, 
 		e.objeto(nodo.Hijos, fila, rutaFila(ruta, idDe(fila)), padre)
 	}
 	e.cobertura(nodo, filas, ruta, padre)
+}
+
+// casillasUnicas exige que cada casilla con unica quede marcada en una sola fila de la lista
+// (p. ej. la alternativa que pasa al módulo de Preparación); si es obligatoria, en exactamente una.
+func (e *ejecucion) casillasUnicas(nodo *Nodo, filas []Datos, ruta string) {
+	for _, hijo := range nodo.Hijos {
+		if hijo.Dato.Tipo != TipoCasilla || !hijo.Dato.Unica {
+			continue
+		}
+		marcadas := 0
+		for _, fila := range filas {
+			if marcada, _ := fila[hijo.Clave()].(bool); marcada {
+				marcadas++
+			}
+		}
+		switch {
+		case marcadas > 1:
+			e.agregar(ruta, "%s: la casilla «%s» solo se puede marcar en una fila; está marcada en %d.", nodo.Nombre, hijo.Nombre, marcadas)
+		case marcadas == 0 && len(filas) > 0 && bool(hijo.Dato.Requerido):
+			e.agregar(ruta, "%s: marque la casilla «%s» en una de las filas.", nodo.Nombre, hijo.Nombre)
+		}
+	}
 }
 
 // filasValidas descarta (y reporta) los elementos que no son objetos o que no
@@ -348,6 +445,10 @@ func (e *ejecucion) espejo(nodo *Nodo, filas []Datos, ruta string) {
 
 func validarReferencia(e *ejecucion, nodo *Nodo, valor interface{}, existe bool, ruta string, alcance alcance) {
 	ids := idsReferenciados(valor)
+	if nodo.Dato.MarcadaEn != "" {
+		e.referenciaMarcada(nodo, ids, ruta, alcance)
+		return
+	}
 	if !existe || len(ids) == 0 {
 		e.faltaObligatorio(nodo, ruta)
 		return
@@ -366,6 +467,27 @@ func validarReferencia(e *ejecucion, nodo *Nodo, valor interface{}, existe bool,
 			e.agregar(ruta, "%s: la opción seleccionada no es válida aquí (puede haber sido eliminada).", nodo.Nombre)
 			return
 		}
+	}
+}
+
+// referenciaMarcada valida una referencia con marcada_en: su única opción es la fila marcada en
+// esa casilla del grupo de origen (p. ej. la alternativa que pasa al módulo de Preparación). El
+// cliente la llena sola; si después se marca otra fila, el submódulo se debe revisar y guardar.
+func (e *ejecucion) referenciaMarcada(nodo *Nodo, ids []string, ruta string, alcance alcance) {
+	opciones, err := e.opcionesDe(nodo, alcance)
+	if err != "" {
+		e.malConfigurado(nodo, ruta, "opciones_desde: %s", err)
+		return
+	}
+	switch {
+	case len(opciones) == 0:
+		if nodo.Dato.Requerido {
+			e.agregar(ruta, "%s: aún no se ha marcado cuál pasa; márquela primero en el submódulo de donde se trae.", nodo.Nombre)
+		}
+	case len(ids) == 0:
+		e.faltaObligatorio(nodo, ruta)
+	case len(ids) > 1 || opciones[ids[0]] == nil:
+		e.agregar(ruta, "%s: se marcó otra en el submódulo de donde se trae; revise este submódulo y guárdelo de nuevo.", nodo.Nombre)
 	}
 }
 
@@ -430,23 +552,49 @@ func (e *ejecucion) opcionesDe(nodo *Nodo, alcance alcance) (map[string]Datos, s
 }
 
 // listaDeOpciones resuelve opciones_desde: "origen.<grupo>" (dentro de la fila de
-// origen del espejo) o "<submodulo>.<grupo>".
+// origen del espejo) o "<submodulo>.<grupo>". Con marcada_en, solo las filas que
+// tienen marcada esa casilla.
 func (e *ejecucion) listaDeOpciones(nodo *Nodo, alcance alcance) ([]Datos, string) {
 	desde := nodo.Dato.OpcionesDesde
+	var filas []Datos
 	if strings.HasPrefix(desde, prefijoOrigen) {
 		if alcance.filaOrigen == nil {
 			return nil, "la referencia " + desde + " solo se puede usar dentro de un grupo espejo."
 		}
-		return filasDe(alcance.filaOrigen[strings.TrimPrefix(desde, prefijoOrigen)]), ""
+		filas = filasDe(alcance.filaOrigen[strings.TrimPrefix(desde, prefijoOrigen)])
+	} else {
+		var err string
+		if filas, err = e.filasDeRuta(desde); err != "" {
+			return nil, err
+		}
 	}
-	return e.filasDeRuta(desde)
+	if nodo.Dato.MarcadaEn == "" {
+		return filas, ""
+	}
+	marcadas := []Datos{}
+	for _, fila := range filas {
+		if marcada, _ := fila[nodo.Dato.MarcadaEn].(bool); marcada {
+			marcadas = append(marcadas, fila)
+		}
+	}
+	return marcadas, ""
 }
 
 // filasDeRuta devuelve las filas de "<submodulo>.<grupo>" en los datos de la iniciativa.
+// La ruta puede seguir por grupos anidados ("<submodulo>.<grupo>.<subgrupo>"): entonces
+// devuelve, en orden, las filas de <subgrupo> de todas las filas de <grupo>.
 func (e *ejecucion) filasDeRuta(ruta string) ([]Datos, string) {
 	partes := strings.Split(ruta, ".")
-	if len(partes) != 2 {
+	if len(partes) < 2 || strings.Contains(ruta, "..") || strings.HasSuffix(ruta, ".") {
 		return nil, fmt.Sprintf("la ruta %q no es válida (se espera submodulo.grupo).", ruta)
 	}
-	return filasDe(e.iniciativa[partes[0]][partes[1]]), ""
+	filas := filasDe(e.iniciativa[partes[0]][partes[1]])
+	for _, clave := range partes[2:] {
+		anidadas := []Datos{}
+		for _, fila := range filas {
+			anidadas = append(anidadas, filasDe(fila[clave])...)
+		}
+		filas = anidadas
+	}
+	return filas, ""
 }

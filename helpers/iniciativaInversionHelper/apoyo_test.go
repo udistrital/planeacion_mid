@@ -8,8 +8,8 @@ import (
 )
 
 // Datos de prueba:
-//   - testdata/identificacion.plantilla.json: copia de la construcción de
-//     database local/construccion-proyecto-inversion/identificacion.plantilla.json
+//   - testdata/iniciativa.plantilla.json: copia de la construcción de
+//     database local/construccion-proyecto-inversion/iniciativa.plantilla.json
 //   - testdata/iniciativa_ejemplo.json: la iniciativa de ejemplo del Excel (OATI), sin
 //     errores. Las matrices de población van en 0 porque el Excel no trae cifras.
 
@@ -17,7 +17,7 @@ const tipoPlanDePrueba = "tipo-iniciativa"
 
 func definicionDePrueba(t *testing.T) *Definicion {
 	t.Helper()
-	contenido, err := os.ReadFile("testdata/identificacion.plantilla.json")
+	contenido, err := os.ReadFile("testdata/iniciativa.plantilla.json")
 	if err != nil {
 		t.Fatal(err)
 	}
