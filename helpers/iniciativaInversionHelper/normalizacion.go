@@ -1,6 +1,7 @@
 package iniciativaInversionHelper
 
 import (
+	"math"
 	"regexp"
 	"strings"
 )
@@ -43,13 +44,70 @@ func (n *Normalizador) objeto(nodos []*Nodo, datos Datos) Datos {
 			salida[clave] = limpiarEscalar(valor)
 		}
 	}
-	// Los calculados van al final porque usan los valores ya limpios de sus hermanos.
+	// Lo que no aplica (solo_si) no se guarda: p. ej. el texto de «Otra» si se desmarcó.
 	for _, nodo := range nodos {
-		if nodo.Dato.Tipo == TipoCalculado && nodo.Clave() != "" {
+		if !nodo.visible(salida) {
+			delete(salida, nodo.Clave())
+		}
+	}
+	// Los calculados van al final porque usan los valores ya limpios de sus hermanos. Los que
+	// traen un valor de otro submódulo (desde) solo se muestran: no se guardan.
+	for _, nodo := range nodos {
+		if nodo.Dato.Tipo != TipoCalculado || nodo.Clave() == "" || nodo.Dato.Desde != "" {
+			continue
+		}
+		if nodo.Dato.Operacion == "" {
 			salida[nodo.Clave()] = n.valorCalculado(nodo, nodos, salida, datos[nodo.Clave()])
+		} else if resultado, ok := operar(nodo.Dato, salida); ok {
+			salida[nodo.Clave()] = resultado
 		}
 	}
 	return salida
+}
+
+// operar resuelve un calculado numérico con los valores de sus hermanos. Sin resultado (el
+// campo queda sin valor) si la operación no existe, si en una resta o una multiplicación
+// falta algún operando o si en una suma están todos vacíos.
+func operar(dato Dato, valores Datos) (float64, bool) {
+	if !operacionValida(dato) {
+		return 0, false
+	}
+	resultado, hayAlguno := 0.0, false
+	for _, clave := range dato.Operandos {
+		numero, esNumero := comoNumero(valores[clave])
+		if !esNumero {
+			if dato.Operacion == OperacionSuma {
+				continue // en la suma, vacío = 0
+			}
+			return 0, false
+		}
+		switch {
+		case !hayAlguno:
+			resultado = numero
+		case dato.Operacion == OperacionResta:
+			resultado -= numero
+		case dato.Operacion == OperacionMultiplicacion:
+			resultado *= numero
+		default:
+			resultado += numero
+		}
+		hayAlguno = true
+	}
+	if !hayAlguno {
+		return 0, false
+	}
+	return redondear(resultado, dato.Decimales), true
+}
+
+// redondear quita el ruido del punto flotante (0,3 - 0,1 = 0,19999…): a los decimales
+// del campo o, si no los define, a nueve.
+func redondear(numero float64, decimales *int) float64 {
+	cifras := 9
+	if decimales != nil {
+		cifras = *decimales
+	}
+	escala := math.Pow(10, float64(cifras))
+	return math.Round(numero*escala) / escala
 }
 
 // valorCalculado respeta lo que escribió el usuario si el campo es editable;

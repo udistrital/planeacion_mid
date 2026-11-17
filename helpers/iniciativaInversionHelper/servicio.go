@@ -539,13 +539,13 @@ func (s *Servicio) vista(documento SubmoduloIniciativa, errores []ErrorCampo) (*
 }
 
 // dependenciasDe devuelve los submódulos de los que lee datos un submódulo
-// (por espejo_de u opciones_desde absolutos).
+// (por espejo_de, opciones_desde absolutos o un calculado con desde).
 func dependenciasDe(submodulo *Nodo) map[string]bool {
 	dependencias := map[string]bool{}
 	var recorrer func(nodos []*Nodo)
 	recorrer = func(nodos []*Nodo) {
 		for _, nodo := range nodos {
-			for _, ruta := range []string{nodo.Dato.EspejoDe, nodo.Dato.OpcionesDesde} {
+			for _, ruta := range []string{nodo.Dato.EspejoDe, nodo.Dato.OpcionesDesde, nodo.Dato.Desde} {
 				if ruta == "" || strings.HasPrefix(ruta, prefijoOrigen) {
 					continue
 				}

@@ -16,7 +16,30 @@ const (
 	TipoRepetible  = "repetible"
 	TipoReferencia = "referencia"
 	TipoMatriz     = "matriz"
+	TipoCasilla    = "casilla"
 )
+
+// Operaciones de un calculado numérico.
+const (
+	// OperacionResta: el primer operando menos los demás (p. ej. el déficit: oferta - demanda).
+	// Si falta algún operando, no hay resultado.
+	OperacionResta = "resta"
+	// OperacionSuma: la suma de los operandos; los vacíos cuentan como 0 (p. ej. el costo total
+	// de una actividad: la suma de sus periodos). Si todos están vacíos, no hay resultado.
+	OperacionSuma = "suma"
+	// OperacionMultiplicacion: el producto de los operandos (p. ej. el valor total de un año en
+	// Ingresos y beneficios: cantidad × valor unitario). Si falta algún operando, no hay resultado.
+	OperacionMultiplicacion = "multiplicacion"
+)
+
+// operacionValida indica si el calculado numérico está bien definido.
+func operacionValida(dato Dato) bool {
+	switch dato.Operacion {
+	case OperacionResta, OperacionSuma, OperacionMultiplicacion:
+		return len(dato.Operandos) >= 2
+	}
+	return false
+}
 
 // prefijoOrigen indica, en opciones_desde, que las opciones salen de la fila de
 // origen del espejo más cercano (p. ej. "origen.causas_indirectas").
@@ -101,6 +124,9 @@ type Dato struct {
 	Catalogo       string          `json:"catalogo,omitempty"`
 	DependeDe      string          `json:"depende_de,omitempty"`
 	Plantilla      string          `json:"plantilla,omitempty"`
+	Operacion      string          `json:"operacion,omitempty"` // calculado numérico (OperacionResta, OperacionSuma, OperacionMultiplicacion); sin ella, el calculado es texto (plantilla)
+	Desde          string          `json:"desde,omitempty"`     // calculado que solo muestra "<submodulo>.<campo>" de otro submódulo; no se guarda
+	Operandos      []string        `json:"operandos,omitempty"` // claves de los campos hermanos, en orden
 	Transformar    string          `json:"transformar,omitempty"`
 	Editable       bool            `json:"editable,omitempty"`
 	NombrePlan     bool            `json:"nombre_plan,omitempty"`
@@ -108,12 +134,42 @@ type Dato struct {
 	EspejoDe       string          `json:"espejo_de,omitempty"`
 	Mostrar        string          `json:"mostrar,omitempty"`
 	OpcionesDesde  string          `json:"opciones_desde,omitempty"`
-	Multiple       bool            `json:"multiple,omitempty"`
+	MarcadaEn      string          `json:"marcada_en,omitempty"` // referencia a la fila marcada en esa casilla única (se llena sola)
+	Multiple       bool            `json:"multiple,omitempty"`   // referencia o catálogo con varias opciones (lista de ids o códigos)
+	SoloSi         *Condicion      `json:"solo_si,omitempty"`    // el campo se muestra, se exige y se guarda solo si se cumple
 	CubrirTodas    bool            `json:"cubrir_todas,omitempty"`
+	Unica          bool            `json:"unica,omitempty"` // casilla que se marca en una sola fila de su lista
 	TipoCelda      string          `json:"tipo_celda,omitempty"`
 	Totales        *Totales        `json:"totales,omitempty"`
 	Filas          []ElementoClave `json:"filas,omitempty"`
 	GruposColumnas []GrupoColumnas `json:"grupos_columnas,omitempty"`
+}
+
+// Condicion de solo_si: el campo hermano Campo vale Valor o, si es una lista (catálogo
+// multiple), lo incluye. P. ej. «¿Cuál otra sede?» solo si en las sedes se marcó «Otra».
+type Condicion struct {
+	Campo string `json:"campo"`
+	Valor string `json:"valor"`
+}
+
+// Cumple indica si la condición se cumple con los valores del mismo nivel.
+func (c *Condicion) Cumple(hermanos Datos) bool {
+	valor := hermanos[c.Campo]
+	if texto, esTexto := comoTexto(valor); esTexto {
+		return texto == c.Valor
+	}
+	lista, _ := comoLista(valor)
+	for _, elemento := range lista {
+		if texto, esTexto := comoTexto(elemento); esTexto && texto == c.Valor {
+			return true
+		}
+	}
+	return false
+}
+
+// visible indica si el nodo aplica con los valores de su nivel (sin solo_si, siempre).
+func (n *Nodo) visible(hermanos Datos) bool {
+	return n.Dato.SoloSi == nil || n.Dato.SoloSi.Cumple(hermanos)
 }
 
 // Booleano acepta true/false y también "true"/"false", como guarda el cliente.

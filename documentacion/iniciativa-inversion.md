@@ -14,7 +14,7 @@ Formulación de las iniciativas para proyectos de inversión a partir de plantil
 
 | Qué | Dónde (planes_crud) |
 |---|---|
-| Plantilla | `plan` con `formato: true` y `tipo_plan_id` = tipo `IPI_SP`; sus nodos en `subgrupo` / `subgrupo_detalle` (se carga con `database local/construccion-proyecto-inversion/cargar-construccion.js`). **Primer nivel = módulos** (`dato.modulo: true`: Identificación y, más adelante, Preparación, Evaluación y Programación). **Segundo nivel = submódulos (hojas)**, con clave única en toda la plantilla |
+| Plantilla | `plan` con `formato: true` y `tipo_plan_id` = tipo `IPI_SP`; sus nodos en `subgrupo` / `subgrupo_detalle` (se carga con `database local/construccion-proyecto-inversion/cargar-construccion.js`). **Primer nivel = módulos** (`dato.modulo: true`: Identificación, Preparación y Anexos; el mid no depende de cuántos haya). **Segundo nivel = submódulos (hojas)**, con clave única en toda la plantilla |
 | Iniciativa | `plan` de tipo `IPI_SP` con `formato: false`, `formato_id` = plantilla, `dependencia_id`, `estado_plan_id` (estado general) y, si se enviaron, `vigencia_aplica` (JSON de vigencias) |
 | Datos de cada submódulo | `submodulo_iniciativa`: un documento por iniciativa y submódulo, con `dato` (JSON legible armado con las claves de la plantilla), `observaciones`, `estado_submodulo_id` y `version` |
 
@@ -70,6 +70,8 @@ Todos responden `{ Success, Status, Message, Data }` con el **código HTTP real*
 1. **Normalizar:**
    - Se quitan las claves que no están en la plantilla y se recortan los textos.
    - Se recalculan los campos `calculado` y se ignora el valor que envíe el cliente. Excepción: si el campo es `editable` y el cliente envía un texto no vacío, se guarda ese texto (con la misma transformación, p. ej. mayúsculas). Así funciona el nombre de la iniciativa: el sistema lo propone y el usuario puede cambiarlo.
+   - Un `calculado` con `operacion` es numérico: `"operacion": "resta", "operandos": ["oferta", "demanda"]` guarda el primer campo hermano menos los demás (el déficit de Necesidades); si falta un operando, queda sin valor. `"operacion": "suma"` guarda la suma, con los vacíos en 0 (el costo total de cada actividad de Cadena de valor, de `periodo_0` a `periodo_4`); si todos están vacíos, queda sin valor. `"operacion": "multiplicacion"` guarda el producto (el valor total de cada año de Ingresos y beneficios: `cantidad` × `valor_unitario`); si falta un operando, queda sin valor.
+   - Un `calculado` con `desde: "<submodulo>.<campo>"` solo muestra ese valor de otro submódulo (el objetivo general en Cadena de valor): no se guarda ni se valida, y el submódulo de origen va en `relacionadas`.
 2. **Validar** según el tipo de campo:
    - Obligatorios y longitud máxima.
    - Mínimo y máximo, y decimales.
@@ -77,10 +79,13 @@ Todos responden `{ Success, Status, Message, Data }` con el **código HTTP real*
    - Códigos de catálogo y su `depende_de`.
    - Mínimo y máximo de filas, e `id` únicos.
    - Espejos: exactamente una fila por cada fila de origen.
-   - Referencias: solo filas válidas en su alcance.
+   - Referencias: solo filas válidas en su alcance. Con `marcada_en` (clave de una casilla única del grupo de origen), la única opción es la fila marcada: el cliente la llena sola y, si después se marca otra, el submódulo pide guardarse de nuevo (Análisis técnico con la alternativa que pasa a Preparación).
    - `cubrir_todas`: cada opción referenciada al menos una vez. La plantilla de Identificación no lo usa.
    - Matrices completas.
-3. **Revalidar los submódulos dependientes.** Si el submódulo cambiado hace inválido otro que depende de él, ese otro vuelve a "Sin formular". Por ejemplo, Alternativas al agregar un objetivo específico en Objetivos. Objetivos no depende de Problemática.
+   - Catálogos con `multiple`: lista de códigos del catálogo, sin repetir; el cliente los muestra como casillas (las sedes de Localización).
+   - `solo_si: { campo, valor }`: el campo solo se exige y se guarda si el campo hermano vale `valor` o, si es una lista, lo incluye («¿Cuál otra sede?» solo si se marcó «Otra»). Si no aplica, el normalizador lo descarta.
+   - Casillas (`casilla`): `true` o `false` (ausente = sin marcar). Con `unica`, se marca en una sola fila de su lista y, si es obligatoria, en exactamente una (la alternativa que pasa al módulo de Preparación).
+3. **Revalidar los submódulos dependientes.** Si el submódulo cambiado hace inválido otro que depende de él, ese otro vuelve a "Sin formular". Por ejemplo, Objetivos al agregar una causa directa en Problemática, o Análisis técnico al marcar otra alternativa.
 4. **Actualizar el nombre del plan** con el campo marcado con `nombre_plan` (el nombre de la iniciativa, propuesto o escrito por el usuario).
 
 Los errores llegan como `[{ ruta, mensaje }]`. La ruta usa el formato `causas_directas[cd-1].causas_indirectas[ci-2].descripcion`.

@@ -253,3 +253,254 @@ func TestCubrirTodasExigeReferenciarCadaOpcion(t *testing.T) {
 	exigirError(t, validador.ValidarSubmodulo(definicion.Submodulo("submodulo_destino"), datosConReferencias("h1")), "espejos[e1].acciones", "Hijo dos")
 	exigirSinErrores(t, "submodulo_destino", validador.ValidarSubmodulo(definicion.Submodulo("submodulo_destino"), datosConReferencias("h1", "h2")))
 }
+
+// ---------------------------------------------------------------------------
+// Casillas y calculados numéricos (Alternativas de solución y Necesidades)
+// ---------------------------------------------------------------------------
+
+func campoDePrueba(clave, tipo string, extra Dato, hijos ...*Nodo) *Nodo {
+	extra.Clave, extra.Tipo = clave, tipo
+	return &Nodo{Nombre: clave, Dato: extra, Hijos: hijos}
+}
+
+func submoduloAlternativas() *Nodo {
+	return &Nodo{Nombre: "Alternativas", Dato: Dato{Clave: "alternativas"}, Hijos: []*Nodo{
+		campoDePrueba("lista", TipoRepetible, Dato{Requerido: true},
+			campoDePrueba("descripcion", TipoTexto, Dato{Requerido: true}),
+			campoDePrueba("pasa", TipoCasilla, Dato{Requerido: true, Unica: true})),
+	}}
+}
+
+func alternativas(marcas ...interface{}) map[string]Datos {
+	filas := []interface{}{}
+	for i, marca := range marcas {
+		fila := map[string]interface{}{"id": "a" + string(rune('1'+i)), "descripcion": "Alternativa"}
+		if marca != nil {
+			fila["pasa"] = marca
+		}
+		filas = append(filas, fila)
+	}
+	return map[string]Datos{"alternativas": {"lista": filas}}
+}
+
+func TestUnaCasillaUnicaSeMarcaEnUnaSolaFila(t *testing.T) {
+	validador := NuevoValidador(catalogosDePrueba())
+	submodulo := submoduloAlternativas()
+
+	exigirError(t, validador.ValidarSubmodulo(submodulo, alternativas(nil, false)), "lista", "marque la casilla «pasa»")
+	exigirError(t, validador.ValidarSubmodulo(submodulo, alternativas(true, false, true)), "lista", "está marcada en 2")
+	exigirError(t, validador.ValidarSubmodulo(submodulo, alternativas("Sí", true)), "lista[a1].pasa", "marcada o sin marcar")
+	exigirSinErrores(t, "alternativas", validador.ValidarSubmodulo(submodulo, alternativas(nil, true, false)))
+}
+
+func TestUnaCasillaUnicaOpcionalPuedeQuedarSinMarcar(t *testing.T) {
+	submodulo := submoduloAlternativas()
+	submodulo.Hijos[0].Hijos[1].Dato.Requerido = false
+	validador := NuevoValidador(catalogosDePrueba())
+
+	exigirSinErrores(t, "alternativas", validador.ValidarSubmodulo(submodulo, alternativas(nil, false)))
+	exigirError(t, validador.ValidarSubmodulo(submodulo, alternativas(true, true)), "lista", "está marcada en 2")
+}
+
+// Análisis técnico trae la alternativa marcada en Alternativas de solución (referencia con marcada_en).
+func TestLaReferenciaMarcadaTomaLaFilaMarcadaEnElOrigen(t *testing.T) {
+	analisis := &Nodo{Nombre: "Análisis", Dato: Dato{Clave: "analisis"}, Hijos: []*Nodo{
+		campoDePrueba("alternativa", TipoReferencia, Dato{Requerido: true, OpcionesDesde: "alternativas.lista", Mostrar: "descripcion", MarcadaEn: "pasa"}),
+	}}
+	validador := NuevoValidador(catalogosDePrueba())
+	validar := func(datos map[string]Datos, alternativa interface{}) []ErrorCampo {
+		datos["analisis"] = Datos{}
+		if alternativa != nil {
+			datos["analisis"]["alternativa"] = alternativa
+		}
+		return validador.ValidarSubmodulo(analisis, datos)
+	}
+
+	exigirError(t, validar(alternativas(false, false), nil), "alternativa", "aún no se ha marcado")
+	exigirError(t, validar(alternativas(false, true), nil), "alternativa", "es obligatorio")
+	exigirError(t, validar(alternativas(false, true), "a1"), "alternativa", "se marcó otra")
+	exigirSinErrores(t, "analisis", validar(alternativas(false, true), "a2"))
+	if !dependenciasDe(analisis)["alternativas"] {
+		t.Fatal("el análisis debe depender de las alternativas para recibirlas en relacionadas")
+	}
+}
+
+// Localización: sedes marcadas de un catálogo (multiple) y «¿Cuál?» solo si se marcó «Otra»
+// (solo_si). Con el catálogo de procesos de prueba: «Adecuación» hace de «Otra».
+func submoduloSedes() *Nodo {
+	return &Nodo{Nombre: "Localización", Dato: Dato{Clave: "localizacion"}, Hijos: []*Nodo{
+		{Nombre: "Sedes", Dato: Dato{Clave: "sedes"}, Hijos: []*Nodo{
+			campoDePrueba("seleccionadas", TipoCatalogo, Dato{Requerido: true, Catalogo: "procesos", Multiple: true}),
+			campoDePrueba("otra", TipoTexto, Dato{Requerido: true, SoloSi: &Condicion{Campo: "seleccionadas", Valor: "Adecuación"}}),
+		}},
+	}}
+}
+
+func validarSedes(t *testing.T, sedes Datos) []ErrorCampo {
+	t.Helper()
+	submodulo := submoduloSedes()
+	catalogos := catalogosDePrueba()
+	datos := NuevoNormalizador(catalogos).Normalizar(submodulo, Datos{"sedes": sedes})
+	return NuevoValidador(catalogos).ValidarSubmodulo(submodulo, map[string]Datos{"localizacion": datos})
+}
+
+func TestLasSedesSonVariasOpcionesDelCatalogo(t *testing.T) {
+	exigirSinErrores(t, "localizacion", validarSedes(t, Datos{"seleccionadas": []interface{}{"Administración", "Ampliación"}}))
+	exigirError(t, validarSedes(t, Datos{"seleccionadas": []interface{}{}}), "sedes.seleccionadas", "es obligatorio")
+	exigirError(t, validarSedes(t, Datos{"seleccionadas": []interface{}{"Administración", "Administración"}}), "sedes.seleccionadas", "dos veces")
+	exigirError(t, validarSedes(t, Datos{"seleccionadas": []interface{}{"Sede inventada"}}), "sedes.seleccionadas", "ya no está en la lista")
+	exigirError(t, validarSedes(t, Datos{"seleccionadas": "Administración"}), "sedes.seleccionadas", "lista de opciones")
+}
+
+func TestCualOtraSedeSoloSeExigeYSeGuardaSiSeMarcoOtra(t *testing.T) {
+	exigirError(t, validarSedes(t, Datos{"seleccionadas": []interface{}{"Adecuación"}}), "sedes.otra", "es obligatorio")
+	exigirSinErrores(t, "localizacion", validarSedes(t, Datos{"seleccionadas": []interface{}{"Adecuación"}, "otra": "Sede Calle 40"}))
+
+	normalizado := NuevoNormalizador(catalogosDePrueba()).Normalizar(submoduloSedes(), Datos{"sedes": Datos{
+		"seleccionadas": []interface{}{"Administración"}, "otra": "texto de cuando estaba marcada",
+	}})
+	if _, existe := normalizado["sedes"].(Datos)["otra"]; existe {
+		t.Fatal("sin «Otra» marcada, el texto de ¿cuál? no se debe guardar")
+	}
+}
+
+func submoduloNecesidades(operacion string) *Nodo {
+	return &Nodo{Nombre: "Necesidades", Dato: Dato{Clave: "necesidades"}, Hijos: []*Nodo{
+		campoDePrueba("demanda", TipoNumerico, Dato{Requerido: true}),
+		campoDePrueba("oferta", TipoNumerico, Dato{Requerido: true}),
+		campoDePrueba("deficit", TipoCalculado, Dato{Operacion: operacion, Operandos: []string{"oferta", "demanda"}}),
+	}}
+}
+
+func TestElDeficitEsLaOfertaMenosLaDemandaYSeIgnoraElDelCliente(t *testing.T) {
+	normalizador := NuevoNormalizador(catalogosDePrueba())
+	submodulo := submoduloNecesidades(OperacionResta)
+
+	normalizado := normalizador.Normalizar(submodulo, Datos{"demanda": 0.1, "oferta": 0.3, "deficit": 999.0})
+	if normalizado["deficit"] != 0.2 {
+		t.Fatalf("deficit = %v", normalizado["deficit"])
+	}
+	normalizado = normalizador.Normalizar(submodulo, Datos{"demanda": 80.0, "oferta": 30.0})
+	if normalizado["deficit"] != -50.0 {
+		t.Fatalf("deficit = %v", normalizado["deficit"])
+	}
+	exigirSinErrores(t, "necesidades", NuevoValidador(catalogosDePrueba()).ValidarSubmodulo(submodulo, map[string]Datos{"necesidades": normalizado}))
+}
+
+func TestSinOperandosElDeficitQuedaVacioYSoloSeReportaElOperando(t *testing.T) {
+	submodulo := submoduloNecesidades(OperacionResta)
+	normalizado := NuevoNormalizador(catalogosDePrueba()).Normalizar(submodulo, Datos{"demanda": 10.0, "deficit": 5.0})
+	if _, existe := normalizado["deficit"]; existe {
+		t.Fatalf("sin oferta no debe haber déficit: %v", normalizado["deficit"])
+	}
+
+	errores := NuevoValidador(catalogosDePrueba()).ValidarSubmodulo(submodulo, map[string]Datos{"necesidades": normalizado})
+	if len(errores) != 1 {
+		t.Fatalf("se esperaba solo el error de la oferta: %+v", errores)
+	}
+	exigirError(t, errores, "oferta", "es obligatorio")
+}
+
+// Cadena de valor: el costo total de cada actividad es la suma de sus periodos (vacío = 0).
+func TestElCostoTotalEsLaSumaDeLosPeriodos(t *testing.T) {
+	periodos := []string{"periodo_0", "periodo_1", "periodo_2"}
+	hijos := []*Nodo{campoDePrueba("costo_total", TipoCalculado, Dato{Requerido: true, Operacion: OperacionSuma, Operandos: periodos})}
+	for _, periodo := range periodos {
+		hijos = append(hijos, campoDePrueba(periodo, TipoNumerico, Dato{}))
+	}
+	submodulo := &Nodo{Nombre: "Cadena", Dato: Dato{Clave: "cadena_valor"}, Hijos: hijos}
+	normalizador, validador := NuevoNormalizador(catalogosDePrueba()), NuevoValidador(catalogosDePrueba())
+
+	normalizado := normalizador.Normalizar(submodulo, Datos{"periodo_0": 1000.5, "periodo_2": 0.25, "costo_total": 1.0})
+	if normalizado["costo_total"] != 1000.75 {
+		t.Fatalf("costo_total = %v", normalizado["costo_total"])
+	}
+	exigirSinErrores(t, "cadena_valor", validador.ValidarSubmodulo(submodulo, map[string]Datos{"cadena_valor": normalizado}))
+
+	vacio := normalizador.Normalizar(submodulo, Datos{})
+	if _, existe := vacio["costo_total"]; existe {
+		t.Fatalf("sin periodos no debe haber costo total: %v", vacio["costo_total"])
+	}
+	exigirError(t, validador.ValidarSubmodulo(submodulo, map[string]Datos{"cadena_valor": vacio}), "costo_total", "es obligatorio")
+}
+
+// Ingresos y beneficios: el valor total de cada año es la cantidad por el valor unitario; si
+// falta alguno, queda sin valor (no es obligatorio: lo obligatorio son sus operandos).
+func TestElValorTotalEsLaCantidadPorElValorUnitario(t *testing.T) {
+	dos := 2
+	submodulo := &Nodo{Nombre: "Ingresos", Dato: Dato{Clave: "ingresos_beneficios"}, Hijos: []*Nodo{
+		campoDePrueba("cantidad", TipoNumerico, Dato{Requerido: true}),
+		campoDePrueba("valor_unitario", TipoNumerico, Dato{Requerido: true}),
+		campoDePrueba("valor_total", TipoCalculado, Dato{Operacion: OperacionMultiplicacion, Operandos: []string{"cantidad", "valor_unitario"}, Decimales: &dos}),
+	}}
+	normalizador := NuevoNormalizador(catalogosDePrueba())
+
+	normalizado := normalizador.Normalizar(submodulo, Datos{"cantidad": 1.1, "valor_unitario": 3.0, "valor_total": 1.0})
+	if normalizado["valor_total"] != 3.3 { // sin el ruido de 1,1 × 3 = 3,3000000000000003
+		t.Fatalf("valor_total = %v", normalizado["valor_total"])
+	}
+	exigirSinErrores(t, "ingresos_beneficios", NuevoValidador(catalogosDePrueba()).ValidarSubmodulo(submodulo, map[string]Datos{"ingresos_beneficios": normalizado}))
+
+	if cero := normalizador.Normalizar(submodulo, Datos{"cantidad": 0.0, "valor_unitario": 500.0}); cero["valor_total"] != 0.0 {
+		t.Fatalf("con cantidad 0 el valor total es 0: %v", cero["valor_total"])
+	}
+	if incompleto := normalizador.Normalizar(submodulo, Datos{"cantidad": 3.0}); incompleto["valor_total"] != nil {
+		t.Fatalf("sin valor unitario no debe haber valor total: %v", incompleto["valor_total"])
+	}
+}
+
+// Cadena de valor muestra arriba el objetivo general de Objetivos: no se guarda ni se valida,
+// pero el submódulo lo recibe en relacionadas.
+func TestUnCalculadoDesdeOtroSubmoduloNoSeGuardaYEsDependencia(t *testing.T) {
+	submodulo := &Nodo{Nombre: "Cadena", Dato: Dato{Clave: "cadena_valor"}, Hijos: []*Nodo{
+		campoDePrueba("objetivo_general", TipoCalculado, Dato{Requerido: true, Desde: "objetivos.objetivo_central"}),
+	}}
+
+	normalizado := NuevoNormalizador(catalogosDePrueba()).Normalizar(submodulo, Datos{"objetivo_general": "lo que mande el cliente"})
+	if _, existe := normalizado["objetivo_general"]; existe {
+		t.Fatalf("no se debe guardar: %v", normalizado["objetivo_general"])
+	}
+	exigirSinErrores(t, "cadena_valor", NuevoValidador(catalogosDePrueba()).ValidarSubmodulo(submodulo, map[string]Datos{"cadena_valor": normalizado}))
+	if !dependenciasDe(submodulo)["objetivos"] {
+		t.Fatal("cadena_valor debe recibir objetivos en relacionadas")
+	}
+}
+
+func TestUnaOperacionDesconocidaEsUnErrorDeConfiguracion(t *testing.T) {
+	submodulo := submoduloNecesidades("division")
+	errores := NuevoValidador(catalogosDePrueba()).ValidarSubmodulo(submodulo, map[string]Datos{"necesidades": {"demanda": 1.0, "oferta": 2.0}})
+
+	exigirError(t, errores, "deficit", "mal configurado")
+}
+
+// Un espejo puede salir de un grupo anidado ("submodulo.grupo.subgrupo"): una fila por
+// cada fila del subgrupo en todas las filas del grupo (p. ej. Plurianual por actividad).
+func TestUnEspejoDeUnGrupoAnidadoExigeUnaFilaPorCadaFilaInterna(t *testing.T) {
+	campo := func(clave, tipo string, extra Dato) *Nodo {
+		extra.Clave, extra.Tipo, extra.Requerido = clave, tipo, true
+		return &Nodo{Nombre: clave, Dato: extra}
+	}
+	destino := &Nodo{Nombre: "Destino", Dato: Dato{Clave: "submodulo_destino"}, Hijos: []*Nodo{{
+		Nombre: "Por hijo",
+		Dato:   Dato{Clave: "por_hijo", Tipo: TipoRepetible, Requerido: true, EspejoDe: "submodulo_origen.padres.hijos", Mostrar: "descripcion"},
+		Hijos:  []*Nodo{campo("valor", TipoTexto, Dato{})},
+	}}}
+	datos := datosConReferencias()
+	datos["submodulo_origen"]["padres"] = append(datos["submodulo_origen"]["padres"].([]interface{}), map[string]interface{}{
+		"id": "p2", "descripcion": "Padre 2",
+		"hijos": []interface{}{map[string]interface{}{"id": "h3", "descripcion": "Hijo tres"}},
+	})
+	fila := func(id, origen string) map[string]interface{} {
+		return map[string]interface{}{"id": id, "origen": origen, "valor": "x"}
+	}
+	validador := NuevoValidador(catalogosDePrueba())
+
+	datos["submodulo_destino"] = Datos{"por_hijo": []interface{}{fila("x1", "h1"), fila("x3", "h3")}}
+	exigirError(t, validador.ValidarSubmodulo(destino, datos), "por_hijo", "Hijo dos")
+
+	datos["submodulo_destino"] = Datos{"por_hijo": []interface{}{fila("x1", "h1"), fila("x2", "h2"), fila("x3", "h3"), fila("x9", "p1")}}
+	exigirError(t, validador.ValidarSubmodulo(destino, datos), "por_hijo[x9]", "ya no existe")
+
+	datos["submodulo_destino"] = Datos{"por_hijo": []interface{}{fila("x1", "h1"), fila("x2", "h2"), fila("x3", "h3")}}
+	exigirSinErrores(t, "submodulo_destino", validador.ValidarSubmodulo(destino, datos))
+}
