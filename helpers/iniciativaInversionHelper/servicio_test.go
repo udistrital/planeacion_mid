@@ -1,11 +1,16 @@
 package iniciativaInversionHelper
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/astaxie/beego"
+	"github.com/udistrital/planeacion_mid/models"
 )
 
 // repoMemoria imita a planes_crud en memoria, incluido el bloqueo optimista de
@@ -160,7 +165,7 @@ func (r *repoMemoria) AgregarObservacion(id string, nueva NuevaObservacion) (*Su
 		return nil, errorNoEncontrado("No existe el submódulo %s.", id)
 	}
 	submodulo.Observaciones = append(submodulo.Observaciones, Observacion{
-		ID: r.nuevoID("obs"), Texto: nueva.Texto, Rol: nueva.Rol, Usuario: nueva.Usuario,
+		ID: r.nuevoID("obs"), Texto: nueva.Texto, Rol: nueva.Rol, Usuario: nueva.Usuario, UsuarioNombre: nueva.UsuarioNombre,
 	})
 	if nueva.EstadoSubmoduloID != "" {
 		submodulo.EstadoSubmoduloID = nueva.EstadoSubmoduloID
@@ -174,17 +179,46 @@ type definicionFija struct{ definicion *Definicion }
 
 func (d definicionFija) Definicion(string) (*Definicion, error) { return d.definicion, nil }
 
+// responsableDePrueba es el documento de quien crea las iniciativas de prueba.
+const responsableDePrueba = "52123456"
+
+// personasDePrueba son los terceros que conoce tercerosDePrueba: documento -> nombre completo.
+var personasDePrueba = map[string]string{
+	responsableDePrueba: "LAURA GOMEZ RIOS",
+	"1012345678":        "CARLOS RUIZ PENA", // Planeación (dePlaneacion)
+	"79876543":          "MARTA LOPEZ DIAZ", // gestor de la unidad (delGestor)
+}
+
+// tercerosDePrueba imita a Terceros (datos_identificacion por número de documento) con
+// personasDePrueba, y lo deja como TercerosService mientras dura la prueba.
+func tercerosDePrueba(t *testing.T) {
+	t.Helper()
+	servidor := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		documento := strings.TrimPrefix(r.URL.Query().Get("query"), "Numero:")
+		nombre, existe := personasDePrueba[documento]
+		if r.URL.Path != "/datos_identificacion/" || !existe {
+			t.Errorf("consulta inesperada a Terceros: %s", r.URL.String())
+		}
+		json.NewEncoder(w).Encode([]models.DatosIdentificacion{{Numero: documento, TerceroID: models.TerceroID{ID: 1, NombreCompleto: nombre}}})
+	}))
+	t.Cleanup(servidor.Close)
+	anterior := beego.AppConfig.String("TercerosService")
+	beego.AppConfig.Set("TercerosService", strings.TrimPrefix(servidor.URL, "http://"))
+	t.Cleanup(func() { beego.AppConfig.Set("TercerosService", anterior) })
+}
+
 // ---------------------------------------------------------------------------
 
 func nuevoServicioDePrueba(t *testing.T) (*Servicio, *repoMemoria) {
 	t.Helper()
+	tercerosDePrueba(t)
 	repo := nuevoRepoMemoria()
 	return NuevoServicio(repo, definicionFija{definicionDePrueba(t)}, catalogosDePrueba()), repo
 }
 
 func crearIniciativaDePrueba(t *testing.T, servicio *Servicio) *ResumenIniciativa {
 	t.Helper()
-	resumen, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: "dep-1", Vigencias: []byte(`[{"Id":1,"Nombre":"2026"}]`)})
+	resumen, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: "dep-1", Responsable: responsableDePrueba, Vigencias: []byte(`[{"Id":1,"Nombre":"2026"}]`)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -310,7 +344,7 @@ func TestListarNumeraYFiltraPorUnidad(t *testing.T) {
 	servicio, repo := nuevoServicioDePrueba(t)
 	crear := func(dependencia string) string {
 		t.Helper()
-		resumen, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: dependencia})
+		resumen, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: dependencia, Responsable: responsableDePrueba})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -326,8 +360,8 @@ func TestListarNumeraYFiltraPorUnidad(t *testing.T) {
 	if len(todas) != 2 || todas[0].ID != otraUnidad || todas[0].Numero != 3 || todas[1].ID != activa || todas[1].Numero != 2 {
 		t.Fatalf("listado = %+v", todas)
 	}
-	if todas[1].Estado.Codigo != EstadoIniciativaSinFormular || !todas[1].PermiteEditar {
-		t.Fatalf("estado = %+v", todas[1])
+	if todas[1].Estado.Codigo != EstadoIniciativaSinFormular || !todas[1].PermiteEditar || todas[1].Responsable != personasDePrueba[responsableDePrueba] {
+		t.Fatalf("iniciativa = %+v", todas[1])
 	}
 
 	deUnaUnidad, err := servicio.ListarIniciativas([]string{"dep-1"})
@@ -578,7 +612,7 @@ func TestPlaneacionComentaYElSubmoduloQuedaConObservacionesSinCambiarLaVersion(t
 	if vista.Estado.Codigo != EstadoSubmoduloConObservaciones || vista.Version != antes.Submodulo.Version {
 		t.Fatalf("estado %s, versión %d (antes %d)", vista.Estado.Codigo, vista.Version, antes.Submodulo.Version)
 	}
-	esperada := Observacion{ID: vista.Observaciones[0].ID, Texto: "Revisar el total de juventud.", Rol: "PLANEACION", Usuario: "1012345678"}
+	esperada := Observacion{ID: vista.Observaciones[0].ID, Texto: "Revisar el total de juventud.", Rol: "PLANEACION", Usuario: "1012345678", UsuarioNombre: personasDePrueba["1012345678"]}
 	if len(vista.Observaciones) != 1 || vista.Observaciones[0] != esperada {
 		t.Fatalf("observaciones = %+v", vista.Observaciones)
 	}
