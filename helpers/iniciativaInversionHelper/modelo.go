@@ -255,6 +255,7 @@ type Plan struct {
 	Descripcion       string `json:"descripcion"`
 	TipoPlanID        string `json:"tipo_plan_id"`
 	AplicativoID      string `json:"aplicativo_id"`
+	Responsable       string `json:"responsable,omitempty"`
 	Activo            bool   `json:"activo"`
 	Formato           bool   `json:"formato"`
 	FormatoID         string `json:"formato_id,omitempty"`
@@ -292,11 +293,12 @@ type Estado struct {
 // Observacion es una entrada del historial de comentarios de un submódulo (siempre
 // sobre el submódulo completo). Se agregan y nunca se reemplazan.
 type Observacion struct {
-	ID      string `json:"_id,omitempty"`
-	Texto   string `json:"texto"`
-	Rol     string `json:"rol"`
-	Usuario string `json:"usuario"`
-	Fecha   string `json:"fecha,omitempty"`
+	ID            string `json:"_id,omitempty"`
+	Texto         string `json:"texto"`
+	Rol           string `json:"rol"`
+	Usuario       string `json:"usuario"`
+	UsuarioNombre string `json:"usuario_nombre,omitempty"`
+	Fecha         string `json:"fecha,omitempty"`
 }
 
 // NuevaObservacion es el cuerpo para agregar una observación en planes_crud. Si
@@ -305,6 +307,7 @@ type NuevaObservacion struct {
 	Texto             string `json:"texto"`
 	Rol               string `json:"rol"`
 	Usuario           string `json:"usuario"`
+	UsuarioNombre     string `json:"usuario_nombre,omitempty"`
 	EstadoSubmoduloID string `json:"estado_submodulo_id,omitempty"`
 }
 
@@ -354,6 +357,7 @@ type ErrorCampo struct {
 type SolicitudCrearIniciativa struct {
 	PlantillaID   string          `json:"plantilla_id"`
 	DependenciaID string          `json:"dependencia_id"`
+	Responsable   string          `json:"responsable"`
 	Nombre        string          `json:"nombre"`
 	Vigencias     json.RawMessage `json:"vigencias"`
 }
@@ -395,6 +399,7 @@ type IniciativaListado struct {
 	Numero        int    `json:"numero"`
 	Nombre        string `json:"nombre"`
 	DependenciaID string `json:"dependencia_id"`
+	Responsable   string `json:"responsable"`
 	Estado        Estado `json:"estado"`
 	PermiteEditar bool   `json:"permite_editar"`
 	FechaCreacion string `json:"fecha_creacion"`

@@ -7,7 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+	"github.com/udistrital/planeacion_mid/models"
+	"github.com/udistrital/utils_oas/request"
 )
 
 const (
@@ -105,6 +108,7 @@ func (s *Servicio) motivoPlantillaNoUsable(plantillaID string) string {
 // antigua, con su número y su estado general. Si se indican dependencias, solo
 // las de esas dependencias.
 func (s *Servicio) ListarIniciativas(dependencias []string) ([]IniciativaListado, error) {
+
 	tipo, err := s.sistema.TipoPlanIniciativa()
 	if err != nil {
 		return nil, err
@@ -129,11 +133,19 @@ func (s *Servicio) ListarIniciativas(dependencias []string) ([]IniciativaListado
 		if err != nil {
 			return nil, err
 		}
+
+		var tercero []models.DatosIdentificacion
+
+		if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/datos_identificacion/?query=Numero:"+plan.Responsable, &tercero); err != nil || tercero[0].TerceroID.ID == 0 {
+			panic(map[string]interface{}{"funcion": "ListarIniciativas", "err": "Error al obtener el dato de terceros", "status": "400", "log": err})
+		}
+
 		iniciativas = append(iniciativas, IniciativaListado{
 			ID:            plan.ID,
 			Numero:        numeros[plan.ID],
 			Nombre:        plan.Nombre,
 			DependenciaID: plan.DependenciaID,
+			Responsable:   string(tercero[0].TerceroID.NombreCompleto),
 			Estado:        estado,
 			PermiteEditar: PermiteEditar(estado.Codigo),
 			FechaCreacion: plan.FechaCreacion,
@@ -211,6 +223,7 @@ func (s *Servicio) CrearIniciativa(solicitud SolicitudCrearIniciativa) (*Resumen
 		Descripcion:    "Iniciativa de inversión formulada con la plantilla «" + definicion.Nombre + "»",
 		TipoPlanID:     tipo.ID,
 		AplicativoID:   aplicativoPlaneacion,
+		Responsable:    solicitud.Responsable,
 		Activo:         true,
 		Formato:        false,
 		FormatoID:      definicion.PlantillaID,
