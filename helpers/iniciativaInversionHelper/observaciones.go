@@ -3,6 +3,10 @@ package iniciativaInversionHelper
 import (
 	"strings"
 	"unicode/utf8"
+
+	"github.com/astaxie/beego"
+	"github.com/udistrital/utils_oas/request"
+	"github.com/udistrital/planeacion_mid/models"
 )
 
 // MaximoTextoObservacion es el largo máximo de una observación (igual que en planes_crud).
@@ -45,6 +49,14 @@ func (s *Servicio) AgregarObservacion(iniciativaID, clave string, solicitud Soli
 	default:
 		return nil, errorConflicto("La iniciativa está «%s»; ya no recibe observaciones.", ctx.estado.Nombre)
 	}
+
+	var tercero []models.DatosIdentificacion
+
+	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/datos_identificacion/?query=Numero:" + nueva.Usuario, &tercero); err != nil || tercero[0].TerceroID.ID == 0 {
+		panic(map[string]interface{}{"funcion": "ListarIniciativas", "err": "Error al obtener el dato de terceros", "status": "400", "log": err})
+	}
+
+	nueva.UsuarioNombre = string(tercero[0].TerceroID.NombreCompleto)
 
 	guardada, err := s.repo.AgregarObservacion(documento.ID, nueva)
 	if err != nil {
