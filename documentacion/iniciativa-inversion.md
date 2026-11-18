@@ -51,13 +51,13 @@ Todos responden `{ Success, Status, Message, Data }` con el **código HTTP real*
 | Método y ruta | Qué hace | Errores |
 |---|---|---|
 | `GET /plantillas` | Plantillas activas con las que se pueden crear iniciativas, de la más reciente a la más antigua | 502 si falla el crud |
-| `GET /iniciativas?dependencias=1,2` | Iniciativas activas de esas dependencias (sin el filtro, todas), de la más reciente a la más antigua. Cada fila trae `numero` (consecutivo por orden de creación, contado sobre todas las iniciativas, activas o no), `estado` (general) y `permite_editar` | |
-| `POST /iniciativas` | Crea la iniciativa y todos sus submódulos en "Sin formular" (la iniciativa también). Cuerpo: `{ dependencia_id, plantilla_id?, nombre?, vigencias? }`. Sin `plantilla_id` usa la plantilla más reciente; sin `nombre`, "Iniciativa de inversión sin nombre" | 400 si falta `dependencia_id`; 409 si no hay plantillas |
+| `GET /iniciativas?dependencias=1,2` | Iniciativas activas de esas dependencias (sin el filtro, todas), de la más reciente a la más antigua. Cada fila trae `numero` (consecutivo por orden de creación, contado sobre todas las iniciativas, activas o no), `estado` (general), `permite_editar` y `responsable` (nombre en Terceros de quien la creó, consultado una vez por documento; vacío si la iniciativa no tiene responsable o no se obtiene el nombre) | |
+| `POST /iniciativas` | Crea la iniciativa y todos sus submódulos en "Sin formular" (la iniciativa también). Cuerpo: `{ dependencia_id, responsable, plantilla_id?, nombre?, vigencias? }`, con `responsable` = documento de quien la crea (el mid no lo exige). Sin `plantilla_id` usa la plantilla más reciente; sin `nombre`, "Iniciativa de inversión sin nombre" | 400 si falta `dependencia_id`; 409 si no hay plantillas |
 | `GET /iniciativas/:id` | Vista general: estado general y `modulos: [{ clave, nombre, submodulos: [{ clave, nombre, estado (con color), observaciones }] }]`, más `permite_editar`, `permite_revisar` y `acciones_posibles` | 404 |
 | `GET /iniciativas/:id/definicion` | Construcción de la plantilla: `modulos`, y en cada uno sus submódulos y campos | 404 |
 | `GET /iniciativas/:id/submodulos/:clave` | Datos, errores vigentes, historial de observaciones y `relacionadas` (datos de los submódulos de los que depende para espejos y referencias) | 404 |
 | `PUT /iniciativas/:id/submodulos/:clave` | Guarda `{ version, datos }`, aunque tenga errores (borrador). Responde el submódulo con sus `errores`; queda **Formulado** si no hay errores, **Formulando** si tiene información pero errores y **Sin formular** si está vacío. Con la primera información, la iniciativa pasa de Sin formular a **Formulación iniciada** | 409 si la iniciativa no se puede editar o si `version` no es la vigente |
-| `POST /iniciativas/:id/submodulos/:clave/observaciones` | Publica una observación en el historial: `{ texto, rol, usuario }`. No cambia la `version` del submódulo. Con la iniciativa en revisión, el submódulo queda **Con observaciones** | 400 si falta un dato; 409 si la iniciativa está avalada, o si está en revisión y el submódulo no está formulado |
+| `POST /iniciativas/:id/submodulos/:clave/observaciones` | Publica una observación en el historial: `{ texto, rol, usuario }`, con `usuario` = documento de quien comenta. El mid agrega `usuario_nombre`, su nombre en Terceros (`TercerosService`); si no lo obtiene, la publica sin nombre. No cambia la `version` del submódulo. Con la iniciativa en revisión, el submódulo queda **Con observaciones** | 400 si falta un dato o `usuario` no es un documento (letras y números, máx. 20); 409 si la iniciativa está avalada, o si está en revisión y el submódulo no está formulado |
 | `PUT /iniciativas/:id/submodulos/:clave/revision` | Planeación aprueba el submódulo: `{ version }` → **Aprobado**. El historial se conserva | 400 si se envían observaciones (van por el `POST`); 409 si la iniciativa no está en revisión o el submódulo no está formulado |
 | `PUT /iniciativas/:id/acciones/:accion` | `enviar`, `devolver` o `avalar` | 400 si la acción no existe, 409 si no se permite |
 | `GET /unidades/:documento` | Unidades del usuario (`[{ Id, Nombre }]`): tercero por documento y vinculaciones activas en Terceros, con los mismos cargos que Formulación (`/v1/formulacion/vinculacion_tercero`: 319, 312, 320 y 300), y nombre en Oikos. Lista vacía si no tiene. El documento solo admite letras y números (máx. 20). Usa `TercerosService` y `OikosService` de `conf/app.conf` | 400 si el documento no es válido; 502 si falla Terceros u Oikos |
@@ -123,7 +123,8 @@ Cada submódulo guarda un **historial** de observaciones en `submodulo_iniciativ
 
 ```json
 { "_id": "…", "texto": "Precisar la fuente de la línea base.",
-  "rol": "PLANEACION", "usuario": "1012345678", "fecha": "2026-11-04T10:15:00Z" }
+  "rol": "PLANEACION", "usuario": "1012345678", "usuario_nombre": "CARLOS RUIZ PENA",
+  "fecha": "2026-11-04T10:15:00Z" }
 ```
 
 - **Quién comenta lo decide el estado de la iniciativa:**
@@ -133,6 +134,7 @@ Cada submódulo guarda un **historial** de observaciones en `submodulo_iniciativ
 - **Se agregan, nunca se reemplazan.** Forman un hilo, como un blog, con las rondas de revisión. Aprobar (`PUT /revision`) cambia el estado, pero no borra el historial.
 - **No cambian la `version` del submódulo.** Comentar no provoca un 409 a quien tiene el formulario abierto.
 - **`rol` y `usuario` los envía el cliente.** El cliente toma el documento del token y el rol que corresponde al momento: uno de Planeación al revisar, uno de la dependencia al formular. El mid no valida el token, igual que el resto de SISGPLAN.
+- **`usuario_nombre` lo pone el mid** al publicar: busca el documento en Terceros (`nombreTercero`, en `servicio.go`). Si el documento no está o Terceros no responde, la observación se publica sin nombre y el motivo va al log.
 
 ## Organización del paquete
 

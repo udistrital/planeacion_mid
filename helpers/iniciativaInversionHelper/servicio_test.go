@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/astaxie/beego"
@@ -190,10 +191,10 @@ var personasDePrueba = map[string]string{
 }
 
 // tercerosDePrueba imita a Terceros (datos_identificacion por número de documento) con
-// personasDePrueba, y lo deja como TercerosService mientras dura la prueba.
+// personasDePrueba.
 func tercerosDePrueba(t *testing.T) {
 	t.Helper()
-	servidor := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	usarTerceros(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		documento := strings.TrimPrefix(r.URL.Query().Get("query"), "Numero:")
 		nombre, existe := personasDePrueba[documento]
 		if r.URL.Path != "/datos_identificacion/" || !existe {
@@ -201,10 +202,17 @@ func tercerosDePrueba(t *testing.T) {
 		}
 		json.NewEncoder(w).Encode([]models.DatosIdentificacion{{Numero: documento, TerceroID: models.TerceroID{ID: 1, NombreCompleto: nombre}}})
 	}))
+}
+
+// usarTerceros deja el manejador como TercerosService mientras dura la prueba.
+func usarTerceros(t *testing.T, manejador http.Handler) *httptest.Server {
+	t.Helper()
+	servidor := httptest.NewServer(manejador)
 	t.Cleanup(servidor.Close)
 	anterior := beego.AppConfig.String("TercerosService")
 	beego.AppConfig.Set("TercerosService", strings.TrimPrefix(servidor.URL, "http://"))
 	t.Cleanup(func() { beego.AppConfig.Set("TercerosService", anterior) })
+	return servidor
 }
 
 // ---------------------------------------------------------------------------
@@ -370,6 +378,49 @@ func TestListarNumeraYFiltraPorUnidad(t *testing.T) {
 	}
 	if len(deUnaUnidad) != 1 || deUnaUnidad[0].ID != activa {
 		t.Fatalf("listado de dep-1 = %+v", deUnaUnidad)
+	}
+}
+
+// Sin responsable o con un documento no válido no se consulta Terceros; un documento
+// repetido se consulta una vez, y si Terceros no lo tiene la fila sale sin nombre.
+func TestListarConsultaCadaDocumentoValidoUnaSolaVez(t *testing.T) {
+	servicio, _ := nuevoServicioDePrueba(t)
+	var consultas int32
+	usarTerceros(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&consultas, 1)
+		w.Write([]byte("[]"))
+	}))
+	for _, responsable := range []string{"", "123,Activo:false", "999999", "999999"} {
+		if _, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: "dep-1", Responsable: responsable}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	listado, err := servicio.ListarIniciativas(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n := atomic.LoadInt32(&consultas); len(listado) != 4 || n != 1 {
+		t.Fatalf("iniciativas = %d, consultas a Terceros = %d", len(listado), n)
+	}
+	for _, fila := range listado {
+		if fila.Responsable != "" {
+			t.Fatalf("responsable = %q, se esperaba vacío", fila.Responsable)
+		}
+	}
+}
+
+func TestListarSaleSinNombreSiTercerosNoResponde(t *testing.T) {
+	servicio, _ := nuevoServicioDePrueba(t)
+	crearIniciativaDePrueba(t, servicio)
+	usarTerceros(t, http.NotFoundHandler()).Close()
+
+	listado, err := servicio.ListarIniciativas(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listado) != 1 || listado[0].Responsable != "" {
+		t.Fatalf("listado = %+v", listado)
 	}
 }
 
@@ -670,10 +721,11 @@ func TestObservacionInvalidaResponde400(t *testing.T) {
 		largo[i] = 'á'
 	}
 	casos := map[string]SolicitudObservacion{
-		"sin texto":       {Texto: "   ", Rol: "R", Usuario: "U"},
-		"texto muy largo": {Texto: string(largo), Rol: "R", Usuario: "U"},
-		"sin rol":         {Texto: "x", Usuario: "U"},
-		"sin usuario":     {Texto: "x", Rol: "R"},
+		"sin texto":                   {Texto: "   ", Rol: "R", Usuario: "U"},
+		"texto muy largo":             {Texto: string(largo), Rol: "R", Usuario: "U"},
+		"sin rol":                     {Texto: "x", Usuario: "U"},
+		"sin usuario":                 {Texto: "x", Rol: "R"},
+		"usuario que no es documento": {Texto: "x", Rol: "R", Usuario: "123,Activo:false"},
 	}
 	for nombre, solicitud := range casos {
 		if _, err := servicio.AgregarObservacion(iniciativa.ID, "nombre", solicitud); err == nil {
@@ -681,6 +733,17 @@ func TestObservacionInvalidaResponde400(t *testing.T) {
 		} else {
 			exigirStatus(t, err, http.StatusBadRequest)
 		}
+	}
+}
+
+func TestLaObservacionSePublicaSinNombreSiTercerosNoResponde(t *testing.T) {
+	servicio, _ := nuevoServicioDePrueba(t)
+	iniciativa := crearIniciativaDePrueba(t, servicio)
+	usarTerceros(t, http.NotFoundHandler()).Close()
+
+	vista := comentar(t, servicio, iniciativa.ID, "nombre", delGestor("El nombre se ajustó con la OAPC."))
+	if len(vista.Observaciones) != 1 || vista.Observaciones[0].Usuario != "79876543" || vista.Observaciones[0].UsuarioNombre != "" {
+		t.Fatalf("observaciones = %+v", vista.Observaciones)
 	}
 }
 

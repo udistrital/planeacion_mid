@@ -2,6 +2,8 @@ package iniciativaInversionHelper
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -124,6 +126,7 @@ func (s *Servicio) ListarIniciativas(dependencias []string) ([]IniciativaListado
 		deInteres[dependencia] = true
 	}
 
+	responsables := nombresResponsables{}
 	iniciativas := make([]IniciativaListado, 0, len(planes))
 	for _, plan := range planes {
 		if !plan.Activo || (len(deInteres) > 0 && !deInteres[plan.DependenciaID]) {
@@ -133,19 +136,12 @@ func (s *Servicio) ListarIniciativas(dependencias []string) ([]IniciativaListado
 		if err != nil {
 			return nil, err
 		}
-
-		var tercero []models.DatosIdentificacion
-
-		if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/datos_identificacion/?query=Numero:"+plan.Responsable, &tercero); err != nil || tercero[0].TerceroID.ID == 0 {
-			panic(map[string]interface{}{"funcion": "ListarIniciativas", "err": "Error al obtener el dato de terceros", "status": "400", "log": err})
-		}
-
 		iniciativas = append(iniciativas, IniciativaListado{
 			ID:            plan.ID,
 			Numero:        numeros[plan.ID],
 			Nombre:        plan.Nombre,
 			DependenciaID: plan.DependenciaID,
-			Responsable:   string(tercero[0].TerceroID.NombreCompleto),
+			Responsable:   responsables.de(plan.ID, plan.Responsable),
 			Estado:        estado,
 			PermiteEditar: PermiteEditar(estado.Codigo),
 			FechaCreacion: plan.FechaCreacion,
@@ -153,6 +149,49 @@ func (s *Servicio) ListarIniciativas(dependencias []string) ([]IniciativaListado
 	}
 	sort.SliceStable(iniciativas, func(i, j int) bool { return iniciativas[i].Numero > iniciativas[j].Numero })
 	return iniciativas, nil
+}
+
+// nombresResponsables guarda, durante un listado, el nombre completo de cada
+// responsable según Terceros, para consultar cada documento una sola vez.
+type nombresResponsables map[string]string
+
+// de devuelve el nombre del responsable de la iniciativa planID. Queda vacío si la
+// iniciativa no tiene responsable, o si su documento no es válido, no está en
+// Terceros o Terceros no responde; en esos tres casos el motivo va al log y el
+// listado sale igual.
+func (n nombresResponsables) de(planID, documento string) string {
+	documento = strings.TrimSpace(documento)
+	if documento == "" {
+		return ""
+	}
+	if nombre, consultado := n[documento]; consultado {
+		return nombre
+	}
+	nombre, err := nombreTercero(documento)
+	if err != nil {
+		logs.Warn("iniciativaInversion: sin nombre para el responsable de la iniciativa %s: %v", planID, err)
+	}
+	n[documento] = nombre
+	return nombre
+}
+
+// nombreTercero devuelve el nombre completo de quien tiene ese documento en Terceros.
+func nombreTercero(documento string) (string, error) {
+	if !patronDocumento.MatchString(documento) {
+		return "", errors.New("el documento no cumple el formato: solo letras y números, máximo 20")
+	}
+	var datos []models.DatosIdentificacion
+	ruta := "http://" + beego.AppConfig.String("TercerosService") + "/datos_identificacion/?query=Numero:" + documento
+	if err := request.GetJson(ruta, &datos); err != nil {
+		return "", fmt.Errorf("no se pudo consultar Terceros: %v", err)
+	}
+	// Terceros responde [{}] cuando no hay resultados.
+	for _, dato := range datos {
+		if dato.TerceroID.ID != 0 {
+			return dato.TerceroID.NombreCompleto, nil
+		}
+	}
+	return "", errors.New("el documento no está en Terceros")
 }
 
 // numerarPorCreacion da a cada plan su consecutivo por fecha de creación (y por

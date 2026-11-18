@@ -4,9 +4,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/astaxie/beego"
-	"github.com/udistrital/planeacion_mid/models"
-	"github.com/udistrital/utils_oas/request"
+	"github.com/astaxie/beego/logs"
 )
 
 // MaximoTextoObservacion es el largo máximo de una observación (igual que en planes_crud).
@@ -20,6 +18,9 @@ const MaximoTextoObservacion = 4000
 //   - Enviado a revisión: comenta Planeación, solo sobre submódulos formulados; el
 //     submódulo queda "Con observaciones".
 //   - Avalado: no recibe observaciones.
+//
+// El nombre de quien comenta se busca en Terceros con su documento. Si no está o
+// Terceros no responde, la observación se publica sin nombre.
 func (s *Servicio) AgregarObservacion(iniciativaID, clave string, solicitud SolicitudObservacion) (*SubmoduloVista, error) {
 	nueva, err := observacionValida(solicitud)
 	if err != nil {
@@ -50,13 +51,11 @@ func (s *Servicio) AgregarObservacion(iniciativaID, clave string, solicitud Soli
 		return nil, errorConflicto("La iniciativa está «%s»; ya no recibe observaciones.", ctx.estado.Nombre)
 	}
 
-	var tercero []models.DatosIdentificacion
-
-	if err := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"/datos_identificacion/?query=Numero:"+nueva.Usuario, &tercero); err != nil || tercero[0].TerceroID.ID == 0 {
-		panic(map[string]interface{}{"funcion": "AgregarObservacion", "err": "Error al obtener el dato de terceros", "status": "400", "log": err})
+	nombre, err := nombreTercero(nueva.Usuario)
+	if err != nil {
+		logs.Warn("iniciativaInversion: la observación del submódulo %s de la iniciativa %s se publica sin nombre: %v", clave, iniciativaID, err)
 	}
-
-	nueva.UsuarioNombre = string(tercero[0].TerceroID.NombreCompleto)
+	nueva.UsuarioNombre = nombre
 
 	guardada, err := s.repo.AgregarObservacion(documento.ID, nueva)
 	if err != nil {
@@ -81,7 +80,8 @@ func (s *Servicio) exigirRevisable(ctx *contextoIniciativa, nodo *Nodo, document
 	return nil
 }
 
-// observacionValida limpia la solicitud y exige texto, rol y usuario.
+// observacionValida limpia la solicitud y exige texto, rol y usuario; el usuario es
+// el documento de quien comenta.
 func observacionValida(solicitud SolicitudObservacion) (NuevaObservacion, error) {
 	nueva := NuevaObservacion{
 		Texto:   strings.TrimSpace(solicitud.Texto),
@@ -96,6 +96,9 @@ func observacionValida(solicitud SolicitudObservacion) (NuevaObservacion, error)
 	case nueva.Rol == "" || nueva.Usuario == "":
 		return nueva, errorSolicitud("No se pudo identificar quién publica la observación. Vuelva a iniciar sesión e intente de nuevo.").
 			conDetalle("rol y usuario son obligatorios (rol vacío: %t, usuario vacío: %t)", nueva.Rol == "", nueva.Usuario == "")
+	case !patronDocumento.MatchString(nueva.Usuario):
+		return nueva, errorSolicitud("No se pudo identificar quién publica la observación. Vuelva a iniciar sesión e intente de nuevo.").
+			conDetalle("el usuario no cumple el formato de documento: solo letras y números, máximo 20")
 	}
 	return nueva, nil
 }
