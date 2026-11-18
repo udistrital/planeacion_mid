@@ -11,11 +11,11 @@ const MaximoTextoObservacion = 4000
 // AgregarObservacion publica un comentario en el historial del submódulo. No cambia
 // la versión del submódulo, así que no choca con quien está editando los datos.
 // Quién comenta y qué pasa lo decide el estado de la iniciativa:
-//   - En formulación o por corregir comenta la dependencia; el estado del
-//     submódulo no cambia.
-//   - En revisión comenta Planeación, solo sobre submódulos formulados; el
+//   - Sin formular, Formulación iniciada o Por corregir: comenta la dependencia; el
+//     estado del submódulo no cambia.
+//   - Enviado a revisión: comenta Planeación, solo sobre submódulos formulados; el
 //     submódulo queda "Con observaciones".
-//   - Avalada o no avalada ya no recibe observaciones.
+//   - Avalado: no recibe observaciones.
 func (s *Servicio) AgregarObservacion(iniciativaID, clave string, solicitud SolicitudObservacion) (*SubmoduloVista, error) {
 	nueva, err := observacionValida(solicitud)
 	if err != nil {

@@ -21,10 +21,12 @@ func NuevoNormalizador(catalogos ProveedorCatalogos) *Normalizador {
 
 // Normalizar devuelve una copia limpia de los datos del submódulo.
 func (n *Normalizador) Normalizar(submodulo *Nodo, datos Datos) Datos {
-	return n.objeto(submodulo.Hijos, datos)
+	return n.objeto(submodulo.Hijos, datos, nil)
 }
 
-func (n *Normalizador) objeto(nodos []*Nodo, datos Datos) Datos {
+// objeto limpia un nivel. fila trae los datos propios de la fila de un grupo que no son campos
+// (p. ej. el origen de un espejo): no se guardan aquí, pero cuentan para solo_si.
+func (n *Normalizador) objeto(nodos []*Nodo, datos Datos, fila Datos) Datos {
 	salida := Datos{}
 	for _, nodo := range nodos {
 		clave := nodo.Clave()
@@ -35,7 +37,7 @@ func (n *Normalizador) objeto(nodos []*Nodo, datos Datos) Datos {
 		switch {
 		case !nodo.EsCampo():
 			subdatos, _ := comoObjeto(valor)
-			salida[clave] = n.objeto(nodo.Hijos, subdatos)
+			salida[clave] = n.objeto(nodo.Hijos, subdatos, nil)
 		case nodo.Dato.Tipo == TipoRepetible:
 			salida[clave] = n.filas(nodo, valor)
 		case nodo.Dato.Tipo == TipoMatriz:
@@ -44,9 +46,20 @@ func (n *Normalizador) objeto(nodos []*Nodo, datos Datos) Datos {
 			salida[clave] = limpiarEscalar(valor)
 		}
 	}
-	// Lo que no aplica (solo_si) no se guarda: p. ej. el texto de «Otra» si se desmarcó.
+	// Lo que no aplica (solo_si) no se guarda: p. ej. el texto de «Otra» si se desmarcó, o el
+	// «¿Cuál?» de una fila de Resultados esperados que no es «Otro» (solo_si sobre el origen).
+	condiciones := salida
+	if len(fila) > 0 {
+		condiciones = Datos{}
+		for clave, valor := range fila {
+			condiciones[clave] = valor
+		}
+		for clave, valor := range salida {
+			condiciones[clave] = valor
+		}
+	}
 	for _, nodo := range nodos {
-		if !nodo.visible(salida) {
+		if !nodo.visible(condiciones) {
 			delete(salida, nodo.Clave())
 		}
 	}
@@ -133,10 +146,14 @@ func (n *Normalizador) filas(nodo *Nodo, valor interface{}) []interface{} {
 			filas = append(filas, elemento)
 			continue
 		}
-		limpia := n.objeto(nodo.Hijos, fila)
-		limpia["id"] = limpiarEscalar(fila["id"])
+		propios := Datos{}
 		if nodo.EsEspejo() {
-			limpia["origen"] = limpiarEscalar(fila["origen"])
+			propios["origen"] = limpiarEscalar(fila["origen"])
+		}
+		limpia := n.objeto(nodo.Hijos, fila, propios)
+		limpia["id"] = limpiarEscalar(fila["id"])
+		for clave, valor := range propios {
+			limpia[clave] = valor
 		}
 		filas = append(filas, limpia)
 	}

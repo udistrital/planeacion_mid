@@ -1,0 +1,12 @@
+{
+  "catalogo": "localizaciones_proyecto",
+  "nombre": "Localización del proyecto (nombre de la iniciativa)",
+  "modulo": "Identificación",
+  "fuente": "Lista de la plantilla de iniciativas. No sale del Excel del instrumento: extraer-catalogos.js no la genera.",
+  "observaciones": [
+    "Se usa en Nombre > Localización; el nombre propuesto de la iniciativa muestra el nombre del elemento."
+  ],
+  "items": [
+    {"codigo":"Bogotá D.C.","nombre":"Bogotá D.C."}
+  ]
+}

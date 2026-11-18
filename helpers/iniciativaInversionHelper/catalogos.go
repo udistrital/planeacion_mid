@@ -7,11 +7,13 @@ import (
 )
 
 // ItemCatalogo es un elemento de un catálogo de las iniciativas. Padre es el código del
-// elemento del que depende (p. ej. el sector de un programa).
+// elemento del que depende (p. ej. el sector de un programa) y Descripcion, una ayuda
+// opcional (p. ej. la definición de cada trazador presupuestal).
 type ItemCatalogo struct {
-	Codigo string `json:"codigo"`
-	Nombre string `json:"nombre"`
-	Padre  string `json:"padre,omitempty"`
+	Codigo      string `json:"codigo"`
+	Nombre      string `json:"nombre"`
+	Padre       string `json:"padre,omitempty"`
+	Descripcion string `json:"descripcion,omitempty"`
 }
 
 // Catalogo es una lista de elementos con búsqueda por código.

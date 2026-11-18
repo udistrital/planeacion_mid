@@ -58,8 +58,8 @@ const (
 )
 
 // ClienteCrud implementa Repositorio con HTTP. A diferencia de helpers.SendJson,
-// trata como error cualquier respuesta 4xx/5xx o con Success=false (el crud
-// antiguo responde HTTP 200 y pone el código real en Status).
+// trata como error cualquier respuesta 4xx/5xx o con Success=false (la mayoría de
+// los recursos del crud responden HTTP 200 y ponen el código real en Status).
 type ClienteCrud struct {
 	base string
 	http *http.Client
@@ -119,7 +119,8 @@ func (c *ClienteCrud) llamar(metodo, ruta string, cuerpo, destino interface{}) e
 	return nil
 }
 
-// codigoReal prefiere el Status del sobre cuando el HTTP es 200 (crud antiguo).
+// codigoReal prefiere el Status del sobre cuando el HTTP es 200, como responden la
+// mayoría de los recursos del crud aunque fallen.
 func codigoReal(http int, status interface{}) int {
 	if http != 200 {
 		return http
@@ -278,7 +279,7 @@ func (c *ClienteCrud) ActualizarSubmodulo(id string, cambios CambiosSubmodulo) (
 // ElementosDeCatalogo devuelve los elementos activos del catálogo, en su orden.
 func (c *ClienteCrud) ElementosDeCatalogo(nombre string) ([]ItemCatalogo, error) {
 	var items []ItemCatalogo
-	ruta := "/elemento-catalogo?" + consulta(map[string]string{"catalogo": nombre, "activo": "true"}) + "&fields=codigo,nombre,padre&sortby=orden,codigo&order=asc"
+	ruta := "/elemento-catalogo?" + consulta(map[string]string{"catalogo": nombre, "activo": "true"}) + "&fields=codigo,nombre,padre,descripcion&sortby=orden,codigo&order=asc"
 	err := c.llamar(http.MethodGet, ruta, nil, &items)
 	return items, err
 }

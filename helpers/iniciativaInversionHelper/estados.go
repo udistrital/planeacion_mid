@@ -8,27 +8,46 @@ import (
 // Códigos del tipo de plan y de los estados (catálogos tipo-plan, estado-plan y
 // estado-submodulo de planes_crud). Son propios de las iniciativas de inversión
 // para no mezclarse con los proyectos MACRO (PRI_SP) ni con Formulación.
+//
+// Los estados son los de la «Relación de estados» del mockup (docs/Refinamiento mockup
+// para Banco de proyectos OAP.pdf). Cada estado general va con uno detallado (submódulo):
+//
+//	General               Submódulo          Cuándo
+//	Sin formular          Sin formular       nada diligenciado todavía
+//	Formulación iniciada  Formulando         con información, sin enviar (el submódulo, incompleto)
+//	Enviado a revisión    Formulado          todo formulado y enviado a Planeación (el submódulo, completo)
+//	Avalado               Aprobado           todo revisado y aprobado por Planeación
+//	Por corregir          Con observaciones  al menos un submódulo con observaciones por atender
 const (
 	CodigoTipoPlanIniciativa = "IPI_SP"
 
-	EstadoIniciativaEnFormulacion = "EF_IPI"
-	EstadoIniciativaEnRevision    = "ER_IPI"
-	EstadoIniciativaPorCorregir   = "PC_IPI"
-	EstadoIniciativaAvalado       = "AV_IPI"
-	EstadoIniciativaNoAvalado     = "NA_IPI"
+	EstadoIniciativaSinFormular         = "SF_IPI"
+	EstadoIniciativaFormulacionIniciada = "EF_IPI"
+	EstadoIniciativaEnRevision          = "ER_IPI"
+	EstadoIniciativaPorCorregir         = "PC_IPI"
+	EstadoIniciativaAvalado             = "AV_IPI"
 
 	EstadoSubmoduloSinFormular      = "SF_SUB"
+	EstadoSubmoduloFormulando       = "FN_SUB"
 	EstadoSubmoduloFormulado        = "FOR_SUB"
 	EstadoSubmoduloConObservaciones = "CO_SUB"
-	EstadoSubmoduloSinObservaciones = "SO_SUB"
+	EstadoSubmoduloAprobado         = "SO_SUB"
 )
 
 var codigosEstadoIniciativa = []string{
-	EstadoIniciativaEnFormulacion,
+	EstadoIniciativaSinFormular,
+	EstadoIniciativaFormulacionIniciada,
 	EstadoIniciativaEnRevision,
 	EstadoIniciativaPorCorregir,
 	EstadoIniciativaAvalado,
-	EstadoIniciativaNoAvalado,
+}
+
+var codigosEstadoSubmodulo = []string{
+	EstadoSubmoduloSinFormular,
+	EstadoSubmoduloFormulando,
+	EstadoSubmoduloFormulado,
+	EstadoSubmoduloConObservaciones,
+	EstadoSubmoduloAprobado,
 }
 
 // Acciones sobre el estado general de la iniciativa.
@@ -36,7 +55,6 @@ const (
 	AccionEnviar   = "enviar"
 	AccionDevolver = "devolver"
 	AccionAvalar   = "avalar"
-	AccionNoAvalar = "no-avalar"
 )
 
 // transicion describe una acción: desde qué estados se permite, a cuál lleva y
@@ -49,9 +67,9 @@ type transicion struct {
 
 var transiciones = map[string]transicion{
 	AccionEnviar: {
-		desde:     []string{EstadoIniciativaEnFormulacion, EstadoIniciativaPorCorregir},
+		desde:     []string{EstadoIniciativaFormulacionIniciada, EstadoIniciativaPorCorregir},
 		hacia:     EstadoIniciativaEnRevision,
-		requisito: todasEn("Todos los submódulos deben estar formulados.", EstadoSubmoduloFormulado, EstadoSubmoduloSinObservaciones),
+		requisito: todasEn("Todos los submódulos deben estar formulados.", EstadoSubmoduloFormulado, EstadoSubmoduloAprobado),
 	},
 	AccionDevolver: {
 		desde:     []string{EstadoIniciativaEnRevision},
@@ -61,17 +79,12 @@ var transiciones = map[string]transicion{
 	AccionAvalar: {
 		desde:     []string{EstadoIniciativaEnRevision},
 		hacia:     EstadoIniciativaAvalado,
-		requisito: todasEn("Todos los submódulos deben estar revisados y sin observaciones.", EstadoSubmoduloSinObservaciones),
-	},
-	AccionNoAvalar: {
-		desde:     []string{EstadoIniciativaEnRevision},
-		hacia:     EstadoIniciativaNoAvalado,
-		requisito: func([]string) string { return "" },
+		requisito: todasEn("Todos los submódulos deben estar revisados y aprobados.", EstadoSubmoduloAprobado),
 	},
 }
 
 // ordenAcciones fija el orden en que se listan las acciones posibles.
-var ordenAcciones = []string{AccionEnviar, AccionDevolver, AccionAvalar, AccionNoAvalar}
+var ordenAcciones = []string{AccionEnviar, AccionDevolver, AccionAvalar}
 
 // nombresAcciones son los nombres con que el usuario ve las acciones (los botones
 // del cliente, ACCIONES_INICIATIVA); los mensajes no muestran la clave del API.
@@ -79,12 +92,11 @@ var nombresAcciones = map[string]string{
 	AccionEnviar:   "Enviar a revisión",
 	AccionDevolver: "Devolver para corregir",
 	AccionAvalar:   "Avalar",
-	AccionNoAvalar: "No avalar",
 }
 
 // PermiteEditar indica si en ese estado de la iniciativa se pueden guardar submódulos.
 func PermiteEditar(estadoIniciativa string) bool {
-	return estadoIniciativa == EstadoIniciativaEnFormulacion || estadoIniciativa == EstadoIniciativaPorCorregir
+	return contiene([]string{EstadoIniciativaSinFormular, EstadoIniciativaFormulacionIniciada, EstadoIniciativaPorCorregir}, estadoIniciativa)
 }
 
 // PermiteRevisar indica si en ese estado de la iniciativa se pueden revisar submódulos.
@@ -92,12 +104,26 @@ func PermiteRevisar(estadoIniciativa string) bool {
 	return estadoIniciativa == EstadoIniciativaEnRevision
 }
 
-// EstadoTrasGuardar: un submódulo sin errores queda Formulado; con errores, Sin formular.
-func EstadoTrasGuardar(errores []ErrorCampo) string {
-	if len(errores) == 0 {
+// EstadoTrasGuardar: un submódulo sin errores queda Formulado; con errores, Formulando si ya
+// tiene información y Sin formular si no tiene nada diligenciado.
+func EstadoTrasGuardar(errores []ErrorCampo, conInformacion bool) string {
+	switch {
+	case len(errores) == 0:
 		return EstadoSubmoduloFormulado
+	case conInformacion:
+		return EstadoSubmoduloFormulando
+	default:
+		return EstadoSubmoduloSinFormular
 	}
-	return EstadoSubmoduloSinFormular
+}
+
+// EstadoIniciativaTrasGuardar: la iniciativa Sin formular pasa a Formulación iniciada en cuanto
+// algún submódulo tiene información. En los demás estados no cambia ("" = sin cambio).
+func EstadoIniciativaTrasGuardar(estadoIniciativa string, conInformacion bool) string {
+	if estadoIniciativa == EstadoIniciativaSinFormular && conInformacion {
+		return EstadoIniciativaFormulacionIniciada
+	}
+	return ""
 }
 
 // EvaluarAccion devuelve el estado destino o el motivo por el que no se puede.
@@ -126,9 +152,9 @@ func AccionesPosibles(estadoIniciativa string, estadosSubmodulos []string) []str
 	return posibles
 }
 
-// SubmoduloRevisable indica si un submódulo en ese estado se puede revisar.
+// SubmoduloRevisable indica si un submódulo en ese estado se puede revisar (ya está formulado).
 func SubmoduloRevisable(estadoSubmodulo string) bool {
-	return estadoSubmodulo != EstadoSubmoduloSinFormular
+	return estadoSubmodulo != EstadoSubmoduloSinFormular && estadoSubmodulo != EstadoSubmoduloFormulando
 }
 
 func todasEn(motivo string, permitidos ...string) func([]string) string {
@@ -217,7 +243,7 @@ func (c *catalogosSistema) asegurar() error {
 		submoduloPorCod[estado.Codigo] = estado
 		submoduloPorID[estado.ID] = estado
 	}
-	for _, codigo := range []string{EstadoSubmoduloSinFormular, EstadoSubmoduloFormulado, EstadoSubmoduloConObservaciones, EstadoSubmoduloSinObservaciones} {
+	for _, codigo := range codigosEstadoSubmodulo {
 		if _, existe := submoduloPorCod[codigo]; !existe {
 			return errorConfiguracion("no existe en %s un registro activo con código %s. %s", RecursoEstadoSubmodulo, codigo, comoCargarEstados)
 		}

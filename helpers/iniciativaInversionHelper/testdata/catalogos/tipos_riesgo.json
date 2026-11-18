@@ -1,0 +1,24 @@
+{
+  "catalogo": "tipos_riesgo",
+  "nombre": "Tipos de riesgo",
+  "modulo": "Preparación",
+  "fuente": "Hoja 'Analisis Riesgos' J67:J79",
+  "observaciones": [
+    "Las listas de las filas 22 a 25 de la hoja apuntan a rangos corridos; se tomaron las de las filas 56 a 86, que son las correctas."
+  ],
+  "items": [
+    {"codigo":"Administrativos","nombre":"Administrativos"},
+    {"codigo":"Asociados a fenómenos de origen biológico: plagas, epidemias","nombre":"Asociados a fenómenos de origen biológico: plagas, epidemias"},
+    {"codigo":"Asociados a fenómenos de origen humano no intencionales: aglomeración de público","nombre":"Asociados a fenómenos de origen humano no intencionales: aglomeración de público"},
+    {"codigo":"Asociados a fenómenos de origen natural: atmosféricos, hidrológicos, geológicos, otros","nombre":"Asociados a fenómenos de origen natural: atmosféricos, hidrológicos, geológicos, otros"},
+    {"codigo":"Asociados a fenómenos de origen socio-natural: inundaciones, movimientos en masa, incendios forestales","nombre":"Asociados a fenómenos de origen socio-natural: inundaciones, movimientos en masa, incendios forestales"},
+    {"codigo":"Asociados a fenómenos de origen tecnológico: químicos, eléctricos, mecánicos, térmicos","nombre":"Asociados a fenómenos de origen tecnológico: químicos, eléctricos, mecánicos, térmicos"},
+    {"codigo":"De calendario","nombre":"De calendario"},
+    {"codigo":"De costos","nombre":"De costos"},
+    {"codigo":"De mercado","nombre":"De mercado"},
+    {"codigo":"Financieros","nombre":"Financieros"},
+    {"codigo":"Legales","nombre":"Legales"},
+    {"codigo":"Operacionales","nombre":"Operacionales"},
+    {"codigo":"Sanitarios","nombre":"Sanitarios"}
+  ]
+}

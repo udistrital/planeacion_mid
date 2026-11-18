@@ -1,0 +1,28 @@
+{
+  "catalogo": "grupos_etnicos_trazador",
+  "nombre": "Comunidades del Trazador Presupuestal de Grupos Étnicos",
+  "modulo": "Identificación",
+  "fuente": "Formato de Planeación «Trazadores presupuestales» (imagen, 18 nov 2026), columna «Discriminado» de Grupos Étnicos. No sale del Excel del instrumento: extraer-catalogos.js no la genera.",
+  "observaciones": [
+    "Se usa en Trazadores presupuestales: las subfilas de Grupos Étnicos, cada una con su número de beneficiarios.",
+    "El padre es el código del trazador en trazadores_presupuestales.",
+    "El formato dice «Comunidades Room»; se escribió «Comunidades Rrom», como en Población («Pueblos Rrom»)."
+  ],
+  "items": [
+    {
+      "codigo": "Comunidades Negras, Afrocolombianos y Palenquera y comunidad raizal",
+      "nombre": "Comunidades Negras, Afrocolombianos y Palenquera y comunidad raizal",
+      "padre": "Trazador Presupuestal de Grupos Étnicos"
+    },
+    {
+      "codigo": "Comunidades indígenas",
+      "nombre": "Comunidades indígenas",
+      "padre": "Trazador Presupuestal de Grupos Étnicos"
+    },
+    {
+      "codigo": "Comunidades Rrom",
+      "nombre": "Comunidades Rrom",
+      "padre": "Trazador Presupuestal de Grupos Étnicos"
+    }
+  ]
+}

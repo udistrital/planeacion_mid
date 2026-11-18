@@ -1,0 +1,17 @@
+{
+  "catalogo": "niveles_actor",
+  "nombre": "Nivel del actor",
+  "modulo": "Identificación",
+  "fuente": "Lista de la plantilla de iniciativas. No sale del Excel del instrumento: extraer-catalogos.js no la genera.",
+  "observaciones": [
+    "Se usa en Participantes > Actor."
+  ],
+  "items": [
+    {"codigo":"Departamental","nombre":"Departamental"},
+    {"codigo":"Distrital","nombre":"Distrital"},
+    {"codigo":"Embajada","nombre":"Embajada"},
+    {"codigo":"Municipal","nombre":"Municipal"},
+    {"codigo":"Nacional","nombre":"Nacional"},
+    {"codigo":"Otro","nombre":"Otro"}
+  ]
+}

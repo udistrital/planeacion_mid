@@ -97,8 +97,8 @@ func TestUnErrorDesconocidoNoMuestraSuTexto(t *testing.T) {
 }
 
 func TestLaAccionNoPermitidaSeNombraComoEnPantalla(t *testing.T) {
-	_, motivo := EvaluarAccion(AccionNoAvalar, EstadoIniciativaEnFormulacion, nil)
-	if !strings.Contains(motivo, "«No avalar»") {
+	_, motivo := EvaluarAccion(AccionAvalar, EstadoIniciativaFormulacionIniciada, nil)
+	if !strings.Contains(motivo, "«Avalar»") {
 		t.Fatalf("motivo = %q", motivo)
 	}
 }

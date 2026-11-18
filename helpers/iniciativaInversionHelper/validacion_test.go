@@ -1,62 +1,62 @@
 package iniciativaInversionHelper
 
 import (
+	"errors"
 	"testing"
+	"time"
 )
 
-func TestElEjemploDelExcelNoTieneErrores(t *testing.T) {
+func TestLaIniciativaDeEjemploNoTieneErrores(t *testing.T) {
 	for submodulo, errores := range validarIniciativa(t, definicionDePrueba(t), iniciativaDeEjemplo(t)) {
 		exigirSinErrores(t, submodulo, errores)
 	}
 }
 
-func TestLosObjetivosNoDependenDeLaProblematica(t *testing.T) {
+// Objetivos tiene un objetivo específico por cada causa directa de la Problemática (espejo).
+func TestLosObjetivosEspecificosExigenUnaFilaPorCadaCausaDirecta(t *testing.T) {
 	iniciativa := iniciativaDeEjemplo(t)
-	problematica := iniciativa["problematica"]
-	problematica["causas_directas"] = append(filasEn(t, problematica, "causas_directas"), map[string]interface{}{
-		"id": "cd-4", "descripcion": "Nueva causa directa.", "linea_base": "Sin medición.",
-		"causas_indirectas": []interface{}{map[string]interface{}{"id": "ci-9", "descripcion": "Nueva causa indirecta."}},
-	})
+	iniciativa["problematica"] = problematicaConOtraCausa(t)
 
-	exigirSinErrores(t, "objetivos", validarIniciativa(t, definicionDePrueba(t), iniciativa)["objetivos"])
+	exigirError(t, validarIniciativa(t, definicionDePrueba(t), iniciativa)["objetivos"], "objetivos_especificos", "Nueva causa directa.")
 }
 
-func TestCadaObjetivoEspecificoNecesitaAlMenosUnMedio(t *testing.T) {
+func TestCadaCausaDirectaNecesitaAlMenosUnaCausaIndirecta(t *testing.T) {
 	iniciativa := iniciativaDeEjemplo(t)
-	filaConID(t, filasEn(t, iniciativa["objetivos"], "objetivos_especificos"), "oe-2")["medios"] = []interface{}{}
+	filaConID(t, filasEn(t, iniciativa["problematica"], "causas_directas"), "cd-2")["causas_indirectas"] = []interface{}{}
 
-	exigirError(t, validarIniciativa(t, definicionDePrueba(t), iniciativa)["objetivos"], "objetivos_especificos[oe-2].medios", "mínimo 1")
+	exigirError(t, validarIniciativa(t, definicionDePrueba(t), iniciativa)["problematica"], "causas_directas[cd-2].causas_indirectas", "mínimo 1")
 }
 
-func TestLasAlternativasExigenUnaFilaPorCadaObjetivoEspecifico(t *testing.T) {
+// La Cadena de valor tiene una sección por cada objetivo específico (espejo de Objetivos).
+func TestLaCadenaDeValorExigeUnaSeccionPorCadaObjetivoEspecifico(t *testing.T) {
 	iniciativa := iniciativaDeEjemplo(t)
-	actividades := filasEn(t, iniciativa["alternativas"], "actividades_por_objetivo")
-	iniciativa["alternativas"]["actividades_por_objetivo"] = actividades[:2] // se quita la de oe-3
+	secciones := filasEn(t, iniciativa["cadena_valor"], "productos_por_objetivo")
+	iniciativa["cadena_valor"]["productos_por_objetivo"] = secciones[:2] // sin la de oe-3
+
+	errores := validarIniciativa(t, definicionDePrueba(t), iniciativa)["cadena_valor"]
+	exigirError(t, errores, "productos_por_objetivo", "Fortalecer los componentes tecnológicos según")
+}
+
+func TestLaCadenaDeValorRechazaSeccionesDeObjetivosInexistentes(t *testing.T) {
+	iniciativa := iniciativaDeEjemplo(t)
+	filaConID(t, filasEn(t, iniciativa["cadena_valor"], "productos_por_objetivo"), "po-3")["origen"] = "oe-9"
+
+	errores := validarIniciativa(t, definicionDePrueba(t), iniciativa)["cadena_valor"]
+	exigirError(t, errores, "productos_por_objetivo[po-3]", "ya no existe")
+	exigirError(t, errores, "productos_por_objetivo", "Fortalecer los componentes tecnológicos según")
+}
+
+func TestCadaAlternativaExigeSuDescripcion(t *testing.T) {
+	iniciativa := iniciativaDeEjemplo(t)
+	delete(filaConID(t, filasEn(t, iniciativa["alternativas"], "alternativas_solucion"), "as-2"), "descripcion_alternativa")
 
 	errores := validarIniciativa(t, definicionDePrueba(t), iniciativa)["alternativas"]
-	exigirError(t, errores, "actividades_por_objetivo", "Fortalecer los componentes tecnológicos según")
-}
-
-func TestCadaObjetivoDeLasAlternativasExigeSuDescripcion(t *testing.T) {
-	iniciativa := iniciativaDeEjemplo(t)
-	delete(filaConID(t, filasEn(t, iniciativa["alternativas"], "actividades_por_objetivo"), "ao-2"), "descripcion_alternativa")
-
-	errores := validarIniciativa(t, definicionDePrueba(t), iniciativa)["alternativas"]
-	exigirError(t, errores, "actividades_por_objetivo[ao-2].descripcion_alternativa", "es obligatorio")
-}
-
-func TestLasAlternativasRechazanFilasDeObjetivosQueYaNoExisten(t *testing.T) {
-	iniciativa := iniciativaDeEjemplo(t)
-	filaConID(t, filasEn(t, iniciativa["alternativas"], "actividades_por_objetivo"), "ao-3")["origen"] = "oe-9"
-
-	errores := validarIniciativa(t, definicionDePrueba(t), iniciativa)["alternativas"]
-	exigirError(t, errores, "actividades_por_objetivo[ao-3]", "ya no existe")
-	exigirError(t, errores, "actividades_por_objetivo", "Fortalecer los componentes tecnológicos según")
+	exigirError(t, errores, "alternativas_solucion[as-2].descripcion_alternativa", "es obligatorio")
 }
 
 func TestElProgramaDebePertenecerAlSectorElegido(t *testing.T) {
 	iniciativa := iniciativaDeEjemplo(t)
-	iniciativa["articulacion_pnd"]["programa"] = "2201" // programa del sector 22, no del 45
+	iniciativa["articulacion_pnd"]["programa"] = "4599" // programa del sector 45, no del 22
 
 	errores := validarIniciativa(t, definicionDePrueba(t), iniciativa)["articulacion_pnd"]
 	exigirError(t, errores, "programa", "no pertenece")
@@ -87,18 +87,18 @@ func TestFilasSinIdentificadorOConIdentificadorRepetido(t *testing.T) {
 	exigirError(t, errores, "actores", "no tiene identificador")
 }
 
-func TestSelectRechazaValoresFueraDeLasOpciones(t *testing.T) {
-	iniciativa := iniciativaDeEjemplo(t)
-	filaConID(t, filasEn(t, iniciativa["participantes"], "actores"), "pa-1")["posicion"] = "Aliado"
+// En la plantilla la población es opcional; una matriz obligatoria reporta las celdas que faltan.
+func TestLaPoblacionEsOpcionalYUnaMatrizObligatoriaReportaLasCeldasFaltantes(t *testing.T) {
+	poblacion := definicionDePrueba(t).Submodulo("poblacion")
+	validador := NuevoValidador(catalogosDePrueba())
+	vacia := map[string]Datos{"poblacion": {"afectada": map[string]interface{}{}}}
+	exigirSinErrores(t, "poblacion", validador.ValidarSubmodulo(poblacion, vacia))
 
-	exigirError(t, validarIniciativa(t, definicionDePrueba(t), iniciativa)["participantes"], "actores[pa-1].posicion", "no es una opción válida")
-}
-
-func TestMatrizIncompletaReportaLasCeldasFaltantes(t *testing.T) {
-	iniciativa := iniciativaDeEjemplo(t)
-	iniciativa["poblacion"]["afectada"] = map[string]interface{}{}
-
-	exigirError(t, validarIniciativa(t, definicionDePrueba(t), iniciativa)["poblacion"], "afectada", "faltan 170 de 170")
+	obligatoria := *poblacion
+	afectada := *poblacion.Hijo("afectada")
+	afectada.Dato.Requerido = true
+	obligatoria.Hijos = []*Nodo{&afectada}
+	exigirError(t, validador.ValidarSubmodulo(&obligatoria, vacia), "afectada", "faltan 170 de 170")
 }
 
 func TestMatrizRechazaNegativosYDecimales(t *testing.T) {
@@ -123,7 +123,7 @@ func TestTextoObligatorioVacio(t *testing.T) {
 // Nombre del proyecto: calculado, pero editable
 // ---------------------------------------------------------------------------
 
-const nombreSugerido = "IMPLEMENTACIÓN DE LA POLÍTICA DE ESPACIO PÚBLICO PARA LA GENERACIÓN DE MÁS Y MEJORES ÁREAS PARA ENCUENTRO, CUIDADO Y DISFRUTE EN BOGOTÁ D.C."
+const nombreSugerido = "FORTALECIMIENTO DE LA INFRAESTRUCTURA TECNOLÓGICA Y DE LOS COMPONENTES DE TRANSFORMACIÓN DIGITAL DE LA UNIVERSIDAD DISTRITAL FRANCISCO JOSÉ DE CALDAS EN BOGOTÁ D.C."
 
 func normalizarNombre(t *testing.T, nombre interface{}) Datos {
 	t.Helper()
@@ -189,22 +189,21 @@ func TestNormalizarConservaIdYOrigenDeLasFilas(t *testing.T) {
 	catalogos := catalogosDePrueba()
 	ejemplo := iniciativaDeEjemplo(t)
 
-	objetivos := NuevoNormalizador(catalogos).Normalizar(definicion.Submodulo("objetivos"), ejemplo["objetivos"])
-	if len(filasEn(t, filaConID(t, filasEn(t, objetivos, "objetivos_especificos"), "oe-3"), "medios")) != 3 {
-		t.Fatal("se perdieron los medios anidados")
+	problematica := NuevoNormalizador(catalogos).Normalizar(definicion.Submodulo("problematica"), ejemplo["problematica"])
+	if len(filasEn(t, filaConID(t, filasEn(t, problematica, "causas_directas"), "cd-3"), "causas_indirectas")) != 3 {
+		t.Fatal("se perdieron las causas indirectas anidadas")
 	}
-	alternativas := NuevoNormalizador(catalogos).Normalizar(definicion.Submodulo("alternativas"), ejemplo["alternativas"])
-	if fila := filaConID(t, filasEn(t, alternativas, "actividades_por_objetivo"), "ao-2"); fila["origen"] != "oe-2" {
+	objetivos := NuevoNormalizador(catalogos).Normalizar(definicion.Submodulo("objetivos"), ejemplo["objetivos"])
+	if fila := filaConID(t, filasEn(t, objetivos, "objetivos_especificos"), "oe-2"); fila["origen"] != "cd-2" {
 		t.Fatalf("origen = %v", fila["origen"])
 	}
 }
 
 // ---------------------------------------------------------------------------
-// Referencias y cobertura: el motor las soporta aunque la plantilla de Identificación hoy no
-// las use. Se prueban con una definición pequeña.
+// Referencias "origen.*": se prueban con una definición pequeña.
 // ---------------------------------------------------------------------------
 
-func definicionConReferencias(cubrirTodas bool) *Definicion {
+func definicionConReferencias() *Definicion {
 	campo := func(clave, tipo string, extra Dato, hijos ...*Nodo) *Nodo {
 		extra.Clave, extra.Tipo, extra.Requerido = clave, tipo, true
 		return &Nodo{Nombre: clave, Dato: extra, Hijos: hijos}
@@ -217,7 +216,7 @@ func definicionConReferencias(cubrirTodas bool) *Definicion {
 	destino := &Nodo{Nombre: "Destino", Dato: Dato{Clave: "submodulo_destino"}, Hijos: []*Nodo{
 		campo("espejos", TipoRepetible, Dato{EspejoDe: "submodulo_origen.padres", Mostrar: "descripcion"},
 			campo("acciones", TipoRepetible, Dato{EtiquetaFila: "Acción"},
-				campo("hijo", TipoReferencia, Dato{OpcionesDesde: "origen.hijos", Mostrar: "descripcion", CubrirTodas: cubrirTodas}))),
+				campo("hijo", TipoReferencia, Dato{OpcionesDesde: "origen.hijos", Mostrar: "descripcion"}))),
 	}}
 	return &Definicion{Modulos: []*Nodo{{Dato: Dato{Clave: "m", Modulo: true}, Hijos: []*Nodo{origen, destino}}}}
 }
@@ -240,18 +239,10 @@ func datosConReferencias(referencias ...string) map[string]Datos {
 }
 
 func TestUnaReferenciaSoloAceptaFilasDeSuFilaDeOrigen(t *testing.T) {
-	definicion := definicionConReferencias(false)
+	definicion := definicionConReferencias()
 	errores := NuevoValidador(catalogosDePrueba()).ValidarSubmodulo(definicion.Submodulo("submodulo_destino"), datosConReferencias("h1", "h9"))
 
 	exigirError(t, errores, "espejos[e1].acciones[a2].hijo", "no es válida")
-}
-
-func TestCubrirTodasExigeReferenciarCadaOpcion(t *testing.T) {
-	definicion := definicionConReferencias(true)
-	validador := NuevoValidador(catalogosDePrueba())
-
-	exigirError(t, validador.ValidarSubmodulo(definicion.Submodulo("submodulo_destino"), datosConReferencias("h1")), "espejos[e1].acciones", "Hijo dos")
-	exigirSinErrores(t, "submodulo_destino", validador.ValidarSubmodulo(definicion.Submodulo("submodulo_destino"), datosConReferencias("h1", "h2")))
 }
 
 // ---------------------------------------------------------------------------
@@ -474,7 +465,8 @@ func TestUnaOperacionDesconocidaEsUnErrorDeConfiguracion(t *testing.T) {
 }
 
 // Un espejo puede salir de un grupo anidado ("submodulo.grupo.subgrupo"): una fila por
-// cada fila del subgrupo en todas las filas del grupo (p. ej. Plurianual por actividad).
+// cada fila del subgrupo en todas las filas del grupo (p. ej. el Cronograma, una fila por
+// cada actividad de los productos de la Cadena de valor).
 func TestUnEspejoDeUnGrupoAnidadoExigeUnaFilaPorCadaFilaInterna(t *testing.T) {
 	campo := func(clave, tipo string, extra Dato) *Nodo {
 		extra.Clave, extra.Tipo, extra.Requerido = clave, tipo, true
@@ -503,4 +495,290 @@ func TestUnEspejoDeUnGrupoAnidadoExigeUnaFilaPorCadaFilaInterna(t *testing.T) {
 
 	datos["submodulo_destino"] = Datos{"por_hijo": []interface{}{fila("x1", "h1"), fila("x2", "h2"), fila("x3", "h3")}}
 	exigirSinErrores(t, "submodulo_destino", validador.ValidarSubmodulo(destino, datos))
+}
+
+// Cronograma: una fila por actividad de la Cadena de valor. La programación física de un año se
+// exige solo si la actividad tiene costo (distinto de 0) en ese periodo (obligatorio_si), y la
+// financiera solo muestra el costo de la fila de origen (desde "origen.<campo>"): no se guarda.
+func submoduloCronograma() *Nodo {
+	return &Nodo{Nombre: "Cronograma", Dato: Dato{Clave: "cronograma"}, Hijos: []*Nodo{
+		campoDePrueba("actividades", TipoRepetible, Dato{Requerido: true, EspejoDe: "cadena_valor.objetivos.actividades", Mostrar: "actividad"},
+			&Nodo{Nombre: "Física", Dato: Dato{Clave: "fisica"}, Hijos: []*Nodo{
+				campoDePrueba("anio_0", TipoTexto, Dato{ObligatorioSi: "origen.periodo_0"}),
+				campoDePrueba("anio_1", TipoTexto, Dato{ObligatorioSi: "origen.periodo_1"}),
+				campoDePrueba("anio_2", TipoTexto, Dato{ObligatorioSi: "origen.periodo_2"}),
+			}},
+			&Nodo{Nombre: "Financiera", Dato: Dato{Clave: "financiera"}, Hijos: []*Nodo{
+				campoDePrueba("anio_0", TipoCalculado, Dato{Desde: "origen.periodo_0"}),
+			}}),
+	}}
+}
+
+func validarCronograma(t *testing.T, fisica Datos) ([]ErrorCampo, Datos) {
+	t.Helper()
+	submodulo := submoduloCronograma()
+	catalogos := catalogosDePrueba()
+	cronograma := NuevoNormalizador(catalogos).Normalizar(submodulo, Datos{"actividades": []interface{}{
+		map[string]interface{}{"id": "a1", "origen": "act-1", "fisica": fisica, "financiera": Datos{"anio_0": 999.0}},
+	}})
+	iniciativa := map[string]Datos{
+		"cadena_valor": {"objetivos": []interface{}{map[string]interface{}{"id": "o1", "actividades": []interface{}{
+			map[string]interface{}{"id": "act-1", "actividad": "Adecuar aulas", "periodo_0": 500.0, "periodo_1": 0.0},
+		}}}},
+		"cronograma": cronograma,
+	}
+	return NuevoValidador(catalogos).ValidarSubmodulo(submodulo, iniciativa), cronograma
+}
+
+func TestLaProgramacionFisicaSoloSeExigeEnLosAniosConCosto(t *testing.T) {
+	errores, _ := validarCronograma(t, Datos{})
+	if len(errores) != 1 {
+		t.Fatalf("solo el año 0 tiene costo; se esperaba un error: %+v", errores)
+	}
+	exigirError(t, errores, "actividades[a1].fisica.anio_0", "es obligatorio")
+
+	errores, cronograma := validarCronograma(t, Datos{"anio_0": "Enero - Diciembre", "anio_2": "Marzo"})
+	exigirSinErrores(t, "cronograma", errores)
+	fila := filasEn(t, cronograma, "actividades")[0].(map[string]interface{})
+	if financiera := fila["financiera"].(Datos); len(financiera) != 0 {
+		t.Fatalf("la programación financiera se trae de la fila de origen y no se guarda: %v", financiera)
+	}
+	if !dependenciasDe(submoduloCronograma())["cadena_valor"] {
+		t.Fatal("el cronograma debe recibir la cadena de valor en relacionadas")
+	}
+}
+
+// Presupuesto inicial: un espejo de las actividades en el que todo se trae (desde). Solo guarda id y
+// origen de cada fila, queda sin errores con una fila por actividad y avisa si falta alguna.
+func TestUnResumenTraidoSoloGuardaLasFilasYExigeUnaPorActividad(t *testing.T) {
+	submodulo := &Nodo{Nombre: "Presupuesto", Dato: Dato{Clave: "presupuesto_inicial"}, Hijos: []*Nodo{
+		campoDePrueba("actividades", TipoRepetible, Dato{Requerido: true, EspejoDe: "cadena_valor.objetivos.actividades", Mostrar: "actividad"},
+			campoDePrueba("producto", TipoCalculado, Dato{Desde: "cadena_valor.objetivos.producto", Catalogo: "productos"}),
+			campoDePrueba("anio_0", TipoCalculado, Dato{Desde: "origen.periodo_0"})),
+	}}
+	catalogos := catalogosDePrueba()
+	normalizar := func(filas ...interface{}) Datos {
+		return NuevoNormalizador(catalogos).Normalizar(submodulo, Datos{"actividades": filas})
+	}
+	iniciativa := map[string]Datos{
+		"cadena_valor": {"objetivos": []interface{}{map[string]interface{}{"id": "o1", "producto": "2201001", "actividades": []interface{}{
+			map[string]interface{}{"id": "act-1", "actividad": "Adecuar aulas", "periodo_0": 500.0},
+			map[string]interface{}{"id": "act-2", "actividad": "Comprar equipos", "periodo_0": 250.0},
+		}}}},
+	}
+	validador := NuevoValidador(catalogos)
+
+	iniciativa["presupuesto_inicial"] = normalizar(
+		map[string]interface{}{"id": "pi-1", "origen": "act-1", "producto": "lo que mande el cliente", "anio_0": 1.0},
+		map[string]interface{}{"id": "pi-2", "origen": "act-2"},
+	)
+	exigirSinErrores(t, "presupuesto_inicial", validador.ValidarSubmodulo(submodulo, iniciativa))
+	if fila := filasEn(t, iniciativa["presupuesto_inicial"], "actividades")[0].(map[string]interface{}); len(fila) != 2 {
+		t.Fatalf("de cada fila solo se guardan id y origen: %v", fila)
+	}
+
+	iniciativa["presupuesto_inicial"] = normalizar(map[string]interface{}{"id": "pi-1", "origen": "act-1"})
+	exigirError(t, validador.ValidarSubmodulo(submodulo, iniciativa), "actividades", "Comprar equipos")
+}
+
+// Trazadores presupuestales: espejo de un catálogo en el que se llenan solo los que aplican.
+// Grupos étnicos se desglosa en sus comunidades (espejo de otro catálogo con solo_si) y los
+// demás llevan discriminado y beneficiarios propios (solo_si con distinto).
+type repoCatalogosPorNombre map[string][]ItemCatalogo
+
+func (r repoCatalogosPorNombre) ElementosDeCatalogo(nombre string) ([]ItemCatalogo, error) {
+	return r[nombre], nil
+}
+
+func validarTrazadores(t *testing.T, filas ...interface{}) ([]ErrorCampo, Datos) {
+	t.Helper()
+	uno := 1.0
+	noEtnicos := &Condicion{Campo: "origen", Valor: "etn", Distinto: true}
+	submodulo := &Nodo{Nombre: "Trazadores", Dato: Dato{Clave: "trazadores_presupuestales"}, Hijos: []*Nodo{
+		campoDePrueba("trazadores", TipoRepetible, Dato{EspejoDe: "catalogo.trazadores", Mostrar: "nombre", FilasOpcionales: true},
+			campoDePrueba("descripcion", TipoTexto, Dato{Requerido: true}),
+			campoDePrueba("discriminado", TipoTexto, Dato{SoloSi: noEtnicos}),
+			campoDePrueba("beneficiarios", TipoNumerico, Dato{Requerido: true, SoloSi: noEtnicos}),
+			campoDePrueba("grupos", TipoRepetible, Dato{EspejoDe: "catalogo.grupos", Mostrar: "nombre", FilasOpcionales: true, Min: &uno,
+				SoloSi: &Condicion{Campo: "origen", Valor: "etn"}},
+				campoDePrueba("beneficiarios", TipoNumerico, Dato{Requerido: true}))),
+	}}
+	catalogos := NuevosCatalogosConCache(repoCatalogosPorNombre{
+		"trazadores": {{Codigo: "cul", Nombre: "Cultura ciudadana", Descripcion: "Busca consolidar un modelo…"}, {Codigo: "etn", Nombre: "Grupos étnicos"}},
+		"grupos":     {{Codigo: "ind", Nombre: "Comunidades indígenas"}, {Codigo: "rrom", Nombre: "Comunidades Rrom"}},
+	}, time.Hour)
+	datos := NuevoNormalizador(catalogos).Normalizar(submodulo, Datos{"trazadores": filas})
+	return NuevoValidador(catalogos).ValidarSubmodulo(submodulo, map[string]Datos{"trazadores_presupuestales": datos}), datos
+}
+
+func TestLosTrazadoresSeLlenanSiAplicanYGruposEtnicosSeDesglosaPorComunidad(t *testing.T) {
+	sinNinguno, _ := validarTrazadores(t)
+	exigirSinErrores(t, "trazadores_presupuestales", sinNinguno)
+
+	cultura, _ := validarTrazadores(t, Datos{"id": "t1", "origen": "cul", "descripcion": "Talleres de convivencia"})
+	exigirError(t, cultura, "trazadores[t1].beneficiarios", "es obligatorio")
+
+	etnicos := func(grupos ...interface{}) Datos {
+		return Datos{"id": "t2", "origen": "etn", "descripcion": "Becas", "discriminado": "no aplica", "beneficiarios": 9.0, "grupos": grupos}
+	}
+	sinComunidades, datos := validarTrazadores(t, etnicos(Datos{"id": "g1", "origen": "ind"}, Datos{"id": "g2", "origen": "rrom"}))
+	exigirError(t, sinComunidades, "trazadores[t2].grupos", "al menos 1")
+	fila := filasEn(t, datos, "trazadores")[0].(map[string]interface{})
+	if _, existe := fila["discriminado"]; existe {
+		t.Fatal("en grupos étnicos no se guarda el discriminado: lo reemplazan las comunidades")
+	}
+	if _, existe := fila["beneficiarios"]; existe {
+		t.Fatal("en grupos étnicos los beneficiarios van por comunidad")
+	}
+
+	conIndigenas, _ := validarTrazadores(t, etnicos(Datos{"id": "g1", "origen": "ind", "beneficiarios": 40.0}, Datos{"id": "g2", "origen": "rrom"}))
+	exigirSinErrores(t, "trazadores_presupuestales", conIndigenas)
+}
+
+func TestElOrigenDeUnEspejoDeCatalogoTraeLaDescripcionDelElemento(t *testing.T) {
+	filas := filasDeCatalogo(NuevoCatalogo("trazadores", []ItemCatalogo{
+		{Codigo: "cul", Nombre: "Cultura ciudadana", Descripcion: "Busca consolidar un modelo…"},
+		{Codigo: "juv", Nombre: "Juventud"},
+	}))
+	if filas[0]["descripcion"] != "Busca consolidar un modelo…" {
+		t.Fatalf("la fila de origen debe traer la descripción: %v", filas[0])
+	}
+	if _, existe := filas[1]["descripcion"]; existe {
+		t.Fatalf("sin descripción no se agrega la clave: %v", filas[1])
+	}
+}
+
+func TestObligatorioSiFueraDeUnEspejoEsUnErrorDeConfiguracion(t *testing.T) {
+	submodulo := &Nodo{Nombre: "Suelto", Dato: Dato{Clave: "suelto"}, Hijos: []*Nodo{
+		campoDePrueba("anio_0", TipoTexto, Dato{ObligatorioSi: "origen.periodo_0"}),
+	}}
+	errores := NuevoValidador(catalogosDePrueba()).ValidarSubmodulo(submodulo, map[string]Datos{"suelto": {}})
+
+	exigirError(t, errores, "anio_0", "mal configurado")
+}
+
+// ---------------------------------------------------------------------------
+// Espejo de un catálogo con filas opcionales (Resultados esperados de Objetivos)
+// ---------------------------------------------------------------------------
+
+func submoduloResultados() *Nodo {
+	return &Nodo{Nombre: "Objetivos", Dato: Dato{Clave: "objetivos"}, Hijos: []*Nodo{
+		campoDePrueba("resultados", TipoRepetible, Dato{Requerido: true, EspejoDe: "catalogo.resultados", Mostrar: "nombre",
+			FilasOpcionales: true, FilasObligatorias: []string{"est"}},
+			campoDePrueba("cual", TipoTexto, Dato{Requerido: true, SoloSi: &Condicion{Campo: "origen", Valor: "Otro"}}),
+			campoDePrueba("cantidad", TipoNumerico, Dato{Requerido: true}),
+			campoDePrueba("sede", TipoTexto, Dato{Requerido: true})),
+	}}
+}
+
+func validarResultados(repo RepositorioElementosCatalogo, filas ...interface{}) []ErrorCampo {
+	return NuevoValidador(NuevosCatalogosConCache(repo, time.Hour)).ValidarSubmodulo(submoduloResultados(),
+		map[string]Datos{"objetivos": {"resultados": filas}})
+}
+
+func resultadosDePrueba() *repoCatalogosContado {
+	return &repoCatalogosContado{items: []ItemCatalogo{
+		{Codigo: "est", Nombre: "Número de estudiantes beneficiados"},
+		{Codigo: "doc", Nombre: "Número de docentes beneficiados"},
+		{Codigo: "aul", Nombre: "Número de aulas"},
+		{Codigo: "Otro", Nombre: "Otro: ¿Cuál?"},
+	}}
+}
+
+func filaResultado(origen string, campos Datos) Datos {
+	fila := Datos{"id": "r-" + origen, "origen": origen}
+	for clave, valor := range campos {
+		fila[clave] = valor
+	}
+	return fila
+}
+
+func estudiantes() Datos {
+	return filaResultado("est", Datos{"cantidad": 26257.0, "sede": "Todas las sedes"})
+}
+
+func TestUnEspejoDeCatalogoSoloExigeLasFilasQueSeLlenanYLasObligatorias(t *testing.T) {
+	exigirSinErrores(t, "objetivos", validarResultados(resultadosDePrueba(),
+		estudiantes(),
+		filaResultado("doc", Datos{"cantidad": 120.0, "sede": "Macarena"}),
+		filaResultado("aul", Datos{"sede": "  "})))
+	// El cliente puede no mandar las filas opcionales vacías.
+	exigirSinErrores(t, "objetivos", validarResultados(resultadosDePrueba(), estudiantes()))
+}
+
+func TestUnaFilaObligatoriaDelCatalogoNoSePuedeDejarVacia(t *testing.T) {
+	errores := validarResultados(resultadosDePrueba(), filaResultado("est", nil))
+	exigirError(t, errores, "resultados[r-est].cantidad", "es obligatorio")
+	exigirError(t, errores, "resultados[r-est].sede", "es obligatorio")
+	exigirError(t, validarResultados(resultadosDePrueba()), "resultados", "«Número de estudiantes beneficiados»")
+}
+
+func TestUnaFilaDelCatalogoQueSeEmpiezaALlenarSeExigeCompleta(t *testing.T) {
+	errores := validarResultados(resultadosDePrueba(), estudiantes(), filaResultado("doc", Datos{"cantidad": 120.0}))
+	exigirError(t, errores, "resultados[r-doc].sede", "es obligatorio")
+}
+
+func TestUnEspejoDeCatalogoExigeElMinimoDeFilasLlenas(t *testing.T) {
+	submodulo := submoduloResultados()
+	minimo := 2.0
+	submodulo.Hijos[0].Dato.Min = &minimo
+	validador := NuevoValidador(NuevosCatalogosConCache(resultadosDePrueba(), time.Hour))
+
+	errores := validador.ValidarSubmodulo(submodulo, map[string]Datos{"objetivos": {"resultados": []interface{}{estudiantes()}}})
+	exigirError(t, errores, "resultados", "diligencie al menos 2 (hay 1)")
+}
+
+func TestUnEspejoDeCatalogoRechazaElementosQueYaNoEstanEnLaLista(t *testing.T) {
+	errores := validarResultados(resultadosDePrueba(), estudiantes(),
+		filaResultado("viejo", Datos{"cantidad": 1.0, "sede": "Macarena"}))
+	exigirError(t, errores, "resultados[r-viejo]", "ya no existe")
+}
+
+func TestSiNoSePuedeConsultarElCatalogoDelEspejoSeAvisa(t *testing.T) {
+	errores := validarResultados(&repoCatalogosContado{err: errors.New("crud caído")}, estudiantes())
+	exigirError(t, errores, "resultados", "no se pudieron consultar")
+}
+
+func TestUnEspejoDeCatalogoNoEsDependenciaDeOtroSubmodulo(t *testing.T) {
+	submodulo := submoduloResultados()
+	if len(dependenciasDe(submodulo)) != 0 {
+		t.Fatalf("el catálogo no es un submódulo: %v", dependenciasDe(submodulo))
+	}
+	if !catalogosEspejadosDe(submodulo)["resultados"] {
+		t.Fatal("el submódulo debe recibir los elementos del catálogo resultados en relacionadas")
+	}
+}
+
+func TestLaFilaOtroDelCatalogoEsOpcionalYSiSeLlenaPideCual(t *testing.T) {
+	exigirSinErrores(t, "objetivos", validarResultados(resultadosDePrueba(), estudiantes(), filaResultado("Otro", nil)))
+
+	errores := validarResultados(resultadosDePrueba(), estudiantes(), filaResultado("Otro", Datos{"cantidad": 3.0, "sede": "Macarena"}))
+	exigirError(t, errores, "resultados[r-Otro].cual", "es obligatorio")
+
+	exigirSinErrores(t, "objetivos", validarResultados(resultadosDePrueba(), estudiantes(),
+		filaResultado("Otro", Datos{"cual": "Número de huertas", "cantidad": 3.0, "sede": "Macarena"})))
+}
+
+func TestElCualSoloSeGuardaEnLaFilaOtro(t *testing.T) {
+	normalizado := NuevoNormalizador(catalogosDePrueba()).Normalizar(submoduloResultados(), Datos{"resultados": []interface{}{
+		filaResultado("doc", Datos{"cual": "no aplica aquí", "cantidad": 1.0, "sede": "Macarena"}),
+		filaResultado("Otro", Datos{"cual": "  Número de huertas ", "cantidad": 3.0, "sede": "Macarena"}),
+	}})
+	filas := normalizado["resultados"].([]interface{})
+	if _, existe := filas[0].(Datos)["cual"]; existe {
+		t.Fatal("el ¿cuál? no se debe guardar en una fila que no es «Otro»")
+	}
+	otro := filas[1].(Datos)
+	if otro["cual"] != "Número de huertas" || otro["origen"] != "Otro" || otro["id"] != "r-Otro" {
+		t.Fatalf("la fila «Otro» debe conservar su ¿cuál?, su origen y su id: %v", otro)
+	}
+}
+
+func TestLosMensajesNombranLaFilaSinElNoDelTitulo(t *testing.T) {
+	bienes := campoDePrueba("bienes", TipoRepetible, Dato{Requerido: true, EtiquetaFila: "Bien o servicio a entregar o demanda a satisfacer No."},
+		campoDePrueba("descripcion", TipoTexto, Dato{Requerido: true}))
+	submodulo := &Nodo{Nombre: "Necesidades", Dato: Dato{Clave: "necesidades"}, Hijos: []*Nodo{bienes}}
+
+	errores := NuevoValidador(catalogosDePrueba()).ValidarSubmodulo(submodulo, map[string]Datos{"necesidades": {}})
+	exigirError(t, errores, "bienes", "(bien o servicio a entregar o demanda a satisfacer)")
 }

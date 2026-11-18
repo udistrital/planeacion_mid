@@ -1,0 +1,14 @@
+{
+  "catalogo": "niveles_riesgo",
+  "nombre": "Niveles de la matriz de riesgos",
+  "modulo": "Preparación",
+  "fuente": "Hoja 'Analisis Riesgos' J62:J64",
+  "observaciones": [
+    "Las listas de las filas 22 a 25 de la hoja apuntan a rangos corridos; se tomaron las de las filas 56 a 86, que son las correctas."
+  ],
+  "items": [
+    {"codigo":"PROPOSITO","nombre":"PROPOSITO"},
+    {"codigo":"COMPONENTE","nombre":"COMPONENTE"},
+    {"codigo":"ACTIVIDAD","nombre":"ACTIVIDAD"}
+  ]
+}

@@ -27,17 +27,18 @@ func nuevoRepoMemoria() *repoMemoria {
 		catalogos: map[string][]Estado{
 			RecursoTipoPlan: {estado(tipoPlanDePrueba, CodigoTipoPlanIniciativa, "Iniciativa de inversión")},
 			RecursoEstadoPlan: {
-				estado("ep-ef", EstadoIniciativaEnFormulacion, "En formulación"),
+				estado("ep-sf", EstadoIniciativaSinFormular, "Sin formular"),
+				estado("ep-ef", EstadoIniciativaFormulacionIniciada, "Formulación iniciada"),
 				estado("ep-er", EstadoIniciativaEnRevision, "Enviado a revisión"),
 				estado("ep-pc", EstadoIniciativaPorCorregir, "Por corregir"),
 				estado("ep-av", EstadoIniciativaAvalado, "Avalado"),
-				estado("ep-na", EstadoIniciativaNoAvalado, "No avalado"),
 			},
 			RecursoEstadoSubmodulo: {
 				estado("es-sf", EstadoSubmoduloSinFormular, "Sin formular"),
+				estado("es-fn", EstadoSubmoduloFormulando, "Formulando"),
 				estado("es-for", EstadoSubmoduloFormulado, "Formulado"),
 				estado("es-co", EstadoSubmoduloConObservaciones, "Con observaciones"),
-				estado("es-so", EstadoSubmoduloSinObservaciones, "Sin observaciones"),
+				estado("es-so", EstadoSubmoduloAprobado, "Aprobado"),
 			},
 		},
 	}
@@ -204,11 +205,13 @@ func guardar(t *testing.T, servicio *Servicio, iniciativaID, clave string, datos
 	return vista
 }
 
-// formularTodo guarda todos los submódulos del ejemplo y exige que queden formulados.
+// formularTodo guarda, en el orden de la plantilla, todos los submódulos del ejemplo y exige
+// que queden formulados.
 func formularTodo(t *testing.T, servicio *Servicio, iniciativaID string) {
 	t.Helper()
 	iniciativa := iniciativaDeEjemplo(t)
-	for _, clave := range []string{"nombre", "articulacion_pnd", "problematica", "participantes", "poblacion", "objetivos", "alternativas"} {
+	for _, submodulo := range definicionDePrueba(t).Submodulos() {
+		clave := submodulo.Clave()
 		if vista := guardar(t, servicio, iniciativaID, clave, iniciativa[clave]); vista.Estado.Codigo != EstadoSubmoduloFormulado {
 			t.Fatalf("%s quedó %s: %+v", clave, vista.Estado.Codigo, vista.Errores)
 		}
@@ -244,11 +247,11 @@ func TestCrearIniciativaCreaUnSubmoduloSinFormularPorSubmoduloDeLaPlantilla(t *t
 	servicio, _ := nuevoServicioDePrueba(t)
 	resumen := crearIniciativaDePrueba(t, servicio)
 
-	if resumen.Estado.Codigo != EstadoIniciativaEnFormulacion || !resumen.PermiteEditar {
+	if resumen.Estado.Codigo != EstadoIniciativaSinFormular || !resumen.PermiteEditar {
 		t.Fatalf("estado inicial = %+v", resumen.Estado)
 	}
-	if len(submodulosDe(resumen)) != 7 {
-		t.Fatalf("se esperaban 7 submódulos y hay %d", len(submodulosDe(resumen)))
+	if esperados := len(definicionDePrueba(t).Submodulos()); len(submodulosDe(resumen)) != esperados {
+		t.Fatalf("se esperaban %d submódulos y hay %d", esperados, len(submodulosDe(resumen)))
 	}
 	for _, submodulo := range submodulosDe(resumen) {
 		if submodulo.Estado.Codigo != EstadoSubmoduloSinFormular {
@@ -292,8 +295,8 @@ func TestSinPlantillaSeCreaConLaMasReciente(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resumen.PlantillaID != "reciente" || resumen.Nombre != nombreIniciativaInicial {
-		t.Fatalf("plantilla = %s, nombre = %s", resumen.PlantillaID, resumen.Nombre)
+	if plantilla := repo.planes[resumen.ID].FormatoID; plantilla != "reciente" || resumen.Nombre != nombreIniciativaInicial {
+		t.Fatalf("plantilla = %s, nombre = %s", plantilla, resumen.Nombre)
 	}
 }
 
@@ -323,7 +326,7 @@ func TestListarNumeraYFiltraPorUnidad(t *testing.T) {
 	if len(todas) != 2 || todas[0].ID != otraUnidad || todas[0].Numero != 3 || todas[1].ID != activa || todas[1].Numero != 2 {
 		t.Fatalf("listado = %+v", todas)
 	}
-	if todas[1].Estado.Codigo != EstadoIniciativaEnFormulacion || !todas[1].PermiteEditar {
+	if todas[1].Estado.Codigo != EstadoIniciativaSinFormular || !todas[1].PermiteEditar {
 		t.Fatalf("estado = %+v", todas[1])
 	}
 
@@ -350,19 +353,48 @@ func TestGuardarNombreLoFormulaYActualizaElNombreDelPlan(t *testing.T) {
 	}
 }
 
-func TestGuardarConErroresGuardaElBorradorSinFormular(t *testing.T) {
-	servicio, _ := nuevoServicioDePrueba(t)
+func TestGuardarConErroresGuardaElBorradorFormulando(t *testing.T) {
+	servicio, repo := nuevoServicioDePrueba(t)
 	iniciativa := crearIniciativaDePrueba(t, servicio)
-	objetivos := iniciativaDeEjemplo(t)["objetivos"]
-	objetivos["objetivo_central"] = ""
+	participantes := iniciativaDeEjemplo(t)["participantes"]
+	participantes["analisis"] = ""
 
-	vista := guardar(t, servicio, iniciativa.ID, "objetivos", objetivos)
+	vista := guardar(t, servicio, iniciativa.ID, "participantes", participantes)
 
-	if vista.Estado.Codigo != EstadoSubmoduloSinFormular || len(vista.Errores) != 1 {
+	if vista.Estado.Codigo != EstadoSubmoduloFormulando || len(vista.Errores) != 1 {
 		t.Fatalf("estado=%s errores=%+v", vista.Estado.Codigo, vista.Errores)
 	}
-	if len(filasEn(t, vista.Datos, "objetivos_especificos")) != 3 {
+	if len(filasEn(t, vista.Datos, "actores")) != 4 {
 		t.Fatal("el borrador debió guardarse aunque tenga errores")
+	}
+	if estado := repo.planes[iniciativa.ID].EstadoPlanID; estado != "ep-ef" {
+		t.Fatalf("con la primera información la iniciativa debió pasar a Formulación iniciada y está %s", estado)
+	}
+}
+
+func TestGuardarVacioDejaSinFormularElSubmoduloYLaIniciativa(t *testing.T) {
+	servicio, repo := nuevoServicioDePrueba(t)
+	iniciativa := crearIniciativaDePrueba(t, servicio)
+
+	vista := guardar(t, servicio, iniciativa.ID, "objetivos", Datos{})
+
+	if vista.Estado.Codigo != EstadoSubmoduloSinFormular || len(vista.Errores) == 0 {
+		t.Fatalf("estado=%s errores=%d", vista.Estado.Codigo, len(vista.Errores))
+	}
+	if estado := repo.planes[iniciativa.ID].EstadoPlanID; estado != "ep-sf" {
+		t.Fatalf("sin información la iniciativa sigue Sin formular y está %s", estado)
+	}
+}
+
+func TestPasarAFormulacionIniciadaConservaElNombreQueSePropone(t *testing.T) {
+	servicio, repo := nuevoServicioDePrueba(t)
+	iniciativa := crearIniciativaDePrueba(t, servicio)
+
+	vista := guardar(t, servicio, iniciativa.ID, "nombre", iniciativaDeEjemplo(t)["nombre"])
+
+	plan := repo.planes[iniciativa.ID]
+	if plan.EstadoPlanID != "ep-ef" || plan.Nombre != vista.Datos["nombre_proyecto"] {
+		t.Fatalf("el plan debió quedar en Formulación iniciada y con el nombre propuesto: estado=%s nombre=%q", plan.EstadoPlanID, plan.Nombre)
 	}
 }
 
@@ -375,68 +407,56 @@ func TestGuardarConUnaVersionViejaResponde409(t *testing.T) {
 	exigirStatus(t, err, http.StatusConflict)
 }
 
-func TestAgregarUnObjetivoDevuelveAlternativasASinFormular(t *testing.T) {
+func TestAgregarUnaCausaDirectaDevuelveObjetivosAFormulando(t *testing.T) {
 	servicio, _ := nuevoServicioDePrueba(t)
 	iniciativa := crearIniciativaDePrueba(t, servicio)
 	formularTodo(t, servicio, iniciativa.ID)
 
-	objetivos := iniciativaDeEjemplo(t)["objetivos"]
-	objetivos["objetivos_especificos"] = append(filasEn(t, objetivos, "objetivos_especificos"), map[string]interface{}{
-		"id": "oe-4", "objetivo_especifico": "Nuevo objetivo.", "linea_base": "Sin medición.",
-		"medios": []interface{}{map[string]interface{}{"id": "me-9", "descripcion": "Nuevo medio."}},
-	})
-	guardar(t, servicio, iniciativa.ID, "objetivos", objetivos)
+	guardar(t, servicio, iniciativa.ID, "problematica", problematicaConOtraCausa(t))
 
-	if estado := estadoDeSubmodulo(t, servicio, iniciativa.ID, "alternativas"); estado != EstadoSubmoduloSinFormular {
-		t.Fatalf("alternativas debió volver a sin formular (falta la fila del nuevo objetivo) y está %s", estado)
+	if estado := estadoDeSubmodulo(t, servicio, iniciativa.ID, "objetivos"); estado != EstadoSubmoduloFormulando {
+		t.Fatalf("objetivos debió volver a formulando (falta el objetivo de la nueva causa) y está %s", estado)
 	}
 	if estado := estadoDeSubmodulo(t, servicio, iniciativa.ID, "participantes"); estado != EstadoSubmoduloFormulado {
-		t.Fatalf("participantes no depende de objetivos y quedó %s", estado)
+		t.Fatalf("participantes no depende de la problemática y quedó %s", estado)
 	}
 }
 
-func TestCambiarLaProblematicaNoAfectaLosObjetivos(t *testing.T) {
+func TestCambiarUnTextoDeLaProblematicaNoAfectaLosObjetivos(t *testing.T) {
 	servicio, _ := nuevoServicioDePrueba(t)
 	iniciativa := crearIniciativaDePrueba(t, servicio)
 	formularTodo(t, servicio, iniciativa.ID)
 
 	problematica := iniciativaDeEjemplo(t)["problematica"]
-	problematica["causas_directas"] = append(filasEn(t, problematica, "causas_directas"), map[string]interface{}{
-		"id": "cd-4", "descripcion": "Nueva causa directa.", "linea_base": "Sin medición.",
-		"causas_indirectas": []interface{}{map[string]interface{}{"id": "ci-9", "descripcion": "Nueva causa indirecta."}},
-	})
+	problematica["problema_central"] = "Baja capacidad tecnológica para la transformación digital de la Universidad."
 	guardar(t, servicio, iniciativa.ID, "problematica", problematica)
 
 	if estado := estadoDeSubmodulo(t, servicio, iniciativa.ID, "objetivos"); estado != EstadoSubmoduloFormulado {
-		t.Fatalf("objetivos no se relaciona con las causas y quedó %s", estado)
+		t.Fatalf("objetivos sigue con un objetivo por causa directa y quedó %s", estado)
 	}
 }
 
-// Simula que al guardar Objetivos falló devolver Alternativas a Sin formular: el
-// nuevo objetivo quedó guardado y Alternativas sigue Formulado sin la fila de ese
-// objetivo. Enviar debe detectarlo aunque el estado guardado diga Formulado.
+// Simula que al guardar Problemática falló devolver Objetivos a Formulando: la nueva
+// causa quedó guardada y Objetivos sigue Formulado sin el objetivo de esa causa. Enviar
+// debe detectarlo aunque el estado guardado diga Formulado.
 func TestEnviarRevalidaLosSubmodulosAunqueSuEstadoDigaFormulado(t *testing.T) {
 	servicio, repo := nuevoServicioDePrueba(t)
 	iniciativa := crearIniciativaDePrueba(t, servicio)
 	formularTodo(t, servicio, iniciativa.ID)
 
-	objetivos := iniciativaDeEjemplo(t)["objetivos"]
-	objetivos["objetivos_especificos"] = append(filasEn(t, objetivos, "objetivos_especificos"), map[string]interface{}{
-		"id": "oe-4", "objetivo_especifico": "Nuevo objetivo.", "linea_base": "Sin medición.",
-		"medios": []interface{}{map[string]interface{}{"id": "me-9", "descripcion": "Nuevo medio."}},
-	})
+	problematica := problematicaConOtraCausa(t)
 	for _, documento := range repo.submodulos {
-		if documento.PlanID == iniciativa.ID && documento.Submodulo == "objetivos" {
-			documento.Datos = objetivos
+		if documento.PlanID == iniciativa.ID && documento.Submodulo == "problematica" {
+			documento.Datos = problematica
 		}
 	}
-	if estado := estadoDeSubmodulo(t, servicio, iniciativa.ID, "alternativas"); estado != EstadoSubmoduloFormulado {
-		t.Fatalf("la prueba supone alternativas Formulado y está %s", estado)
+	if estado := estadoDeSubmodulo(t, servicio, iniciativa.ID, "objetivos"); estado != EstadoSubmoduloFormulado {
+		t.Fatalf("la prueba supone objetivos Formulado y está %s", estado)
 	}
 
 	_, err := servicio.EjecutarAccion(iniciativa.ID, AccionEnviar)
 	exigirStatus(t, err, http.StatusConflict)
-	if !strings.Contains(err.Error(), "«Alternativas de solución»") {
+	if !strings.Contains(err.Error(), "«Objetivos generales y específicos»") {
 		t.Fatalf("el mensaje debe nombrar el submódulo con pendientes: %v", err)
 	}
 	if estado := repo.planes[iniciativa.ID].EstadoPlanID; estado != "ep-ef" {
@@ -448,19 +468,19 @@ func TestObtenerSubmoduloIncluyeLosSubmodulosDeLasQueDepende(t *testing.T) {
 	servicio, _ := nuevoServicioDePrueba(t)
 	iniciativa := crearIniciativaDePrueba(t, servicio)
 
-	submodulo, err := servicio.ObtenerSubmodulo(iniciativa.ID, "alternativas")
+	cronograma, err := servicio.ObtenerSubmodulo(iniciativa.ID, "cronograma")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, existe := submodulo.Relacionadas["objetivos"]; !existe || len(submodulo.Relacionadas) != 1 {
-		t.Fatalf("relacionadas = %v", submodulo.Relacionadas)
+	if _, existe := cronograma.Relacionadas["cadena_valor"]; !existe || len(cronograma.Relacionadas) != 1 {
+		t.Fatalf("relacionadas = %v", cronograma.Relacionadas)
 	}
-	objetivos, err := servicio.ObtenerSubmodulo(iniciativa.ID, "objetivos")
+	participantes, err := servicio.ObtenerSubmodulo(iniciativa.ID, "participantes")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(objetivos.Relacionadas) != 0 {
-		t.Fatalf("objetivos ya no depende de otros submódulos: %v", objetivos.Relacionadas)
+	if len(participantes.Relacionadas) != 0 {
+		t.Fatalf("participantes no depende de otros submódulos: %v", participantes.Relacionadas)
 	}
 }
 
@@ -580,7 +600,7 @@ func TestElGestorComentaMientrasFormulaSinChocarConSuEdicion(t *testing.T) {
 	}
 }
 
-func TestUnaIniciativaAvaladaYaNoRecibeObservaciones(t *testing.T) {
+func TestUnaIniciativaAvaladaNoRecibeObservaciones(t *testing.T) {
 	servicio, _ := nuevoServicioDePrueba(t)
 	iniciativa := crearIniciativaDePrueba(t, servicio)
 	formularTodo(t, servicio, iniciativa.ID)
@@ -630,7 +650,7 @@ func TestObservacionInvalidaResponde400(t *testing.T) {
 	}
 }
 
-func TestRevisarYaNoRecibeObservaciones(t *testing.T) {
+func TestRevisarConObservacionesResponde400(t *testing.T) {
 	servicio, _ := nuevoServicioDePrueba(t)
 	iniciativa := crearIniciativaDePrueba(t, servicio)
 

@@ -15,17 +15,17 @@ func TestEvaluarAccion(t *testing.T) {
 		destino    string
 		permitida  bool
 	}{
-		{"enviar con todo formulado", AccionEnviar, EstadoIniciativaEnFormulacion, formuladas, EstadoIniciativaEnRevision, true},
-		{"enviar con un submódulo sin formular", AccionEnviar, EstadoIniciativaEnFormulacion, []string{EstadoSubmoduloFormulado, EstadoSubmoduloSinFormular}, "", false},
-		{"reenviar tras corregir", AccionEnviar, EstadoIniciativaPorCorregir, []string{EstadoSubmoduloSinObservaciones, EstadoSubmoduloFormulado}, EstadoIniciativaEnRevision, true},
+		{"enviar con todo formulado", AccionEnviar, EstadoIniciativaFormulacionIniciada, formuladas, EstadoIniciativaEnRevision, true},
+		{"enviar con un submódulo sin formular", AccionEnviar, EstadoIniciativaFormulacionIniciada, []string{EstadoSubmoduloFormulado, EstadoSubmoduloSinFormular}, "", false},
+		{"enviar con un submódulo formulando", AccionEnviar, EstadoIniciativaFormulacionIniciada, []string{EstadoSubmoduloFormulado, EstadoSubmoduloFormulando}, "", false},
+		{"enviar sin haber empezado", AccionEnviar, EstadoIniciativaSinFormular, formuladas, "", false},
+		{"reenviar tras corregir", AccionEnviar, EstadoIniciativaPorCorregir, []string{EstadoSubmoduloAprobado, EstadoSubmoduloFormulado}, EstadoIniciativaEnRevision, true},
 		{"reenviar con observaciones pendientes", AccionEnviar, EstadoIniciativaPorCorregir, []string{EstadoSubmoduloConObservaciones}, "", false},
 		{"enviar estando en revisión", AccionEnviar, EstadoIniciativaEnRevision, formuladas, "", false},
-		{"devolver con observaciones", AccionDevolver, EstadoIniciativaEnRevision, []string{EstadoSubmoduloSinObservaciones, EstadoSubmoduloConObservaciones}, EstadoIniciativaPorCorregir, true},
-		{"devolver sin observaciones", AccionDevolver, EstadoIniciativaEnRevision, []string{EstadoSubmoduloSinObservaciones}, "", false},
-		{"avalar todo sin observaciones", AccionAvalar, EstadoIniciativaEnRevision, []string{EstadoSubmoduloSinObservaciones, EstadoSubmoduloSinObservaciones}, EstadoIniciativaAvalado, true},
-		{"avalar con submódulos sin revisar", AccionAvalar, EstadoIniciativaEnRevision, []string{EstadoSubmoduloSinObservaciones, EstadoSubmoduloFormulado}, "", false},
-		{"no avalar en revisión", AccionNoAvalar, EstadoIniciativaEnRevision, formuladas, EstadoIniciativaNoAvalado, true},
-		{"no avalar en formulación", AccionNoAvalar, EstadoIniciativaEnFormulacion, formuladas, "", false},
+		{"devolver con observaciones", AccionDevolver, EstadoIniciativaEnRevision, []string{EstadoSubmoduloAprobado, EstadoSubmoduloConObservaciones}, EstadoIniciativaPorCorregir, true},
+		{"devolver sin observaciones", AccionDevolver, EstadoIniciativaEnRevision, []string{EstadoSubmoduloAprobado}, "", false},
+		{"avalar todo aprobado", AccionAvalar, EstadoIniciativaEnRevision, []string{EstadoSubmoduloAprobado, EstadoSubmoduloAprobado}, EstadoIniciativaAvalado, true},
+		{"avalar con submódulos sin revisar", AccionAvalar, EstadoIniciativaEnRevision, []string{EstadoSubmoduloAprobado, EstadoSubmoduloFormulado}, "", false},
 		{"acción inexistente", "borrar", EstadoIniciativaEnRevision, formuladas, "", false},
 	}
 	for _, caso := range casos {
@@ -39,8 +39,8 @@ func TestEvaluarAccion(t *testing.T) {
 }
 
 func TestAccionesPosibles(t *testing.T) {
-	enRevision := []string{EstadoSubmoduloSinObservaciones, EstadoSubmoduloConObservaciones}
-	if got := AccionesPosibles(EstadoIniciativaEnRevision, enRevision); !reflect.DeepEqual(got, []string{AccionDevolver, AccionNoAvalar}) {
+	enRevision := []string{EstadoSubmoduloAprobado, EstadoSubmoduloConObservaciones}
+	if got := AccionesPosibles(EstadoIniciativaEnRevision, enRevision); !reflect.DeepEqual(got, []string{AccionDevolver}) {
 		t.Fatalf("acciones = %v", got)
 	}
 	if got := AccionesPosibles(EstadoIniciativaAvalado, enRevision); len(got) != 0 {
@@ -49,10 +49,64 @@ func TestAccionesPosibles(t *testing.T) {
 }
 
 func TestEstadosDeSubmodulo(t *testing.T) {
-	if EstadoTrasGuardar(nil) != EstadoSubmoduloFormulado || EstadoTrasGuardar([]ErrorCampo{{}}) != EstadoSubmoduloSinFormular {
-		t.Fatal("estado tras guardar incorrecto")
+	conErrores := []ErrorCampo{{}}
+	if EstadoTrasGuardar(nil, true) != EstadoSubmoduloFormulado || EstadoTrasGuardar(nil, false) != EstadoSubmoduloFormulado {
+		t.Fatal("sin errores, el submódulo queda Formulado")
 	}
-	if !PermiteEditar(EstadoIniciativaPorCorregir) || PermiteEditar(EstadoIniciativaEnRevision) || !PermiteRevisar(EstadoIniciativaEnRevision) {
+	if EstadoTrasGuardar(conErrores, true) != EstadoSubmoduloFormulando || EstadoTrasGuardar(conErrores, false) != EstadoSubmoduloSinFormular {
+		t.Fatal("con errores, Formulando si tiene información y Sin formular si está vacío")
+	}
+	if SubmoduloRevisable(EstadoSubmoduloFormulando) || SubmoduloRevisable(EstadoSubmoduloSinFormular) || !SubmoduloRevisable(EstadoSubmoduloFormulado) {
+		t.Fatal("solo se revisa lo formulado")
+	}
+	if !PermiteEditar(EstadoIniciativaSinFormular) || !PermiteEditar(EstadoIniciativaFormulacionIniciada) || !PermiteEditar(EstadoIniciativaPorCorregir) ||
+		PermiteEditar(EstadoIniciativaEnRevision) || !PermiteRevisar(EstadoIniciativaEnRevision) {
 		t.Fatal("permisos por estado incorrectos")
+	}
+}
+
+func TestLaIniciativaPasaAFormulacionIniciadaConLaPrimeraInformacion(t *testing.T) {
+	if EstadoIniciativaTrasGuardar(EstadoIniciativaSinFormular, true) != EstadoIniciativaFormulacionIniciada {
+		t.Fatal("con información, de Sin formular a Formulación iniciada")
+	}
+	for _, sinCambio := range []struct {
+		estado         string
+		conInformacion bool
+	}{
+		{EstadoIniciativaSinFormular, false},
+		{EstadoIniciativaFormulacionIniciada, true},
+		{EstadoIniciativaPorCorregir, true},
+	} {
+		if destino := EstadoIniciativaTrasGuardar(sinCambio.estado, sinCambio.conInformacion); destino != "" {
+			t.Fatalf("%s con información=%v no debe cambiar y cambió a %s", sinCambio.estado, sinCambio.conInformacion, destino)
+		}
+	}
+}
+
+func TestTieneInformacionNoCuentaLoQuePoneElSistema(t *testing.T) {
+	nodos := []*Nodo{
+		campoDePrueba("nombre", TipoCalculado, Dato{Plantilla: "{x}"}),
+		campoDePrueba("filas", TipoRepetible, Dato{}, campoDePrueba("texto", TipoTexto, Dato{}), campoDePrueba("marcada", TipoCasilla, Dato{})),
+		{Nombre: "grupo", Dato: Dato{Clave: "grupo"}, Hijos: []*Nodo{campoDePrueba("numero", TipoNumerico, Dato{})}},
+	}
+	vacios := []Datos{
+		{},
+		{"nombre": "PROPUESTO", "filas": []interface{}{map[string]interface{}{"id": "f-1", "origen": "cd-1", "texto": "  ", "marcada": false}}},
+		{"grupo": map[string]interface{}{"numero": nil}},
+	}
+	for _, datos := range vacios {
+		if tieneInformacion(nodos, datos) {
+			t.Fatalf("no debía contar como información: %v", datos)
+		}
+	}
+	llenos := []Datos{
+		{"filas": []interface{}{map[string]interface{}{"id": "f-1", "texto": "algo"}}},
+		{"filas": []interface{}{map[string]interface{}{"id": "f-1", "marcada": true}}},
+		{"grupo": map[string]interface{}{"numero": 0.0}},
+	}
+	for _, datos := range llenos {
+		if !tieneInformacion(nodos, datos) {
+			t.Fatalf("debía contar como información: %v", datos)
+		}
 	}
 }

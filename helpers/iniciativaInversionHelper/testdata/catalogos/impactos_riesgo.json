@@ -1,0 +1,14 @@
+{
+  "catalogo": "impactos_riesgo",
+  "nombre": "Impacto del riesgo",
+  "modulo": "Preparación",
+  "fuente": "Hoja 'Analisis Riesgos' J87:J91",
+  "observaciones": [],
+  "items": [
+    {"codigo":"1","nombre":"Insignificante"},
+    {"codigo":"2","nombre":"Menor"},
+    {"codigo":"3","nombre":"Moderado"},
+    {"codigo":"4","nombre":"Mayor"},
+    {"codigo":"5","nombre":"Catastrófico"}
+  ]
+}

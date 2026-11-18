@@ -121,11 +121,10 @@ func (c *cargadorDefiniciones) cargarNodo(subgrupo Subgrupo) (*Nodo, error) {
 		return nil, err
 	}
 	nodo := &Nodo{
-		ID:           subgrupo.ID,
-		Nombre:       subgrupo.Nombre,
-		Descripcion:  patronOrden.ReplaceAllString(subgrupo.Descripcion, ""),
-		BanderaTabla: subgrupo.BanderaTabla,
-		Dato:         dato,
+		ID:          subgrupo.ID,
+		Nombre:      subgrupo.Nombre,
+		Descripcion: patronOrden.ReplaceAllString(subgrupo.Descripcion, ""),
+		Dato:        dato,
 	}
 	if len(subgrupo.Hijos) > 0 {
 		if nodo.Hijos, err = c.cargarHijos(subgrupo.ID); err != nil {
@@ -152,8 +151,8 @@ func (c *cargadorDefiniciones) cargarDato(subgrupoID string) (Dato, error) {
 	return Dato{}, nil
 }
 
-// interpretarDato convierte el texto JSON de subgrupo_detalle.dato. Los nodos de
-// grupo antiguos guardan "{}" o " ", que se interpretan como "sin campo".
+// interpretarDato convierte el texto JSON de subgrupo_detalle.dato. Un texto en blanco
+// o "{}" da un Dato sin tipo: el nodo es un grupo, no un campo.
 func interpretarDato(subgrupoID, texto string) (Dato, error) {
 	var dato Dato
 	if strings.TrimSpace(texto) == "" {

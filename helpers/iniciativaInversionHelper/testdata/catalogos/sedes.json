@@ -1,0 +1,17 @@
+{
+  "catalogo": "sedes",
+  "nombre": "Sedes",
+  "modulo": "Preparación",
+  "fuente": "Catálogo de prueba. En producción las sedes salen de Oikos (RepositorioConSedes, en sedes.go).",
+  "observaciones": [],
+  "items": [
+    {
+      "codigo": "1",
+      "nombre": "Sede de prueba"
+    },
+    {
+      "codigo": "Otra",
+      "nombre": "Otra"
+    }
+  ]
+}

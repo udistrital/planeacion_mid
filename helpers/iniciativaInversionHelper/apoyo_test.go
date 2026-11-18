@@ -8,10 +8,15 @@ import (
 )
 
 // Datos de prueba:
-//   - testdata/iniciativa.plantilla.json: copia de la construcción de
-//     database local/construccion-proyecto-inversion/iniciativa.plantilla.json
-//   - testdata/iniciativa_ejemplo.json: la iniciativa de ejemplo del Excel (OATI), sin
-//     errores. Las matrices de población van en 0 porque el Excel no trae cifras.
+//   - testdata/iniciativa.plantilla.json: la plantilla de database local/construccion-proyecto-inversion/
+//     iniciativa.plantilla.json con los módulos Identificación y Preparación. Anexos no va: sus
+//     campos son documentos, un tipo que el validador no tiene, y ninguna iniciativa de prueba
+//     quedaría completa para enviarla a revisión.
+//   - testdata/iniciativa_ejemplo.json: database local/construccion-proyecto-inversion/
+//     iniciativa.ejemplo.json con la sede de prueba «1» en Localización. Todos sus submódulos
+//     quedan formulados.
+//   - testdata/catalogos/: copias de database local/catalogos con los catálogos que usa la
+//     plantilla, y sedes.json, de prueba (en producción las sedes salen de Oikos).
 
 const tipoPlanDePrueba = "tipo-iniciativa"
 
@@ -45,6 +50,17 @@ func iniciativaDeEjemplo(t *testing.T) map[string]Datos {
 		t.Fatal(err)
 	}
 	return iniciativa
+}
+
+// problematicaConOtraCausa es la Problemática del ejemplo con una cuarta causa directa.
+func problematicaConOtraCausa(t *testing.T) Datos {
+	t.Helper()
+	problematica := iniciativaDeEjemplo(t)["problematica"]
+	problematica["causas_directas"] = append(filasEn(t, problematica, "causas_directas"), map[string]interface{}{
+		"id": "cd-4", "descripcion": "Nueva causa directa.",
+		"causas_indirectas": []interface{}{map[string]interface{}{"id": "ci-9", "descripcion": "Nueva causa indirecta."}},
+	})
+	return problematica
 }
 
 // validarIniciativa normaliza y valida todos los submódulos, como al guardarlos.

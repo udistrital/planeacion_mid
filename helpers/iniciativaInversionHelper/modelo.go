@@ -10,7 +10,6 @@ import (
 const (
 	TipoTexto      = "input"
 	TipoNumerico   = "numeric"
-	TipoSelect     = "select"
 	TipoCatalogo   = "catalogo"
 	TipoCalculado  = "calculado"
 	TipoRepetible  = "repetible"
@@ -41,9 +40,40 @@ func operacionValida(dato Dato) bool {
 	return false
 }
 
-// prefijoOrigen indica, en opciones_desde, que las opciones salen de la fila de
-// origen del espejo más cercano (p. ej. "origen.causas_indirectas").
+// prefijoOrigen indica, en opciones_desde, desde y obligatorio_si, que el grupo o el campo
+// es de la fila de origen del espejo más cercano (p. ej. "origen.periodo_0" en el Cronograma).
 const prefijoOrigen = "origen."
+
+// prefijoCatalogo indica, en espejo_de, que las filas salen de un catálogo: una por cada
+// elemento (p. ej. "catalogo.resultados_esperados"). Cada elemento es una fila de origen
+// con id = código y nombre; el cliente las recibe en relacionadas[claveRelacionadasCatalogo].
+const prefijoCatalogo = "catalogo."
+
+// claveRelacionadasCatalogo es la clave, en relacionadas, de los catálogos que espeja un
+// submódulo: relacionadas["catalogo"]["<nombre>"] = filas de origen.
+const claveRelacionadasCatalogo = "catalogo"
+
+// catalogoDeRuta devuelve el nombre del catálogo de una ruta "catalogo.<nombre>".
+func catalogoDeRuta(ruta string) (string, bool) {
+	if !strings.HasPrefix(ruta, prefijoCatalogo) {
+		return "", false
+	}
+	return strings.TrimPrefix(ruta, prefijoCatalogo), true
+}
+
+// filasDeCatalogo convierte los elementos de un catálogo en filas de origen de un espejo, con
+// su descripción si la tienen (el cliente la muestra como ayuda bajo el nombre).
+func filasDeCatalogo(catalogo *Catalogo) []Datos {
+	filas := make([]Datos, 0, len(catalogo.Items))
+	for _, item := range catalogo.Items {
+		fila := Datos{"id": item.Codigo, "nombre": item.Nombre}
+		if item.Descripcion != "" {
+			fila["descripcion"] = item.Descripcion
+		}
+		filas = append(filas, fila)
+	}
+	return filas
+}
 
 // Datos es el contenido de un submódulo o de una fila: clave del campo -> valor.
 type Datos = map[string]interface{}
@@ -78,12 +108,11 @@ func (d *Definicion) Submodulo(clave string) *Nodo {
 
 // Nodo es un subgrupo de la plantilla con su definición de campo.
 type Nodo struct {
-	ID           string  `json:"id"`
-	Nombre       string  `json:"nombre"`
-	Descripcion  string  `json:"descripcion"`
-	BanderaTabla bool    `json:"bandera_tabla"`
-	Dato         Dato    `json:"dato"`
-	Hijos        []*Nodo `json:"hijos"`
+	ID          string  `json:"id"`
+	Nombre      string  `json:"nombre"`
+	Descripcion string  `json:"descripcion"`
+	Dato        Dato    `json:"dato"`
+	Hijos       []*Nodo `json:"hijos"`
 }
 
 // Clave técnica del nodo (dato.clave).
@@ -111,50 +140,58 @@ func buscarNodo(nodos []*Nodo, clave string) *Nodo {
 
 // Dato es la definición de un campo, tal como se guarda en subgrupo_detalle.dato.
 type Dato struct {
-	Clave          string          `json:"clave"`
-	Modulo         bool            `json:"modulo,omitempty"`
-	Tipo           string          `json:"type,omitempty"`
-	Requerido      Booleano        `json:"required"`
-	Multilinea     bool            `json:"multilinea,omitempty"`
-	MaxLongitud    *int            `json:"maxlength,omitempty"`
-	Min            *float64        `json:"min,omitempty"`
-	Max            *float64        `json:"max,omitempty"`
-	Decimales      *int            `json:"decimales,omitempty"`
-	Opciones       []Opcion        `json:"options,omitempty"`
-	Catalogo       string          `json:"catalogo,omitempty"`
-	DependeDe      string          `json:"depende_de,omitempty"`
-	Plantilla      string          `json:"plantilla,omitempty"`
-	Operacion      string          `json:"operacion,omitempty"` // calculado numérico (OperacionResta, OperacionSuma, OperacionMultiplicacion); sin ella, el calculado es texto (plantilla)
-	Desde          string          `json:"desde,omitempty"`     // calculado que solo muestra "<submodulo>.<campo>" de otro submódulo; no se guarda
-	Operandos      []string        `json:"operandos,omitempty"` // claves de los campos hermanos, en orden
-	Transformar    string          `json:"transformar,omitempty"`
-	Editable       bool            `json:"editable,omitempty"`
-	NombrePlan     bool            `json:"nombre_plan,omitempty"`
-	EtiquetaFila   string          `json:"etiqueta_fila,omitempty"`
-	EspejoDe       string          `json:"espejo_de,omitempty"`
-	Mostrar        string          `json:"mostrar,omitempty"`
-	OpcionesDesde  string          `json:"opciones_desde,omitempty"`
-	MarcadaEn      string          `json:"marcada_en,omitempty"` // referencia a la fila marcada en esa casilla única (se llena sola)
-	Multiple       bool            `json:"multiple,omitempty"`   // referencia o catálogo con varias opciones (lista de ids o códigos)
-	SoloSi         *Condicion      `json:"solo_si,omitempty"`    // el campo se muestra, se exige y se guarda solo si se cumple
-	CubrirTodas    bool            `json:"cubrir_todas,omitempty"`
-	Unica          bool            `json:"unica,omitempty"` // casilla que se marca en una sola fila de su lista
-	TipoCelda      string          `json:"tipo_celda,omitempty"`
-	Totales        *Totales        `json:"totales,omitempty"`
-	Filas          []ElementoClave `json:"filas,omitempty"`
-	GruposColumnas []GrupoColumnas `json:"grupos_columnas,omitempty"`
+	Clave             string          `json:"clave"`
+	Modulo            bool            `json:"modulo,omitempty"`
+	Tipo              string          `json:"type,omitempty"`
+	Requerido         Booleano        `json:"required"`
+	Multilinea        bool            `json:"multilinea,omitempty"`
+	MaxLongitud       *int            `json:"maxlength,omitempty"`
+	Min               *float64        `json:"min,omitempty"`
+	Max               *float64        `json:"max,omitempty"`
+	Decimales         *int            `json:"decimales,omitempty"`
+	Catalogo          string          `json:"catalogo,omitempty"` // en un calculado con desde, el catálogo del que se muestra el nombre (solo cliente)
+	DependeDe         string          `json:"depende_de,omitempty"`
+	Plantilla         string          `json:"plantilla,omitempty"`
+	Operacion         string          `json:"operacion,omitempty"` // calculado numérico (OperacionResta, OperacionSuma, OperacionMultiplicacion); sin ella, el calculado es texto (plantilla)
+	Desde             string          `json:"desde,omitempty"`     // calculado que solo muestra "<submodulo>.<campo>" de otro submódulo, "origen.<campo>" de la fila de origen del espejo o "<ruta de un grupo>.<campo>" de la fila de ese grupo que contiene la de origen; no se guarda
+	Operandos         []string        `json:"operandos,omitempty"` // claves de los campos hermanos, en orden
+	Transformar       string          `json:"transformar,omitempty"`
+	Editable          bool            `json:"editable,omitempty"`
+	NombrePlan        bool            `json:"nombre_plan,omitempty"`
+	EtiquetaFila      string          `json:"etiqueta_fila,omitempty"`
+	EspejoDe          string          `json:"espejo_de,omitempty"`          // "<submodulo>.<grupo>" o "catalogo.<nombre>"
+	FilasOpcionales   bool            `json:"filas_opcionales,omitempty"`   // espejo: la fila vacía no se exige; min = cuántas se llenan como mínimo
+	FilasObligatorias []string        `json:"filas_obligatorias,omitempty"` // con filas_opcionales: ids de origen (códigos del catálogo) cuya fila sí se exige
+	Mostrar           string          `json:"mostrar,omitempty"`
+	MostrarDetalle    string          `json:"mostrar_detalle,omitempty"` // referencia: segundo texto de la opción (p. ej. la descripción bajo el nombre de la alternativa); solo lo usa el cliente
+	OpcionesDesde     string          `json:"opciones_desde,omitempty"`
+	MarcadaEn         string          `json:"marcada_en,omitempty"`     // referencia a la fila marcada en esa casilla única (se llena sola)
+	Multiple          bool            `json:"multiple,omitempty"`       // referencia o catálogo con varias opciones (lista de ids o códigos)
+	SoloSi            *Condicion      `json:"solo_si,omitempty"`        // el campo se muestra, se exige y se guarda solo si se cumple
+	ObligatorioSi     string          `json:"obligatorio_si,omitempty"` // "origen.<campo>": se exige solo si ese campo de la fila de origen del espejo tiene valor (un número distinto de 0)
+	NumerarPor        string          `json:"numerar_por,omitempty"`    // lista: sus filas se numeran n.m, con n la fila de este grupo (de su ruta o de espejo_de) que las contiene; solo lo usa el cliente
+	Unica             bool            `json:"unica,omitempty"`          // casilla que se marca en una sola fila de su lista
+	Totales           *Totales        `json:"totales,omitempty"`        // matriz; en un espejo, columnas = fila de totales (solo cliente)
+	Filas             []ElementoClave `json:"filas,omitempty"`
+	GruposColumnas    []GrupoColumnas `json:"grupos_columnas,omitempty"`
 }
 
 // Condicion de solo_si: el campo hermano Campo vale Valor o, si es una lista (catálogo
 // multiple), lo incluye. P. ej. «¿Cuál otra sede?» solo si en las sedes se marcó «Otra».
+// Con Distinto, al revés: el campo aplica si no vale (ni incluye) Valor (p. ej. el
+// discriminado de todos los trazadores presupuestales menos el de grupos étnicos).
 type Condicion struct {
-	Campo string `json:"campo"`
-	Valor string `json:"valor"`
+	Campo    string `json:"campo"`
+	Valor    string `json:"valor"`
+	Distinto bool   `json:"distinto,omitempty"`
 }
 
 // Cumple indica si la condición se cumple con los valores del mismo nivel.
 func (c *Condicion) Cumple(hermanos Datos) bool {
-	valor := hermanos[c.Campo]
+	return c.coincide(hermanos[c.Campo]) != c.Distinto
+}
+
+func (c *Condicion) coincide(valor interface{}) bool {
 	if texto, esTexto := comoTexto(valor); esTexto {
 		return texto == c.Valor
 	}
@@ -186,11 +223,6 @@ func (b *Booleano) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("valor booleano inválido: %s", data)
 	}
 	return nil
-}
-
-// Opcion de un select.
-type Opcion struct {
-	Valor string `json:"valor"`
 }
 
 // ElementoClave es una fila o columna de una matriz.
@@ -235,12 +267,11 @@ type Plan struct {
 
 // Subgrupo es un nodo del árbol tal como lo devuelve el crud.
 type Subgrupo struct {
-	ID           string   `json:"_id"`
-	Nombre       string   `json:"nombre"`
-	Descripcion  string   `json:"descripcion"`
-	Activo       bool     `json:"activo"`
-	BanderaTabla bool     `json:"bandera_tabla"`
-	Hijos        []string `json:"hijos"`
+	ID          string   `json:"_id"`
+	Nombre      string   `json:"nombre"`
+	Descripcion string   `json:"descripcion"`
+	Activo      bool     `json:"activo"`
+	Hijos       []string `json:"hijos"`
 }
 
 // DetalleSubgrupo es el subgrupo_detalle de un nodo; Dato es texto JSON.
@@ -311,7 +342,7 @@ type CambiosSubmodulo struct {
 // Solicitudes y respuestas del API
 // ---------------------------------------------------------------------------
 
-// ErrorCampo es un error de validación ubicado por la ruta del campo dentro de la
+// ErrorCampo es un error de validación ubicado por la ruta del campo dentro del
 // submódulo, p. ej. "causas_directas[cd-1].causas_indirectas[ci-2].descripcion".
 type ErrorCampo struct {
 	Ruta    string `json:"ruta"`
@@ -334,8 +365,8 @@ type SolicitudGuardarSubmodulo struct {
 }
 
 // SolicitudRevisarSubmodulo es el cuerpo de PUT /iniciativas/:id/submodulos/:clave/revision:
-// Planeación da el submódulo por revisado sin observaciones. Observaciones ya no
-// se acepta aquí; solo se lee para responder 400 a quien la siga enviando.
+// Planeación da el submódulo por revisado sin observaciones. Si trae Observaciones
+// responde 400: las observaciones se registran con POST .../observaciones.
 type SolicitudRevisarSubmodulo struct {
 	Version       int           `json:"version"`
 	Observaciones []Observacion `json:"observaciones,omitempty"`
@@ -364,7 +395,6 @@ type IniciativaListado struct {
 	Numero        int    `json:"numero"`
 	Nombre        string `json:"nombre"`
 	DependenciaID string `json:"dependencia_id"`
-	PlantillaID   string `json:"plantilla_id"`
 	Estado        Estado `json:"estado"`
 	PermiteEditar bool   `json:"permite_editar"`
 	FechaCreacion string `json:"fecha_creacion"`
@@ -374,28 +404,21 @@ type IniciativaListado struct {
 type ResumenSubmodulo struct {
 	Clave         string `json:"clave"`
 	Nombre        string `json:"nombre"`
-	Descripcion   string `json:"descripcion"`
-	Orden         int    `json:"orden"`
 	Estado        Estado `json:"estado"`
-	Version       int    `json:"version"`
 	Observaciones int    `json:"observaciones"`
 }
 
 // ResumenModulo agrupa los submódulos de un módulo en la vista general.
 type ResumenModulo struct {
-	Clave       string             `json:"clave"`
-	Nombre      string             `json:"nombre"`
-	Descripcion string             `json:"descripcion"`
-	Submodulos  []ResumenSubmodulo `json:"submodulos"`
+	Clave      string             `json:"clave"`
+	Nombre     string             `json:"nombre"`
+	Submodulos []ResumenSubmodulo `json:"submodulos"`
 }
 
 // ResumenIniciativa es la vista general: estado de la iniciativa y de cada submódulo, por módulo.
 type ResumenIniciativa struct {
 	ID               string          `json:"id"`
 	Nombre           string          `json:"nombre"`
-	DependenciaID    string          `json:"dependencia_id"`
-	PlantillaID      string          `json:"plantilla_id"`
-	VigenciaAplica   string          `json:"vigencia_aplica"`
 	Estado           Estado          `json:"estado"`
 	PermiteEditar    bool            `json:"permite_editar"`
 	PermiteRevisar   bool            `json:"permite_revisar"`
@@ -405,8 +428,6 @@ type ResumenIniciativa struct {
 
 // SubmoduloVista es un submódulo con su estado, observaciones y errores vigentes.
 type SubmoduloVista struct {
-	ID            string        `json:"id"`
-	Clave         string        `json:"clave"`
 	Estado        Estado        `json:"estado"`
 	Datos         Datos         `json:"datos"`
 	Observaciones []Observacion `json:"observaciones"`

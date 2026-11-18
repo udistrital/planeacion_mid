@@ -1,0 +1,15 @@
+{
+  "catalogo": "posiciones_actor",
+  "nombre": "Posición del actor frente al proyecto",
+  "modulo": "Identificación",
+  "fuente": "Lista de la plantilla de iniciativas. No sale del Excel del instrumento: extraer-catalogos.js no la genera.",
+  "observaciones": [
+    "Se usa en Participantes > Posición."
+  ],
+  "items": [
+    {"codigo":"Cooperante","nombre":"Cooperante"},
+    {"codigo":"Beneficiario","nombre":"Beneficiario"},
+    {"codigo":"Oponente","nombre":"Oponente"},
+    {"codigo":"Perjudicado","nombre":"Perjudicado"}
+  ]
+}

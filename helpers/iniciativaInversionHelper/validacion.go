@@ -3,6 +3,7 @@ package iniciativaInversionHelper
 import (
 	"fmt"
 	"math"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 
@@ -50,7 +51,6 @@ func NuevoValidador(catalogos ProveedorCatalogos) *Validador {
 	v.reglas = map[string]reglaCampo{
 		TipoTexto:      validarTexto,
 		TipoNumerico:   validarNumerico,
-		TipoSelect:     validarSelect,
 		TipoCatalogo:   validarCatalogo,
 		TipoCalculado:  validarCalculado,
 		TipoRepetible:  validarRepetible,
@@ -109,8 +109,39 @@ func (e *ejecucion) objeto(nodos []*Nodo, valores Datos, ruta string, padre alca
 			e.malConfigurado(nodo, rutaNodo, "el tipo de campo %q no está soportado", nodo.Dato.Tipo)
 			continue
 		}
-		regla(e, nodo, valor, valor != nil, rutaNodo, actual)
+		campo, configurado := e.segunOrigen(nodo, actual, rutaNodo)
+		if !configurado {
+			continue
+		}
+		regla(e, campo, valor, valor != nil, rutaNodo, actual)
 	}
+}
+
+// segunOrigen resuelve obligatorio_si "origen.<campo>": el campo se exige solo si ese campo de la
+// fila de origen del espejo tiene valor (p. ej. la programación física de un año en que la actividad
+// tiene costo en la Cadena de valor). Devuelve una copia del nodo con required resuelto, o false si
+// está mal configurado.
+func (e *ejecucion) segunOrigen(nodo *Nodo, alcance alcance, ruta string) (*Nodo, bool) {
+	if nodo.Dato.ObligatorioSi == "" {
+		return nodo, true
+	}
+	campo, deOrigen := strings.CutPrefix(nodo.Dato.ObligatorioSi, prefijoOrigen)
+	if !deOrigen || campo == "" || alcance.filaOrigen == nil {
+		e.malConfigurado(nodo, ruta, "obligatorio_si %q: se espera origen.<campo> en un campo de un grupo espejo", nodo.Dato.ObligatorioSi)
+		return nil, false
+	}
+	copia := *nodo
+	copia.Dato.Requerido = Booleano(conValor(alcance.filaOrigen[campo]))
+	return &copia, true
+}
+
+// conValor indica si un valor cuenta como diligenciado para obligatorio_si: un número distinto de 0
+// o cualquier otro contenido (un costo de 0 es como no tener costo).
+func conValor(valor interface{}) bool {
+	if numero, esNumero := comoNumero(valor); esNumero {
+		return numero != 0
+	}
+	return tieneContenido(valor)
 }
 
 // ---------------------------------------------------------------------------
@@ -195,20 +226,6 @@ func validarCasilla(e *ejecucion, nodo *Nodo, valor interface{}, existe bool, ru
 	case !marcada && !nodo.Dato.Unica:
 		e.faltaObligatorio(nodo, ruta)
 	}
-}
-
-func validarSelect(e *ejecucion, nodo *Nodo, valor interface{}, existe bool, ruta string, _ alcance) {
-	texto, esTexto := comoTexto(valor)
-	if !existe || (esTexto && texto == "") {
-		e.faltaObligatorio(nodo, ruta)
-		return
-	}
-	for _, opcion := range nodo.Dato.Opciones {
-		if esTexto && opcion.Valor == texto {
-			return
-		}
-	}
-	e.agregar(ruta, "%s: el valor seleccionado no es una opción válida.", nodo.Nombre)
 }
 
 func validarCatalogo(e *ejecucion, nodo *Nodo, valor interface{}, existe bool, ruta string, alcance alcance) {
@@ -337,7 +354,6 @@ func validarRepetible(e *ejecucion, nodo *Nodo, valor interface{}, existe bool, 
 	for _, fila := range filas {
 		e.objeto(nodo.Hijos, fila, rutaFila(ruta, idDe(fila)), padre)
 	}
-	e.cobertura(nodo, filas, ruta, padre)
 }
 
 // casillasUnicas exige que cada casilla con unica quede marcada en una sola fila de la lista
@@ -385,6 +401,14 @@ func (e *ejecucion) filasValidas(nodo *Nodo, lista []interface{}, ruta string) [
 	return filas
 }
 
+// etiquetaDeFila es la etiqueta de las filas para los mensajes, en minúscula y sin el «No.» final
+// del título (p. ej. «Bien o servicio a entregar o demanda a satisfacer No.»).
+func etiquetaDeFila(nodo *Nodo) string {
+	return strings.ToLower(patronNumeroFinal.ReplaceAllString(nodo.Dato.EtiquetaFila, ""))
+}
+
+var patronNumeroFinal = regexp.MustCompile(`(?i)\s+no\.?$`)
+
 func (e *ejecucion) cantidadDeFilas(nodo *Nodo, cantidad int, ruta string) {
 	minimo := 0
 	if nodo.Dato.Min != nil {
@@ -392,7 +416,7 @@ func (e *ejecucion) cantidadDeFilas(nodo *Nodo, cantidad int, ruta string) {
 	} else if nodo.Dato.Requerido {
 		minimo = 1
 	}
-	etiqueta := strings.ToLower(nodo.Dato.EtiquetaFila)
+	etiqueta := etiquetaDeFila(nodo)
 	if etiqueta == "" {
 		etiqueta = "fila"
 	}
@@ -404,11 +428,12 @@ func (e *ejecucion) cantidadDeFilas(nodo *Nodo, cantidad int, ruta string) {
 	}
 }
 
-// espejo exige exactamente una fila por cada fila del grupo de origen.
+// espejo exige exactamente una fila por cada fila del grupo de origen (o por cada elemento del
+// catálogo). Con filas_opcionales, la fila vacía no se exige ni se valida (no aplica), salvo las
+// de filas_obligatorias, y min es cuántas filas se llenan como mínimo.
 func (e *ejecucion) espejo(nodo *Nodo, filas []Datos, ruta string) {
-	origen, err := e.filasDeRuta(nodo.Dato.EspejoDe)
-	if err != "" {
-		e.malConfigurado(nodo, ruta, "espejo_de: %s", err)
+	origen, ok := e.origenDeEspejo(nodo, ruta)
+	if !ok {
 		return
 	}
 	idsOrigen := map[string]bool{}
@@ -432,15 +457,109 @@ func (e *ejecucion) espejo(nodo *Nodo, filas []Datos, ruta string) {
 		}
 	}
 
+	diligenciadas := 0
 	for _, filaOrigen := range origen {
 		fila := porOrigen[idDe(filaOrigen)]
+		if nodo.Dato.FilasOpcionales && !filaDiligenciada(nodo.Hijos, fila) && !filaObligatoria(nodo, idDe(filaOrigen)) {
+			continue
+		}
 		if fila == nil {
 			e.agregar(ruta, "%s: falta diligenciar el elemento que corresponde a «%s».",
 				nodo.Nombre, resumir(textoPlano(filaOrigen[nodo.Dato.Mostrar]), 80))
 			continue
 		}
+		diligenciadas++
 		e.objeto(nodo.Hijos, fila, rutaFila(ruta, idDe(fila)), alcance{filaOrigen: filaOrigen})
 	}
+	if nodo.Dato.FilasOpcionales && nodo.Dato.Min != nil && diligenciadas < int(*nodo.Dato.Min) {
+		e.agregar(ruta, "%s: diligencie al menos %d (hay %d).", nodo.Nombre, int(*nodo.Dato.Min), diligenciadas)
+	}
+}
+
+// filaObligatoria indica si la fila de ese elemento de origen se exige aunque el espejo tenga
+// filas_opcionales (p. ej. los resultados de estudiantes, docentes y administrativos beneficiados).
+func filaObligatoria(nodo *Nodo, idOrigen string) bool {
+	for _, id := range nodo.Dato.FilasObligatorias {
+		if id == idOrigen {
+			return true
+		}
+	}
+	return false
+}
+
+// origenDeEspejo devuelve las filas de origen de un espejo: las de otro grupo o, con
+// "catalogo.<nombre>", los elementos del catálogo. Si no se pueden obtener, reporta el error.
+func (e *ejecucion) origenDeEspejo(nodo *Nodo, ruta string) ([]Datos, bool) {
+	if nombre, esCatalogo := catalogoDeRuta(nodo.Dato.EspejoDe); esCatalogo {
+		catalogo, err := e.validador.catalogos.Catalogo(nombre)
+		if err != nil {
+			logs.Warn("iniciativaInversion: no se pudo consultar el catálogo %s para %s: %v", nombre, ruta, err)
+			e.agregar(ruta, "%s: no se pudieron consultar los elementos de la lista. Intente de nuevo más tarde.", nodo.Nombre)
+			return nil, false
+		}
+		return filasDeCatalogo(catalogo), true
+	}
+	origen, err := e.filasDeRuta(nodo.Dato.EspejoDe)
+	if err != "" {
+		e.malConfigurado(nodo, ruta, "espejo_de: %s", err)
+		return nil, false
+	}
+	return origen, true
+}
+
+// filaDiligenciada indica si la fila tiene algún valor en sus campos.
+func filaDiligenciada(nodos []*Nodo, fila Datos) bool {
+	return fila != nil && tieneInformacion(nodos, fila)
+}
+
+// tieneInformacion indica si hay algo diligenciado en esos campos: un texto, número, opción,
+// casilla marcada, celda o documento, también dentro de grupos y filas. No cuentan los calculados
+// (salen de los demás) ni el id y el origen de las filas, que pone el sistema (p. ej. las filas de
+// un espejo que nadie ha llenado).
+func tieneInformacion(nodos []*Nodo, datos Datos) bool {
+	for _, nodo := range nodos {
+		clave := nodo.Clave()
+		if clave == "" || nodo.Dato.Tipo == TipoCalculado {
+			continue
+		}
+		valor := datos[clave]
+		switch {
+		case !nodo.EsCampo():
+			if subdatos, esObjeto := comoObjeto(valor); esObjeto && tieneInformacion(nodo.Hijos, subdatos) {
+				return true
+			}
+		case nodo.Dato.Tipo == TipoRepetible:
+			for _, fila := range filasDe(valor) {
+				if tieneInformacion(nodo.Hijos, fila) {
+					return true
+				}
+			}
+		case tieneContenido(valor):
+			return true
+		}
+	}
+	return false
+}
+
+func tieneContenido(valor interface{}) bool {
+	switch v := valor.(type) {
+	case nil:
+		return false
+	case string:
+		return strings.TrimSpace(v) != ""
+	case bool:
+		return v
+	case []interface{}:
+		return len(v) > 0
+	case map[string]interface{}:
+		for _, interno := range v {
+			if tieneContenido(interno) {
+				return true
+			}
+		}
+		return false
+	}
+	return true
 }
 
 func validarReferencia(e *ejecucion, nodo *Nodo, valor interface{}, existe bool, ruta string, alcance alcance) {
@@ -488,36 +607,6 @@ func (e *ejecucion) referenciaMarcada(nodo *Nodo, ids []string, ruta string, alc
 		e.faltaObligatorio(nodo, ruta)
 	case len(ids) > 1 || opciones[ids[0]] == nil:
 		e.agregar(ruta, "%s: se marcó otra en el submódulo de donde se trae; revise este submódulo y guárdelo de nuevo.", nodo.Nombre)
-	}
-}
-
-// cobertura exige que cada opción de una referencia con cubrir_todas quede
-// seleccionada en al menos una fila (p. ej. toda causa indirecta con su medio).
-func (e *ejecucion) cobertura(nodo *Nodo, filas []Datos, ruta string, padre alcance) {
-	for _, hijo := range nodo.Hijos {
-		if hijo.Dato.Tipo != TipoReferencia || !hijo.Dato.CubrirTodas {
-			continue
-		}
-		opciones, err := e.listaDeOpciones(hijo, padre)
-		if err != "" {
-			continue // el error ya se reporta en cada fila
-		}
-		usadas := map[string]bool{}
-		for _, fila := range filas {
-			for _, id := range idsReferenciados(fila[hijo.Clave()]) {
-				usadas[id] = true
-			}
-		}
-		etiqueta := strings.ToLower(nodo.Dato.EtiquetaFila)
-		if etiqueta == "" {
-			etiqueta = "elemento"
-		}
-		for _, opcion := range opciones {
-			if !usadas[idDe(opcion)] {
-				e.agregar(ruta, "%s: ningún %s atiende «%s».",
-					nodo.Nombre, etiqueta, resumir(textoPlano(opcion[hijo.Dato.Mostrar]), 80))
-			}
-		}
 	}
 }
 

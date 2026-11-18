@@ -1,0 +1,11 @@
+{
+  "catalogo": "tipos_ingreso_beneficio",
+  "nombre": "Tipo (ingreso o beneficio)",
+  "modulo": "Preparación",
+  "fuente": "Hoja 'Ingresos y beneficios+' C24:C25",
+  "observaciones": [],
+  "items": [
+    {"codigo":"Beneficio","nombre":"Beneficio"},
+    {"codigo":"Ingreso","nombre":"Ingreso"}
+  ]
+}

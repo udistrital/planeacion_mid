@@ -31,7 +31,7 @@
             {
               "nombre": "Localización",
               "descripcion": "Lugar donde se ejecuta el proyecto.",
-              "dato": { "clave": "localizacion", "type": "select", "required": "true", "options": [{ "valor": "Bogotá D.C." }] }
+              "dato": { "clave": "localizacion", "type": "catalogo", "required": "true", "catalogo": "localizaciones_proyecto" }
             },
             {
               "nombre": "Producto principal del proyecto",
@@ -41,7 +41,6 @@
             {
               "nombre": "Nombre del proyecto",
               "descripcion": "Se propone como PROCESO + OBJETO + LOCALIZACIÓN; puede modificarlo. Se guarda en mayúsculas.",
-              "bandera_tabla": true,
               "dato": {
                 "clave": "nombre_proyecto",
                 "type": "calculado",
@@ -56,8 +55,8 @@
           ]
         },
         {
-          "nombre": "Articulación con el Plan Nacional de Desarrollo",
-          "descripcion": "Contribución del proyecto al Plan Nacional de Desarrollo.",
+          "nombre": "Articulación instrumentos de planificación",
+          "descripcion": "Contribución del proyecto a los instrumentos de planificación.",
           "dato": { "clave": "articulacion_pnd" },
           "hijos": [
             {
@@ -73,8 +72,37 @@
           ]
         },
         {
+          "nombre": "Justificación",
+          "descripcion": "Por qué se justifica el proyecto y normativa que lo enmarca.",
+          "dato": { "clave": "justificacion" },
+          "hijos": [
+            {
+              "nombre": "Descripción",
+              "descripcion": "Por qué se justifica el proyecto.",
+              "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
+            },
+            {
+              "nombre": "Aspectos legales",
+              "descripcion": "Normativa que enmarca el proyecto.",
+              "dato": { "clave": "aspectos_legales", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Normativa" },
+              "hijos": [
+                {
+                  "nombre": "Normativa",
+                  "descripcion": "Ley, decreto, resolución, Conpes o norma técnica, con su número y año.",
+                  "dato": { "clave": "norma", "type": "input", "required": "true", "maxlength": 300 }
+                },
+                {
+                  "nombre": "Descripción",
+                  "descripcion": "De qué trata la normativa.",
+                  "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
+                }
+              ]
+            }
+          ]
+        },
+        {
           "nombre": "Problemática",
-          "descripcion": "Análisis de la situación inicial (árbol de problemas).",
+          "descripcion": "Análisis de la situación inicial: problema central, causas y efectos.",
           "dato": { "clave": "problematica" },
           "hijos": [
             {
@@ -98,11 +126,6 @@
                   "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
                 },
                 {
-                  "nombre": "Línea base",
-                  "descripcion": "Situación actual medible de la causa directa.",
-                  "dato": { "clave": "linea_base", "type": "input", "required": "true", "multilinea": true }
-                },
-                {
                   "nombre": "Causas indirectas",
                   "descripcion": "Causas que originan esta causa directa.",
                   "dato": { "clave": "causas_indirectas", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Causa indirecta" },
@@ -111,11 +134,6 @@
                       "nombre": "Descripción",
                       "descripcion": "Descripción de la causa indirecta.",
                       "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
-                    },
-                    {
-                      "nombre": "Línea base",
-                      "descripcion": "Situación actual medible de la causa indirecta.",
-                      "dato": { "clave": "linea_base", "type": "input", "required": "false", "multilinea": true }
                     }
                   ]
                 }
@@ -132,11 +150,6 @@
                   "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
                 },
                 {
-                  "nombre": "Línea base",
-                  "descripcion": "Situación actual medible del efecto directo.",
-                  "dato": { "clave": "linea_base", "type": "input", "required": "true", "multilinea": true }
-                },
-                {
                   "nombre": "Efectos indirectos",
                   "descripcion": "Consecuencias que se derivan de este efecto directo.",
                   "dato": { "clave": "efectos_indirectos", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Efecto indirecto" },
@@ -145,11 +158,6 @@
                       "nombre": "Descripción",
                       "descripcion": "Descripción del efecto indirecto.",
                       "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
-                    },
-                    {
-                      "nombre": "Línea base",
-                      "descripcion": "Situación actual medible del efecto indirecto.",
-                      "dato": { "clave": "linea_base", "type": "input", "required": "false", "multilinea": true }
                     }
                   ]
                 }
@@ -168,6 +176,30 @@
           ]
         },
         {
+          "nombre": "Diagnóstico",
+          "descripcion": "Diagnóstico encontrado de la situación problemática.",
+          "dato": { "clave": "diagnostico" },
+          "hijos": [
+            {
+              "nombre": "Diagnóstico encontrado",
+              "descripcion": "Soporte con cifras la situación problemática presentada y sus fuentes de información.",
+              "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
+            }
+          ]
+        },
+        {
+          "nombre": "Antecedentes",
+          "descripcion": "Antecedentes relacionados con el problema.",
+          "dato": { "clave": "antecedentes" },
+          "hijos": [
+            {
+              "nombre": "Antecedentes relacionados",
+              "descripcion": "Los antecedentes del problema deben incluir las acciones o intervenciones adelantadas en los últimos años.",
+              "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
+            }
+          ]
+        },
+        {
           "nombre": "Participantes",
           "descripcion": "Identificación y análisis de los participantes del proyecto.",
           "dato": { "clave": "participantes" },
@@ -180,19 +212,7 @@
                 {
                   "nombre": "Actor",
                   "descripcion": "Nivel del actor.",
-                  "dato": {
-                    "clave": "actor",
-                    "type": "select",
-                    "required": "true",
-                    "options": [
-                      { "valor": "Departamental" },
-                      { "valor": "Distrital" },
-                      { "valor": "Embajada" },
-                      { "valor": "Municipal" },
-                      { "valor": "Nacional" },
-                      { "valor": "Otro" }
-                    ]
-                  }
+                  "dato": { "clave": "actor", "type": "catalogo", "required": "true", "catalogo": "niveles_actor" }
                 },
                 {
                   "nombre": "Entidad",
@@ -202,17 +222,7 @@
                 {
                   "nombre": "Posición",
                   "descripcion": "Posición del actor frente al proyecto.",
-                  "dato": {
-                    "clave": "posicion",
-                    "type": "select",
-                    "required": "true",
-                    "options": [
-                      { "valor": "Cooperante" },
-                      { "valor": "Beneficiario" },
-                      { "valor": "Oponente" },
-                      { "valor": "Perjudicado" }
-                    ]
-                  }
+                  "dato": { "clave": "posicion", "type": "catalogo", "required": "true", "catalogo": "posiciones_actor" }
                 },
                 {
                   "nombre": "Intereses o expectativas",
@@ -227,7 +237,7 @@
               ]
             },
             {
-              "nombre": "Análisis de participantes",
+              "nombre": "Análisis de los participantes",
               "descripcion": "Análisis general de los participantes.",
               "dato": { "clave": "analisis", "type": "input", "required": "true", "multilinea": true }
             }
@@ -244,8 +254,7 @@
               "dato": {
                 "clave": "afectada",
                 "type": "matriz",
-                "required": "true",
-                "tipo_celda": "numeric",
+                "required": "false",
                 "min": 0,
                 "decimales": 0,
                 "totales": { "filas": true, "columnas": true },
@@ -308,8 +317,7 @@
               "dato": {
                 "clave": "objetivo",
                 "type": "matriz",
-                "required": "true",
-                "tipo_celda": "numeric",
+                "required": "false",
                 "min": 0,
                 "decimales": 0,
                 "totales": { "filas": true, "columnas": true },
@@ -317,7 +325,7 @@
                   { "clave": "primera_infancia", "nombre": "Primera infancia 0 - 5 años" },
                   { "clave": "infancia", "nombre": "Infancia 6 - 11 años" },
                   { "clave": "adolescencia", "nombre": "Adolescencia 12 - 18 años" },
-                  { "clave": "juventud", "nombre": "Juventud 14 - 26 años" },
+                  { "clave": "juventud", "nombre": "Juventud 19 - 26 años" },
                   { "clave": "adultez", "nombre": "Adultez 27 - 59 años" },
                   { "clave": "vejez", "nombre": "Vejez 60 años y más" },
                   { "clave": "de_0_a_14", "nombre": "0 a 14 años" },
@@ -369,8 +377,80 @@
           ]
         },
         {
+          "nombre": "Trazadores presupuestales",
+          "descripcion": "Trazadores presupuestales a los que contribuye el proyecto.",
+          "dato": { "clave": "trazadores_presupuestales" },
+          "hijos": [
+            {
+              "nombre": "El proyecto contribuye Sí / No a los siguientes trazadores presupuestales",
+              "descripcion": "Diligencie solo los trazadores a los que contribuye el proyecto; los demás se dejan vacíos. Debajo del nombre de cada trazador está su definición. En Grupos Étnicos, diligencie el número de beneficiarios de cada comunidad a la que llega el proyecto.",
+              "dato": {
+                "clave": "trazadores",
+                "type": "repetible",
+                "required": "false",
+                "espejo_de": "catalogo.trazadores_presupuestales",
+                "mostrar": "nombre",
+                "filas_opcionales": true,
+                "etiqueta_fila": "Nombre completo del trazador presupuestal"
+              },
+              "hijos": [
+                {
+                  "nombre": "Descripción",
+                  "descripcion": "Cómo contribuye el proyecto al trazador.",
+                  "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
+                },
+                {
+                  "nombre": "Discriminado",
+                  "descripcion": "Población o enfoque en que se concreta la contribución, si aplica.",
+                  "dato": {
+                    "clave": "discriminado",
+                    "type": "input",
+                    "required": "false",
+                    "maxlength": 300,
+                    "solo_si": { "campo": "origen", "valor": "Trazador Presupuestal de Grupos Étnicos", "distinto": true }
+                  }
+                },
+                {
+                  "nombre": "Número de beneficiarios",
+                  "descripcion": "Personas que se benefician.",
+                  "dato": {
+                    "clave": "numero_beneficiarios",
+                    "type": "numeric",
+                    "required": "true",
+                    "min": 0,
+                    "decimales": 0,
+                    "solo_si": { "campo": "origen", "valor": "Trazador Presupuestal de Grupos Étnicos", "distinto": true }
+                  }
+                },
+                {
+                  "nombre": "Comunidades",
+                  "descripcion": "Comunidades del trazador de Grupos Étnicos: diligencie el número de beneficiarios de al menos una.",
+                  "dato": {
+                    "clave": "grupos_etnicos",
+                    "type": "repetible",
+                    "required": "true",
+                    "espejo_de": "catalogo.grupos_etnicos_trazador",
+                    "mostrar": "nombre",
+                    "filas_opcionales": true,
+                    "min": 1,
+                    "etiqueta_fila": "Comunidad",
+                    "solo_si": { "campo": "origen", "valor": "Trazador Presupuestal de Grupos Étnicos" }
+                  },
+                  "hijos": [
+                    {
+                      "nombre": "Número de beneficiarios",
+                      "descripcion": "Personas de la comunidad que se benefician.",
+                      "dato": { "clave": "numero_beneficiarios", "type": "numeric", "required": "true", "min": 0, "decimales": 0 }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
           "nombre": "Objetivos generales y específicos",
-          "descripcion": "Árbol de objetivos. Se redacta teniendo en cuenta el árbol de problemas, sin relacionar causas ni efectos.",
+          "descripcion": "Objetivo central, un objetivo específico por cada causa directa de la Problemática, resultados esperados e impactos esperados.",
           "dato": { "clave": "objetivos" },
           "hijos": [
             {
@@ -400,67 +480,177 @@
             },
             {
               "nombre": "Objetivos específicos",
-              "descripcion": "Objetivos específicos del proyecto.",
-              "dato": { "clave": "objetivos_especificos", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Objetivo específico" },
+              "descripcion": "Un objetivo específico por cada causa directa de la Problemática.",
+              "dato": {
+                "clave": "objetivos_especificos",
+                "type": "repetible",
+                "required": "true",
+                "espejo_de": "problematica.causas_directas",
+                "mostrar": "descripcion",
+                "etiqueta_fila": "Causa directa"
+              },
               "hijos": [
                 {
                   "nombre": "Objetivo específico",
-                  "descripcion": "Objetivo que contribuye al objetivo central.",
+                  "descripcion": "Objetivo que resuelve la causa directa y contribuye al objetivo central.",
                   "dato": { "clave": "objetivo_especifico", "type": "input", "required": "true", "multilinea": true }
                 },
                 {
                   "nombre": "Línea base",
                   "descripcion": "Situación actual medible del objetivo específico.",
                   "dato": { "clave": "linea_base", "type": "input", "required": "true", "multilinea": true }
-                },
-                {
-                  "nombre": "Medios",
-                  "descripcion": "Medios para lograr el objetivo específico.",
-                  "dato": { "clave": "medios", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Medio" },
-                  "hijos": [
-                    {
-                      "nombre": "Medio",
-                      "descripcion": "Acción con la que se logra el objetivo específico.",
-                      "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
-                    },
-                    {
-                      "nombre": "Línea base",
-                      "descripcion": "Situación actual medible del medio.",
-                      "dato": { "clave": "linea_base", "type": "input", "required": "false", "multilinea": true }
-                    }
-                  ]
                 }
               ]
             },
             {
               "nombre": "Resultados esperados",
-              "descripcion": "Resultados esperados del proyecto.",
-              "dato": { "clave": "resultados_esperados", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Resultado esperado" },
+              "descripcion": "Los resultados de estudiantes, docentes y administrativos beneficiados son obligatorios. De los demás, diligencie la cantidad y la sede solo de los que apliquen; los que no apliquen se dejan vacíos. Si el proyecto tiene un resultado que no está en la lista, escríbalo en la última fila («Otro»).",
+              "dato": {
+                "clave": "resultados_esperados",
+                "type": "repetible",
+                "required": "true",
+                "espejo_de": "catalogo.resultados_esperados",
+                "mostrar": "nombre",
+                "filas_opcionales": true,
+                "filas_obligatorias": [
+                  "Número de estudiantes beneficiados",
+                  "Número de docentes beneficiados",
+                  "Número de administrativos beneficiados"
+                ],
+                "etiqueta_fila": "Resultado esperado del proyecto"
+              },
               "hijos": [
                 {
-                  "nombre": "Resultado esperado",
-                  "descripcion": "Cambio esperado al lograr el objetivo central.",
-                  "dato": { "clave": "resultado_esperado", "type": "input", "required": "true", "multilinea": true }
+                  "nombre": "¿Cuál?",
+                  "descripcion": "Resultado esperado que no está en la lista.",
+                  "dato": { "clave": "cual", "type": "input", "required": "true", "maxlength": 300, "solo_si": { "campo": "origen", "valor": "Otro" } }
                 },
                 {
-                  "nombre": "Indicador de resultado",
-                  "descripcion": "Indicador con el que se mide el resultado.",
-                  "dato": { "clave": "indicador_resultado", "type": "input", "required": "false", "multilinea": true }
+                  "nombre": "Cantidad",
+                  "descripcion": "Cantidad que se espera lograr del resultado (por ejemplo, 26.257 estudiantes).",
+                  "dato": { "clave": "cantidad", "type": "numeric", "required": "true", "min": 0 }
                 },
                 {
-                  "nombre": "Impactos esperados",
-                  "descripcion": "Impactos que se derivan de este resultado.",
-                  "dato": { "clave": "impactos", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Impacto esperado" },
+                  "nombre": "Localización (Sede)",
+                  "descripcion": "Sedes donde se logra el resultado. Mencione también los laboratorios, canchas u otros espacios a intervenir.",
+                  "dato": { "clave": "localizacion_sede", "type": "input", "required": "true", "multilinea": true }
+                }
+              ]
+            },
+            {
+              "nombre": "Impactos esperados",
+              "descripcion": "Cambios que se esperan en el mediano o largo plazo gracias al proyecto.",
+              "dato": { "clave": "impactos_esperados", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Impacto esperado" },
+              "hijos": [
+                {
+                  "nombre": "Impacto esperado",
+                  "descripcion": "Cambio esperado en el mediano o largo plazo.",
+                  "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
+                },
+                {
+                  "nombre": "Línea base",
+                  "descripcion": "Situación actual medible frente a la que se compara el impacto.",
+                  "dato": { "clave": "linea_base", "type": "input", "required": "false", "multilinea": true }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nombre": "Alternativas de solución",
+          "descripcion": "Alternativas de solución del problema. Solo una pasa al módulo de Preparación.",
+          "dato": { "clave": "alternativas" },
+          "hijos": [
+            {
+              "nombre": "Alternativas de solución",
+              "descripcion": "Marque la única alternativa que pasa al módulo de Preparación.",
+              "dato": { "clave": "alternativas_solucion", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Alternativa" },
+              "hijos": [
+                {
+                  "nombre": "Nombre de la alternativa",
+                  "descripcion": "Nombre corto con el que se identifica la alternativa.",
+                  "dato": { "clave": "nombre_alternativa", "type": "input", "required": "true", "maxlength": 300 }
+                },
+                {
+                  "nombre": "Descripción de la alternativa de solución",
+                  "descripcion": "En qué consiste la alternativa de solución.",
+                  "dato": { "clave": "descripcion_alternativa", "type": "input", "required": "true", "multilinea": true }
+                },
+                {
+                  "nombre": "¿Pasa al módulo de preparación?",
+                  "descripcion": "Solo una alternativa pasa: marcar una desmarca las demás.",
+                  "dato": { "clave": "pasa_preparacion", "type": "casilla", "required": "true", "unica": true }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nombre": "Preparación",
+      "descripcion": "Módulo de preparación",
+      "dato": { "clave": "preparacion", "modulo": true },
+      "hijos": [
+        {
+          "nombre": "Necesidades",
+          "descripcion": "Estudio de necesidades: bienes o servicios que entrega el proyecto, con su oferta y demanda por año.",
+          "dato": { "clave": "necesidades" },
+          "hijos": [
+            {
+              "nombre": "Bienes o servicios a entregar",
+              "descripcion": "Bienes o servicios que entrega el proyecto o demandas que satisface.",
+              "dato": { "clave": "bienes_servicios", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Bien o servicio a entregar o demanda a satisfacer No." },
+              "hijos": [
+                {
+                  "nombre": "Descripción general",
+                  "descripcion": "Qué bien o servicio entrega el proyecto, o qué demanda satisface.",
+                  "dato": { "clave": "bien_servicio", "type": "input", "required": "true", "multilinea": true }
+                },
+                {
+                  "nombre": "Descripción del bien",
+                  "descripcion": "Nombre corto del bien o servicio.",
+                  "dato": { "clave": "descripcion_bien", "type": "input", "required": "true", "maxlength": 500 }
+                },
+                {
+                  "nombre": "Unidad de medida",
+                  "descripcion": "Unidad en que se miden la oferta y la demanda (por ejemplo, porcentaje de obsolescencia).",
+                  "dato": { "clave": "unidad_medida", "type": "input", "required": "true", "maxlength": 200 }
+                },
+                {
+                  "nombre": "Descripción de la oferta",
+                  "descripcion": "A qué corresponde la oferta del bien o servicio.",
+                  "dato": { "clave": "descripcion_oferta", "type": "input", "required": "true", "multilinea": true }
+                },
+                {
+                  "nombre": "Descripción de la demanda",
+                  "descripcion": "A qué corresponde la demanda del bien o servicio.",
+                  "dato": { "clave": "descripcion_demanda", "type": "input", "required": "true", "multilinea": true }
+                },
+                {
+                  "nombre": "Oferta y demanda por año",
+                  "descripcion": "Años históricos y proyectados. El déficit se calcula: oferta menos demanda.",
+                  "dato": { "clave": "analisis_anual", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Año" },
                   "hijos": [
                     {
-                      "nombre": "Impacto esperado",
-                      "descripcion": "Cambio esperado en el mediano o largo plazo.",
-                      "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
+                      "nombre": "Año",
+                      "descripcion": "Año del análisis.",
+                      "dato": { "clave": "anio", "type": "numeric", "required": "true", "min": 1900, "max": 2100, "decimales": 0 }
                     },
                     {
-                      "nombre": "Indicador de impacto",
-                      "descripcion": "Indicador con el que se mide el impacto.",
-                      "dato": { "clave": "indicador_impacto", "type": "input", "required": "false", "multilinea": true }
+                      "nombre": "Oferta",
+                      "descripcion": "Oferta del año, en la unidad de medida del bien.",
+                      "dato": { "clave": "oferta", "type": "numeric", "required": "true", "min": 0 }
+                    },
+                    {
+                      "nombre": "Demanda",
+                      "descripcion": "Demanda del año, en la unidad de medida del bien.",
+                      "dato": { "clave": "demanda", "type": "numeric", "required": "true", "min": 0 }
+                    },
+                    {
+                      "nombre": "Déficit",
+                      "descripcion": "Se calcula: oferta menos demanda.",
+                      "dato": { "clave": "deficit", "type": "calculado", "required": "false", "operacion": "resta", "operandos": ["oferta", "demanda"] }
                     }
                   ]
                 }
@@ -469,15 +659,134 @@
           ]
         },
         {
-          "nombre": "Alternativas de solución",
-          "descripcion": "Actividades y descripción de la alternativa por cada objetivo específico.",
-          "dato": { "clave": "alternativas" },
+          "nombre": "Análisis técnico",
+          "descripcion": "Análisis técnico de la alternativa de solución que pasa al módulo de Preparación.",
+          "dato": { "clave": "analisis_tecnico" },
           "hijos": [
             {
-              "nombre": "Actividades por objetivo específico",
-              "descripcion": "Una fila por cada objetivo específico.",
+              "nombre": "Alternativa de solución",
+              "descripcion": "Se trae sola, con su nombre y su descripción: es la que se marcó en «¿Pasa al módulo de preparación?», en Alternativas de solución.",
               "dato": {
-                "clave": "actividades_por_objetivo",
+                "clave": "alternativa_seleccionada",
+                "type": "referencia",
+                "required": "true",
+                "opciones_desde": "alternativas.alternativas_solucion",
+                "mostrar": "nombre_alternativa",
+                "mostrar_detalle": "descripcion_alternativa",
+                "marcada_en": "pasa_preparacion"
+              }
+            },
+            {
+              "nombre": "Descripción",
+              "descripcion": "Descripción técnica de la alternativa: qué se hará y cómo.",
+              "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
+            }
+          ]
+        },
+        {
+          "nombre": "Localización",
+          "descripcion": "Localización de la alternativa, sedes donde se ejecuta y factores que inciden en ella.",
+          "dato": { "clave": "localizacion" },
+          "hijos": [
+            {
+              "nombre": "Localización de la alternativa",
+              "descripcion": "Lugar donde se ejecuta la alternativa: una sola región, departamento y municipio.",
+              "dato": { "clave": "ubicacion" },
+              "hijos": [
+                {
+                  "nombre": "Región",
+                  "descripcion": "Región donde se ejecuta la alternativa.",
+                  "dato": { "clave": "region", "type": "catalogo", "required": "true", "catalogo": "regiones" }
+                },
+                {
+                  "nombre": "Departamento",
+                  "descripcion": "Departamento donde se ejecuta la alternativa.",
+                  "dato": { "clave": "departamento", "type": "catalogo", "required": "true", "catalogo": "departamentos" }
+                },
+                {
+                  "nombre": "Municipio",
+                  "descripcion": "Municipio del departamento seleccionado.",
+                  "dato": { "clave": "municipio", "type": "catalogo", "required": "true", "catalogo": "municipios", "depende_de": "departamento" }
+                },
+                {
+                  "nombre": "Centro poblado",
+                  "descripcion": "Centro poblado, si aplica.",
+                  "dato": { "clave": "centro_poblado", "type": "input", "required": "false", "maxlength": 200 }
+                },
+                {
+                  "nombre": "Resguardo",
+                  "descripcion": "Resguardo indígena, si aplica.",
+                  "dato": { "clave": "resguardo", "type": "input", "required": "false", "maxlength": 200 }
+                },
+                {
+                  "nombre": "Ubicación específica",
+                  "descripcion": "Sede, dirección o lugar exacto, si aplica.",
+                  "dato": { "clave": "especifica", "type": "input", "required": "false", "maxlength": 500 }
+                },
+                {
+                  "nombre": "Latitud",
+                  "descripcion": "Latitud en grados decimales, si aplica.",
+                  "dato": { "clave": "latitud", "type": "numeric", "required": "false", "min": -90, "max": 90 }
+                },
+                {
+                  "nombre": "Longitud",
+                  "descripcion": "Longitud en grados decimales, si aplica.",
+                  "dato": { "clave": "longitud", "type": "numeric", "required": "false", "min": -180, "max": 180 }
+                }
+              ]
+            },
+            {
+              "nombre": "Sedes donde se ejecuta la alternativa",
+              "descripcion": "Marque las sedes de la Universidad donde se ejecuta la alternativa. Si marca «Otra», indique cuál.",
+              "dato": { "clave": "sedes" },
+              "hijos": [
+                {
+                  "nombre": "Sedes",
+                  "descripcion": "Sedes de la Universidad donde se ejecuta la alternativa.",
+                  "dato": { "clave": "seleccionadas", "type": "catalogo", "required": "true", "catalogo": "sedes", "multiple": true }
+                },
+                {
+                  "nombre": "¿Cuál otra sede?",
+                  "descripcion": "Nombre de la sede o el lugar que no está en la lista.",
+                  "dato": {
+                    "clave": "otra",
+                    "type": "input",
+                    "required": "true",
+                    "maxlength": 300,
+                    "solo_si": { "campo": "seleccionadas", "valor": "Otra" }
+                  }
+                }
+              ]
+            },
+            {
+              "nombre": "Factores que inciden en la localización",
+              "descripcion": "Marque los factores que inciden en la localización de la alternativa.",
+              "dato": { "clave": "factores" },
+              "hijos": [
+                {
+                  "nombre": "Factores",
+                  "descripcion": "Factores que inciden en la localización de la alternativa.",
+                  "dato": { "clave": "seleccionados", "type": "catalogo", "required": "true", "catalogo": "factores_localizacion", "multiple": true }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nombre": "Cadena de valor",
+          "descripcion": "Objetivo general y, por cada objetivo específico, sus productos con sus actividades y costos por periodo.",
+          "dato": { "clave": "cadena_valor" },
+          "hijos": [
+            {
+              "nombre": "Objetivo general",
+              "descripcion": "Se trae del objetivo central del submódulo Objetivos.",
+              "dato": { "clave": "objetivo_general", "type": "calculado", "required": "false", "desde": "objetivos.objetivo_central" }
+            },
+            {
+              "nombre": "Productos y actividades por objetivo específico",
+              "descripcion": "Una sección por cada objetivo específico: arriba los datos de cada producto y debajo sus actividades con el costo por periodo.",
+              "dato": {
+                "clave": "productos_por_objetivo",
                 "type": "repetible",
                 "required": "true",
                 "espejo_de": "objetivos.objetivos_especificos",
@@ -486,14 +795,400 @@
               },
               "hijos": [
                 {
-                  "nombre": "Actividades",
-                  "descripcion": "Actividades con las que se cumple el objetivo específico.",
-                  "dato": { "clave": "actividades", "type": "input", "required": "true", "multilinea": true }
+                  "nombre": "Productos",
+                  "descripcion": "Bienes o servicios que se generan para cumplir el objetivo específico.",
+                  "dato": { "clave": "productos", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Producto" },
+                  "hijos": [
+                    {
+                      "nombre": "Producto",
+                      "descripcion": "Producto del catálogo de productos.",
+                      "dato": { "clave": "producto", "type": "catalogo", "required": "true", "catalogo": "productos" }
+                    },
+                    {
+                      "nombre": "Indicador de producto",
+                      "descripcion": "Indicador con el que se mide el producto (por ejemplo, número de sedes).",
+                      "dato": { "clave": "indicador_producto", "type": "input", "required": "true", "maxlength": 500 }
+                    },
+                    {
+                      "nombre": "Unidad de medida",
+                      "descripcion": "Unidad de medida del indicador de producto.",
+                      "dato": { "clave": "unidad_medida", "type": "catalogo", "required": "true", "catalogo": "unidades_medida_cadena_valor" }
+                    },
+                    {
+                      "nombre": "Actividades",
+                      "descripcion": "Actividades con las que se genera el producto, con su costo en cada periodo. Se numeran por objetivo específico: 1.1, 1.2… son las del objetivo específico 1, aunque estén en productos distintos. El costo total se calcula: la suma de los periodos.",
+                      "dato": { "clave": "actividades", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Actividad", "numerar_por": "productos_por_objetivo" },
+                      "hijos": [
+                        {
+                          "nombre": "Actividad",
+                          "descripcion": "Qué se hace para generar el producto.",
+                          "dato": { "clave": "actividad", "type": "input", "required": "true", "multilinea": true }
+                        },
+                        {
+                          "nombre": "Insumos",
+                          "descripcion": "Tipo de insumo de la actividad (por ejemplo, mano de obra calificada, maquinaria y equipo, otros servicios).",
+                          "dato": { "clave": "insumos", "type": "input", "required": "true", "maxlength": 300 }
+                        },
+                        {
+                          "nombre": "Costo total",
+                          "descripcion": "Se calcula: la suma de los periodos, en pesos.",
+                          "dato": {
+                            "clave": "costo_total",
+                            "type": "calculado",
+                            "required": "true",
+                            "decimales": 2,
+                            "operacion": "suma",
+                            "operandos": ["periodo_0", "periodo_1", "periodo_2", "periodo_3", "periodo_4"]
+                          }
+                        },
+                        {
+                          "nombre": "Periodo 0",
+                          "descripcion": "Costo de la actividad en el periodo 0, en pesos. Déjelo vacío si no tiene costo en ese periodo.",
+                          "dato": { "clave": "periodo_0", "type": "numeric", "required": "false", "min": 0, "decimales": 2 }
+                        },
+                        {
+                          "nombre": "Periodo 1",
+                          "descripcion": "Costo de la actividad en el periodo 1, en pesos. Déjelo vacío si no tiene costo en ese periodo.",
+                          "dato": { "clave": "periodo_1", "type": "numeric", "required": "false", "min": 0, "decimales": 2 }
+                        },
+                        {
+                          "nombre": "Periodo 2",
+                          "descripcion": "Costo de la actividad en el periodo 2, en pesos. Déjelo vacío si no tiene costo en ese periodo.",
+                          "dato": { "clave": "periodo_2", "type": "numeric", "required": "false", "min": 0, "decimales": 2 }
+                        },
+                        {
+                          "nombre": "Periodo 3",
+                          "descripcion": "Costo de la actividad en el periodo 3, en pesos. Déjelo vacío si no tiene costo en ese periodo.",
+                          "dato": { "clave": "periodo_3", "type": "numeric", "required": "false", "min": 0, "decimales": 2 }
+                        },
+                        {
+                          "nombre": "Periodo 4",
+                          "descripcion": "Costo de la actividad en el periodo 4, en pesos. Déjelo vacío si no tiene costo en ese periodo.",
+                          "dato": { "clave": "periodo_4", "type": "numeric", "required": "false", "min": 0, "decimales": 2 }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nombre": "Cronograma de actividades físicas y financieras",
+          "descripcion": "Programación física y financiera, por año, de cada actividad de la Cadena de valor.",
+          "dato": { "clave": "cronograma" },
+          "hijos": [
+            {
+              "nombre": "Actividades",
+              "descripcion": "Las actividades de la Cadena de valor con su número: 1.1 es la primera actividad del objetivo específico 1. En la programación física escriba los meses en que se ejecuta cada actividad en cada año; es obligatoria en los años en que la actividad tiene costo. La programación financiera se trae de los costos por periodo de la Cadena de valor (Año 0 = Periodo 0) y se cambia allí.",
+              "dato": {
+                "clave": "actividades",
+                "type": "repetible",
+                "required": "true",
+                "espejo_de": "cadena_valor.productos_por_objetivo.productos.actividades",
+                "mostrar": "actividad",
+                "numerar_por": "productos_por_objetivo",
+                "etiqueta_fila": "Actividad"
+              },
+              "hijos": [
+                {
+                  "nombre": "Programación física",
+                  "descripcion": "Meses en que se ejecuta la actividad en cada año (por ejemplo, enero - diciembre).",
+                  "dato": { "clave": "programacion_fisica" },
+                  "hijos": [
+                    {
+                      "nombre": "Año 0",
+                      "descripcion": "Meses en que se ejecuta la actividad en el año 0. Obligatorio si la actividad tiene costo en el periodo 0.",
+                      "dato": { "clave": "anio_0", "type": "input", "required": "false", "obligatorio_si": "origen.periodo_0", "maxlength": 100 }
+                    },
+                    {
+                      "nombre": "Año 1",
+                      "descripcion": "Meses en que se ejecuta la actividad en el año 1. Obligatorio si la actividad tiene costo en el periodo 1.",
+                      "dato": { "clave": "anio_1", "type": "input", "required": "false", "obligatorio_si": "origen.periodo_1", "maxlength": 100 }
+                    },
+                    {
+                      "nombre": "Año 2",
+                      "descripcion": "Meses en que se ejecuta la actividad en el año 2. Obligatorio si la actividad tiene costo en el periodo 2.",
+                      "dato": { "clave": "anio_2", "type": "input", "required": "false", "obligatorio_si": "origen.periodo_2", "maxlength": 100 }
+                    },
+                    {
+                      "nombre": "Año 3",
+                      "descripcion": "Meses en que se ejecuta la actividad en el año 3. Obligatorio si la actividad tiene costo en el periodo 3.",
+                      "dato": { "clave": "anio_3", "type": "input", "required": "false", "obligatorio_si": "origen.periodo_3", "maxlength": 100 }
+                    },
+                    {
+                      "nombre": "Año 4",
+                      "descripcion": "Meses en que se ejecuta la actividad en el año 4. Obligatorio si la actividad tiene costo en el periodo 4.",
+                      "dato": { "clave": "anio_4", "type": "input", "required": "false", "obligatorio_si": "origen.periodo_4", "maxlength": 100 }
+                    }
+                  ]
                 },
                 {
-                  "nombre": "Descripción de la alternativa de solución",
-                  "descripcion": "Descripción de la alternativa de solución para este objetivo específico.",
-                  "dato": { "clave": "descripcion_alternativa", "type": "input", "required": "true", "multilinea": true }
+                  "nombre": "Programación financiera",
+                  "descripcion": "Costo de la actividad en cada año, en pesos. Se trae de los periodos de la Cadena de valor.",
+                  "dato": { "clave": "programacion_financiera" },
+                  "hijos": [
+                    {
+                      "nombre": "Año 0",
+                      "descripcion": "Costo de la actividad en el periodo 0 de la Cadena de valor, en pesos.",
+                      "dato": { "clave": "anio_0", "type": "calculado", "required": "false", "desde": "origen.periodo_0" }
+                    },
+                    {
+                      "nombre": "Año 1",
+                      "descripcion": "Costo de la actividad en el periodo 1 de la Cadena de valor, en pesos.",
+                      "dato": { "clave": "anio_1", "type": "calculado", "required": "false", "desde": "origen.periodo_1" }
+                    },
+                    {
+                      "nombre": "Año 2",
+                      "descripcion": "Costo de la actividad en el periodo 2 de la Cadena de valor, en pesos.",
+                      "dato": { "clave": "anio_2", "type": "calculado", "required": "false", "desde": "origen.periodo_2" }
+                    },
+                    {
+                      "nombre": "Año 3",
+                      "descripcion": "Costo de la actividad en el periodo 3 de la Cadena de valor, en pesos.",
+                      "dato": { "clave": "anio_3", "type": "calculado", "required": "false", "desde": "origen.periodo_3" }
+                    },
+                    {
+                      "nombre": "Año 4",
+                      "descripcion": "Costo de la actividad en el periodo 4 de la Cadena de valor, en pesos.",
+                      "dato": { "clave": "anio_4", "type": "calculado", "required": "false", "desde": "origen.periodo_4" }
+                    },
+                    {
+                      "nombre": "Valor total",
+                      "descripcion": "Costo total de la actividad en la Cadena de valor, en pesos.",
+                      "dato": { "clave": "valor_total", "type": "calculado", "required": "false", "desde": "origen.costo_total" }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nombre": "Riesgos",
+          "descripcion": "Análisis de riesgos. El propósito es el objetivo general del proyecto, los componentes son los productos y las actividades son las de ruta crítica en la cadena de valor.",
+          "dato": { "clave": "riesgos" },
+          "hijos": [
+            {
+              "nombre": "Identificación de riesgos",
+              "descripcion": "¿Qué situaciones pueden impedir que se logren el objetivo general, los productos y las actividades?",
+              "dato": { "clave": "riesgos_identificados", "type": "repetible", "required": "true", "min": 3, "max": null, "etiqueta_fila": "Riesgo" },
+              "hijos": [
+                {
+                  "nombre": "Fase",
+                  "descripcion": "Propósito (objetivo general), componente (productos) o actividad.",
+                  "dato": { "clave": "fase", "type": "catalogo", "required": "true", "catalogo": "niveles_riesgo" }
+                },
+                {
+                  "nombre": "Tipo de riesgo",
+                  "descripcion": "Clasificación del riesgo.",
+                  "dato": { "clave": "tipo", "type": "catalogo", "required": "true", "catalogo": "tipos_riesgo" }
+                },
+                {
+                  "nombre": "Probabilidad",
+                  "descripcion": "Qué tan probable es que ocurra el riesgo.",
+                  "dato": { "clave": "probabilidad", "type": "catalogo", "required": "true", "catalogo": "probabilidades_riesgo" }
+                },
+                {
+                  "nombre": "Impacto",
+                  "descripcion": "Qué tanto afectaría el riesgo al proyecto.",
+                  "dato": { "clave": "impacto", "type": "catalogo", "required": "true", "catalogo": "impactos_riesgo" }
+                },
+                {
+                  "nombre": "Efectos",
+                  "descripcion": "Qué pasaría si ocurre el riesgo.",
+                  "dato": { "clave": "efectos", "type": "input", "required": "true", "multilinea": true }
+                },
+                {
+                  "nombre": "Medidas de mitigación",
+                  "descripcion": "Acciones para reducir la probabilidad o el impacto del riesgo.",
+                  "dato": { "clave": "medidas_mitigacion", "type": "input", "required": "true", "multilinea": true }
+                },
+                {
+                  "nombre": "Supuestos",
+                  "descripcion": "Condiciones que se asumen para que el riesgo no afecte el proyecto.",
+                  "dato": { "clave": "supuestos", "type": "input", "required": "true", "multilinea": true }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nombre": "Presupuesto inicial de la alternativa seleccionada",
+          "descripcion": "Resumen de lo cargado en la Cadena de valor: el costo de cada actividad por año y el total.",
+          "dato": { "clave": "presupuesto_inicial" },
+          "hijos": [
+            {
+              "nombre": "Presupuesto por actividad",
+              "descripcion": "Se trae de la Cadena de valor (Año 0 = Periodo 0) y se cambia allí; 1.1 es la primera actividad del objetivo específico 1. Revise el resumen y guárdelo para dejar el submódulo formulado.",
+              "dato": {
+                "clave": "actividades",
+                "type": "repetible",
+                "required": "true",
+                "espejo_de": "cadena_valor.productos_por_objetivo.productos.actividades",
+                "mostrar": "actividad",
+                "numerar_por": "productos_por_objetivo",
+                "etiqueta_fila": "Actividad",
+                "totales": { "filas": false, "columnas": true }
+              },
+              "hijos": [
+                {
+                  "nombre": "Producto",
+                  "descripcion": "Producto de la Cadena de valor al que pertenece la actividad.",
+                  "dato": { "clave": "producto", "type": "calculado", "required": "false", "desde": "cadena_valor.productos_por_objetivo.productos.producto", "catalogo": "productos" }
+                },
+                {
+                  "nombre": "Actividad",
+                  "descripcion": "Actividad de la Cadena de valor.",
+                  "dato": { "clave": "actividad", "type": "calculado", "required": "false", "desde": "origen.actividad" }
+                },
+                {
+                  "nombre": "Año 0",
+                  "descripcion": "Costo de la actividad en el periodo 0 de la Cadena de valor, en pesos.",
+                  "dato": { "clave": "anio_0", "type": "calculado", "required": "false", "desde": "origen.periodo_0" }
+                },
+                {
+                  "nombre": "Año 1",
+                  "descripcion": "Costo de la actividad en el periodo 1 de la Cadena de valor, en pesos.",
+                  "dato": { "clave": "anio_1", "type": "calculado", "required": "false", "desde": "origen.periodo_1" }
+                },
+                {
+                  "nombre": "Año 2",
+                  "descripcion": "Costo de la actividad en el periodo 2 de la Cadena de valor, en pesos.",
+                  "dato": { "clave": "anio_2", "type": "calculado", "required": "false", "desde": "origen.periodo_2" }
+                },
+                {
+                  "nombre": "Año 3",
+                  "descripcion": "Costo de la actividad en el periodo 3 de la Cadena de valor, en pesos.",
+                  "dato": { "clave": "anio_3", "type": "calculado", "required": "false", "desde": "origen.periodo_3" }
+                },
+                {
+                  "nombre": "Año 4",
+                  "descripcion": "Costo de la actividad en el periodo 4 de la Cadena de valor, en pesos.",
+                  "dato": { "clave": "anio_4", "type": "calculado", "required": "false", "desde": "origen.periodo_4" }
+                },
+                {
+                  "nombre": "Valor total",
+                  "descripcion": "Costo total de la actividad en la Cadena de valor, en pesos.",
+                  "dato": { "clave": "valor_total", "type": "calculado", "required": "false", "desde": "origen.costo_total" }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nombre": "Descripción de la sostenibilidad",
+          "descripcion": "Los bienes o servicios recibidos en el marco del proyecto, una vez este finalice, estarán a cargo así:",
+          "dato": { "clave": "sostenibilidad" },
+          "hijos": [
+            {
+              "nombre": "Bienes",
+              "descripcion": "Bienes recibidos en el marco del proyecto y quién estará a cargo de cada uno cuando el proyecto finalice.",
+              "dato": { "clave": "bienes", "type": "repetible", "required": "false", "min": 0, "max": null, "etiqueta_fila": "Bien" },
+              "hijos": [
+                {
+                  "nombre": "Bien",
+                  "descripcion": "Bien recibido en el marco del proyecto.",
+                  "dato": { "clave": "bien", "type": "input", "required": "true", "maxlength": 300 }
+                },
+                {
+                  "nombre": "Vida útil del bien (cuando aplique)",
+                  "descripcion": "Tiempo durante el cual el bien presta su servicio (por ejemplo, 5 años). Déjelo vacío si no aplica.",
+                  "dato": { "clave": "vida_util", "type": "input", "required": "false", "maxlength": 100 }
+                },
+                {
+                  "nombre": "Responsable (entidad o área competente responsable)",
+                  "descripcion": "Entidad o área que estará a cargo del bien cuando el proyecto finalice.",
+                  "dato": { "clave": "responsable", "type": "input", "required": "true", "maxlength": 300 }
+                }
+              ]
+            },
+            {
+              "nombre": "Servicios",
+              "descripcion": "Servicios recibidos en el marco del proyecto y quién estará a cargo de cada uno cuando el proyecto finalice.",
+              "dato": { "clave": "servicios", "type": "repetible", "required": "false", "min": 0, "max": null, "etiqueta_fila": "Servicio" },
+              "hijos": [
+                {
+                  "nombre": "Servicios",
+                  "descripcion": "Servicio recibido en el marco del proyecto.",
+                  "dato": { "clave": "servicio", "type": "input", "required": "true", "maxlength": 300 }
+                },
+                {
+                  "nombre": "Responsable (entidad o área competente responsable)",
+                  "descripcion": "Entidad o área que estará a cargo del servicio cuando el proyecto finalice.",
+                  "dato": { "clave": "responsable", "type": "input", "required": "true", "maxlength": 300 }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nombre": "Ingresos y beneficios",
+          "descripcion": "Ingresos y beneficios que genera el proyecto, con su cantidad y valor unitario por año.",
+          "dato": { "clave": "ingresos_beneficios" },
+          "hijos": [
+            {
+              "nombre": "Ingresos y beneficios del proyecto",
+              "descripcion": "Cada ingreso o beneficio que genera el proyecto.",
+              "dato": { "clave": "conceptos", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Ingreso o beneficio" },
+              "hijos": [
+                {
+                  "nombre": "Tipo",
+                  "descripcion": "Ingreso o beneficio.",
+                  "dato": { "clave": "tipo", "type": "catalogo", "required": "true", "catalogo": "tipos_ingreso_beneficio" }
+                },
+                {
+                  "nombre": "Descripción",
+                  "descripcion": "En qué consiste el ingreso o beneficio.",
+                  "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
+                },
+                {
+                  "nombre": "Unidad de medida",
+                  "descripcion": "Unidad en que se mide la cantidad.",
+                  "dato": { "clave": "unidad_medida", "type": "catalogo", "required": "true", "catalogo": "unidades_medida" }
+                },
+                {
+                  "nombre": "Bien producido",
+                  "descripcion": "Bien o servicio del catálogo con el que se valora el ingreso o beneficio.",
+                  "dato": { "clave": "bien_producido", "type": "catalogo", "required": "true", "catalogo": "bienes_servicios" }
+                },
+                {
+                  "nombre": "Descripción de la cantidad",
+                  "descripcion": "Qué se cuenta en la cantidad.",
+                  "dato": { "clave": "descripcion_cantidad", "type": "input", "required": "true", "multilinea": true }
+                },
+                {
+                  "nombre": "Descripción del valor unitario",
+                  "descripcion": "Cómo se obtiene el valor unitario.",
+                  "dato": { "clave": "descripcion_valor_unitario", "type": "input", "required": "true", "multilinea": true }
+                },
+                {
+                  "nombre": "Cantidad y valor por año",
+                  "descripcion": "Años en que se recibe el ingreso o beneficio (tantos como los costeados en la cadena de valor). El valor total es la cantidad por el valor unitario.",
+                  "dato": { "clave": "valores_anuales", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Año" },
+                  "hijos": [
+                    {
+                      "nombre": "Año",
+                      "descripcion": "Año del ingreso o beneficio.",
+                      "dato": { "clave": "anio", "type": "numeric", "required": "true", "min": 1900, "max": 2100, "decimales": 0 }
+                    },
+                    {
+                      "nombre": "Cantidad",
+                      "descripcion": "Cantidad del año, en la unidad de medida.",
+                      "dato": { "clave": "cantidad", "type": "numeric", "required": "true", "min": 0 }
+                    },
+                    {
+                      "nombre": "Valor unitario",
+                      "descripcion": "Valor unitario del año, en pesos.",
+                      "dato": { "clave": "valor_unitario", "type": "numeric", "required": "true", "min": 0, "decimales": 2 }
+                    },
+                    {
+                      "nombre": "Valor total",
+                      "descripcion": "Cantidad por valor unitario, en pesos. Lo calcula el sistema.",
+                      "dato": { "clave": "valor_total", "type": "calculado", "required": "false", "operacion": "multiplicacion", "operandos": ["cantidad", "valor_unitario"], "decimales": 2 }
+                    }
+                  ]
                 }
               ]
             }

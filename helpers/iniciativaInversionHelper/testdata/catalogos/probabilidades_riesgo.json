@@ -1,0 +1,14 @@
+{
+  "catalogo": "probabilidades_riesgo",
+  "nombre": "Probabilidad del riesgo",
+  "modulo": "Preparación",
+  "fuente": "Hoja 'Analisis Riesgos' J81:J85",
+  "observaciones": [],
+  "items": [
+    {"codigo":"1","nombre":"Raro"},
+    {"codigo":"2","nombre":"Improbable"},
+    {"codigo":"3","nombre":"Moderado"},
+    {"codigo":"4","nombre":"Probable"},
+    {"codigo":"5","nombre":"Casi seguro"}
+  ]
+}

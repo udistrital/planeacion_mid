@@ -1,0 +1,38 @@
+{
+  "catalogo": "trazadores_presupuestales",
+  "nombre": "Trazadores presupuestales",
+  "modulo": "Identificación",
+  "fuente": "Formato de Planeación «Trazadores presupuestales» (imagen, 18 nov 2026): nombre completo y descripción de cada trazador. No sale del Excel del instrumento: extraer-catalogos.js no la genera.",
+  "observaciones": [
+    "Se usa en Trazadores presupuestales: una fila por trazador; se llenan solo los que aplican.",
+    "La descripción es la ayuda que el formato muestra en gris; el formulario la muestra bajo el nombre del trazador.",
+    "Grupos Étnicos se desglosa por comunidad (catálogo grupos_etnicos_trazador); la plantilla usa su código en solo_si."
+  ],
+  "items": [
+    {
+      "codigo": "Trazador Presupuestal de Cultura Ciudadana",
+      "nombre": "Trazador Presupuestal de Cultura Ciudadana",
+      "descripcion": "Busca consolidar un modelo de coordinación para gestionar los recursos de cultura ciudadana, mediante lineamientos y herramientas que permitan movilizar y monitorear los recursos públicos destinados a acciones de transformación cultural."
+    },
+    {
+      "codigo": "Trazador Presupuestal de Grupos Étnicos",
+      "nombre": "Trazador Presupuestal de Grupos Étnicos",
+      "descripcion": "Orientado a evidenciar y visibilizar los recursos asignados por las entidades para garantizar el ejercicio de los derechos de las comunidades y grupos étnicos en el Distrito Capital."
+    },
+    {
+      "codigo": "Trazador Presupuestal de Igualdad y Equidad de Género",
+      "nombre": "Trazador Presupuestal de Igualdad y Equidad de Género",
+      "descripcion": "Busca la identificación y clasificación del presupuesto público que contribuye al cierre de brechas de género en la ciudad."
+    },
+    {
+      "codigo": "Trazador Presupuestal de Juventud",
+      "nombre": "Trazador Presupuestal de Juventud",
+      "descripcion": "Busca identificar recursos de funcionamiento e inversión destinados a ampliar las oportunidades de las juventudes, para que puedan elegir su proyecto de vida y ejercer plenamente su ciudadanía."
+    },
+    {
+      "codigo": "Trazador Presupuestal para Población con Discapacidad",
+      "nombre": "Trazador Presupuestal para Población con Discapacidad",
+      "descripcion": "Busca identificar acciones para monitorear la eficacia, eficiencia e impacto del gasto público, mediante el seguimiento de los recursos (directos e indirectos) de proyectos de inversión dirigidos a la población con discapacidad."
+    }
+  ]
+}

@@ -9,8 +9,7 @@ import (
 	"time"
 )
 
-// repoCatalogosArchivos lee los catálogos de testdata/catalogos/ (copias de los que
-// genera database local/catalogos/extraer-catalogos.js).
+// repoCatalogosArchivos lee los catálogos de testdata/catalogos/ (ver apoyo_test.go).
 type repoCatalogosArchivos struct{}
 
 func (repoCatalogosArchivos) ElementosDeCatalogo(nombre string) ([]ItemCatalogo, error) {

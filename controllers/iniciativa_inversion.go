@@ -29,7 +29,8 @@ var (
 
 func servicioIniciativas() *iniciativaInversionHelper.Servicio {
 	servicioIniciativaUnaVez.Do(func() {
-		servicioIniciativa = iniciativaInversionHelper.NuevoServicioPorDefecto(beego.AppConfig.String("PlanesService"))
+		servicioIniciativa = iniciativaInversionHelper.NuevoServicioPorDefecto(
+			beego.AppConfig.String("PlanesService"), beego.AppConfig.String("OikosService"))
 	})
 	return servicioIniciativa
 }
@@ -171,7 +172,7 @@ func (c *IniciativaInversionController) GuardarSubmodulo() {
 
 // AgregarObservacion ...
 // @Title AgregarObservacion
-// @Description Publica una observación en el historial del submódulo sin cambiar su versión. En formulación o por corregir comenta la dependencia; en revisión comenta Planeación y el submódulo queda Con observaciones
+// @Description Publica una observación en el historial del submódulo sin cambiar su versión. Mientras la iniciativa se formula o está por corregir comenta la dependencia; en revisión comenta Planeación y el submódulo queda Con observaciones
 // @Param	id	path	string	true	"Id de la iniciativa"
 // @Param	clave	path	string	true	"Clave del submódulo"
 // @Param	body	body	iniciativaInversionHelper.SolicitudObservacion	true	"texto, rol y usuario (documento)"
@@ -191,7 +192,7 @@ func (c *IniciativaInversionController) AgregarObservacion() {
 
 // RevisarSubmodulo ...
 // @Title RevisarSubmodulo
-// @Description Planeación da el submódulo por revisado sin observaciones. Las observaciones se registran con POST .../observaciones y su historial no se borra
+// @Description Planeación aprueba el submódulo (queda Aprobado). Las observaciones se registran con POST .../observaciones y su historial no se borra
 // @Param	id	path	string	true	"Id de la iniciativa"
 // @Param	clave	path	string	true	"Clave del submódulo"
 // @Param	body	body	iniciativaInversionHelper.SolicitudRevisarSubmodulo	true	"version (la consultada)"
@@ -211,9 +212,9 @@ func (c *IniciativaInversionController) RevisarSubmodulo() {
 
 // EjecutarAccion ...
 // @Title EjecutarAccion
-// @Description Cambia el estado general de la iniciativa: enviar, devolver, avalar o no-avalar
+// @Description Cambia el estado general de la iniciativa: enviar, devolver o avalar
 // @Param	id	path	string	true	"Id de la iniciativa"
-// @Param	accion	path	string	true	"enviar | devolver | avalar | no-avalar"
+// @Param	accion	path	string	true	"enviar | devolver | avalar"
 // @Success 200 {object} iniciativaInversionHelper.ResumenIniciativa
 // @Failure 409 La acción no se permite en el estado actual
 // @router /iniciativas/:id/acciones/:accion [put]

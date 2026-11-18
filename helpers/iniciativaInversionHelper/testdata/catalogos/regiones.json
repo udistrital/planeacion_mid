@@ -1,0 +1,16 @@
+{
+  "catalogo": "regiones",
+  "nombre": "Regiones",
+  "modulo": "Preparación",
+  "fuente": "Hoja 'LocalizaciónAlternativa' XFC1161:XFC1167",
+  "observaciones": [],
+  "items": [
+    {"codigo":"Amazonía","nombre":"Amazonía"},
+    {"codigo":"Bogotá D.C","nombre":"Bogotá D.C"},
+    {"codigo":"Caribe","nombre":"Caribe"},
+    {"codigo":"Centro Oriente","nombre":"Centro Oriente"},
+    {"codigo":"Nacional","nombre":"Nacional"},
+    {"codigo":"Occidente","nombre":"Occidente"},
+    {"codigo":"Orinoquía","nombre":"Orinoquía"}
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "catalogo": "factores_localizacion",
+  "nombre": "Factores que inciden en la localización",
+  "modulo": "Preparación",
+  "fuente": "Factores de localización de la plantilla de iniciativas. No sale del Excel del instrumento: extraer-catalogos.js no la genera.",
+  "observaciones": [
+    "Se usa en Localización > Factores que inciden en la localización: se marcan con casillas los que aplican."
+  ],
+  "items": [
+    {"codigo":"Aspectos administrativos y políticos","nombre":"Aspectos administrativos y políticos"},
+    {"codigo":"Cercanía de fuentes de abastecimiento","nombre":"Cercanía de fuentes de abastecimiento"},
+    {"codigo":"Disponibilidad de servicios públicos (agua, energía y otros)","nombre":"Disponibilidad de servicios públicos (agua, energía y otros)"},
+    {"codigo":"Estructura impositiva y legal","nombre":"Estructura impositiva y legal"},
+    {"codigo":"Impacto para la equidad de género","nombre":"Impacto para la equidad de género"},
+    {"codigo":"Orden público","nombre":"Orden público"},
+    {"codigo":"Topografía","nombre":"Topografía"},
+    {"codigo":"Cercanía a la población objetivo","nombre":"Cercanía a la población objetivo"},
+    {"codigo":"Comunicaciones","nombre":"Comunicaciones"},
+    {"codigo":"Costo y disponibilidad de terrenos","nombre":"Costo y disponibilidad de terrenos"},
+    {"codigo":"Disponibilidad y costo de mano de obra","nombre":"Disponibilidad y costo de mano de obra"},
+    {"codigo":"Factores ambientales","nombre":"Factores ambientales"},
+    {"codigo":"Medios y costos de transporte","nombre":"Medios y costos de transporte"},
+    {"codigo":"Otros","nombre":"Otros"}
+  ]
+}

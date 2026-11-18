@@ -1,0 +1,35 @@
+{
+  "catalogo": "unidades_medida",
+  "nombre": "Unidades de medida (ingresos y beneficios)",
+  "modulo": "Preparación",
+  "fuente": "Hoja 'Ingresos y beneficios+' F24:F47",
+  "observaciones": [
+    "Ninguna lista desplegable del Excel la usa; está junto a la lista de bienes y servicios."
+  ],
+  "items": [
+    {"codigo":"Área","nombre":"Área"},
+    {"codigo":"Día","nombre":"Día"},
+    {"codigo":"Galones","nombre":"Galones"},
+    {"codigo":"Hectáreas","nombre":"Hectáreas"},
+    {"codigo":"Horas","nombre":"Horas"},
+    {"codigo":"Kilómetros","nombre":"Kilómetros"},
+    {"codigo":"Kilómetros cuadrados","nombre":"Kilómetros cuadrados"},
+    {"codigo":"Kilovatios","nombre":"Kilovatios"},
+    {"codigo":"Litros","nombre":"Litros"},
+    {"codigo":"Longitud","nombre":"Longitud"},
+    {"codigo":"Metros","nombre":"Metros"},
+    {"codigo":"Metros cuadrados","nombre":"Metros cuadrados"},
+    {"codigo":"Metros cúbicos","nombre":"Metros cúbicos"},
+    {"codigo":"Metros lineales","nombre":"Metros lineales"},
+    {"codigo":"Millas náuticas","nombre":"Millas náuticas"},
+    {"codigo":"Millones","nombre":"Millones"},
+    {"codigo":"Minutos","nombre":"Minutos"},
+    {"codigo":"Número","nombre":"Número"},
+    {"codigo":"Peso m/c","nombre":"Peso m/c"},
+    {"codigo":"Pesos","nombre":"Pesos"},
+    {"codigo":"Porcentaje","nombre":"Porcentaje"},
+    {"codigo":"Puntaje","nombre":"Puntaje"},
+    {"codigo":"Toneladas","nombre":"Toneladas"},
+    {"codigo":"Volúmen","nombre":"Volúmen"}
+  ]
+}

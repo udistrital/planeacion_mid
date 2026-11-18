@@ -37,12 +37,14 @@ func NuevoServicio(repo Repositorio, definiciones FuenteDefiniciones, catalogos 
 	}
 }
 
-// NuevoServicioPorDefecto conecta con planes_crud (host sin esquema, como en
-// conf/app.conf), con caché de definiciones y de catálogos (colección elemento_catalogo).
-func NuevoServicioPorDefecto(hostCrud string) *Servicio {
+// NuevoServicioPorDefecto conecta con planes_crud y Oikos (hosts sin esquema, como en
+// conf/app.conf), con caché de definiciones y de catálogos: los de la colección
+// elemento_catalogo y, para el catálogo sedes, los espacios físicos de tipo SEDE de Oikos.
+func NuevoServicioPorDefecto(hostCrud, hostOikos string) *Servicio {
 	crud := NuevoClienteCrud(hostCrud)
 	definiciones := NuevaCacheDefiniciones(NuevoCargadorDefiniciones(crud, crud, 8), 10*time.Minute)
-	return NuevoServicio(crud, definiciones, NuevosCatalogosConCache(crud, 10*time.Minute))
+	catalogos := NuevoRepositorioConSedes(crud, NuevoClienteSedesOikos(hostOikos))
+	return NuevoServicio(crud, definiciones, NuevosCatalogosConCache(catalogos, 10*time.Minute))
 }
 
 // ---------------------------------------------------------------------------
@@ -132,7 +134,6 @@ func (s *Servicio) ListarIniciativas(dependencias []string) ([]IniciativaListado
 			Numero:        numeros[plan.ID],
 			Nombre:        plan.Nombre,
 			DependenciaID: plan.DependenciaID,
-			PlantillaID:   plan.FormatoID,
 			Estado:        estado,
 			PermiteEditar: PermiteEditar(estado.Codigo),
 			FechaCreacion: plan.FechaCreacion,
@@ -192,7 +193,7 @@ func (s *Servicio) CrearIniciativa(solicitud SolicitudCrearIniciativa) (*Resumen
 	if len(submodulos) == 0 {
 		return nil, errorSolicitud("La plantilla indicada no tiene submódulos.").conDetalle("la plantilla %s no tiene submódulos", plantillaID)
 	}
-	enFormulacion, err := s.sistema.EstadoIniciativa(EstadoIniciativaEnFormulacion)
+	iniciativaSinFormular, err := s.sistema.EstadoIniciativa(EstadoIniciativaSinFormular)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +215,7 @@ func (s *Servicio) CrearIniciativa(solicitud SolicitudCrearIniciativa) (*Resumen
 		Formato:        false,
 		FormatoID:      definicion.PlantillaID,
 		DependenciaID:  solicitud.DependenciaID,
-		EstadoPlanID:   enFormulacion.ID,
+		EstadoPlanID:   iniciativaSinFormular.ID,
 		VigenciaAplica: vigencias,
 	})
 	if err != nil {
@@ -255,9 +256,8 @@ func (s *Servicio) Resumen(iniciativaID string) (*ResumenIniciativa, error) {
 	}
 	modulos := make([]ResumenModulo, 0, len(ctx.definicion.Modulos))
 	codigos := []string{}
-	orden := 0
 	for _, modulo := range ctx.definicion.Modulos {
-		resumenModulo := ResumenModulo{Clave: modulo.Clave(), Nombre: modulo.Nombre, Descripcion: modulo.Descripcion, Submodulos: []ResumenSubmodulo{}}
+		resumenModulo := ResumenModulo{Clave: modulo.Clave(), Nombre: modulo.Nombre, Submodulos: []ResumenSubmodulo{}}
 		for _, nodo := range modulo.Hijos {
 			documento, err := ctx.documento(nodo)
 			if err != nil {
@@ -271,22 +271,15 @@ func (s *Servicio) Resumen(iniciativaID string) (*ResumenIniciativa, error) {
 			resumenModulo.Submodulos = append(resumenModulo.Submodulos, ResumenSubmodulo{
 				Clave:         nodo.Clave(),
 				Nombre:        nodo.Nombre,
-				Descripcion:   nodo.Descripcion,
-				Orden:         orden,
 				Estado:        estado,
-				Version:       documento.Version,
 				Observaciones: len(documento.Observaciones),
 			})
-			orden++
 		}
 		modulos = append(modulos, resumenModulo)
 	}
 	return &ResumenIniciativa{
 		ID:               ctx.plan.ID,
 		Nombre:           ctx.plan.Nombre,
-		DependenciaID:    ctx.plan.DependenciaID,
-		PlantillaID:      ctx.plan.FormatoID,
-		VigenciaAplica:   ctx.plan.VigenciaAplica,
 		Estado:           ctx.estado,
 		PermiteEditar:    PermiteEditar(ctx.estado.Codigo),
 		PermiteRevisar:   PermiteRevisar(ctx.estado.Codigo),
@@ -308,7 +301,7 @@ func (s *Servicio) Definicion(iniciativaID string) (*Definicion, error) {
 // Submodulos
 // ---------------------------------------------------------------------------
 
-// ObtenerSubmodulo devuelve el submódulo, sus errores vigentes y los datos de las
+// ObtenerSubmodulo devuelve el submódulo, sus errores vigentes y los datos de los
 // submódulos de los que depende (para armar espejos y referencias).
 func (s *Servicio) ObtenerSubmodulo(iniciativaID, clave string) (*SubmoduloConRelacionadas, error) {
 	ctx, err := s.cargarIniciativa(iniciativaID)
@@ -328,12 +321,43 @@ func (s *Servicio) ObtenerSubmodulo(iniciativaID, clave string) (*SubmoduloConRe
 	for dependencia := range dependenciasDe(nodo) {
 		relacionadas[dependencia] = iniciativa[dependencia]
 	}
+	if catalogos := catalogosEspejadosDe(nodo); len(catalogos) > 0 {
+		filas := Datos{}
+		for nombre := range catalogos {
+			catalogo, err := s.catalogos.Catalogo(nombre)
+			if err != nil {
+				// El formulario se muestra igual; la tabla queda sin filas y el validador avisa.
+				logs.Warn("iniciativaInversion: no se pudo consultar el catálogo %s para el submódulo %s: %v", nombre, clave, err)
+				continue
+			}
+			filas[nombre] = filasDeCatalogo(catalogo)
+		}
+		relacionadas[claveRelacionadasCatalogo] = filas
+	}
 	return &SubmoduloConRelacionadas{Submodulo: *vista, Relacionadas: relacionadas}, nil
 }
 
+// catalogosEspejadosDe devuelve los catálogos de los que salen las filas de algún espejo del
+// submódulo (espejo_de "catalogo.<nombre>").
+func catalogosEspejadosDe(submodulo *Nodo) map[string]bool {
+	catalogos := map[string]bool{}
+	var recorrer func(nodos []*Nodo)
+	recorrer = func(nodos []*Nodo) {
+		for _, nodo := range nodos {
+			if nombre, esCatalogo := catalogoDeRuta(nodo.Dato.EspejoDe); esCatalogo {
+				catalogos[nombre] = true
+			}
+			recorrer(nodo.Hijos)
+		}
+	}
+	recorrer(submodulo.Hijos)
+	return catalogos
+}
+
 // GuardarSubmodulo guarda los datos aunque tengan errores (borrador). El submódulo
-// queda Formulada solo si no tiene errores. Si otra persona la cambió desde que
-// se consultó, responde 409.
+// queda Formulado solo si no tiene errores; si no, Formulando (con información) o Sin
+// formular (vacío). La iniciativa pasa de Sin formular a Formulación iniciada con la primera
+// información. Si otra persona la cambió desde que se consultó, responde 409.
 func (s *Servicio) GuardarSubmodulo(iniciativaID, clave string, solicitud SolicitudGuardarSubmodulo) (*SubmoduloVista, error) {
 	ctx, err := s.cargarIniciativa(iniciativaID)
 	if err != nil {
@@ -351,7 +375,8 @@ func (s *Servicio) GuardarSubmodulo(iniciativaID, clave string, solicitud Solici
 	iniciativa := ctx.datosIniciativa()
 	iniciativa[clave] = datos
 	errores := s.validador.ValidarSubmodulo(nodo, iniciativa)
-	estado, err := s.sistema.EstadoSubmodulo(EstadoTrasGuardar(errores))
+	conInformacion := tieneInformacion(nodo.Hijos, datos)
+	estado, err := s.sistema.EstadoSubmodulo(EstadoTrasGuardar(errores, conInformacion))
 	if err != nil {
 		return nil, err
 	}
@@ -365,6 +390,7 @@ func (s *Servicio) GuardarSubmodulo(iniciativaID, clave string, solicitud Solici
 	}
 
 	s.revalidarDependientes(ctx, clave, iniciativa)
+	s.actualizarEstadoIniciativa(ctx, conInformacion)
 	s.actualizarNombrePlan(ctx, nodo, datos)
 	return s.vista(*guardada, errores)
 }
@@ -387,13 +413,13 @@ func (s *Servicio) RevisarSubmodulo(iniciativaID, clave string, solicitud Solici
 		return nil, err
 	}
 
-	sinObservaciones, err := s.sistema.EstadoSubmodulo(EstadoSubmoduloSinObservaciones)
+	aprobado, err := s.sistema.EstadoSubmodulo(EstadoSubmoduloAprobado)
 	if err != nil {
 		return nil, err
 	}
 	guardada, err := s.repo.ActualizarSubmodulo(documento.ID, CambiosSubmodulo{
 		Version:           solicitud.Version,
-		EstadoSubmoduloID: sinObservaciones.ID,
+		EstadoSubmoduloID: aprobado.ID,
 	})
 	if err != nil {
 		return nil, err
@@ -401,7 +427,7 @@ func (s *Servicio) RevisarSubmodulo(iniciativaID, clave string, solicitud Solici
 	return s.vista(*guardada, s.validador.ValidarSubmodulo(nodo, ctx.datosIniciativa()))
 }
 
-// EjecutarAccion cambia el estado general de la iniciativa (enviar, devolver, avalar, no-avalar).
+// EjecutarAccion cambia el estado general de la iniciativa (enviar, devolver, avalar).
 func (s *Servicio) EjecutarAccion(iniciativaID, accion string) (*ResumenIniciativa, error) {
 	if _, existe := transiciones[accion]; !existe {
 		return nil, errorFormatoSolicitud("la acción %q no existe; las válidas son %s", accion, strings.Join(ordenAcciones, ", "))
@@ -437,7 +463,7 @@ func (s *Servicio) EjecutarAccion(iniciativaID, accion string) (*ResumenIniciati
 
 // exigirSubmodulosValidos vuelve a validar todos los submódulos antes de enviar la
 // iniciativa, porque el estado guardado puede no estar al día: si al guardar un
-// submódulo falló devolver a Sin formular uno que depende de él (revalidarDependientes),
+// submódulo falló devolver a Formulando uno que depende de él (revalidarDependientes),
 // ese sigue Formulado con datos que ya no son válidos.
 func (s *Servicio) exigirSubmodulosValidos(ctx *contextoIniciativa) error {
 	iniciativa := ctx.datosIniciativa()
@@ -472,27 +498,61 @@ func (s *Servicio) Catalogo(nombre, padre string) ([]ItemCatalogo, error) {
 // Apoyo
 // ---------------------------------------------------------------------------
 
-// revalidarDependientes devuelve a "Sin formular" los submódulos que dependen de
-// la que cambió y dejaron de ser válidas (p. ej. Objetivos si se agregó una causa).
+// revalidarDependientes devuelve a Formulando (o a Sin formular, si están vacíos) los
+// submódulos que dependen del que cambió y dejaron de ser válidos (p. ej. Objetivos si se
+// agregó una causa). Los que ya estaban sin formular o formulando no cambian.
 func (s *Servicio) revalidarDependientes(ctx *contextoIniciativa, cambiada string, iniciativa map[string]Datos) {
 	sinFormular, err := s.sistema.EstadoSubmodulo(EstadoSubmoduloSinFormular)
+	if err != nil {
+		return
+	}
+	formulando, err := s.sistema.EstadoSubmodulo(EstadoSubmoduloFormulando)
 	if err != nil {
 		return
 	}
 	for _, nodo := range ctx.definicion.Submodulos() {
 		clave := nodo.Clave()
 		documento, existe := ctx.submodulos[clave]
-		if clave == cambiada || !existe || documento.EstadoSubmoduloID == sinFormular.ID || !dependenciasDe(nodo)[cambiada] {
+		if clave == cambiada || !existe || documento.EstadoSubmoduloID == sinFormular.ID || documento.EstadoSubmoduloID == formulando.ID ||
+			!dependenciasDe(nodo)[cambiada] {
 			continue
 		}
 		if len(s.validador.ValidarSubmodulo(nodo, iniciativa)) == 0 {
 			continue
 		}
-		cambios := CambiosSubmodulo{Version: documento.Version, EstadoSubmoduloID: sinFormular.ID}
+		nuevo := sinFormular
+		if tieneInformacion(nodo.Hijos, iniciativa[clave]) {
+			nuevo = formulando
+		}
+		cambios := CambiosSubmodulo{Version: documento.Version, EstadoSubmoduloID: nuevo.ID}
 		if _, err := s.repo.ActualizarSubmodulo(documento.ID, cambios); err != nil {
-			logs.Warn("iniciativaInversion: no se pudo marcar el submódulo %s como sin formular: %v", clave, err)
+			logs.Warn("iniciativaInversion: no se pudo marcar el submódulo %s como %s: %v", clave, nuevo.Nombre, err)
 		}
 	}
+}
+
+// actualizarEstadoIniciativa pasa la iniciativa de Sin formular a Formulación iniciada cuando un
+// submódulo se guarda con información. Si falla, el guardado del submódulo ya quedó: solo se avisa
+// en el log, y se vuelve a intentar en el siguiente guardado.
+func (s *Servicio) actualizarEstadoIniciativa(ctx *contextoIniciativa, conInformacion bool) {
+	destino := EstadoIniciativaTrasGuardar(ctx.estado.Codigo, conInformacion)
+	if destino == "" {
+		return
+	}
+	estado, err := s.sistema.EstadoIniciativa(destino)
+	if err != nil {
+		logs.Warn("iniciativaInversion: no se encontró el estado %s: %v", destino, err)
+		return
+	}
+	plan := *ctx.plan
+	plan.EstadoPlanID = estado.ID
+	if err := s.repo.ActualizarPlan(plan); err != nil {
+		logs.Warn("iniciativaInversion: no se pudo pasar la iniciativa %s a %s: %v", plan.ID, estado.Nombre, err)
+		return
+	}
+	// El plan del contexto queda al día: actualizarNombrePlan parte de él y no debe devolver el estado.
+	ctx.plan.EstadoPlanID = estado.ID
+	ctx.estado = estado
 }
 
 // actualizarNombrePlan copia al plan el valor del campo marcado con nombre_plan.
@@ -528,8 +588,6 @@ func (s *Servicio) vista(documento SubmoduloIniciativa, errores []ErrorCampo) (*
 		observaciones = []Observacion{}
 	}
 	return &SubmoduloVista{
-		ID:            documento.ID,
-		Clave:         documento.Submodulo,
 		Estado:        estado,
 		Datos:         datos,
 		Observaciones: observaciones,
@@ -546,7 +604,7 @@ func dependenciasDe(submodulo *Nodo) map[string]bool {
 	recorrer = func(nodos []*Nodo) {
 		for _, nodo := range nodos {
 			for _, ruta := range []string{nodo.Dato.EspejoDe, nodo.Dato.OpcionesDesde, nodo.Dato.Desde} {
-				if ruta == "" || strings.HasPrefix(ruta, prefijoOrigen) {
+				if ruta == "" || strings.HasPrefix(ruta, prefijoOrigen) || strings.HasPrefix(ruta, prefijoCatalogo) {
 					continue
 				}
 				if otra := strings.SplitN(ruta, ".", 2)[0]; otra != submodulo.Clave() {
