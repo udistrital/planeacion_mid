@@ -51,7 +51,7 @@ func (c *ArbolController) GetArbol() {
 	var res map[string]interface{}
 	var hijos []models.Nodo
 	var hijosID []map[string]interface{}
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &hijos)
 		helpers.LimpiezaRespuestaRefactor(res, &hijosID)
 		tree := arbolHelper.BuildTree(hijos, hijosID)
@@ -96,16 +96,16 @@ func (c *ArbolController) DeletePlan() {
 	var resHijos map[string]interface{}
 	var hijos []map[string]interface{}
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &res); err == nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/plan/"+id, &res); err == nil {
 
 		helpers.LimpiezaRespuestaRefactor(res, &plan)
 		// fmt.Println(plan)
 		plan["activo"] = false
-		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+plan["_id"].(string), "PUT", &resPut, plan); err != nil {
+		if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/plan/"+plan["_id"].(string), "PUT", &resPut, plan); err != nil {
 			panic(map[string]interface{}{"funcion": "DeleteHijos", "err": "Error actualizacion activo \"id\"", "status": "400", "log": err})
 		}
 		// fmt.Println("entra aca primeros hijos")
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan["_id"].(string), &resHijos); err == nil {
+		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan["_id"].(string), &resHijos); err == nil {
 			// fmt.Println("consulta hijos")
 			// fmt.Println(resHijos)
 			helpers.LimpiezaRespuestaRefactor(resHijos, &hijos)
@@ -149,15 +149,15 @@ func (c *ArbolController) DeleteNodo() {
 	var resHijos map[string]interface{}
 	var hijos []map[string]interface{}
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+id, &res); err == nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/"+id, &res); err == nil {
 
 		helpers.LimpiezaRespuestaRefactor(res, &subgrupo)
 		subgrupo["activo"] = false
-		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+subgrupo["_id"].(string), "PUT", &resPut, subgrupo); err != nil {
+		if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/subgrupo/"+subgrupo["_id"].(string), "PUT", &resPut, subgrupo); err != nil {
 			panic(map[string]interface{}{"funcion": "DeleteHijos", "err": "Error actualizacion activo \"id\"", "status": "400", "log": err})
 		}
 		// fmt.Println("entra aca primeros hijos")
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+subgrupo["_id"].(string), &resHijos); err == nil {
+		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+subgrupo["_id"].(string), &resHijos); err == nil {
 			// fmt.Println("consulta hijos")
 			// fmt.Println(resHijos)
 			helpers.LimpiezaRespuestaRefactor(resHijos, &hijos)
@@ -202,14 +202,14 @@ func (c *ArbolController) ActivarPlan() {
 	var resHijos map[string]interface{}
 	var hijos []map[string]interface{}
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+id, &res); err == nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/plan/"+id, &res); err == nil {
 
 		helpers.LimpiezaRespuestaRefactor(res, &plan)
 		plan["activo"] = true
-		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+plan["_id"].(string), "PUT", &resPut, plan); err != nil {
+		if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/plan/"+plan["_id"].(string), "PUT", &resPut, plan); err != nil {
 			panic(map[string]interface{}{"funcion": "DeleteHijos", "err": "Error actualizacion activo \"id\"", "status": "400", "log": err})
 		}
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan["_id"].(string), &resHijos); err == nil {
+		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan["_id"].(string), &resHijos); err == nil {
 			helpers.LimpiezaRespuestaRefactor(resHijos, &hijos)
 			arbolHelper.ActivarHijos(hijos)
 		}
@@ -252,14 +252,14 @@ func (c *ArbolController) ActivarNodo() {
 	var resHijos map[string]interface{}
 	var hijos []map[string]interface{}
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+id, &res); err == nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/"+id, &res); err == nil {
 
 		helpers.LimpiezaRespuestaRefactor(res, &subgrupo)
 		subgrupo["activo"] = true
-		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+subgrupo["_id"].(string), "PUT", &resPut, subgrupo); err != nil {
+		if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/subgrupo/"+subgrupo["_id"].(string), "PUT", &resPut, subgrupo); err != nil {
 			panic(map[string]interface{}{"funcion": "DeleteHijos", "err": "Error actualizacion activo \"id\"", "status": "400", "log": err})
 		}
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+subgrupo["_id"].(string), &resHijos); err == nil {
+		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+subgrupo["_id"].(string), &resHijos); err == nil {
 			helpers.LimpiezaRespuestaRefactor(resHijos, &hijos)
 			arbolHelper.ActivarHijos(hijos)
 		}

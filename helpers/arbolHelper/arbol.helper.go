@@ -46,7 +46,7 @@ func getChildren(children []string) (childrenTree []map[string]interface{}) {
 	for orden, child := range children {
 		forkData := make(map[string]interface{})
 
-		err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+child, &res)
+		err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/"+child, &res)
 		if err != nil {
 			return
 		}
@@ -80,12 +80,12 @@ func DeleteHijos(children []map[string]interface{}) {
 		aux := children[i]
 		aux["activo"] = false
 		fmt.Println(aux)
-		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+aux["_id"].(string), "PUT", &res, aux); err != nil {
+		if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/subgrupo/"+aux["_id"].(string), "PUT", &res, aux); err != nil {
 			panic(map[string]interface{}{"funcion": "DeleteHijos", "err": "Error actualizacion activo \"id\"", "status": "400", "log": err})
 		}
 
 		if len(aux["hijos"].([]interface{})) > 0 {
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+aux["_id"].(string), &resHijos); err == nil {
+			if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+aux["_id"].(string), &resHijos); err == nil {
 				helpers.LimpiezaRespuestaRefactor(resHijos, &hijos)
 				fmt.Println(hijos)
 				DeleteHijos(hijos)
@@ -103,12 +103,12 @@ func ActivarHijos(children []map[string]interface{}) {
 		aux := children[i]
 		aux["activo"] = true
 		fmt.Println(aux)
-		if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/"+aux["_id"].(string), "PUT", &res, aux); err != nil {
+		if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/subgrupo/"+aux["_id"].(string), "PUT", &res, aux); err != nil {
 			panic(map[string]interface{}{"funcion": "DeleteHijos", "err": "Error actualizacion activo \"id\"", "status": "400", "log": err})
 		}
 
 		if len(aux["hijos"].([]interface{})) > 0 {
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+aux["_id"].(string), &resHijos); err == nil {
+			if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+aux["_id"].(string), &resHijos); err == nil {
 				helpers.LimpiezaRespuestaRefactor(resHijos, &hijos)
 				fmt.Println(hijos)
 				ActivarHijos(hijos)
