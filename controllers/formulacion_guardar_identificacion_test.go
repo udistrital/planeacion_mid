@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 )
 
@@ -48,7 +47,7 @@ func TestGuardarIdentificacionNoDocentePersisteDato(t *testing.T) {
 
 	err := guardarIdentificacionNoDocente(
 		context.Background(),
-		strings.TrimPrefix(servidor.URL, "http://"),
+		servidor.URL,
 		"identificacion-prueba",
 		identificacion,
 		entrada,
@@ -95,7 +94,7 @@ func TestGuardarIdentificacionNoDocenteReportaRechazoDelCRUD(t *testing.T) {
 
 	err := guardarIdentificacionNoDocente(
 		context.Background(),
-		strings.TrimPrefix(servidor.URL, "http://"),
+		servidor.URL,
 		"identificacion-prueba",
 		map[string]interface{}{"_id": "identificacion-prueba"},
 		map[string]interface{}{"0": map[string]interface{}{"activo": true}},
