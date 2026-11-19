@@ -75,7 +75,7 @@ func (c *SeguimientoController) HabilitarReportes() {
 	var entrada map[string]interface{}
 	json.Unmarshal(c.Ctx.Input.RequestBody, &entrada)
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?query=tipo_seguimiento_id:61f236f525e40c582a0840d0,periodo_id:`+entrada["periodo_id"].(string), &res); err == nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?query=tipo_seguimiento_id:61f236f525e40c582a0840d0,periodo_id:`+entrada["periodo_id"].(string), &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &reportes)
 		if len(reportes) > 0 {
 			var element = reportes[0]
@@ -84,7 +84,7 @@ func (c *SeguimientoController) HabilitarReportes() {
 			element["fecha_fin"] = entrada["fecha_fin"]
 			element["unidades_interes"] = entrada["unidades_interes"]
 			element["planes_interes"] = entrada["planes_interes"]
-			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/"+element["_id"].(string), "PUT", &resPut, element); err != nil {
+			if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/"+element["_id"].(string), "PUT", &resPut, element); err != nil {
 				panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle \"subgrupo_detalle[\"_id\"].(string)\"", "status": "400", "log": err})
 			}
 		} else {
@@ -98,11 +98,11 @@ func (c *SeguimientoController) HabilitarReportes() {
 				"planes_interes":      entrada["planes_interes"],
 			}
 
-			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento", "POST", &resPut, element); err != nil {
+			if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento", "POST", &resPut, element); err != nil {
 				panic(map[string]interface{}{"funcion": "GuardarPlan", "err": "Error actualizando subgrupo-detalle", "status": "400", "log": err})
 			}
 
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?query=tipo_seguimiento_id:61f236f525e40c582a0840d0,periodo_id:`+entrada["periodo_id"].(string), &res); err == nil {
+			if err := request.GetJson(beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?query=tipo_seguimiento_id:61f236f525e40c582a0840d0,periodo_id:`+entrada["periodo_id"].(string), &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &reportes)
 			}
 		}
@@ -141,7 +141,7 @@ func (c *SeguimientoController) AvalarPlan() {
 	id_estado_avalado := "6153355601c7a2365b2fb2a1"
 
 	// Get plan
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+plan_id, &resPlan); err != nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/plan/"+plan_id, &resPlan); err != nil {
 		panic(map[string]interface{}{"funcion": "AvalarPlan", "err": err, "status": "400"})
 	}
 	if resPlan["Data"] == nil {
@@ -175,7 +175,7 @@ func (c *SeguimientoController) AvalarPlan() {
 		nuevo = false
 		var seguimientosPeticion []map[string]interface{}
 
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=dependencia_id:"+plan["dependencia_id"].(string)+",vigencia:"+plan["vigencia"].(string)+",formato:false,nombre:"+url.QueryEscape(plan["nombre"].(string)), &resPadres); err == nil {
+		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/plan?query=dependencia_id:"+plan["dependencia_id"].(string)+",vigencia:"+plan["vigencia"].(string)+",formato:false,nombre:"+url.QueryEscape(plan["nombre"].(string)), &resPadres); err == nil {
 			helpers.LimpiezaRespuestaRefactor(resPadres, &planesPadre)
 
 			var seguimientosLlenos []map[string]interface{}
@@ -184,7 +184,7 @@ func (c *SeguimientoController) AvalarPlan() {
 			for _, padre := range planesPadre {
 				var resSeguimientos map[string]interface{}
 				var seguimientos []map[string]interface{}
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+padre["_id"].(string), &resSeguimientos); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+padre["_id"].(string), &resSeguimientos); err == nil {
 					helpers.LimpiezaRespuestaRefactor(resSeguimientos, &seguimientos)
 					seguimientosPeticion = seguimientos
 					for _, seguimiento := range seguimientos {
@@ -214,7 +214,7 @@ func (c *SeguimientoController) AvalarPlan() {
 				var resEstado map[string]interface{}
 				estado := map[string]interface{}{}
 
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
 					estado = map[string]interface{}{
 						"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 						"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -224,13 +224,13 @@ func (c *SeguimientoController) AvalarPlan() {
 				for _, seguimiento := range seguimientosVacios {
 					// ? Inactivar el actual
 					seguimiento["activo"] = false
-					helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &resActualizacion, seguimiento)
+					helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &resActualizacion, seguimiento)
 					arrReportes = append(arrReportes, resActualizacion["Data"].(map[string]interface{}))
 					// ? Crear el nuevo
 					seguimiento["activo"] = true
 					seguimiento["plan_id"] = plan_id
 					delete(seguimiento, "_id")
-					helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &resCreacion, seguimiento)
+					helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &resCreacion, seguimiento)
 					arrReportes = append(arrReportes, resCreacion["Data"].(map[string]interface{}))
 				}
 
@@ -247,7 +247,7 @@ func (c *SeguimientoController) AvalarPlan() {
 					for _, idxAct := range listAct {
 						id, existe := dato[idxAct].(map[string]interface{})["id"].(string)
 						if existe && id != "" {
-							if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id, &resSeguimientoDetalle); err == nil {
+							if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id, &resSeguimientoDetalle); err == nil {
 								helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
 								detalle = seguimientohelper.ConvertirStringJson(detalle)
 								// ? Inactivar el actual
@@ -266,7 +266,7 @@ func (c *SeguimientoController) AvalarPlan() {
 
 					// ? Inactiva el actual
 					seguimiento["activo"] = false
-					helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &resActualizacion, seguimiento)
+					helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &resActualizacion, seguimiento)
 					arrReportes = append(arrReportes, resActualizacion["Data"].(map[string]interface{}))
 
 					// ? crear el nuevo
@@ -277,7 +277,7 @@ func (c *SeguimientoController) AvalarPlan() {
 					str := string(valor)
 					seguimiento["dato"] = str
 					delete(seguimiento, "_id")
-					helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &resCreacion, seguimiento)
+					helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &resCreacion, seguimiento)
 					arrReportes = append(arrReportes, resCreacion["Data"].(map[string]interface{}))
 				}
 			}
@@ -285,7 +285,7 @@ func (c *SeguimientoController) AvalarPlan() {
 	}
 
 	if nuevo {
-		if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia?query=Id:"+plan["dependencia_id"].(string), &resDependencia); err == nil {
+		if err := request.GetJson(beego.AppConfig.String("OikosService")+"/dependencia?query=Id:"+plan["dependencia_id"].(string), &resDependencia); err == nil {
 		} else {
 			panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error obteniendo la dependencia", "status": "400", "log": err})
 		}
@@ -330,7 +330,7 @@ func (c *SeguimientoController) AvalarPlan() {
 				body["tipo_seguimiento_id"] = tipo
 				body["activo"] = true
 
-				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/buscar-unidad-planes/1", "POST", &respuestaRegistro, body); err != nil {
+				if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/buscar-unidad-planes/1", "POST", &respuestaRegistro, body); err != nil {
 					panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error buscando periodo-seguimiento", "status": "404", "log": err})
 				}
 
@@ -358,7 +358,7 @@ func (c *SeguimientoController) AvalarPlan() {
 				}
 				fmt.Println("Reporte:", string(jsonReporte))
 
-				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &respuestaPost, reporte); err != nil {
+				if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &respuestaPost, reporte); err != nil {
 					panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error creando reporte", "status": "400", "log": err})
 				}
 
@@ -373,7 +373,7 @@ func (c *SeguimientoController) AvalarPlan() {
 				body["nueva_estructura"] = nil
 				body["tipo_seguimiento_id"] = tipo
 				body["activo"] = true
-				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/buscar-unidad-planes/8", "POST", &resTrimestres, body); err != nil {
+				if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/buscar-unidad-planes/8", "POST", &resTrimestres, body); err != nil {
 					panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error buscando periodo-seguimiento", "status": "404", "log": err})
 				}
 
@@ -394,7 +394,7 @@ func (c *SeguimientoController) AvalarPlan() {
 				reporte["tipo_seguimiento_id"] = tipo
 				reporte["dato"] = "{}"
 
-				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &respuestaPost, reporte); err != nil {
+				if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &respuestaPost, reporte); err != nil {
 					panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error creando reporte", "status": "400", "log": err})
 				}
 
@@ -455,7 +455,7 @@ func (c *SeguimientoController) CrearReportes() {
 	reporte := make(map[string]interface{})
 	nuevo := true
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+plan_id, &res); err == nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/plan/"+plan_id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &plan)
 		trimestres := seguimientohelper.GetTrimestres(plan["vigencia"].(string))
 
@@ -463,7 +463,7 @@ func (c *SeguimientoController) CrearReportes() {
 		if tipo == "61f236f525e40c582a0840d0" && plan["padre_plan_id"] != nil {
 			nuevo = false
 
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan?query=dependencia_id:"+plan["dependencia_id"].(string)+",vigencia:"+plan["vigencia"].(string)+",formato:false,nombre:"+url.QueryEscape(plan["nombre"].(string)), &resPadres); err == nil {
+			if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/plan?query=dependencia_id:"+plan["dependencia_id"].(string)+",vigencia:"+plan["vigencia"].(string)+",formato:false,nombre:"+url.QueryEscape(plan["nombre"].(string)), &resPadres); err == nil {
 				helpers.LimpiezaRespuestaRefactor(resPadres, &planesPadre)
 
 				var seguimientosLlenos []map[string]interface{}
@@ -472,7 +472,7 @@ func (c *SeguimientoController) CrearReportes() {
 				for _, padre := range planesPadre {
 					var resSeguimientos map[string]interface{}
 					var seguimientos []map[string]interface{}
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+padre["_id"].(string), &resSeguimientos); err == nil {
+					if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+padre["_id"].(string), &resSeguimientos); err == nil {
 						helpers.LimpiezaRespuestaRefactor(resSeguimientos, &seguimientos)
 						for _, seguimiento := range seguimientos {
 							if (len(seguimientosLlenos) + len(seguimientosVacios)) <= 4 {
@@ -496,7 +496,7 @@ func (c *SeguimientoController) CrearReportes() {
 				var resEstado map[string]interface{}
 				estado := map[string]interface{}{}
 
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
 					estado = map[string]interface{}{
 						"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 						"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -506,13 +506,13 @@ func (c *SeguimientoController) CrearReportes() {
 				for _, seguimiento := range seguimientosVacios {
 					// ? Inactivar el actual
 					seguimiento["activo"] = false
-					helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &resActualizacion, seguimiento)
+					helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &resActualizacion, seguimiento)
 					arrReportes = append(arrReportes, resActualizacion["Data"].(map[string]interface{}))
 					// ? Crear el nuevo
 					seguimiento["activo"] = true
 					seguimiento["plan_id"] = plan_id
 					delete(seguimiento, "_id")
-					helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &resCreacion, seguimiento)
+					helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &resCreacion, seguimiento)
 					arrReportes = append(arrReportes, resCreacion["Data"].(map[string]interface{}))
 				}
 
@@ -529,7 +529,7 @@ func (c *SeguimientoController) CrearReportes() {
 					for _, idxAct := range listAct {
 						id, existe := dato[idxAct].(map[string]interface{})["id"].(string)
 						if existe && id != "" {
-							if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id, &resSeguimientoDetalle); err == nil {
+							if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id, &resSeguimientoDetalle); err == nil {
 								helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
 								detalle = seguimientohelper.ConvertirStringJson(detalle)
 								// ? Inactivar el actual
@@ -548,7 +548,7 @@ func (c *SeguimientoController) CrearReportes() {
 
 					// ? Inactiva el actual
 					seguimiento["activo"] = false
-					helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &resActualizacion, seguimiento)
+					helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &resActualizacion, seguimiento)
 					arrReportes = append(arrReportes, resActualizacion["Data"].(map[string]interface{}))
 
 					// ? crear el nuevo
@@ -559,14 +559,14 @@ func (c *SeguimientoController) CrearReportes() {
 					str := string(valor)
 					seguimiento["dato"] = str
 					delete(seguimiento, "_id")
-					helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &resCreacion, seguimiento)
+					helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &resCreacion, seguimiento)
 					arrReportes = append(arrReportes, resCreacion["Data"].(map[string]interface{}))
 				}
 			}
 		}
 
 		if nuevo {
-			if err := request.GetJson("http://"+beego.AppConfig.String("OikosService")+"/dependencia?query=Id:"+plan["dependencia_id"].(string), &resDependencia); err == nil {
+			if err := request.GetJson(beego.AppConfig.String("OikosService")+"/dependencia?query=Id:"+plan["dependencia_id"].(string), &resDependencia); err == nil {
 			} else {
 				panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error obteniendo la dependencia", "status": "400", "log": err})
 			}
@@ -611,7 +611,7 @@ func (c *SeguimientoController) CrearReportes() {
 					body["tipo_seguimiento_id"] = tipo
 					body["activo"] = true
 
-					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/buscar-unidad-planes/1", "POST", &respuestaRegistro, body); err != nil {
+					if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/buscar-unidad-planes/1", "POST", &respuestaRegistro, body); err != nil {
 						panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error buscando periodo-seguimiento", "status": "400", "log": err})
 					}
 
@@ -635,7 +635,7 @@ func (c *SeguimientoController) CrearReportes() {
 					}
 					fmt.Println("Reporte:", string(jsonReporte))
 
-					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &respuestaPost, reporte); err != nil {
+					if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &respuestaPost, reporte); err != nil {
 						panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error creando reporte", "status": "400", "log": err})
 					}
 
@@ -645,7 +645,7 @@ func (c *SeguimientoController) CrearReportes() {
 
 				} else {
 					// El parámetro 'nueva_estructura' no está presente o no es del tipo bool o no es true.
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?query=tipo_seguimiento_id:`+tipo+`,periodo_id:`+strconv.Itoa(periodo), &resTrimestres); err == nil {
+					if err := request.GetJson(beego.AppConfig.String("PlanesService")+`/periodo-seguimiento?query=tipo_seguimiento_id:`+tipo+`,periodo_id:`+strconv.Itoa(periodo), &resTrimestres); err == nil {
 						reporte["nombre"] = "Seguimiento para el " + plan["nombre"].(string)
 						reporte["descripcion"] = "Seguimiento " + plan["nombre"].(string)
 						if resDependencia[0]["Nombre"] != nil {
@@ -659,7 +659,7 @@ func (c *SeguimientoController) CrearReportes() {
 						reporte["tipo_seguimiento_id"] = tipo
 						reporte["dato"] = "{}"
 
-						if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &respuestaPost, reporte); err != nil {
+						if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento", "POST", &respuestaPost, reporte); err != nil {
 							panic(map[string]interface{}{"funcion": "CrearReportes", "err": "Error creando reporte", "status": "400", "log": err})
 						}
 
@@ -779,11 +779,11 @@ func (c *SeguimientoController) GetActividadesGenerales() {
 	var seguimientoDetalle []map[string]interface{}
 	var datoPlan map[string]interface{}
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,_id:"+seguimiento_id, &resSeguimiento); err == nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,_id:"+seguimiento_id, &resSeguimiento); err == nil {
 		helpers.LimpiezaRespuestaRefactor(resSeguimiento, &seguimiento)
 		if fmt.Sprintf("%v", seguimiento) != "[]" {
 			planId := seguimiento[0]["plan_id"].(string) // Obtenemos el planId
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+planId, &res); err == nil {
+			if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+planId, &res); err == nil {
 				helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
 
 				for i := 0; i < len(subgrupos); i++ {
@@ -813,7 +813,7 @@ func (c *SeguimientoController) GetActividadesGenerales() {
 											actividad["estado"] = element.(map[string]interface{})["estado"]
 											break
 										} else {
-											if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle?query=activo:true,_id:"+element.(map[string]interface{})["id"].(string), &resSeguimientoDetalle); err == nil {
+											if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento-detalle?query=activo:true,_id:"+element.(map[string]interface{})["id"].(string), &resSeguimientoDetalle); err == nil {
 												helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &seguimientoDetalle)
 												dato := make(map[string]interface{})
 												json.Unmarshal([]byte(seguimientoDetalle[0]["estado"].(string)), &dato)
@@ -904,7 +904,7 @@ func (c *SeguimientoController) GuardarSeguimiento() {
 
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &body); err == nil {
 
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
+		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
 
 			for _, evidencia := range body["evidencia"].([]interface{}) {
 				if evidencia.(map[string]interface{})["Enlace"] != nil {
@@ -919,7 +919,7 @@ func (c *SeguimientoController) GuardarSeguimiento() {
 			datoStr := seguimiento["dato"].(string)
 			json.Unmarshal([]byte(datoStr), &dato)
 
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
+			if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
 				estado = map[string]interface{}{
 					"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 					"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -938,7 +938,7 @@ func (c *SeguimientoController) GuardarSeguimiento() {
 				id, actualizar := dato[indexActividad].(map[string]interface{})["id"].(string)
 
 				if actualizar && id != "" {
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+dato[indexActividad].(map[string]interface{})["id"].(string), &resSeguimientoDetalle); err == nil {
+					if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+dato[indexActividad].(map[string]interface{})["id"].(string), &resSeguimientoDetalle); err == nil {
 						helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
 						detalle = seguimientohelper.ConvertirStringJson(detalle)
 						detalle["estado"] = estado
@@ -956,7 +956,7 @@ func (c *SeguimientoController) GuardarSeguimiento() {
 			estadoSeguimiento = seguimientohelper.GetEstadoSeguimiento(seguimiento)
 			seguimiento["estado_seguimiento_id"] = estadoSeguimiento
 
-			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+			if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
 				panic(map[string]interface{}{"funcion": "GuardarSeguimiento", "err": "Error actualizando seguimiento \"seguimiento[\"_id\"].(string)\"", "status": "400", "log": err})
 			}
 
@@ -1030,13 +1030,13 @@ func (c *SeguimientoController) GetIndicadores() {
 	var hijos []map[string]interface{}
 	var indicadores []map[string]interface{}
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id, &res); err == nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo?query=padre:"+plan_id, &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &subgrupos)
 
 		for i := 0; i < len(subgrupos); i++ {
 			if strings.Contains(strings.ToLower(subgrupos[i]["nombre"].(string)), "indicador") {
 
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+subgrupos[i]["_id"].(string), &res); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/subgrupo/hijos/"+subgrupos[i]["_id"].(string), &res); err == nil {
 					helpers.LimpiezaRespuestaRefactor(res, &hijos)
 					for j := range hijos {
 						if strings.Contains(strings.ToLower(hijos[j]["nombre"].(string)), "indicador") {
@@ -1099,16 +1099,16 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 	var nombrePeriodo string
 	json.Unmarshal(c.Ctx.Input.RequestBody, &body)
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_seguimiento_id:"+body["periodo_seguimiento_id"].(string), &res); err == nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_seguimiento_id:"+body["periodo_seguimiento_id"].(string), &res); err == nil {
 		helpers.LimpiezaRespuestaRefactor(res, &avancedata)
 
-		if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+body["periodo_seguimiento_id"].(string), &res); err == nil {
+		if err := request.GetJson(beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+body["periodo_seguimiento_id"].(string), &res); err == nil {
 			helpers.LimpiezaRespuestaRefactor(res, &parametro_periodo)
 			paramIdlen := parametro_periodo[0]
 
 			paramId := paramIdlen["ParametroId"].(map[string]interface{})
 			if paramId["CodigoAbreviacion"] != "T1" {
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_seguimiento_id:"+body["periodo_seguimiento_id"].(string), &res1); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_seguimiento_id:"+body["periodo_seguimiento_id"].(string), &res1); err == nil {
 					helpers.LimpiezaRespuestaRefactor(res1, &avancedata1)
 					seguimiento1 = avancedata1[0]
 					datoStrUltimoTrimestre := seguimiento1["dato"].(string)
@@ -1132,7 +1132,7 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 					panic(err)
 				}
 				periodIdString = fmt.Sprint(periodId)
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_seguimiento_id:"+periodIdString, &res2); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+body["plan_id"].(string)+",periodo_seguimiento_id:"+periodIdString, &res2); err == nil {
 					helpers.LimpiezaRespuestaRefactor(res2, &avancedata2)
 					seguimiento = avancedata2[0]
 					datoStr := seguimiento["dato"].(string)
@@ -1144,7 +1144,7 @@ func (c *SeguimientoController) GetAvanceIndicador() {
 				} else {
 					panic(err)
 				}
-				if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+body["periodo_seguimiento_id"].(string), &resName); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+body["periodo_seguimiento_id"].(string), &resName); err == nil {
 					helpers.LimpiezaRespuestaRefactor(resName, &parametro_periodo_name)
 					paramIdlenName := parametro_periodo_name[0]
 
@@ -1244,7 +1244,7 @@ func (c *SeguimientoController) GuardarDocumentos() {
 
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &body); err == nil {
 
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
+		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
 
 			for _, evidencia := range body["evidencia"].([]interface{}) {
 				if evidencia.(map[string]interface{})["Enlace"] != nil {
@@ -1278,21 +1278,21 @@ func (c *SeguimientoController) GuardarDocumentos() {
 			}
 
 			if body["unidad"].(bool) {
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
 					estado = map[string]interface{}{
 						"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 						"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
 					}
 				}
 			} else if comentario {
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:CO", &resEstado); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:CO", &resEstado); err == nil {
 					estado = map[string]interface{}{
 						"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 						"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
 					}
 				}
 			} else {
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AR", &resEstado); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AR", &resEstado); err == nil {
 					estado = map[string]interface{}{
 						"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 						"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -1315,7 +1315,7 @@ func (c *SeguimientoController) GuardarDocumentos() {
 				id, segregado := dato[indexActividad].(map[string]interface{})["id"]
 
 				if segregado && id != "" {
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+dato[indexActividad].(map[string]interface{})["id"].(string), &resSeguimientoDetalle); err == nil {
+					if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+dato[indexActividad].(map[string]interface{})["id"].(string), &resSeguimientoDetalle); err == nil {
 						helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
 						detalle = seguimientohelper.ConvertirStringJson(detalle)
 						detalle["evidencia"] = evidencias
@@ -1335,7 +1335,7 @@ func (c *SeguimientoController) GuardarDocumentos() {
 			estadoSeguimiento = seguimientohelper.GetEstadoSeguimiento(seguimiento)
 			seguimiento["estado_seguimiento_id"] = estadoSeguimiento
 
-			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+			if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
 				panic(map[string]interface{}{"funcion": "GuardarDocumentos", "err": "Error guardado documentos del seguimiento \"seguimiento[\"_id\"].(string)\"", "status": "400", "log": err})
 			}
 
@@ -1381,7 +1381,7 @@ func (c *SeguimientoController) GuardarCualitativo() {
 
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &body); err == nil {
 
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
+		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
 			aux := make([]map[string]interface{}, 1)
 			helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
 			seguimiento = aux[0]
@@ -1393,7 +1393,7 @@ func (c *SeguimientoController) GuardarCualitativo() {
 			json.Unmarshal([]byte(datoStr), &dato)
 
 			if dato[indexActividad] == nil {
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
 					estado = map[string]interface{}{
 						"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 						"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -1406,7 +1406,7 @@ func (c *SeguimientoController) GuardarCualitativo() {
 				id, segregado := dato[indexActividad].(map[string]interface{})["id"]
 
 				if segregado && id != "" {
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+dato[indexActividad].(map[string]interface{})["id"].(string), &resSeguimientoDetalle); err == nil {
+					if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+dato[indexActividad].(map[string]interface{})["id"].(string), &resSeguimientoDetalle); err == nil {
 						helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
 						detalle = seguimientohelper.ConvertirStringJson(detalle)
 						estado = detalle["estado"].(map[string]interface{})
@@ -1416,7 +1416,7 @@ func (c *SeguimientoController) GuardarCualitativo() {
 				}
 
 				if estado["nombre"] == "Con observaciones" && body["dependencia"].(bool) {
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
+					if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
 						estado = map[string]interface{}{
 							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -1432,7 +1432,7 @@ func (c *SeguimientoController) GuardarCualitativo() {
 						codigo_abreviacion = "AAV" /*AR*/
 					}
 
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:"+codigo_abreviacion, &resEstado); err == nil {
+					if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:"+codigo_abreviacion, &resEstado); err == nil {
 						estado = map[string]interface{}{
 							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -1458,7 +1458,7 @@ func (c *SeguimientoController) GuardarCualitativo() {
 			estadoSeguimiento = seguimientohelper.GetEstadoSeguimiento(seguimiento)
 			seguimiento["estado_seguimiento_id"] = estadoSeguimiento
 
-			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+			if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
 				panic(map[string]interface{}{"funcion": "GuardarCualitativo", "err": "Error actualizando componente cualitativo de seguimiento \"seguimiento[\"_id\"].(string)\"", "status": "400", "log": err})
 			}
 
@@ -1504,7 +1504,7 @@ func (c *SeguimientoController) GuardarCuantitativo() {
 
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &body); err == nil {
 
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
+		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
 			aux := make([]map[string]interface{}, 1)
 			helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
 			seguimiento = aux[0]
@@ -1516,7 +1516,7 @@ func (c *SeguimientoController) GuardarCuantitativo() {
 			json.Unmarshal([]byte(datoStr), &dato)
 
 			if dato[indexActividad] == nil {
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
 					estado = map[string]interface{}{
 						"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 						"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -1529,7 +1529,7 @@ func (c *SeguimientoController) GuardarCuantitativo() {
 				id, segregado := dato[indexActividad].(map[string]interface{})["id"]
 
 				if segregado && id != "" {
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+dato[indexActividad].(map[string]interface{})["id"].(string), &resSeguimientoDetalle); err == nil {
+					if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+dato[indexActividad].(map[string]interface{})["id"].(string), &resSeguimientoDetalle); err == nil {
 						helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
 						detalle = seguimientohelper.ConvertirStringJson(detalle)
 						estado = detalle["estado"].(map[string]interface{})
@@ -1539,7 +1539,7 @@ func (c *SeguimientoController) GuardarCuantitativo() {
 				}
 
 				if estado["nombre"] == "Con observaciones" && body["dependencia"].(bool) {
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
+					if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AER", &resEstado); err == nil {
 						estado = map[string]interface{}{
 							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -1555,7 +1555,7 @@ func (c *SeguimientoController) GuardarCuantitativo() {
 						codigo_abreviacion = "AAV" /*AR*/
 					}
 
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:"+codigo_abreviacion, &resEstado); err == nil {
+					if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:"+codigo_abreviacion, &resEstado); err == nil {
 						estado = map[string]interface{}{
 							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -1582,7 +1582,7 @@ func (c *SeguimientoController) GuardarCuantitativo() {
 			estadoSeguimiento = seguimientohelper.GetEstadoSeguimiento(seguimiento)
 			seguimiento["estado_seguimiento_id"] = estadoSeguimiento
 
-			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+			if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
 				panic(map[string]interface{}{"funcion": "GuardarCuantitativo", "err": "Error actualizando componente cuantitativo de seguimiento \"seguimiento[\"_id\"].(string)\"", "status": "400", "log": err})
 			}
 
@@ -1620,7 +1620,7 @@ func (c *SeguimientoController) ReportarActividad() {
 	dato := make(map[string]interface{})
 
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &body); err == nil {
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+body["SeguimientoId"].(string), &respuesta); err == nil {
+		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+body["SeguimientoId"].(string), &respuesta); err == nil {
 			aux := make(map[string]interface{}, 1)
 			helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
 			seguimiento = aux
@@ -1630,7 +1630,7 @@ func (c *SeguimientoController) ReportarActividad() {
 
 			reportable, mensaje := seguimientohelper.ActividadReportable(seguimiento, indexActividad)
 			if reportable {
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AR", &resEstado); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AR", &resEstado); err == nil {
 					estado = map[string]interface{}{
 						"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 						"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -1639,7 +1639,7 @@ func (c *SeguimientoController) ReportarActividad() {
 
 				id, segregable := dato[indexActividad].(map[string]interface{})["id"].(string)
 				if segregable && id != "" {
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+dato[indexActividad].(map[string]interface{})["id"].(string), &resSeguimientoDetalle); err == nil {
+					if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+dato[indexActividad].(map[string]interface{})["id"].(string), &resSeguimientoDetalle); err == nil {
 						helpers.LimpiezaRespuestaRefactor(resSeguimientoDetalle, &detalle)
 						detalle = seguimientohelper.ConvertirStringJson(detalle)
 						detalle["estado"] = estado
@@ -1653,7 +1653,7 @@ func (c *SeguimientoController) ReportarActividad() {
 					str := string(b)
 					seguimiento["dato"] = str
 
-					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+					if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
 						panic(map[string]interface{}{"funcion": "GuardarCuantitativo", "err": "Error actualizando componente cuantitativo de seguimiento \"seguimiento[\"_id\"].(string)\"", "status": "400", "log": err})
 					}
 				}
@@ -1687,17 +1687,17 @@ func (c *SeguimientoController) ReportarSeguimiento() {
 	var seguimiento map[string]interface{}
 	var resEstado map[string]interface{}
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+idSeguimiento, &respuesta); err == nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+idSeguimiento, &respuesta); err == nil {
 		aux := make(map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
 		seguimiento = aux
 		reportable, mensaje := seguimientohelper.SeguimientoReportable(seguimiento)
 		if reportable {
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:EAR", &resEstado); err == nil {
+			if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:EAR", &resEstado); err == nil {
 				seguimiento["estado_seguimiento_id"] = resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"]
 			}
 
-			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+			if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
 				panic(map[string]interface{}{"funcion": "GuardarCuantitativo", "err": "Error actualizando componente cuantitativo de seguimiento \"seguimiento[\"_id\"].(string)\"", "status": "400", "log": err})
 			}
 
@@ -1741,7 +1741,7 @@ func (c *SeguimientoController) RevisarActividad() {
 
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &body); err == nil {
 
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
+		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
 			aux := make([]map[string]interface{}, 1)
 			helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
 
@@ -1765,14 +1765,14 @@ func (c *SeguimientoController) RevisarActividad() {
 			}
 
 			if comentario {
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:CO", &resEstado); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:CO", &resEstado); err == nil {
 					estado = map[string]interface{}{
 						"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 						"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
 					}
 				}
 			} else {
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AAV", &resEstado); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AAV", &resEstado); err == nil {
 					estado = map[string]interface{}{
 						"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 						"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -1782,7 +1782,7 @@ func (c *SeguimientoController) RevisarActividad() {
 
 			id, segregado := body["id"].(string)
 			if segregado && id != "" {
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id, &resDetalle); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id, &resDetalle); err == nil {
 					helpers.LimpiezaRespuestaRefactor(resDetalle, &detalle)
 					detalle = seguimientohelper.ConvertirStringJson(detalle)
 					detalle["evidencia"] = body["evidencia"]
@@ -1799,7 +1799,7 @@ func (c *SeguimientoController) RevisarActividad() {
 				seguimiento["dato"] = str
 			}
 
-			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+			if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
 				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 			}
 			data := respuesta["Data"].(map[string]interface{})
@@ -1841,7 +1841,7 @@ func (c *SeguimientoController) RevisarActividadJefeDependencia() {
 
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &body); err == nil {
 
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
+		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
 			aux := make([]map[string]interface{}, 1)
 			helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
 
@@ -1865,14 +1865,14 @@ func (c *SeguimientoController) RevisarActividadJefeDependencia() {
 			}
 
 			if comentario {
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:CO", &resEstado); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:CO", &resEstado); err == nil {
 					estado = map[string]interface{}{
 						"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 						"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
 					}
 				}
 			} else {
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AVV", &resEstado); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AVV", &resEstado); err == nil {
 					estado = map[string]interface{}{
 						"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 						"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -1882,7 +1882,7 @@ func (c *SeguimientoController) RevisarActividadJefeDependencia() {
 
 			id, segregado := body["id"].(string)
 			if segregado && id != "" {
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id, &resDetalle); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id, &resDetalle); err == nil {
 					helpers.LimpiezaRespuestaRefactor(resDetalle, &detalle)
 					detalle = seguimientohelper.ConvertirStringJson(detalle)
 					detalle["evidencia"] = body["evidencia"]
@@ -1899,7 +1899,7 @@ func (c *SeguimientoController) RevisarActividadJefeDependencia() {
 				seguimiento["dato"] = str
 			}
 
-			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+			if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
 				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 			}
 			data := respuesta["Data"].(map[string]interface{})
@@ -1929,7 +1929,7 @@ func (c *SeguimientoController) RevisarSeguimiento() {
 	var resEstado map[string]interface{}
 	dato := make(map[string]interface{})
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,_id:"+seguimientoId, &respuesta); err == nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,_id:"+seguimientoId, &respuesta); err == nil {
 		aux := make([]map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
 
@@ -1948,7 +1948,7 @@ func (c *SeguimientoController) RevisarSeguimiento() {
 				codigo_abreviacion = "AV"
 			}
 
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:"+codigo_abreviacion, &resEstado); err == nil {
+			if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:"+codigo_abreviacion, &resEstado); err == nil {
 				estado := map[string]interface{}{
 					"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 					"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -1956,7 +1956,7 @@ func (c *SeguimientoController) RevisarSeguimiento() {
 				seguimiento["estado_seguimiento_id"] = estado["id"]
 			}
 
-			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+			if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
 				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 			}
 
@@ -1998,7 +1998,7 @@ func (c *SeguimientoController) RevisarSeguimientoJefeDependencia() {
 		}
 	}
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,_id:"+seguimientoId, &respuesta); err == nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,_id:"+seguimientoId, &respuesta); err == nil {
 		aux := make([]map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
 
@@ -2017,7 +2017,7 @@ func (c *SeguimientoController) RevisarSeguimientoJefeDependencia() {
 				codigo_abreviacion = "RV"
 			}
 
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:"+codigo_abreviacion, &resEstado); err == nil {
+			if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:"+codigo_abreviacion, &resEstado); err == nil {
 				estado := map[string]interface{}{
 					"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 					"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -2025,7 +2025,7 @@ func (c *SeguimientoController) RevisarSeguimientoJefeDependencia() {
 				seguimiento["estado_seguimiento_id"] = estado["id"]
 			}
 
-			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+			if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
 				c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 			}
 
@@ -2065,7 +2065,7 @@ func (c *SeguimientoController) RetornarActividad() {
 	estado := map[string]interface{}{}
 
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &body); err == nil {
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
+		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
 			aux := make([]map[string]interface{}, 1)
 			helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
 
@@ -2076,13 +2076,13 @@ func (c *SeguimientoController) RetornarActividad() {
 			id, segregado := body["id"].(string)
 			if segregado && id != "" {
 				fmt.Println("Se encontro el detalle")
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id, &resDetalle); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id, &resDetalle); err == nil {
 					helpers.LimpiezaRespuestaRefactor(resDetalle, &detalle)
 					detalle = seguimientohelper.ConvertirStringJson(detalle)
 				}
 
 				if detalle["estado"].(map[string]interface{})["id"] == "63793207242b813898e9856b" {
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:OAPC", &resEstado); err == nil {
+					if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:OAPC", &resEstado); err == nil {
 						estado = map[string]interface{}{
 							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -2090,7 +2090,7 @@ func (c *SeguimientoController) RetornarActividad() {
 					}
 					seguimiento["estado_seguimiento_id"] = estado["id"]
 
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AVV", &resEstado); err == nil {
+					if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AVV", &resEstado); err == nil {
 						estado = map[string]interface{}{
 							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -2099,7 +2099,7 @@ func (c *SeguimientoController) RetornarActividad() {
 					detalle["estado"] = estado
 					seguimientohelper.GuardarDetalleSegimiento(detalle, true)
 
-					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+					if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
 						c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 					}
 
@@ -2114,7 +2114,7 @@ func (c *SeguimientoController) RetornarActividad() {
 				dato[indexActividad] = body
 
 				if dato[indexActividad].(map[string]interface{})["estado"].(map[string]interface{})["id"] == "63793207242b813898e9856b" {
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:OAPC", &resEstado); err == nil {
+					if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:OAPC", &resEstado); err == nil {
 						estado = map[string]interface{}{
 							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -2122,7 +2122,7 @@ func (c *SeguimientoController) RetornarActividad() {
 					}
 					seguimiento["estado_seguimiento_id"] = estado["id"]
 
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AVV", &resEstado); err == nil {
+					if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AVV", &resEstado); err == nil {
 						estado = map[string]interface{}{
 							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -2134,7 +2134,7 @@ func (c *SeguimientoController) RetornarActividad() {
 					str := string(b)
 					seguimiento["dato"] = str
 
-					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+					if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
 						c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 					}
 
@@ -2179,7 +2179,7 @@ func (c *SeguimientoController) RetornarActividadJefeDependencia() {
 	estado := map[string]interface{}{}
 
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &body); err == nil {
-		if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
+		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
 
 			aux := make([]map[string]interface{}, 1)
 			helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
@@ -2190,13 +2190,13 @@ func (c *SeguimientoController) RetornarActividadJefeDependencia() {
 
 			id, segregado := body["id"].(string)
 			if segregado && id != "" {
-				if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id, &resDetalle); err == nil {
+				if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento-detalle/"+id, &resDetalle); err == nil {
 					helpers.LimpiezaRespuestaRefactor(resDetalle, &detalle)
 					detalle = seguimientohelper.ConvertirStringJson(detalle)
 				}
 
 				if detalle["estado"].(map[string]interface{})["id"] == "65bf0d840c1fc945b06afeb1" {
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:RJU", &resEstado); err == nil {
+					if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:RJU", &resEstado); err == nil {
 						estado = map[string]interface{}{
 							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -2204,7 +2204,7 @@ func (c *SeguimientoController) RetornarActividadJefeDependencia() {
 					}
 					seguimiento["estado_seguimiento_id"] = estado["id"]
 
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AR", &resEstado); err == nil {
+					if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AR", &resEstado); err == nil {
 						estado = map[string]interface{}{
 							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -2213,7 +2213,7 @@ func (c *SeguimientoController) RetornarActividadJefeDependencia() {
 					detalle["estado"] = estado
 					seguimientohelper.GuardarDetalleSegimiento(detalle, true)
 
-					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+					if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
 						c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 					}
 
@@ -2228,7 +2228,7 @@ func (c *SeguimientoController) RetornarActividadJefeDependencia() {
 				dato[indexActividad] = body
 
 				if dato[indexActividad].(map[string]interface{})["estado"].(map[string]interface{})["id"] == "63793207242b813898e9856b" {
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:RJU", &resEstado); err == nil {
+					if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:RJU", &resEstado); err == nil {
 						estado = map[string]interface{}{
 							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -2236,7 +2236,7 @@ func (c *SeguimientoController) RetornarActividadJefeDependencia() {
 					}
 					seguimiento["estado_seguimiento_id"] = estado["id"]
 
-					if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AR", &resEstado); err == nil {
+					if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:AR", &resEstado); err == nil {
 						estado = map[string]interface{}{
 							"nombre": resEstado["Data"].([]interface{})[0].(map[string]interface{})["nombre"],
 							"id":     resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"],
@@ -2248,7 +2248,7 @@ func (c *SeguimientoController) RetornarActividadJefeDependencia() {
 					str := string(b)
 					seguimiento["dato"] = str
 
-					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+					if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
 						c.Data["json"] = map[string]interface{}{"Code": "400", "Body": err, "Type": "error"}
 					}
 
@@ -2298,7 +2298,7 @@ func (c *SeguimientoController) MigrarInformacion() {
 	resNoMigrado := []map[string]interface{}{}
 	dato := make(map[string]interface{})
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId+",periodo_seguimiento_id:"+trimestre, &respuesta); err == nil {
 		aux := make([]map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
 
@@ -2321,7 +2321,7 @@ func (c *SeguimientoController) MigrarInformacion() {
 			str := string(b)
 			seguimiento["dato"] = str
 
-			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+			if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
 				panic(map[string]interface{}{"funcion": "GuardarCuantitativo", "err": "Error actualizando componente cuantitativo de seguimiento \"seguimiento[\"_id\"].(string)\"", "status": "400", "log": err})
 			}
 		}
@@ -2349,17 +2349,17 @@ func (c *SeguimientoController) VerificarSeguimiento() {
 	var seguimiento map[string]interface{}
 	var resEstado map[string]interface{}
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+idSeguimiento, &respuesta); err == nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+idSeguimiento, &respuesta); err == nil {
 		aux := make(map[string]interface{}, 1)
 		helpers.LimpiezaRespuestaRefactor(respuesta, &aux)
 		seguimiento = aux
 		reportable, mensaje := seguimientohelper.SeguimientoReportable(seguimiento)
 		if reportable {
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:RV", &resEstado); err == nil {
+			if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento?query=codigo_abreviacion:RV", &resEstado); err == nil {
 				seguimiento["estado_seguimiento_id"] = resEstado["Data"].([]interface{})[0].(map[string]interface{})["_id"]
 			}
 
-			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
+			if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/seguimiento/"+seguimiento["_id"].(string), "PUT", &respuesta, seguimiento); err != nil {
 				panic(map[string]interface{}{"funcion": "GuardarCuantitativo", "err": "Error actualizando componente cuantitativo de seguimiento \"seguimiento[\"_id\"].(string)\"", "status": "400", "log": err})
 			}
 
@@ -2404,19 +2404,19 @@ func (c *SeguimientoController) EstadoTrimestres() {
 
 	planId := c.Ctx.Input.Param(":plan_id")
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId, &resSeguimiento); err == nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/seguimiento?query=activo:true,plan_id:"+planId, &resSeguimiento); err == nil {
 		helpers.LimpiezaRespuestaRefactor(resSeguimiento, &planes)
 
 		for _, plan := range planes {
 			var periodo []map[string]interface{}
 			periodoSeguimientoId := plan["periodo_seguimiento_id"].(string)
 
-			if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento?query=_id:"+periodoSeguimientoId, &resPeriodoSeguimiento); err == nil {
+			if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento?query=_id:"+periodoSeguimientoId, &resPeriodoSeguimiento); err == nil {
 				var periodoSeguimiento []map[string]interface{}
 				helpers.LimpiezaRespuestaRefactor(resPeriodoSeguimiento, &periodoSeguimiento)
 				if fmt.Sprintf("%v", periodoSeguimiento[0]) != "map[]" {
 
-					if err := request.GetJson("http://"+beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+periodoSeguimiento[0]["periodo_id"].(string), &resPeriodo); err == nil {
+					if err := request.GetJson(beego.AppConfig.String("ParametrosService")+"/parametro_periodo?query=Id:"+periodoSeguimiento[0]["periodo_id"].(string), &resPeriodo); err == nil {
 						helpers.LimpiezaRespuestaRefactor(resPeriodo, &periodo)
 						auxPeriodo := periodo[0]["ParametroId"].(map[string]interface{})
 						periodoSeguimiento[0]["periodo_nombre"] = auxPeriodo["CodigoAbreviacion"].(string)
@@ -2425,10 +2425,10 @@ func (c *SeguimientoController) EstadoTrimestres() {
 						if fmt.Sprintf("%v", periodo[0]) != "map[]" {
 							var resEstado map[string]interface{}
 
-							if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento/"+plan["estado_seguimiento_id"].(string), &resEstado); err == nil {
+							if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento/"+plan["estado_seguimiento_id"].(string), &resEstado); err == nil {
 								plan["estado_seguimiento_id"] = resEstado["Data"]
 
-								if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/plan/"+plan["plan_id"].(string), &resEstado); err == nil {
+								if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/plan/"+plan["plan_id"].(string), &resEstado); err == nil {
 									plan["plan_id"] = resEstado["Data"]
 
 									auxPlanes = append(auxPlanes, plan)
