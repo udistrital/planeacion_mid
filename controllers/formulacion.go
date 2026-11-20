@@ -1948,7 +1948,7 @@ func (c *FormulacionController) Planes() {
 	var respuestaTipoPlan map[string]interface{}
 	var tipoPlanExcluido []map[string]interface{}
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-plan?query=codigo_abreviacion:IPI_SP", &respuestaTipoPlan); err != nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/tipo-plan?query=codigo_abreviacion:IPI_SP", &respuestaTipoPlan); err != nil {
 		panic(err)
 	}
 	helpers.LimpiezaRespuestaRefactor(respuestaTipoPlan, &tipoPlanExcluido)
