@@ -42,7 +42,7 @@ func NuevoServicio(repo Repositorio, definiciones FuenteDefiniciones, catalogos 
 	}
 }
 
-// NuevoServicioPorDefecto conecta con planes_crud y Oikos (hosts sin esquema, como en
+// NuevoServicioPorDefecto conecta con planes_crud y Oikos (hosts con esquema, como en
 // conf/app.conf), con caché de definiciones y de catálogos: los de la colección
 // elemento_catalogo; para el catálogo sedes, los espacios físicos de tipo SEDE de Oikos, y para
 // los del Plan Distrital de Desarrollo, el Plan Estratégico de Desarrollo y el Plan Indicativo,
@@ -183,7 +183,7 @@ func nombreTercero(documento string) (string, error) {
 		return "", errors.New("el documento no cumple el formato: solo letras y números, máximo 20")
 	}
 	var datos []models.DatosIdentificacion
-	ruta := "http://" + beego.AppConfig.String("TercerosService") + "/datos_identificacion/?query=Numero:" + documento
+	ruta := beego.AppConfig.String("TercerosService") + "/datos_identificacion/?query=Numero:" + documento
 	if err := request.GetJson(ruta, &datos); err != nil {
 		return "", fmt.Errorf("no se pudo consultar Terceros: %v", err)
 	}

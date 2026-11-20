@@ -17,7 +17,7 @@ func DefinirFechasIniciativasFormulacion(body map[string]interface{}) []interfac
 	var respuestaPost = make(map[string]interface{})
 	var respuestaPost2 = make(map[string]interface{})
 
-	if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas/buscar-unidad-planes/1", "POST", &respuestaPost, body); err == nil {
+	if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas/buscar-unidad-planes/1", "POST", &respuestaPost, body); err == nil {
 		data, ok := respuestaPost["Data"].([]interface{})
 		if ok && len(data) > 0 { // Si sí existe se procede a verificar que las fechas sean iguales
 			registro := data[0].(map[string]interface{})
@@ -31,7 +31,7 @@ func DefinirFechasIniciativasFormulacion(body map[string]interface{}) []interfac
 			if fechaInicioBodyParsed.Equal(fechaInicioRegistroParsed) && fechaFinBodyParsed.Equal(fechaFinRegistroParsed) {
 				// Registro Fechas iguales
 				registro = manejarUnidades(body, registro, 1)
-				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas/"+registro["_id"].(string), "PUT", &res, registro); err != nil {
+				if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas/"+registro["_id"].(string), "PUT", &res, registro); err != nil {
 					panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Error actualizando periodo-seguimiento \"registro[\"_id\"].(string)\"", "status": "400", "log": err})
 				}
 				respuestasAcumuladas = append(respuestasAcumuladas, res["Data"])
@@ -39,21 +39,21 @@ func DefinirFechasIniciativasFormulacion(body map[string]interface{}) []interfac
 				// Registro con Fechas distintas, entonces se debe editar el registro existente quitando las unidades del body
 				// Si unidades_interes del registro se queda vacio, se debe inactivar
 				registro = manejarUnidades(body, registro, 2)
-				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas/"+registro["_id"].(string), "PUT", &res, registro); err != nil {
+				if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas/"+registro["_id"].(string), "PUT", &res, registro); err != nil {
 					panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Error actualizando periodo-seguimiento \"registro[\"_id\"].(string)\"", "status": "400", "log": err})
 				}
-				if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas/buscar-unidad-planes/2", "POST", &respuestaPost2, body); err == nil {
+				if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas/buscar-unidad-planes/2", "POST", &respuestaPost2, body); err == nil {
 					data, ok := respuestaPost2["Data"].([]interface{})
 					if ok && len(data) > 0 { // Existe el registro, entonces se le agregan las unidades
 						registro2 := data[0].(map[string]interface{})
 						registro2 = manejarUnidades(body, registro2, 1)
-						if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas/"+registro2["_id"].(string), "PUT", &res, registro2); err != nil {
+						if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas/"+registro2["_id"].(string), "PUT", &res, registro2); err != nil {
 							panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Error actualizando periodo-seguimiento \"registro[\"_id\"].(string)\"", "status": "400", "log": err})
 						}
 						respuestasAcumuladas = append(respuestasAcumuladas, res["Data"])
 					} else { // No existe el registro, se crea el registro con las unidades del body
 						body["planes_interes"] = registro["planes_interes"]
-						if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas", "POST", &res, body); err != nil {
+						if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas", "POST", &res, body); err != nil {
 							panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Error agregaron periodo-seguimiento", "status": "400", "log": err})
 						}
 						respuestasAcumuladas = append(respuestasAcumuladas, res["Data"])
@@ -61,17 +61,17 @@ func DefinirFechasIniciativasFormulacion(body map[string]interface{}) []interfac
 				}
 			}
 		} else { // No existe el registro con las unidades especificadas, se procede a validar por periodo, fecha_inicio y fecha_fin
-			if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas/buscar-unidad-planes/2", "POST", &respuestaPost2, body); err == nil {
+			if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas/buscar-unidad-planes/2", "POST", &respuestaPost2, body); err == nil {
 				data, ok := respuestaPost2["Data"].([]interface{})
 				if ok && len(data) > 0 { // Existe el registro, entonces se le agregan las unidades
 					registro := data[0].(map[string]interface{})
 					registro = manejarUnidades(body, registro, 1)
-					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas/"+registro["_id"].(string), "PUT", &res, registro); err != nil {
+					if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas/"+registro["_id"].(string), "PUT", &res, registro); err != nil {
 						panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Error actualizando periodo-seguimiento \"registro[\"_id\"].(string)\"", "status": "400", "log": err})
 					}
 					respuestasAcumuladas = append(respuestasAcumuladas, res["Data"])
 				} else { // No existe el registro, se crea
-					if err := helpers.SendJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas", "POST", &res, body); err != nil {
+					if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas", "POST", &res, body); err != nil {
 						panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Error versionando periodo-seguimiento", "status": "400", "log": err})
 					}
 					respuestasAcumuladas = append(respuestasAcumuladas, res["Data"])
@@ -91,7 +91,7 @@ func ValidarFechasIniciativasFormulacion(body map[string]interface{}) map[string
 	var tipoSeguimiento []map[string]interface{}
 	respuesta := map[string]interface{}{"unidadEncontrada": false, "habilitado": false}
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-seguimiento/?query=codigo_abreviacion:FIPI_SP", &resTipoSeguimiento); err != nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/tipo-seguimiento/?query=codigo_abreviacion:FIPI_SP", &resTipoSeguimiento); err != nil {
 		panic(map[string]interface{}{"funcion": "ValidarFechasIniciativasFormulacion", "err": "Error al obtener el tipo de seguimiento", "status": "400", "log": err})
 	}
 	helpers.LimpiezaRespuestaRefactor(resTipoSeguimiento, &tipoSeguimiento)
@@ -99,7 +99,7 @@ func ValidarFechasIniciativasFormulacion(body map[string]interface{}) map[string
 		panic(map[string]interface{}{"funcion": "ValidarFechasIniciativasFormulacion", "err": "No se encontró el tipo de seguimiento", "status": "404"})
 	}
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/?query=tipo_seguimiento_id:"+tipoSeguimiento[0]["_id"].(string)+",activo:true", &resFechas); err != nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento/?query=tipo_seguimiento_id:"+tipoSeguimiento[0]["_id"].(string)+",activo:true", &resFechas); err != nil {
 		panic(map[string]interface{}{"funcion": "ValidarFechasIniciativasFormulacion", "err": "Error al obtener las fechas", "status": "400", "log": err})
 	}
 	helpers.LimpiezaRespuestaRefactor(resFechas, &fechas)

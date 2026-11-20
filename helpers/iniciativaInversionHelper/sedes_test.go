@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 )
@@ -30,7 +29,7 @@ func oikosDePrueba(t *testing.T, estado int) *httptest.Server {
 }
 
 func hostDe(servidor *httptest.Server) string {
-	return strings.TrimPrefix(servidor.URL, "http://") + "/v1"
+	return servidor.URL + "/v1"
 }
 
 func TestLasSedesSalenDeOikosActivasPorNombreYConOtraAlFinal(t *testing.T) {

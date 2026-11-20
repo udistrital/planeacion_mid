@@ -210,7 +210,7 @@ func usarTerceros(t *testing.T, manejador http.Handler) *httptest.Server {
 	servidor := httptest.NewServer(manejador)
 	t.Cleanup(servidor.Close)
 	anterior := beego.AppConfig.String("TercerosService")
-	beego.AppConfig.Set("TercerosService", strings.TrimPrefix(servidor.URL, "http://"))
+	beego.AppConfig.Set("TercerosService", servidor.URL)
 	t.Cleanup(func() { beego.AppConfig.Set("TercerosService", anterior) })
 	return servidor
 }

@@ -65,10 +65,10 @@ type ClienteCrud struct {
 	http *http.Client
 }
 
-// NuevoClienteCrud crea el cliente. host va sin esquema, como en conf/app.conf.
+// NuevoClienteCrud crea el cliente. host incluye el esquema, como en conf/app.conf.
 func NuevoClienteCrud(host string) *ClienteCrud {
 	return &ClienteCrud{
-		base: "http://" + strings.TrimSuffix(host, "/"),
+		base: strings.TrimSuffix(host, "/"),
 		http: &http.Client{Timeout: 30 * time.Second},
 	}
 }

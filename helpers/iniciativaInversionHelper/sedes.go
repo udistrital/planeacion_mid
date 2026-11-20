@@ -59,11 +59,11 @@ type ClienteSedesOikos struct {
 	http  *http.Client
 }
 
-// NuevoClienteSedesOikos crea el cliente. El host va sin esquema, como en conf/app.conf
+// NuevoClienteSedesOikos crea el cliente. El host incluye el esquema, como en conf/app.conf
 // (OikosService).
 func NuevoClienteSedesOikos(hostOikos string) *ClienteSedesOikos {
 	return &ClienteSedesOikos{
-		oikos: "http://" + strings.TrimSuffix(hostOikos, "/"),
+		oikos: strings.TrimSuffix(hostOikos, "/"),
 		http:  &http.Client{Timeout: 30 * time.Second},
 	}
 }

@@ -20,7 +20,7 @@ func obtenerEstadosSeguimiento() map[string]string {
 	var respuestaEstados map[string]interface{}
 	var estadoFormulacion []map[string]interface{}
 
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/estado-seguimiento", &respuestaEstados); err != nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/estado-seguimiento", &respuestaEstados); err != nil {
 		panic(err)
 	}
 	helpers.LimpiezaRespuestaRefactor(respuestaEstados, &estadoFormulacion)
@@ -71,7 +71,7 @@ func ObtenerPlanesAccion() (resumenPlanes []map[string]interface{}, outputError 
 
 	estadosSeguimiento := obtenerEstadosSeguimiento()
 	// Obtiene los planes que hay en seguimiento
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+`/seguimiento`, &resSeguimiento); err != nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+`/seguimiento`, &resSeguimiento); err != nil {
 		panic(err)
 	}
 

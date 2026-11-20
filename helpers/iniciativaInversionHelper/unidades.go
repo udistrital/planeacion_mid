@@ -53,7 +53,7 @@ func NuevasUnidades(fuente FuenteUnidades) *Unidades {
 	return &Unidades{fuente: fuente}
 }
 
-// NuevasUnidadesPorDefecto consulta Terceros y Oikos por HTTP (hosts sin esquema,
+// NuevasUnidadesPorDefecto consulta Terceros y Oikos por HTTP (hosts con esquema,
 // como en conf/app.conf).
 func NuevasUnidadesPorDefecto(hostTerceros, hostOikos string) *Unidades {
 	return NuevasUnidades(NuevoClienteUnidades(hostTerceros, hostOikos))
@@ -108,11 +108,11 @@ type ClienteUnidades struct {
 	http     *http.Client
 }
 
-// NuevoClienteUnidades crea el cliente. Los hosts van sin esquema, como en conf/app.conf.
+// NuevoClienteUnidades crea el cliente. Los hosts incluyen el esquema, como en conf/app.conf.
 func NuevoClienteUnidades(hostTerceros, hostOikos string) *ClienteUnidades {
 	return &ClienteUnidades{
-		terceros: "http://" + strings.TrimSuffix(hostTerceros, "/"),
-		oikos:    "http://" + strings.TrimSuffix(hostOikos, "/"),
+		terceros: strings.TrimSuffix(hostTerceros, "/"),
+		oikos:    strings.TrimSuffix(hostOikos, "/"),
 		http:     &http.Client{Timeout: 30 * time.Second},
 	}
 }
