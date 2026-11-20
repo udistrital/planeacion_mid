@@ -218,26 +218,40 @@ func TestSinPlanesConNodosNiFallasSeInventanOpciones(t *testing.T) {
 	}
 }
 
-func TestLaValidacionEncadenaPlanLineamientoYMeta(t *testing.T) {
+// Como en la armonización de Formulación, en cada nivel se seleccionan varios elementos (multiple),
+// cada uno debajo de alguno de los seleccionados en el nivel de arriba.
+func TestLaValidacionEncadenaPlanLineamientosYMetas(t *testing.T) {
 	repo := NuevoRepositorioConInstrumentos(&repoCatalogosContado{}, crudConPED(), time.Minute, 4)
 	validador := NuevoValidador(NuevosCatalogosConCache(repo, time.Hour))
 	submodulo := &Nodo{Nombre: "Articulación", Dato: Dato{Clave: "articulacion"}, Hijos: []*Nodo{
 		{Nombre: "Plan Estratégico de Desarrollo", Dato: Dato{Clave: "ped"}, Hijos: []*Nodo{
 			campoDePrueba("plan", TipoCatalogo, Dato{Requerido: true, Catalogo: "planes_ped", SinCodigo: true}),
-			campoDePrueba("lineamiento_estrategico", TipoCatalogo, Dato{Requerido: true, Catalogo: "lineamientos_ped", DependeDe: "plan", SinCodigo: true}),
-			campoDePrueba("meta_estrategica", TipoCatalogo, Dato{Requerido: true, Catalogo: "metas_ped", DependeDe: "lineamiento_estrategico", SinCodigo: true}),
+			campoDePrueba("lineamiento_estrategico", TipoCatalogo,
+				Dato{Requerido: true, Catalogo: "lineamientos_ped", DependeDe: "plan", SinCodigo: true, Multiple: true}),
+			campoDePrueba("meta_estrategica", TipoCatalogo,
+				Dato{Requerido: true, Catalogo: "metas_ped", DependeDe: "lineamiento_estrategico", SinCodigo: true, Multiple: true}),
 		}},
 	}}
-	validar := func(plan, lineamiento, meta string) []ErrorCampo {
+	lista := func(codigos ...string) []interface{} {
+		valores := make([]interface{}, len(codigos))
+		for i, codigo := range codigos {
+			valores[i] = codigo
+		}
+		return valores
+	}
+	validar := func(plan string, lineamientos, metas []interface{}) []ErrorCampo {
 		return validador.ValidarSubmodulo(submodulo, map[string]Datos{"articulacion": {"ped": Datos{
-			"plan": plan, "lineamiento_estrategico": lineamiento, "meta_estrategica": meta,
+			"plan": plan, "lineamiento_estrategico": lineamientos, "meta_estrategica": metas,
 		}}})
 	}
 
-	exigirSinErrores(t, "articulacion", validar("ped-1", "l-1", "m-2"))
-	exigirError(t, validar("ped-1", "l-1", "m-3"), "ped.meta_estrategica", "no pertenece")
-	exigirError(t, validar("ped-1", "", "m-1"), "ped.lineamiento_estrategico", "es obligatorio")
-	exigirError(t, validar("ped-vacio", "l-1", "m-1"), "ped.plan", "no existe en la lista")
+	exigirSinErrores(t, "articulacion", validar("ped-1", lista("l-1"), lista("m-2")))
+	exigirSinErrores(t, "articulacion", validar("ped-1", lista("l-1", "l-2"), lista("m-1", "m-2", "m-3")))
+	exigirError(t, validar("ped-1", lista("l-1"), lista("m-1", "m-3")), "ped.meta_estrategica", "no pertenece")
+	exigirError(t, validar("ped-1", lista(), lista("m-1")), "ped.lineamiento_estrategico", "es obligatorio")
+	exigirError(t, validar("ped-1", lista(), lista("m-1")), "ped.meta_estrategica", "primero seleccione")
+	exigirError(t, validar("ped-1", lista("l-1"), lista()), "ped.meta_estrategica", "es obligatorio")
+	exigirError(t, validar("ped-vacio", lista("l-1"), lista("m-1")), "ped.plan", "no existe en la lista")
 }
 
 func TestLasVigenciasSeResumen(t *testing.T) {

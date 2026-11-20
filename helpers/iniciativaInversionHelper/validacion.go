@@ -230,7 +230,7 @@ func validarCasilla(e *ejecucion, nodo *Nodo, valor interface{}, existe bool, ru
 
 func validarCatalogo(e *ejecucion, nodo *Nodo, valor interface{}, existe bool, ruta string, alcance alcance) {
 	if nodo.Dato.Multiple {
-		e.catalogoMultiple(nodo, valor, existe, ruta)
+		e.catalogoMultiple(nodo, valor, existe, ruta, alcance)
 		return
 	}
 	codigo, esTexto := comoTexto(valor)
@@ -256,28 +256,34 @@ func validarCatalogo(e *ejecucion, nodo *Nodo, valor interface{}, existe bool, r
 	if nodo.Dato.DependeDe == "" {
 		return
 	}
-	padre, _ := comoTexto(alcance.hermanos[nodo.Dato.DependeDe])
-	if padre == "" {
+	padres := codigosElegidos(alcance.hermanos[nodo.Dato.DependeDe])
+	if len(padres) == 0 {
 		e.agregar(ruta, "%s: primero seleccione %s.", nodo.Nombre, alcance.campoHermano(nodo.Dato.DependeDe))
-	} else if item.Padre != padre {
+	} else if !padres[item.Padre] {
 		e.agregar(ruta, "%s: «%s» no pertenece a la opción seleccionada en %s.", nodo.Nombre, item.Nombre, alcance.campoHermano(nodo.Dato.DependeDe))
 	}
 }
 
 // catalogoMultiple valida un catálogo con multiple: una lista de códigos sin repetir, todos del
-// catálogo (p. ej. las sedes marcadas). Si es obligatorio, al menos uno.
-func (e *ejecucion) catalogoMultiple(nodo *Nodo, valor interface{}, existe bool, ruta string) {
+// catálogo (p. ej. las sedes marcadas). Si es obligatorio, al menos uno. Con depende_de, cada
+// elemento debe colgar de lo seleccionado en ese campo, que puede ser una opción o varias (p. ej.
+// las metas de los lineamientos seleccionados en Articulación).
+func (e *ejecucion) catalogoMultiple(nodo *Nodo, valor interface{}, existe bool, ruta string, alcance alcance) {
 	lista, esLista := comoLista(valor)
 	switch {
 	case existe && !esLista:
 		e.agregar(ruta, "%s: debe ser una lista de opciones.", nodo.Nombre)
 		return
-	case nodo.Dato.DependeDe != "":
-		e.malConfigurado(nodo, ruta, "un catálogo multiple no admite depende_de")
-		return
 	case len(lista) == 0:
 		e.faltaObligatorio(nodo, ruta)
 		return
+	}
+	var padres map[string]bool
+	if nodo.Dato.DependeDe != "" {
+		if padres = codigosElegidos(alcance.hermanos[nodo.Dato.DependeDe]); len(padres) == 0 {
+			e.agregar(ruta, "%s: primero seleccione %s.", nodo.Nombre, alcance.campoHermano(nodo.Dato.DependeDe))
+			return
+		}
 	}
 	catalogo, err := e.validador.catalogos.Catalogo(nodo.Dato.Catalogo)
 	if err != nil {
@@ -294,12 +300,33 @@ func (e *ejecucion) catalogoMultiple(nodo *Nodo, valor interface{}, existe bool,
 		case vistos[codigo]:
 			e.agregar(ruta, "%s: «%s» está marcada dos veces.", nodo.Nombre, codigo)
 		default:
-			if _, existeItem := catalogo.Buscar(codigo); !existeItem {
+			item, existeItem := catalogo.Buscar(codigo)
+			if !existeItem {
 				e.agregar(ruta, "%s: «%s» ya no está en la lista; desmárquela.", nodo.Nombre, codigo)
+			} else if padres != nil && !padres[item.Padre] {
+				e.agregar(ruta, "%s: «%s» no pertenece a lo seleccionado en %s.", nodo.Nombre, item.Nombre, alcance.campoHermano(nodo.Dato.DependeDe))
 			}
 		}
 		vistos[codigo] = true
 	}
+}
+
+// codigosElegidos son los códigos seleccionados en un campo de catálogo: uno (texto) o varios (lista).
+func codigosElegidos(valor interface{}) map[string]bool {
+	elegidos := map[string]bool{}
+	if codigo, esTexto := comoTexto(valor); esTexto {
+		if codigo != "" {
+			elegidos[codigo] = true
+		}
+		return elegidos
+	}
+	lista, _ := comoLista(valor)
+	for _, elemento := range lista {
+		if codigo, esTexto := comoTexto(elemento); esTexto && codigo != "" {
+			elegidos[codigo] = true
+		}
+	}
+	return elegidos
 }
 
 func validarMatriz(e *ejecucion, nodo *Nodo, valor interface{}, existe bool, ruta string, _ alcance) {
