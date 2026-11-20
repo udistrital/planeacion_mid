@@ -1945,7 +1945,13 @@ func (c *FormulacionController) Planes() {
 	var plan map[string]interface{}
 	var arregloPlanes []map[string]interface{}
 	var auxArregloPlanes []map[string]interface{}
-	const tipoPlanExcluido = "6af545fd0e872508973601a4"
+	var respuestaTipoPlan map[string]interface{}
+	var tipoPlanExcluido []map[string]interface{}
+
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/tipo-plan?query=codigo_abreviacion:IPI_SP", &respuestaTipoPlan); err != nil {
+		panic(err)
+	}
+	helpers.LimpiezaRespuestaRefactor(respuestaTipoPlan, &tipoPlanExcluido)
 
 	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/plan?query=formato:true", &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planes)
@@ -1953,7 +1959,7 @@ func (c *FormulacionController) Planes() {
 		// Excluir planes del tipo indicado
 		planesFiltrados := make([]map[string]interface{}, 0, len(planes))
 		for _, p := range planes {
-			if id, ok := p["tipo_plan_id"].(string); ok && id == tipoPlanExcluido {
+			if id, ok := p["tipo_plan_id"].(string); ok && id == tipoPlanExcluido[0]["_id"].(string) {
 				continue
 			}
 			planesFiltrados = append(planesFiltrados, p)
