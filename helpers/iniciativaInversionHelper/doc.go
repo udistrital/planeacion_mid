@@ -13,6 +13,7 @@
 //   - definicion.go     lectura del árbol de la plantilla, con caché
 //   - catalogos.go      catálogos (colección general elemento_catalogo), con caché
 //   - sedes.go          catálogo de sedes, que sale de Oikos
+//   - instrumentos.go   catálogos del Plan Distrital de Desarrollo, del Plan Estratégico de Desarrollo y del Plan Indicativo, que salen de esos planes
 //   - normalizacion.go  limpieza de datos y cálculo de campos calculados
 //   - validacion.go     reglas por tipo de campo, espejos y referencias
 //   - estados.go        tipo de plan, estados de la iniciativa y de los submódulos, y sus transiciones

@@ -430,7 +430,8 @@ func (e *ejecucion) cantidadDeFilas(nodo *Nodo, cantidad int, ruta string) {
 
 // espejo exige exactamente una fila por cada fila del grupo de origen (o por cada elemento del
 // catálogo). Con filas_opcionales, la fila vacía no se exige ni se valida (no aplica), salvo las
-// de filas_obligatorias, y min es cuántas filas se llenan como mínimo.
+// de filas_obligatorias, y min es cuántas filas se llenan como mínimo. Con filas_adicionales, acepta
+// además las filas agregadas por el usuario (hasta max, si lo tiene), que se validan igual que las demás.
 func (e *ejecucion) espejo(nodo *Nodo, filas []Datos, ruta string) {
 	origen, ok := e.origenDeEspejo(nodo, ruta)
 	if !ok {
@@ -440,14 +441,22 @@ func (e *ejecucion) espejo(nodo *Nodo, filas []Datos, ruta string) {
 	for _, filaOrigen := range origen {
 		idsOrigen[idDe(filaOrigen)] = true
 	}
+	adicionales := nodo.Dato.FilasAdicionales
+	if adicionales != nil && (adicionales.Origen == "" || adicionales.Max < 0 || idsOrigen[adicionales.Origen]) {
+		e.malConfigurado(nodo, ruta, "filas_adicionales: origen debe ser un valor que no esté en el origen del espejo y max no puede ser negativo")
+		return
+	}
 
 	porOrigen := map[string]Datos{}
+	agregadas := []Datos{}
 	for _, fila := range filas {
 		idOrigen, _ := comoTexto(fila["origen"])
 		rutaDeFila := rutaFila(ruta, idDe(fila))
 		switch {
 		case idOrigen == "":
 			e.agregar(rutaDeFila, "%s: la fila no indica de qué elemento sale.", nodo.Nombre)
+		case adicionales != nil && idOrigen == adicionales.Origen:
+			agregadas = append(agregadas, fila)
 		case !idsOrigen[idOrigen]:
 			e.agregar(rutaDeFila, "%s: la fila corresponde a un elemento que ya no existe; elimínela.", nodo.Nombre)
 		case porOrigen[idOrigen] != nil:
@@ -471,9 +480,36 @@ func (e *ejecucion) espejo(nodo *Nodo, filas []Datos, ruta string) {
 		diligenciadas++
 		e.objeto(nodo.Hijos, fila, rutaFila(ruta, idDe(fila)), alcance{filaOrigen: filaOrigen})
 	}
+	if adicionales != nil {
+		diligenciadas += e.filasAgregadas(nodo, agregadas, ruta)
+	}
 	if nodo.Dato.FilasOpcionales && nodo.Dato.Min != nil && diligenciadas < int(*nodo.Dato.Min) {
 		e.agregar(ruta, "%s: diligencie al menos %d (hay %d).", nodo.Nombre, int(*nodo.Dato.Min), diligenciadas)
 	}
+}
+
+// filasAgregadas valida las filas que el usuario agregó a un espejo con filas_adicionales (p. ej. los
+// otros trazadores presupuestales): como mucho max (si lo tiene) y, con filas_opcionales, la vacía no
+// se valida. No tienen fila de origen: la de su alcance solo lleva el id (Origen), así que "origen.<campo>"
+// no trae nada. Devuelve cuántas se validaron.
+func (e *ejecucion) filasAgregadas(nodo *Nodo, filas []Datos, ruta string) int {
+	adicionales := nodo.Dato.FilasAdicionales
+	if adicionales.Max > 0 && len(filas) > adicionales.Max {
+		etiqueta := strings.ToLower(adicionales.Etiqueta)
+		if etiqueta == "" {
+			etiqueta = "filas agregadas"
+		}
+		e.agregar(ruta, "%s: se permiten máximo %d (%s), hay %d.", nodo.Nombre, adicionales.Max, etiqueta, len(filas))
+	}
+	validadas := 0
+	for _, fila := range filas {
+		if nodo.Dato.FilasOpcionales && !filaDiligenciada(nodo.Hijos, fila) {
+			continue
+		}
+		validadas++
+		e.objeto(nodo.Hijos, fila, rutaFila(ruta, idDe(fila)), alcance{filaOrigen: Datos{"id": adicionales.Origen}})
+	}
+	return validadas
 }
 
 // filaObligatoria indica si la fila de ese elemento de origen se exige aunque el espejo tenga

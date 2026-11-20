@@ -44,11 +44,13 @@ func NuevoServicio(repo Repositorio, definiciones FuenteDefiniciones, catalogos 
 
 // NuevoServicioPorDefecto conecta con planes_crud y Oikos (hosts sin esquema, como en
 // conf/app.conf), con caché de definiciones y de catálogos: los de la colección
-// elemento_catalogo y, para el catálogo sedes, los espacios físicos de tipo SEDE de Oikos.
+// elemento_catalogo; para el catálogo sedes, los espacios físicos de tipo SEDE de Oikos, y para
+// los del Plan Distrital de Desarrollo, el Plan Estratégico de Desarrollo y el Plan Indicativo,
+// el árbol de esos planes.
 func NuevoServicioPorDefecto(hostCrud, hostOikos string) *Servicio {
 	crud := NuevoClienteCrud(hostCrud)
 	definiciones := NuevaCacheDefiniciones(NuevoCargadorDefiniciones(crud, crud, 8), 10*time.Minute)
-	catalogos := NuevoRepositorioConSedes(crud, NuevoClienteSedesOikos(hostOikos))
+	catalogos := NuevoRepositorioConInstrumentos(NuevoRepositorioConSedes(crud, NuevoClienteSedesOikos(hostOikos)), crud, time.Minute, 8)
 	return NuevoServicio(crud, definiciones, NuevosCatalogosConCache(catalogos, 10*time.Minute))
 }
 

@@ -41,7 +41,7 @@ func operacionValida(dato Dato) bool {
 }
 
 // prefijoOrigen indica, en opciones_desde, desde y obligatorio_si, que el grupo o el campo
-// es de la fila de origen del espejo más cercano (p. ej. "origen.periodo_0" en el Cronograma).
+// es de la fila de origen del espejo más cercano (p. ej. "origen.anio_0" en el Cronograma).
 const prefijoOrigen = "origen."
 
 // prefijoCatalogo indica, en espejo_de, que las filas salen de un catálogo: una por cada
@@ -140,40 +140,62 @@ func buscarNodo(nodos []*Nodo, clave string) *Nodo {
 
 // Dato es la definición de un campo, tal como se guarda en subgrupo_detalle.dato.
 type Dato struct {
-	Clave             string          `json:"clave"`
-	Modulo            bool            `json:"modulo,omitempty"`
-	Tipo              string          `json:"type,omitempty"`
-	Requerido         Booleano        `json:"required"`
-	Multilinea        bool            `json:"multilinea,omitempty"`
-	MaxLongitud       *int            `json:"maxlength,omitempty"`
-	Min               *float64        `json:"min,omitempty"`
-	Max               *float64        `json:"max,omitempty"`
-	Decimales         *int            `json:"decimales,omitempty"`
-	Catalogo          string          `json:"catalogo,omitempty"` // en un calculado con desde, el catálogo del que se muestra el nombre (solo cliente)
-	DependeDe         string          `json:"depende_de,omitempty"`
-	Plantilla         string          `json:"plantilla,omitempty"`
-	Operacion         string          `json:"operacion,omitempty"` // calculado numérico (OperacionResta, OperacionSuma, OperacionMultiplicacion); sin ella, el calculado es texto (plantilla)
-	Desde             string          `json:"desde,omitempty"`     // calculado que solo muestra "<submodulo>.<campo>" de otro submódulo, "origen.<campo>" de la fila de origen del espejo o "<ruta de un grupo>.<campo>" de la fila de ese grupo que contiene la de origen; no se guarda
-	Operandos         []string        `json:"operandos,omitempty"` // claves de los campos hermanos, en orden
-	Transformar       string          `json:"transformar,omitempty"`
-	Editable          bool            `json:"editable,omitempty"`
-	NombrePlan        bool            `json:"nombre_plan,omitempty"`
-	EtiquetaFila      string          `json:"etiqueta_fila,omitempty"`
-	EspejoDe          string          `json:"espejo_de,omitempty"`          // "<submodulo>.<grupo>" o "catalogo.<nombre>"
-	FilasOpcionales   bool            `json:"filas_opcionales,omitempty"`   // espejo: la fila vacía no se exige; min = cuántas se llenan como mínimo
-	FilasObligatorias []string        `json:"filas_obligatorias,omitempty"` // con filas_opcionales: ids de origen (códigos del catálogo) cuya fila sí se exige
-	Mostrar           string          `json:"mostrar,omitempty"`
-	MostrarDetalle    string          `json:"mostrar_detalle,omitempty"` // referencia: segundo texto de la opción (p. ej. la descripción bajo el nombre de la alternativa); solo lo usa el cliente
-	OpcionesDesde     string          `json:"opciones_desde,omitempty"`
-	MarcadaEn         string          `json:"marcada_en,omitempty"`     // referencia a la fila marcada en esa casilla única (se llena sola)
-	Multiple          bool            `json:"multiple,omitempty"`       // referencia o catálogo con varias opciones (lista de ids o códigos)
-	SoloSi            *Condicion      `json:"solo_si,omitempty"`        // el campo se muestra, se exige y se guarda solo si se cumple
-	ObligatorioSi     string          `json:"obligatorio_si,omitempty"` // "origen.<campo>": se exige solo si ese campo de la fila de origen del espejo tiene valor (un número distinto de 0)
-	NumerarPor        string          `json:"numerar_por,omitempty"`    // lista: sus filas se numeran n.m, con n la fila de este grupo (de su ruta o de espejo_de) que las contiene; solo lo usa el cliente
-	Unica             bool            `json:"unica,omitempty"`          // casilla que se marca en una sola fila de su lista
-	Totales           *Totales        `json:"totales,omitempty"`        // matriz; en un espejo, columnas = fila de totales (solo cliente)
-	Filas             []ElementoClave `json:"filas,omitempty"`
-	GruposColumnas    []GrupoColumnas `json:"grupos_columnas,omitempty"`
+	Clave             string            `json:"clave"`
+	Modulo            bool              `json:"modulo,omitempty"`
+	Tipo              string            `json:"type,omitempty"`
+	Requerido         Booleano          `json:"required"`
+	Multilinea        bool              `json:"multilinea,omitempty"`
+	MaxLongitud       *int              `json:"maxlength,omitempty"`
+	Min               *float64          `json:"min,omitempty"`
+	Max               *float64          `json:"max,omitempty"`
+	Decimales         *int              `json:"decimales,omitempty"`
+	Catalogo          string            `json:"catalogo,omitempty"` // en un calculado con desde, el catálogo del que se muestra el nombre (solo cliente)
+	DependeDe         string            `json:"depende_de,omitempty"`
+	SinCodigo         bool              `json:"sin_codigo,omitempty"` // catálogo cuyos códigos son ids internos (p. ej. los nodos de un plan): la lista muestra solo el nombre; solo lo usa el cliente
+	Plantilla         string            `json:"plantilla,omitempty"`
+	Operacion         string            `json:"operacion,omitempty"` // calculado numérico (OperacionResta, OperacionSuma, OperacionMultiplicacion); sin ella, el calculado es texto (plantilla)
+	Desde             string            `json:"desde,omitempty"`     // calculado que solo muestra "<submodulo>.<campo>" de otro submódulo, "origen.<campo>" de la fila de origen del espejo o "<ruta de un grupo>.<campo>" de la fila de ese grupo que contiene la de origen; no se guarda
+	Operandos         []string          `json:"operandos,omitempty"` // claves de los campos hermanos, en orden
+	Transformar       string            `json:"transformar,omitempty"`
+	Editable          bool              `json:"editable,omitempty"`
+	NombrePlan        bool              `json:"nombre_plan,omitempty"`
+	EtiquetaFila      string            `json:"etiqueta_fila,omitempty"`
+	EspejoDe          string            `json:"espejo_de,omitempty"`          // "<submodulo>.<grupo>" o "catalogo.<nombre>"
+	FilasOpcionales   bool              `json:"filas_opcionales,omitempty"`   // espejo: la fila vacía no se exige; min = cuántas se llenan como mínimo
+	FilasObligatorias []string          `json:"filas_obligatorias,omitempty"` // con filas_opcionales: ids de origen (códigos del catálogo) cuya fila sí se exige
+	FilasAdicionales  *FilasAdicionales `json:"filas_adicionales,omitempty"`  // espejo: filas que el usuario agrega además de las del origen (p. ej. los otros trazadores presupuestales)
+	ColumnaCodigo     *ColumnaCodigo    `json:"columna_codigo,omitempty"`     // espejo de catálogo: columna con el código de cada elemento, antes de su nombre; solo lo usa el cliente
+	Mostrar           string            `json:"mostrar,omitempty"`
+	MostrarDetalle    string            `json:"mostrar_detalle,omitempty"` // referencia: segundo texto de la opción (p. ej. la descripción bajo el nombre de la alternativa); solo lo usa el cliente
+	OpcionesDesde     string            `json:"opciones_desde,omitempty"`
+	MarcadaEn         string            `json:"marcada_en,omitempty"`     // referencia a la fila marcada en esa casilla única (se llena sola)
+	Multiple          bool              `json:"multiple,omitempty"`       // referencia o catálogo con varias opciones (lista de ids o códigos)
+	SoloSi            *Condicion        `json:"solo_si,omitempty"`        // el campo se muestra, se exige y se guarda solo si se cumple
+	ObligatorioSi     string            `json:"obligatorio_si,omitempty"` // "origen.<campo>": se exige solo si ese campo de la fila de origen del espejo tiene valor (un número distinto de 0)
+	NumerarPor        string            `json:"numerar_por,omitempty"`    // lista: sus filas se numeran n.m, con n la fila de este grupo (de su ruta o de espejo_de) que las contiene; solo lo usa el cliente
+	Unica             bool              `json:"unica,omitempty"`          // casilla que se marca en una sola fila de su lista
+	Totales           *Totales          `json:"totales,omitempty"`        // matriz; en un espejo, columnas = fila de totales (solo cliente)
+	Filas             []ElementoClave   `json:"filas,omitempty"`
+	GruposColumnas    []GrupoColumnas   `json:"grupos_columnas,omitempty"`
+}
+
+// FilasAdicionales son las filas de un espejo que el usuario agrega, hasta Max (0 = sin límite),
+// además de una por elemento de origen (p. ej. «Otro: ¿Cuál?» en Trazadores presupuestales). Su
+// "origen" vale Origen, que no es un elemento del origen: los campos que solo les aplican llevan
+// solo_si sobre él.
+type FilasAdicionales struct {
+	Origen   string `json:"origen"`
+	Max      int    `json:"max,omitempty"`
+	Nombre   string `json:"nombre,omitempty"`   // texto de su celda de origen (p. ej. «Otro: ¿Cuál?»); solo lo usa el cliente
+	Etiqueta string `json:"etiqueta,omitempty"` // nombre de la fila en los botones y mensajes (p. ej. «Otro trazador»)
+}
+
+// ColumnaCodigo es la columna «Código» de un espejo de catálogo (Fuentes de financiación): muestra
+// el código de cada elemento antes de su nombre. En las filas agregadas (FilasAdicionales), el
+// código se escribe en el campo Campo, si lo hay. Solo lo usa el cliente.
+type ColumnaCodigo struct {
+	Nombre string `json:"nombre"`
+	Campo  string `json:"campo,omitempty"`
 }
 
 // Condicion de solo_si: el campo hermano Campo vale Valor o, si es una lista (catálogo
@@ -237,10 +259,13 @@ type GrupoColumnas struct {
 	Columnas []ElementoClave `json:"columnas"`
 }
 
-// Totales indica qué totales muestra una matriz (se calculan, no se guardan).
+// Totales indica qué totales muestra una matriz (se calculan, no se guardan) y, si no son «Total»,
+// sus títulos. Los títulos solo los usa el cliente.
 type Totales struct {
-	Filas    bool `json:"filas"`
-	Columnas bool `json:"columnas"`
+	Filas          bool   `json:"filas"`
+	Columnas       bool   `json:"columnas"`
+	TituloFilas    string `json:"titulo_filas,omitempty"`    // columna con el total de cada fila (en Población, «SUBTOTALES»)
+	TituloColumnas string `json:"titulo_columnas,omitempty"` // fila con el total de cada columna (en Población, «TOTAL DE POBLACIÓN DE REFERENCIA»)
 }
 
 // ---------------------------------------------------------------------------

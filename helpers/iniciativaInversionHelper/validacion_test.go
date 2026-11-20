@@ -583,7 +583,8 @@ func TestUnResumenTraidoSoloGuardaLasFilasYExigeUnaPorActividad(t *testing.T) {
 
 // Trazadores presupuestales: espejo de un catálogo en el que se llenan solo los que aplican.
 // Grupos étnicos se desglosa en sus comunidades (espejo de otro catálogo con solo_si) y los
-// demás llevan discriminado y beneficiarios propios (solo_si con distinto).
+// demás llevan discriminado y beneficiarios propios (solo_si con distinto). Se pueden agregar
+// hasta dos trazadores que no están en el catálogo («Otro», con su «¿Cuál?»).
 type repoCatalogosPorNombre map[string][]ItemCatalogo
 
 func (r repoCatalogosPorNombre) ElementosDeCatalogo(nombre string) ([]ItemCatalogo, error) {
@@ -595,7 +596,9 @@ func validarTrazadores(t *testing.T, filas ...interface{}) ([]ErrorCampo, Datos)
 	uno := 1.0
 	noEtnicos := &Condicion{Campo: "origen", Valor: "etn", Distinto: true}
 	submodulo := &Nodo{Nombre: "Trazadores", Dato: Dato{Clave: "trazadores_presupuestales"}, Hijos: []*Nodo{
-		campoDePrueba("trazadores", TipoRepetible, Dato{EspejoDe: "catalogo.trazadores", Mostrar: "nombre", FilasOpcionales: true},
+		campoDePrueba("trazadores", TipoRepetible, Dato{EspejoDe: "catalogo.trazadores", Mostrar: "nombre", FilasOpcionales: true,
+			FilasAdicionales: &FilasAdicionales{Origen: "Otro", Max: 2, Nombre: "Otro: ¿Cuál?", Etiqueta: "Otro trazador"}},
+			campoDePrueba("cual", TipoTexto, Dato{Requerido: true, SoloSi: &Condicion{Campo: "origen", Valor: "Otro"}}),
 			campoDePrueba("descripcion", TipoTexto, Dato{Requerido: true}),
 			campoDePrueba("discriminado", TipoTexto, Dato{SoloSi: noEtnicos}),
 			campoDePrueba("beneficiarios", TipoNumerico, Dato{Requerido: true, SoloSi: noEtnicos}),
@@ -633,6 +636,61 @@ func TestLosTrazadoresSeLlenanSiAplicanYGruposEtnicosSeDesglosaPorComunidad(t *t
 
 	conIndigenas, _ := validarTrazadores(t, etnicos(Datos{"id": "g1", "origen": "ind", "beneficiarios": 40.0}, Datos{"id": "g2", "origen": "rrom"}))
 	exigirSinErrores(t, "trazadores_presupuestales", conIndigenas)
+}
+
+func TestSePuedenAgregarHastaDosTrazadoresQueNoEstanEnElCatalogo(t *testing.T) {
+	otro := func(id string, campos Datos) Datos {
+		fila := Datos{"id": id, "origen": "Otro"}
+		for clave, valor := range campos {
+			fila[clave] = valor
+		}
+		return fila
+	}
+	completo := Datos{"cual": "Trazador de Paz", "descripcion": "Cátedra de paz", "beneficiarios": 30.0}
+
+	vacia, _ := validarTrazadores(t, otro("o1", nil))
+	exigirSinErrores(t, "trazadores_presupuestales", vacia)
+
+	sinCual, _ := validarTrazadores(t, otro("o1", Datos{"descripcion": "Cátedra de paz", "beneficiarios": 30.0}))
+	exigirError(t, sinCual, "trazadores[o1].cual", "es obligatorio")
+
+	dos, datos := validarTrazadores(t, otro("o1", completo), otro("o2", completo))
+	exigirSinErrores(t, "trazadores_presupuestales", dos)
+	if fila := filasEn(t, datos, "trazadores")[0].(map[string]interface{}); fila["origen"] != "Otro" || fila["cual"] != "Trazador de Paz" {
+		t.Fatalf("la fila agregada conserva su origen y su «¿Cuál?»: %v", fila)
+	}
+
+	tres, _ := validarTrazadores(t, otro("o1", completo), otro("o2", completo), otro("o3", completo))
+	exigirError(t, tres, "trazadores", "máximo 2 (otro trazador), hay 3")
+
+	cultura, datos := validarTrazadores(t, Datos{"id": "t1", "origen": "cul", "cual": "No aplica", "descripcion": "Talleres", "beneficiarios": 5.0})
+	exigirSinErrores(t, "trazadores_presupuestales", cultura)
+	if _, existe := filasEn(t, datos, "trazadores")[0].(map[string]interface{})["cual"]; existe {
+		t.Fatal("el «¿Cuál?» solo se guarda en las filas agregadas")
+	}
+}
+
+// Fuentes de financiación: las otras fuentes se agregan sin límite (filas_adicionales sin max) y el
+// espejo exige al menos una fuente con valores.
+func TestSinMaxSePuedenAgregarTodasLasOtrasFuentesYSeExigeAlMenosUna(t *testing.T) {
+	uno := 1.0
+	submodulo := &Nodo{Nombre: "Fuentes", Dato: Dato{Clave: "fuentes_financiacion"}, Hijos: []*Nodo{
+		campoDePrueba("fuentes", TipoRepetible, Dato{EspejoDe: "catalogo.fuentes", Mostrar: "nombre", FilasOpcionales: true, Min: &uno,
+			FilasAdicionales: &FilasAdicionales{Origen: "Otra"}},
+			campoDePrueba("cual", TipoTexto, Dato{Requerido: true, SoloSi: &Condicion{Campo: "origen", Valor: "Otra"}}),
+			campoDePrueba("anio_0", TipoNumerico, Dato{})),
+	}}
+	catalogos := NuevosCatalogosConCache(repoCatalogosPorNombre{"fuentes": {{Codigo: "1-100-I013", Nombre: "VA-Estampilla Universidad Distrital"}}}, time.Hour)
+	validar := func(filas ...interface{}) []ErrorCampo {
+		return NuevoValidador(catalogos).ValidarSubmodulo(submodulo, map[string]Datos{"fuentes_financiacion": {"fuentes": filas}})
+	}
+
+	exigirError(t, validar(), "fuentes", "al menos 1")
+	otras := []interface{}{}
+	for _, id := range []string{"o1", "o2", "o3", "o4"} {
+		otras = append(otras, Datos{"id": id, "origen": "Otra", "cual": "Recursos de " + id, "anio_0": 10.0})
+	}
+	exigirSinErrores(t, "fuentes_financiacion", validar(otras...))
 }
 
 func TestElOrigenDeUnEspejoDeCatalogoTraeLaDescripcionDelElemento(t *testing.T) {
