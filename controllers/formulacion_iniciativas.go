@@ -16,6 +16,8 @@ type FormulacionIniciativasController struct {
 func (c *FormulacionIniciativasController) URLMapping() {
 	c.Mapping("DefinirFechasIniciativas", c.DefinirFechasIniciativas)
 	c.Mapping("ValidarFechasIniciativas", c.ValidarFechasIniciativas)
+	c.Mapping("GuardarAnexoIniciativas", c.GuardarAnexoIniciativas)
+	c.Mapping("EliminarAnexoIniciativas", c.EliminarAnexoIniciativas)
 }
 
 // DefinirFechasIniciativas ...
@@ -83,6 +85,76 @@ func (c *FormulacionIniciativasController) ValidarFechasIniciativas() {
 	}
 
 	res = formulacionIniciativasHelper.ValidarFechasIniciativasFormulacion(body)
+	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": res}
+	c.ServeJSON()
+}
+
+// GuardarAnexoIniciativas ...
+// @Title GuardarAnexoIniciativas
+// @Description Peticion POST para subir el anexo de la iniciativa y guardar la referencia de Nuxeo
+// @Param	body		body 	{}	true		"body for Document"
+// @Success 200 {object} 
+// @Failure 400 bad request
+// @router /guardar_anexo_iniciativas [post]
+func (c *FormulacionIniciativasController) GuardarAnexoIniciativas() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "FormulacionIniciativasController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
+	var body map[string]interface{}
+	var res interface{}
+
+	// Decodificar JSON desde el cuerpo de la solicitud
+	err := json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "GuardarAnexoIniciativa", "err": "Error al decodificar JSON desde el cuerpo de la solicitud", "status": "400", "log": err})
+	}
+
+	res = formulacionIniciativasHelper.GuardarAnexoIniciativas(body)
+	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": res}
+	c.ServeJSON()
+}
+
+// EliminarAnexoIniciativas ...
+// @Title EliminarAnexoIniciativas
+// @Description Peticion POST para eliminar el anexo de la iniciativa
+// @Param	body		body 	{}	true		"body for Document"
+// @Success 200 {object} 
+// @Failure 400 bad request
+// @router /eliminar_anexo_iniciativas [post]
+func (c *FormulacionIniciativasController) EliminarAnexoIniciativas() {
+	defer func() {
+		if err := recover(); err != nil {
+			localError := err.(map[string]interface{})
+			c.Data["message"] = (beego.AppConfig.String("appname") + "/" + "FormulacionIniciativasController" + "/" + (localError["funcion"]).(string))
+			c.Data["data"] = (localError["err"])
+			if status, ok := localError["status"]; ok {
+				c.Abort(status.(string))
+			} else {
+				c.Abort("404")
+			}
+		}
+	}()
+
+	var body map[string]interface{}
+	var res interface{}
+
+	// Decodificar JSON desde el cuerpo de la solicitud
+	err := json.Unmarshal(c.Ctx.Input.RequestBody, &body)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "EliminarAnexoIniciativa", "err": "Error al decodificar JSON desde el cuerpo de la solicitud", "status": "400", "log": err})
+	}
+
+	res = formulacionIniciativasHelper.EliminarAnexoIniciativas(body)
 	c.Data["json"] = map[string]interface{}{"Success": true, "Status": "200", "Message": "Successful", "Data": res}
 	c.ServeJSON()
 }

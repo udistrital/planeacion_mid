@@ -414,6 +414,24 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionIniciativasController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionIniciativasController"],
         beego.ControllerComments{
+            Method: "EliminarAnexoIniciativas",
+            Router: "/eliminar_anexo_iniciativas",
+            AllowHTTPMethods: []string{"post"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionIniciativasController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionIniciativasController"],
+        beego.ControllerComments{
+            Method: "GuardarAnexoIniciativas",
+            Router: "/guardar_anexo_iniciativas",
+            AllowHTTPMethods: []string{"post"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionIniciativasController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionIniciativasController"],
+        beego.ControllerComments{
             Method: "DefinirFechasIniciativas",
             Router: "/habilitar_fechas_iniciativa",
             AllowHTTPMethods: []string{"post"},
