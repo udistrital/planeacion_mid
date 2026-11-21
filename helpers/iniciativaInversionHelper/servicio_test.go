@@ -221,7 +221,7 @@ func nuevoServicioDePrueba(t *testing.T) (*Servicio, *repoMemoria) {
 	t.Helper()
 	tercerosDePrueba(t)
 	repo := nuevoRepoMemoria()
-	return NuevoServicio(repo, definicionFija{definicionDePrueba(t)}, catalogosDePrueba()), repo
+	return NuevoServicio(repo, definicionFija{definicionDePrueba(t)}, catalogosDePrueba(), nil), repo
 }
 
 func crearIniciativaDePrueba(t *testing.T, servicio *Servicio) *ResumenIniciativa {
@@ -331,7 +331,7 @@ func TestSinPlantillaSeCreaConLaMasReciente(t *testing.T) {
 	repo.planes["reciente"] = &Plan{ID: "reciente", TipoPlanID: tipoPlanDePrueba, Formato: true, Activo: true, FechaCreacion: "2026-11-01T00:00:00.000Z"}
 	anterior, reciente := definicionDePrueba(t), definicionDePrueba(t)
 	anterior.PlantillaID, reciente.PlantillaID = "anterior", "reciente"
-	servicio := NuevoServicio(repo, definicionesPorPlantilla{"anterior": anterior, "reciente": reciente}, catalogosDePrueba())
+	servicio := NuevoServicio(repo, definicionesPorPlantilla{"anterior": anterior, "reciente": reciente}, catalogosDePrueba(), nil)
 
 	resumen, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{DependenciaID: "dep-1"})
 	if err != nil {
@@ -343,7 +343,7 @@ func TestSinPlantillaSeCreaConLaMasReciente(t *testing.T) {
 }
 
 func TestSinPlantillasNoSeCreaLaIniciativa(t *testing.T) {
-	servicio := NuevoServicio(nuevoRepoMemoria(), definicionesPorPlantilla{}, catalogosDePrueba())
+	servicio := NuevoServicio(nuevoRepoMemoria(), definicionesPorPlantilla{}, catalogosDePrueba(), nil)
 	_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{DependenciaID: "dep-1"})
 	exigirStatus(t, err, http.StatusConflict)
 }
@@ -774,7 +774,7 @@ func TestSoloSeOfrecenPlantillasUsables(t *testing.T) {
 		"completa": definicionDePrueba(t),
 		"vacia":    {PlantillaID: "vacia", TipoPlanID: tipoPlanDePrueba},
 	}
-	servicio := NuevoServicio(repo, definiciones, catalogosDePrueba())
+	servicio := NuevoServicio(repo, definiciones, catalogosDePrueba(), nil)
 
 	plantillas, err := servicio.Plantillas()
 	if err != nil {

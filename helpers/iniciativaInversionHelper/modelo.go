@@ -16,6 +16,7 @@ const (
 	TipoReferencia = "referencia"
 	TipoMatriz     = "matriz"
 	TipoCasilla    = "casilla"
+	TipoDocumento  = "documento"
 )
 
 // Operaciones de un calculado numérico.
@@ -177,6 +178,8 @@ type Dato struct {
 	Totales           *Totales          `json:"totales,omitempty"`        // matriz; en un espejo, columnas = fila de totales (solo cliente)
 	Filas             []ElementoClave   `json:"filas,omitempty"`
 	GruposColumnas    []GrupoColumnas   `json:"grupos_columnas,omitempty"`
+	Formatos          []string          `json:"formatos,omitempty"`         // documento: extensiones permitidas, en minúscula (p. ej. "pdf", "docx")
+	TamanoMaximoMB    *float64          `json:"tamano_maximo_mb,omitempty"` // documento: tamaño máximo del archivo
 }
 
 // FilasAdicionales son las filas de un espejo que el usuario agrega, hasta Max (0 = sin límite),

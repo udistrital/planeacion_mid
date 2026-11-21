@@ -9,9 +9,9 @@ import (
 
 // Datos de prueba:
 //   - testdata/iniciativa.plantilla.json: la plantilla de database local/construccion-proyecto-inversion/
-//     iniciativa.plantilla.json con los módulos Identificación y Preparación. Anexos no va: sus
-//     campos son documentos, un tipo que el validador no tiene, y ninguna iniciativa de prueba
-//     quedaría completa para enviarla a revisión.
+//     iniciativa.plantilla.json con los módulos Identificación y Preparación. Anexos no va: la
+//     iniciativa de ejemplo no trae documentos, así que no quedaría completa para enviarla a
+//     revisión. Las pruebas de los documentos arman su propio Anexos (definicionConAnexos).
 //   - testdata/iniciativa_ejemplo.json: database local/construccion-proyecto-inversion/
 //     iniciativa.ejemplo.json con la sede de prueba «1» en Localización. Todos sus submódulos
 //     quedan formulados.

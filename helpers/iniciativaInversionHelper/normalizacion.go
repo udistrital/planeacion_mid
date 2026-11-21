@@ -42,6 +42,8 @@ func (n *Normalizador) objeto(nodos []*Nodo, datos Datos, fila Datos) Datos {
 			salida[clave] = n.filas(nodo, valor)
 		case nodo.Dato.Tipo == TipoMatriz:
 			salida[clave] = n.matriz(nodo, valor)
+		case nodo.Dato.Tipo == TipoDocumento && valor != nil:
+			salida[clave] = referenciaLimpia(valor)
 		case valor != nil:
 			salida[clave] = limpiarEscalar(valor)
 		}

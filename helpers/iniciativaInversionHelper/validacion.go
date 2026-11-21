@@ -57,6 +57,7 @@ func NuevoValidador(catalogos ProveedorCatalogos) *Validador {
 		TipoReferencia: validarReferencia,
 		TipoMatriz:     validarMatriz,
 		TipoCasilla:    validarCasilla,
+		TipoDocumento:  validarDocumento,
 	}
 	return v
 }
@@ -225,6 +226,25 @@ func validarCasilla(e *ejecucion, nodo *Nodo, valor interface{}, existe bool, ru
 		e.agregar(ruta, "%s: debe quedar marcada o sin marcar.", nodo.Nombre)
 	case !marcada && !nodo.Dato.Unica:
 		e.faltaObligatorio(nodo, ruta)
+	}
+}
+
+// validarDocumento: el valor es la referencia que respondió la carga del archivo (ReferenciaDocumento).
+// Debe traer el enlace y el nombre del archivo, y la extensión del nombre debe estar en formatos.
+func validarDocumento(e *ejecucion, nodo *Nodo, valor interface{}, existe bool, ruta string, _ alcance) {
+	if !existe {
+		e.faltaObligatorio(nodo, ruta)
+		return
+	}
+	referencia, esObjeto := comoObjeto(valor)
+	enlace, _ := comoTexto(referencia["enlace"])
+	nombre, _ := comoTexto(referencia["nombre"])
+	if !esObjeto || strings.TrimSpace(enlace) == "" || strings.TrimSpace(nombre) == "" {
+		e.agregar(ruta, "%s: el archivo no quedó bien adjuntado. Adjúntelo de nuevo.", nodo.Nombre)
+		return
+	}
+	if mensaje := formatoNoPermitido(nodo, nombre); mensaje != "" {
+		e.agregar(ruta, "%s: %s", nodo.Nombre, mensaje)
 	}
 }
 

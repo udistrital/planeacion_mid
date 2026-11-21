@@ -30,7 +30,7 @@ var (
 func servicioIniciativas() *iniciativaInversionHelper.Servicio {
 	servicioIniciativaUnaVez.Do(func() {
 		servicioIniciativa = iniciativaInversionHelper.NuevoServicioPorDefecto(
-			beego.AppConfig.String("PlanesService"), beego.AppConfig.String("OikosService"))
+			beego.AppConfig.String("PlanesService"), beego.AppConfig.String("OikosService"), beego.AppConfig.String("GestorDocumental"))
 	})
 	return servicioIniciativa
 }
@@ -52,6 +52,7 @@ func (c *IniciativaInversionController) URLMapping() {
 	c.Mapping("ObtenerDefinicion", c.ObtenerDefinicion)
 	c.Mapping("ObtenerSubmodulo", c.ObtenerSubmodulo)
 	c.Mapping("GuardarSubmodulo", c.GuardarSubmodulo)
+	c.Mapping("SubirDocumento", c.SubirDocumento)
 	c.Mapping("AgregarObservacion", c.AgregarObservacion)
 	c.Mapping("RevisarSubmodulo", c.RevisarSubmodulo)
 	c.Mapping("EjecutarAccion", c.EjecutarAccion)
@@ -168,6 +169,27 @@ func (c *IniciativaInversionController) GuardarSubmodulo() {
 	}
 	submodulo, err := servicioIniciativas().GuardarSubmodulo(c.Ctx.Input.Param(":id"), c.Ctx.Input.Param(":clave"), solicitud)
 	c.responder(http.StatusOK, submodulo, err)
+}
+
+// SubirDocumento ...
+// @Title SubirDocumento
+// @Description Sube el archivo de un campo documento (Anexos) al gestor documental y responde su referencia. No cambia el submódulo: la referencia queda en la iniciativa al guardarlo (PUT .../submodulos/:clave)
+// @Param	id	path	string	true	"Id de la iniciativa"
+// @Param	clave	path	string	true	"Clave del submódulo (p. ej. anexos)"
+// @Param	body	body	iniciativaInversionHelper.SolicitudDocumento	true	"clave (ruta del campo sin ids de fila, p. ej. otros_anexos.archivo), nombre, archivo (base64) y usuario (documento)"
+// @Success 201 {object} iniciativaInversionHelper.ReferenciaDocumento
+// @Failure 400 Formato no permitido, archivo vacío o más grande de lo permitido
+// @Failure 409 La iniciativa no se puede editar
+// @Failure 502 Error en el gestor documental
+// @router /iniciativas/:id/submodulos/:clave/documentos [post]
+func (c *IniciativaInversionController) SubirDocumento() {
+	defer helpers.ErrorController(c.Controller, "IniciativaInversionController")
+	var solicitud iniciativaInversionHelper.SolicitudDocumento
+	if !c.leerCuerpo(&solicitud) {
+		return
+	}
+	referencia, err := servicioIniciativas().SubirDocumento(c.Ctx.Input.Param(":id"), c.Ctx.Input.Param(":clave"), solicitud)
+	c.responder(http.StatusCreated, referencia, err)
 }
 
 // AgregarObservacion ...

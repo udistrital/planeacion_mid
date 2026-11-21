@@ -25,33 +25,35 @@ type Servicio struct {
 	repo         Repositorio
 	definiciones FuenteDefiniciones
 	catalogos    ProveedorCatalogos
+	gestor       GestorDocumental
 	sistema      *catalogosSistema
 	normalizador *Normalizador
 	validador    *Validador
 }
 
 // NuevoServicio arma el servicio con sus dependencias.
-func NuevoServicio(repo Repositorio, definiciones FuenteDefiniciones, catalogos ProveedorCatalogos) *Servicio {
+func NuevoServicio(repo Repositorio, definiciones FuenteDefiniciones, catalogos ProveedorCatalogos, gestor GestorDocumental) *Servicio {
 	return &Servicio{
 		repo:         repo,
 		definiciones: definiciones,
 		catalogos:    catalogos,
+		gestor:       gestor,
 		sistema:      nuevosCatalogosSistema(repo),
 		normalizador: NuevoNormalizador(catalogos),
 		validador:    NuevoValidador(catalogos),
 	}
 }
 
-// NuevoServicioPorDefecto conecta con planes_crud y Oikos (hosts con esquema, como en
-// conf/app.conf), con caché de definiciones y de catálogos: los de la colección
+// NuevoServicioPorDefecto conecta con planes_crud, Oikos y el gestor documental (hosts con
+// esquema, como en conf/app.conf), con caché de definiciones y de catálogos: los de la colección
 // elemento_catalogo; para el catálogo sedes, los espacios físicos de tipo SEDE de Oikos, y para
 // los del Plan Distrital de Desarrollo, el Plan Estratégico de Desarrollo y el Plan Indicativo,
 // el árbol de esos planes.
-func NuevoServicioPorDefecto(hostCrud, hostOikos string) *Servicio {
+func NuevoServicioPorDefecto(hostCrud, hostOikos, hostGestor string) *Servicio {
 	crud := NuevoClienteCrud(hostCrud)
 	definiciones := NuevaCacheDefiniciones(NuevoCargadorDefiniciones(crud, crud, 8), 10*time.Minute)
 	catalogos := NuevoRepositorioConInstrumentos(NuevoRepositorioConSedes(crud, NuevoClienteSedesOikos(hostOikos)), crud, time.Minute, 8)
-	return NuevoServicio(crud, definiciones, NuevosCatalogosConCache(catalogos, 10*time.Minute))
+	return NuevoServicio(crud, definiciones, NuevosCatalogosConCache(catalogos, 10*time.Minute), NuevoClienteGestorDocumental(hostGestor))
 }
 
 // ---------------------------------------------------------------------------

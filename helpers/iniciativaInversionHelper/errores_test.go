@@ -34,7 +34,7 @@ func exigirMensajeParaUsuario(t *testing.T, err error, detalleEsperado string) *
 func TestSinTipoDePlanElUsuarioNoVeElScriptDeCarga(t *testing.T) {
 	repo := nuevoRepoMemoria()
 	delete(repo.catalogos, RecursoTipoPlan)
-	servicio := NuevoServicio(repo, definicionFija{definicionDePrueba(t)}, catalogosDePrueba())
+	servicio := NuevoServicio(repo, definicionFija{definicionDePrueba(t)}, catalogosDePrueba(), nil)
 
 	_, err := servicio.ListarIniciativas(nil)
 	negocio := exigirMensajeParaUsuario(t, err, "cargar-estados.js")
@@ -46,14 +46,14 @@ func TestSinTipoDePlanElUsuarioNoVeElScriptDeCarga(t *testing.T) {
 func TestSinEstadoDeSubmoduloElUsuarioNoVeElScriptDeCarga(t *testing.T) {
 	repo := nuevoRepoMemoria()
 	repo.catalogos[RecursoEstadoSubmodulo] = repo.catalogos[RecursoEstadoSubmodulo][1:]
-	servicio := NuevoServicio(repo, definicionFija{definicionDePrueba(t)}, catalogosDePrueba())
+	servicio := NuevoServicio(repo, definicionFija{definicionDePrueba(t)}, catalogosDePrueba(), nil)
 
 	_, err := servicio.ListarIniciativas(nil)
 	exigirMensajeParaUsuario(t, err, "cargar-estados.js")
 }
 
 func TestSinPlantillaElUsuarioNoVeElScriptDeCarga(t *testing.T) {
-	servicio := NuevoServicio(nuevoRepoMemoria(), definicionesPorPlantilla{}, catalogosDePrueba())
+	servicio := NuevoServicio(nuevoRepoMemoria(), definicionesPorPlantilla{}, catalogosDePrueba(), nil)
 	_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{DependenciaID: "dep-1"})
 	exigirStatus(t, err, http.StatusConflict)
 	exigirMensajeParaUsuario(t, err, "cargar-construccion.js")
