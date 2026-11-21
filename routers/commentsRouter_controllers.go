@@ -1059,5 +1059,14 @@ func init() {
             MethodParams: param.Make(),
             Filters: nil,
             Params: nil})
+            
+    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionIniciativasController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionIniciativasController"],
+        beego.ControllerComments{
+            Method: "ConsultarFechasIniciativas",
+            Router: "/consultar_fechas_iniciativa",
+            AllowHTTPMethods: []string{"post"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
 
 }
