@@ -3,6 +3,7 @@ package formulacionIniciativasHelper
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/astaxie/beego"
@@ -250,4 +251,66 @@ func eliminarUnidad(unidades []map[string]interface{}, id int) []map[string]inte
 		}
 	}
 	return unidades
+}
+
+// ConsultarFechasIniciativasFormulacion devuelve las fechas de formulación
+// parametrizadas para una vigencia (periodoId) y una unidad (dependenciaId).
+func ConsultarFechasIniciativasFormulacion(body map[string]interface{}) map[string]interface{} {
+	var resTipoSeguimiento map[string]interface{}
+	var resFechas map[string]interface{}
+	var tipoSeguimiento []map[string]interface{}
+	var fechas []map[string]interface{}
+	respuesta := map[string]interface{}{"encontrado": false}
+
+	if body["periodoId"] == nil || body["dependenciaId"] == nil {
+		panic(map[string]interface{}{"funcion": "ConsultarFechasIniciativasFormulacion", "err": "Se requieren los campos periodoId y dependenciaId", "status": "400"})
+	}
+	periodoId := fmt.Sprint(body["periodoId"])
+	dependenciaId := fmt.Sprint(body["dependenciaId"])
+
+	// 1. Obtener el tipo de seguimiento de formulación de iniciativas
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-seguimiento/?query=codigo_abreviacion:FIPI_SP", &resTipoSeguimiento); err != nil {
+		panic(map[string]interface{}{"funcion": "ConsultarFechasIniciativasFormulacion", "err": "Error al obtener el tipo de seguimiento", "status": "400", "log": err})
+	}
+	helpers.LimpiezaRespuestaRefactor(resTipoSeguimiento, &tipoSeguimiento)
+	if len(tipoSeguimiento) == 0 {
+		panic(map[string]interface{}{"funcion": "ConsultarFechasIniciativasFormulacion", "err": "No se encontró el tipo de seguimiento", "status": "404"})
+	}
+
+	// 2. Traer los registros activos de la vigencia, el más reciente primero
+	consulta := "periodo_id:" + url.QueryEscape(periodoId) + ",tipo_seguimiento_id:" + tipoSeguimiento[0]["_id"].(string) + ",activo:true"
+	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas?query="+consulta+"&sortby=fecha_modificacion&order=desc&limit=0", &resFechas); err != nil {
+		panic(map[string]interface{}{"funcion": "ConsultarFechasIniciativasFormulacion", "err": "Error al obtener las fechas", "status": "400", "log": err})
+	}
+	helpers.LimpiezaRespuestaRefactor(resFechas, &fechas)
+
+	// 3. Buscar el primer registro (el más reciente) que incluya la unidad
+	for _, registro := range fechas {
+		if registroIncluyeUnidad(registro, dependenciaId) {
+			respuesta["encontrado"] = true
+			respuesta["fecha_inicio"] = registro["fecha_inicio"]
+			respuesta["fecha_fin"] = registro["fecha_fin"]
+			break
+		}
+	}
+	return respuesta
+}
+
+// registroIncluyeUnidad indica si el registro tiene la unidad en unidades_interes.
+// Compara el Id como texto, por lo que 14 y "14" se consideran iguales.
+func registroIncluyeUnidad(registro map[string]interface{}, dependenciaId string) bool {
+	unidadesTexto, ok := registro["unidades_interes"].(string)
+	if !ok {
+		return false
+	}
+	var unidades []map[string]interface{}
+	if err := json.Unmarshal([]byte(unidadesTexto), &unidades); err != nil {
+		return false
+	}
+	for _, unidad := range unidades {
+		if fmt.Sprint(unidad["Id"]) == dependenciaId {
+			return true
+		}
+	}
+	return false
 }
