@@ -215,6 +215,27 @@ func usarTerceros(t *testing.T, manejador http.Handler) *httptest.Server {
 	return servidor
 }
 
+// dependenciasFalsas imita a Oikos (nombre de una dependencia por id) y cuenta las
+// consultas de cada una. Un id que no está en nombres responde con error, como si
+// Oikos fallara.
+type dependenciasFalsas struct {
+	nombres  map[int]string
+	llamadas map[int]int
+}
+
+func nuevasDependenciasFalsas(nombres map[int]string) *dependenciasFalsas {
+	return &dependenciasFalsas{nombres: nombres, llamadas: map[int]int{}}
+}
+
+func (o *dependenciasFalsas) NombreDependencia(id int) (string, error) {
+	o.llamadas[id]++
+	nombre, existe := o.nombres[id]
+	if !existe {
+		return "", errors.New("Oikos no respondió")
+	}
+	return nombre, nil
+}
+
 // ---------------------------------------------------------------------------
 
 func nuevoServicioDePrueba(t *testing.T) (*Servicio, *repoMemoria) {
@@ -420,6 +441,75 @@ func TestListarSaleSinNombreSiTercerosNoResponde(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(listado) != 1 || listado[0].Responsable != "" {
+		t.Fatalf("listado = %+v", listado)
+	}
+}
+
+func crearEnDependencia(t *testing.T, servicio *Servicio, dependencia string) {
+	t.Helper()
+	if _, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: dependencia, Responsable: responsableDePrueba}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// Oikos responde: la fila trae el nombre. Cada dependencia se consulta una sola vez, y si
+// Oikos falla con una, esa fila sale sin nombre y las demás no se afectan.
+func TestListarTraeElNombreDeLaDependenciaYLaConsultaUnaSolaVez(t *testing.T) {
+	servicio, _ := nuevoServicioDePrueba(t)
+	oikos := nuevasDependenciasFalsas(map[int]string{41: "OFICINA ASESORA DE PLANEACION"})
+	servicio.dependencias = oikos
+	crearEnDependencia(t, servicio, "41")
+	crearEnDependencia(t, servicio, "41")
+	crearEnDependencia(t, servicio, "42") // Oikos no la conoce
+
+	listado, err := servicio.ListarIniciativas(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listado) != 3 {
+		t.Fatalf("listado = %+v", listado)
+	}
+	for _, fila := range listado {
+		esperado := ""
+		if fila.DependenciaID == "41" {
+			esperado = "OFICINA ASESORA DE PLANEACION"
+		}
+		if fila.DependenciaNombre != esperado {
+			t.Fatalf("la dependencia %s quedó con nombre %q, se esperaba %q", fila.DependenciaID, fila.DependenciaNombre, esperado)
+		}
+	}
+	if oikos.llamadas[41] != 1 || oikos.llamadas[42] != 1 {
+		t.Fatalf("consultas a Oikos = %v, se esperaba una por dependencia (también la que falló)", oikos.llamadas)
+	}
+}
+
+// Si la dependencia_id no es un número no se consulta Oikos (NombreDependencia recibe un int)
+// y el listado sale igual, sin nombre.
+func TestListarNoConsultaOikosConUnaDependenciaQueNoEsNumero(t *testing.T) {
+	servicio, _ := nuevoServicioDePrueba(t)
+	oikos := nuevasDependenciasFalsas(map[int]string{})
+	servicio.dependencias = oikos
+	crearEnDependencia(t, servicio, "dep-1")
+
+	listado, err := servicio.ListarIniciativas(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listado) != 1 || listado[0].DependenciaNombre != "" || len(oikos.llamadas) != 0 {
+		t.Fatalf("listado = %+v, consultas a Oikos = %v", listado, oikos.llamadas)
+	}
+}
+
+// Sin fuente de dependencias (servicio.dependencias == nil) el listado sale sin nombre, sin pánico.
+func TestListarSaleSinNombreDeDependenciaSiNoHayFuente(t *testing.T) {
+	servicio, _ := nuevoServicioDePrueba(t)
+	crearEnDependencia(t, servicio, "41")
+
+	listado, err := servicio.ListarIniciativas(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listado) != 1 || listado[0].DependenciaNombre != "" {
 		t.Fatalf("listado = %+v", listado)
 	}
 }
