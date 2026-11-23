@@ -1948,23 +1948,17 @@ func (c *FormulacionController) Planes() {
 	var respuestaTipoPlan map[string]interface{}
 	var tipoPlanExcluido []map[string]interface{}
 
+	// Las plantillas de iniciativas de inversión (IPI_SP) no se construyen aquí: se quitan de la lista.
+	// Si el tipo no existe en el ambiente, no hay plantillas que quitar y la lista sale completa.
 	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/tipo-plan?query=codigo_abreviacion:IPI_SP", &respuestaTipoPlan); err != nil {
-		panic(err)
+		panic(map[string]interface{}{"funcion": "Planes", "err": "Error consultando el tipo de plan de iniciativas de inversión", "status": "502", "log": err})
 	}
 	helpers.LimpiezaRespuestaRefactor(respuestaTipoPlan, &tipoPlanExcluido)
+	idTipoPlanIniciativa := formulacionhelper.IDPrimerTipoPlan(tipoPlanExcluido)
 
 	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/plan?query=formato:true", &respuesta); err == nil {
 		helpers.LimpiezaRespuestaRefactor(respuesta, &planes)
-
-		// Excluir planes del tipo indicado
-		planesFiltrados := make([]map[string]interface{}, 0, len(planes))
-		for _, p := range planes {
-			if id, ok := p["tipo_plan_id"].(string); ok && id == tipoPlanExcluido[0]["_id"].(string) {
-				continue
-			}
-			planesFiltrados = append(planesFiltrados, p)
-		}
-		planes = planesFiltrados
+		planes = formulacionhelper.SinTipoPlan(planes, idTipoPlanIniciativa)
 
 		if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/plan?query=tipo_plan_id:6239117116511e20405d408b", &respuesta); err == nil {
 			helpers.LimpiezaRespuestaRefactor(respuesta, &planesPI)
