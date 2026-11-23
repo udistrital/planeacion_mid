@@ -1,9 +1,13 @@
 package formulacionIniciativasHelper
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"regexp"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/astaxie/beego"
@@ -11,78 +15,254 @@ import (
 	"github.com/udistrital/utils_oas/request"
 )
 
+// zonaBogota es la zona con la que se comparan por día las fechas de formulación.
+var zonaBogota = time.FixedZone("COT", -5*60*60)
+
+var (
+	formatoPeriodoID         = regexp.MustCompile(`^\d+$`)
+	formatoTipoSeguimientoID = regexp.MustCompile(`^[0-9a-fA-F]{24}$`)
+)
+
+// DefinirFechasIniciativasFormulacion habilita el rango de fechas para las unidades elegidas en
+// una vigencia. Cada unidad queda en un solo registro activo por vigencia: se les quita a los
+// demás registros y se agrega al registro que ya tenga ese rango, o a uno nuevo.
+// Devuelve los registros escritos.
 func DefinirFechasIniciativasFormulacion(body map[string]interface{}) []interface{} {
-	body["planes_interes"] = "[]"
-	var respuestasAcumuladas []interface{}
+	// 1. Validar la entrada
+	periodoID := campoTexto(body, "periodo_id")
+	tipoSeguimientoID := campoTexto(body, "tipo_seguimiento_id")
+	if !formatoPeriodoID.MatchString(periodoID) || !formatoTipoSeguimientoID.MatchString(tipoSeguimientoID) {
+		panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Se requieren periodo_id y tipo_seguimiento_id válidos", "status": "400"})
+	}
+	inicio, errInicio := parseFechaHabilitacion(campoTexto(body, "fecha_inicio"))
+	fin, errFin := parseFechaHabilitacion(campoTexto(body, "fecha_fin"))
+	if errInicio != nil || errFin != nil {
+		panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "fecha_inicio y fecha_fin deben ser fechas válidas", "status": "400"})
+	}
+	if diaDe(inicio).After(diaDe(fin)) {
+		panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "fecha_inicio no puede ser posterior a fecha_fin", "status": "400"})
+	}
+	seleccion, _ := ObtenerArrayUnidadesInteres(body)
+	if len(seleccion) == 0 {
+		panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Debe elegir al menos una unidad", "status": "400"})
+	}
+
+	// 2. Traer los registros activos de la vigencia y el tipo de seguimiento
+	urlRegistros := beego.AppConfig.String("PlanesService") + "/periodo-seguimiento-iniciativas"
+	consulta := "tipo_seguimiento_id:" + tipoSeguimientoID + ",periodo_id:" + periodoID + ",activo:true"
+	var resRegistros map[string]interface{}
+	var registros []map[string]interface{}
+	if err := helpers.SendJson(urlRegistros+"?query="+url.QueryEscape(consulta)+"&sortby=fecha_modificacion&order=desc&limit=0", "GET", &resRegistros, nil); err != nil {
+		panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Error al obtener los registros de fechas de la vigencia", "status": "400", "log": err})
+	}
+	if exito, _ := resRegistros["Success"].(bool); !exito {
+		panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": fmt.Sprint("Error al obtener los registros de fechas de la vigencia: ", resRegistros["Message"]), "status": "400"})
+	}
+	helpers.LimpiezaRespuestaRefactor(resRegistros, &registros)
+
+	// 3. Repartir las unidades
+	actualizar, crear := repartirUnidades(registros, seleccion, inicio, fin)
+	usuario := campoTexto(body, "usuario_modificacion")
+
+	// 4. Guardar: primero el registro que queda con las unidades y después los demás, para que
+	// una falla a mitad de camino no deje unidades sin fechas.
+	escritos := []interface{}{}
+	if crear != nil {
+		crear["periodo_id"] = periodoID
+		crear["tipo_seguimiento_id"] = tipoSeguimientoID
+		crear["usuario_modificacion"] = usuario
+		escritos = append(escritos, guardarRegistro(urlRegistros, "POST", crear))
+	}
+	for _, registro := range actualizar {
+		id, ok := registro["_id"].(string)
+		if !ok || id == "" {
+			panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Hay un registro de fechas sin _id", "status": "400"})
+		}
+		if usuario != "" {
+			registro["usuario_modificacion"] = usuario
+		}
+		escritos = append(escritos, guardarRegistro(urlRegistros+"/"+url.PathEscape(id), "PUT", registro))
+	}
+	return escritos
+}
+
+// guardarRegistro envía el registro al crud y devuelve el registro guardado.
+func guardarRegistro(urlRegistro, metodo string, registro map[string]interface{}) interface{} {
 	var res map[string]interface{}
-	var respuestaPost = make(map[string]interface{})
-	var respuestaPost2 = make(map[string]interface{})
+	if err := helpers.SendJson(urlRegistro, metodo, &res, registro); err != nil {
+		panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Error al guardar el registro de fechas", "status": "400", "log": err})
+	}
+	if exito, _ := res["Success"].(bool); !exito {
+		panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": fmt.Sprint("Error al guardar el registro de fechas: ", res["Message"]), "status": "400"})
+	}
+	return res["Data"]
+}
 
-	if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas/buscar-unidad-planes/1", "POST", &respuestaPost, body); err == nil {
-		data, ok := respuestaPost["Data"].([]interface{})
-		if ok && len(data) > 0 { // Si sí existe se procede a verificar que las fechas sean iguales
-			registro := data[0].(map[string]interface{})
+// repartirUnidades calcula qué escribir para que las unidades de la selección queden solo en el
+// registro con el rango [inicio, fin]. El destino es el primer registro con las mismas fechas,
+// comparando por día. A los demás se les quitan las unidades de la selección y, si quedan sin
+// unidades, se inactivan. Las unidades se comparan solo por Id.
+//
+// Devuelve los registros que cambiaron, con el destino de primero, y, si no hay destino, el
+// registro a crear. Ese registro trae las fechas, las unidades, planes_interes y activo; quien
+// llama completa periodo_id, tipo_seguimiento_id y usuario_modificacion. No modifica los
+// registros recibidos.
+func repartirUnidades(registros []map[string]interface{}, seleccion []map[string]interface{}, inicio, fin time.Time) (actualizar []map[string]interface{}, crear map[string]interface{}) {
+	seleccion = unidadesSinRepetir(seleccion)
+	idsSeleccion := make(map[int]bool, len(seleccion))
+	for _, unidad := range seleccion {
+		idsSeleccion[idUnidad(unidad)] = true
+	}
 
-			// Parsear las fechas
-			fechaInicioBodyParsed, _ := time.Parse(time.RFC3339, body["fecha_inicio"].(string))
-			fechaInicioRegistroParsed, _ := time.Parse(time.RFC3339, registro["fecha_inicio"].(string))
-			fechaFinBodyParsed, _ := time.Parse(time.RFC3339, body["fecha_fin"].(string))
-			fechaFinRegistroParsed, _ := time.Parse(time.RFC3339, registro["fecha_fin"].(string))
+	indiceDestino := -1
+	for i, registro := range registros {
+		if mismoRango(registro, inicio, fin) {
+			indiceDestino = i
+			break
+		}
+	}
 
-			if fechaInicioBodyParsed.Equal(fechaInicioRegistroParsed) && fechaFinBodyParsed.Equal(fechaFinRegistroParsed) {
-				// Registro Fechas iguales
-				registro = manejarUnidades(body, registro, 1)
-				if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas/"+registro["_id"].(string), "PUT", &res, registro); err != nil {
-					panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Error actualizando periodo-seguimiento \"registro[\"_id\"].(string)\"", "status": "400", "log": err})
-				}
-				respuestasAcumuladas = append(respuestasAcumuladas, res["Data"])
-			} else {
-				// Registro con Fechas distintas, entonces se debe editar el registro existente quitando las unidades del body
-				// Si unidades_interes del registro se queda vacio, se debe inactivar
-				registro = manejarUnidades(body, registro, 2)
-				if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas/"+registro["_id"].(string), "PUT", &res, registro); err != nil {
-					panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Error actualizando periodo-seguimiento \"registro[\"_id\"].(string)\"", "status": "400", "log": err})
-				}
-				if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas/buscar-unidad-planes/2", "POST", &respuestaPost2, body); err == nil {
-					data, ok := respuestaPost2["Data"].([]interface{})
-					if ok && len(data) > 0 { // Existe el registro, entonces se le agregan las unidades
-						registro2 := data[0].(map[string]interface{})
-						registro2 = manejarUnidades(body, registro2, 1)
-						if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas/"+registro2["_id"].(string), "PUT", &res, registro2); err != nil {
-							panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Error actualizando periodo-seguimiento \"registro[\"_id\"].(string)\"", "status": "400", "log": err})
-						}
-						respuestasAcumuladas = append(respuestasAcumuladas, res["Data"])
-					} else { // No existe el registro, se crea el registro con las unidades del body
-						body["planes_interes"] = registro["planes_interes"]
-						if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas", "POST", &res, body); err != nil {
-							panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Error agregaron periodo-seguimiento", "status": "400", "log": err})
-						}
-						respuestasAcumuladas = append(respuestasAcumuladas, res["Data"])
-					}
-				}
-			}
-		} else { // No existe el registro con las unidades especificadas, se procede a validar por periodo, fecha_inicio y fecha_fin
-			if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas/buscar-unidad-planes/2", "POST", &respuestaPost2, body); err == nil {
-				data, ok := respuestaPost2["Data"].([]interface{})
-				if ok && len(data) > 0 { // Existe el registro, entonces se le agregan las unidades
-					registro := data[0].(map[string]interface{})
-					registro = manejarUnidades(body, registro, 1)
-					if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas/"+registro["_id"].(string), "PUT", &res, registro); err != nil {
-						panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Error actualizando periodo-seguimiento \"registro[\"_id\"].(string)\"", "status": "400", "log": err})
-					}
-					respuestasAcumuladas = append(respuestasAcumuladas, res["Data"])
-				} else { // No existe el registro, se crea
-					if err := helpers.SendJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas", "POST", &res, body); err != nil {
-						panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Error versionando periodo-seguimiento", "status": "400", "log": err})
-					}
-					respuestasAcumuladas = append(respuestasAcumuladas, res["Data"])
-				}
-			}
+	if indiceDestino >= 0 {
+		destino := copiarRegistro(registros[indiceDestino])
+		actuales, _ := ObtenerArrayUnidadesInteres(destino)
+		combinadas := make([]map[string]interface{}, 0, len(actuales)+len(seleccion))
+		combinadas = append(combinadas, actuales...)
+		combinadas = unidadesSinRepetir(append(combinadas, seleccion...))
+		if !mismosIds(actuales, combinadas) {
+			destino["unidades_interes"] = textoUnidades(combinadas)
+			actualizar = append(actualizar, destino)
 		}
 	} else {
-		panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Error en la peticion", "status": "400", "log": err})
+		crear = map[string]interface{}{
+			"fecha_inicio":     inicio.Format(time.RFC3339Nano),
+			"fecha_fin":        fin.Format(time.RFC3339Nano),
+			"unidades_interes": textoUnidades(seleccion),
+			"planes_interes":   "[]",
+			"activo":           true,
+		}
 	}
-	return respuestasAcumuladas
+
+	for i, registro := range registros {
+		if i == indiceDestino {
+			continue
+		}
+		actuales, _ := ObtenerArrayUnidadesInteres(registro)
+		restantes := make([]map[string]interface{}, 0, len(actuales))
+		for _, unidad := range actuales {
+			if !idsSeleccion[idUnidad(unidad)] {
+				restantes = append(restantes, unidad)
+			}
+		}
+		if len(restantes) == len(actuales) {
+			continue
+		}
+		copia := copiarRegistro(registro)
+		copia["unidades_interes"] = textoUnidades(restantes)
+		if len(restantes) == 0 {
+			copia["activo"] = false
+		}
+		actualizar = append(actualizar, copia)
+	}
+	return actualizar, crear
+}
+
+// mismoRango indica si el registro tiene el mismo fecha_inicio y fecha_fin, comparando por día.
+func mismoRango(registro map[string]interface{}, inicio, fin time.Time) bool {
+	inicioRegistro, errInicio := parseFecha(fmt.Sprint(registro["fecha_inicio"]), time.UTC)
+	finRegistro, errFin := parseFecha(fmt.Sprint(registro["fecha_fin"]), time.UTC)
+	if errInicio != nil || errFin != nil {
+		return false
+	}
+	return inicioRegistro.Equal(diaDe(inicio)) && finRegistro.Equal(diaDe(fin))
+}
+
+// diaDe devuelve la medianoche UTC del día de t en UTC, que es el día que se guarda en el crud.
+func diaDe(t time.Time) time.Time {
+	utc := t.UTC()
+	return time.Date(utc.Year(), utc.Month(), utc.Day(), 0, 0, 0, 0, time.UTC)
+}
+
+// parseFechaHabilitacion lee una fecha RFC 3339 (como la envía el cliente) o AAAA-MM-DD.
+func parseFechaHabilitacion(valor string) (time.Time, error) {
+	if fecha, err := time.Parse(time.RFC3339, valor); err == nil {
+		return fecha, nil
+	}
+	return time.Parse("2006-01-02", valor)
+}
+
+// unidadesSinRepetir devuelve las unidades sin Ids repetidos, en el orden en que aparecen.
+func unidadesSinRepetir(unidades []map[string]interface{}) []map[string]interface{} {
+	vistos := make(map[int]bool, len(unidades))
+	resultado := make([]map[string]interface{}, 0, len(unidades))
+	for _, unidad := range unidades {
+		id := idUnidad(unidad)
+		if vistos[id] {
+			continue
+		}
+		vistos[id] = true
+		resultado = append(resultado, unidad)
+	}
+	return resultado
+}
+
+func mismosIds(a, b []map[string]interface{}) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if idUnidad(a[i]) != idUnidad(b[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+// idUnidad devuelve el Id de una unidad leída con ObtenerArrayUnidadesInteres.
+func idUnidad(unidad map[string]interface{}) int {
+	id, _ := unidad["Id"].(int)
+	return id
+}
+
+// textoUnidades convierte las unidades al texto JSON de unidades_interes, solo con Id y Nombre.
+func textoUnidades(unidades []map[string]interface{}) string {
+	limpias := make([]map[string]interface{}, 0, len(unidades))
+	for _, unidad := range unidades {
+		limpias = append(limpias, map[string]interface{}{"Id": unidad["Id"], "Nombre": unidad["Nombre"]})
+	}
+	texto, err := json.Marshal(limpias)
+	if err != nil {
+		panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Error al convertir las unidades a JSON", "status": "400", "log": err})
+	}
+	return string(texto)
+}
+
+func copiarRegistro(registro map[string]interface{}) map[string]interface{} {
+	copia := make(map[string]interface{}, len(registro))
+	for clave, valor := range registro {
+		copia[clave] = valor
+	}
+	return copia
+}
+
+// campoTexto devuelve el campo del body como texto sin espacios, o "" si no viene.
+func campoTexto(body map[string]interface{}, campo string) string {
+	valor, ok := body[campo]
+	if !ok || valor == nil {
+		return ""
+	}
+	return strings.TrimSpace(textoID(valor))
+}
+
+// textoID convierte un Id a texto sin notación científica: 14, 14.0 y "14" dan "14".
+func textoID(valor interface{}) string {
+	switch v := valor.(type) {
+	case float64:
+		return strconv.FormatFloat(v, 'f', -1, 64)
+	case json.Number:
+		return v.String()
+	default:
+		return fmt.Sprint(v)
+	}
 }
 
 func ValidarFechasIniciativasFormulacion(body map[string]interface{}) map[string]interface{} {
@@ -90,7 +270,6 @@ func ValidarFechasIniciativasFormulacion(body map[string]interface{}) map[string
 	var resTipoSeguimiento map[string]interface{}
 	var fechas []map[string]interface{}
 	var tipoSeguimiento []map[string]interface{}
-	respuesta := map[string]interface{}{"unidadEncontrada": false, "habilitado": false}
 
 	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/tipo-seguimiento/?query=codigo_abreviacion:FIPI_SP", &resTipoSeguimiento); err != nil {
 		panic(map[string]interface{}{"funcion": "ValidarFechasIniciativasFormulacion", "err": "Error al obtener el tipo de seguimiento", "status": "400", "log": err})
@@ -108,42 +287,68 @@ func ValidarFechasIniciativasFormulacion(body map[string]interface{}) map[string
 		panic(map[string]interface{}{"funcion": "ValidarFechasIniciativasFormulacion", "err": "No hay periodos activos", "status": "404"})
 	}
 
-	unidadesFechas, err := ObtenerArrayUnidadesInteres(fechas[0])
+	encontrada, habilitada, err := unidadHabilitada(fechas, textoID(body["dependenciaId"]), "", time.Now())
 	if err != nil {
-		panic(map[string]interface{}{"funcion": "ValidarFechasIniciativasFormulacion", "err": "Error en la decodificación JSON", "status": "400"})
+		panic(map[string]interface{}{"funcion": "ValidarFechasIniciativasFormulacion", "err": "Error al revisar las fechas de los periodos activos", "status": "400", "log": err})
 	}
+	return map[string]interface{}{"unidadEncontrada": encontrada, "habilitado": habilitada}
+}
 
-	// 1. Validar que la unidad esté; si no, se descarta todo el proceso
-	unidadEncontrada := false
-	for _, unidad := range unidadesFechas {
-		if fmt.Sprint(body["dependenciaId"]) == fmt.Sprint(unidad["Id"]) {
-			unidadEncontrada = true
-			break
+// unidadHabilitada revisa todos los periodos. encontrada indica si la dependencia está en
+// alguno; habilitada, si alguno de los que la incluyen cubre el día de hoy en Bogotá, inclusivo
+// en los dos extremos. Con periodoID vacío se consideran todas las vigencias. El Id se compara
+// como texto, así que 14 y "14" son iguales.
+func unidadHabilitada(periodos []map[string]interface{}, dependenciaID, periodoID string, hoy time.Time) (encontrada, habilitada bool, err error) {
+	ahora := hoy.In(zonaBogota)
+	dia := time.Date(ahora.Year(), ahora.Month(), ahora.Day(), 0, 0, 0, 0, zonaBogota)
+
+	for _, periodo := range periodos {
+		if periodoID != "" && textoID(periodo["periodo_id"]) != periodoID {
+			continue
+		}
+		incluye, errUnidades := periodoIncluyeUnidad(periodo, dependenciaID)
+		if errUnidades != nil {
+			return false, false, errUnidades
+		}
+		if !incluye {
+			continue
+		}
+		encontrada = true
+
+		inicio, errInicio := parseFecha(fmt.Sprint(periodo["fecha_inicio"]), zonaBogota)
+		if errInicio != nil {
+			return false, false, fmt.Errorf("fecha_inicio inválida en el periodo %v: %w", periodo["_id"], errInicio)
+		}
+		fin, errFin := parseFecha(fmt.Sprint(periodo["fecha_fin"]), zonaBogota)
+		if errFin != nil {
+			return false, false, fmt.Errorf("fecha_fin inválida en el periodo %v: %w", periodo["_id"], errFin)
+		}
+		if !dia.Before(inicio) && !dia.After(fin) {
+			return true, true, nil
 		}
 	}
-	if !unidadEncontrada {
-		return respuesta
+	return encontrada, false, nil
+}
+
+// periodoIncluyeUnidad indica si unidades_interes del periodo tiene la dependencia. Compara el
+// Id como texto, así que 14 y "14" son iguales.
+func periodoIncluyeUnidad(periodo map[string]interface{}, dependenciaID string) (bool, error) {
+	texto, ok := periodo["unidades_interes"].(string)
+	if !ok {
+		return false, fmt.Errorf("el periodo %v no tiene unidades_interes como texto", periodo["_id"])
 	}
-	respuesta["unidadEncontrada"] = true
-
-	// 2. Comparar la fecha de hoy con el rango
-	bogota := time.FixedZone("COT", -5*60*60)
-	ahora := time.Now().In(bogota)
-	hoy := time.Date(ahora.Year(), ahora.Month(), ahora.Day(), 0, 0, 0, 0, bogota)
-
-	inicio, err := parseFecha(fmt.Sprint(fechas[0]["fecha_inicio"]), bogota)
-	if err != nil {
-		panic(map[string]interface{}{"funcion": "ValidarFechasIniciativasFormulacion", "err": "fecha_inicio inválida", "status": "400", "log": err})
+	var unidades []map[string]interface{}
+	decodificador := json.NewDecoder(bytes.NewReader([]byte(texto)))
+	decodificador.UseNumber()
+	if err := decodificador.Decode(&unidades); err != nil {
+		return false, fmt.Errorf("unidades_interes inválido en el periodo %v: %w", periodo["_id"], err)
 	}
-	fin, err := parseFecha(fmt.Sprint(fechas[0]["fecha_fin"]), bogota)
-	if err != nil {
-		panic(map[string]interface{}{"funcion": "ValidarFechasIniciativasFormulacion", "err": "fecha_fin inválida", "status": "400", "log": err})
+	for _, unidad := range unidades {
+		if textoID(unidad["Id"]) == dependenciaID {
+			return true, nil
+		}
 	}
-
-	// Inclusivo: hoy >= inicio y hoy <= fin
-	respuesta["habilitado"] = !hoy.Before(inicio) && !hoy.After(fin)
-
-	return respuesta
+	return false, nil
 }
 
 // Toma solo la parte YYYY-MM-DD para comparar por día y evitar desfases de zona horaria
@@ -152,60 +357,6 @@ func parseFecha(valor string, loc *time.Location) (time.Time, error) {
 		return time.Time{}, fmt.Errorf("fecha inválida: %q", valor)
 	}
 	return time.ParseInLocation("2006-01-02", valor[:10], loc)
-}
-
-func manejarUnidades(body map[string]interface{}, registro map[string]interface{}, caso int) map[string]interface{} {
-	unidadesBody, err := ObtenerArrayUnidadesInteres(body)
-	if err != nil {
-		panic(map[string]interface{}{"funcion": "manejarUnidades", "err": "Error en la decodificación JSON", "status": "400"})
-	}
-
-	unidadesRegistro, err := ObtenerArrayUnidadesInteres(registro)
-	if err != nil {
-		panic(map[string]interface{}{"funcion": "manejarUnidades", "err": "Error en la decodificación JSON", "status": "400"})
-	}
-
-	// Crear un mapa para almacenar los Ids ya presentes en "registro"
-	idsPresentes := make(map[int]bool)
-	for _, unidad := range unidadesRegistro {
-		if id, ok := unidad["Id"].(int); ok {
-			idsPresentes[id] = true
-		} else {
-			panic(map[string]interface{}{"funcion": "manejarUnidades", "err": "Error al obtener el Id de la unidad de interés del registro", "status": "400"})
-		}
-	}
-
-	// Manejar las unidades de body que no existan en registro
-	for _, unidadBody := range unidadesBody {
-		if idBody, ok := unidadBody["Id"].(int); ok {
-			switch caso {
-			case 1:
-				// Si el Id de la unidad no existe en registro, agregar la unidad
-				if !idsPresentes[idBody] {
-					unidadesRegistro = append(unidadesRegistro, unidadBody)
-					idsPresentes[idBody] = true
-				}
-			case 2:
-				// Eliminar la unidad del registro si también está en body
-				if idsPresentes[idBody] {
-					unidadesRegistro = eliminarUnidad(unidadesRegistro, idBody)
-				}
-			default:
-				panic(map[string]interface{}{"funcion": "manejarUnidades", "err": "Caso no válido", "status": "400"})
-			}
-		} else {
-			panic(map[string]interface{}{"funcion": "manejarUnidades", "err": "Error al obtener el Id de la unidad de interés del body", "status": "400"})
-		}
-	}
-	if len(unidadesRegistro) == 0 {
-		registro["activo"] = false
-	}
-	unidadesRegistroJSON, err := json.Marshal(unidadesRegistro)
-	if err != nil {
-		panic(map[string]interface{}{"funcion": "manejarUnidades", "err": "Error al convertir el array a JSON", "status": "400"})
-	}
-	registro["unidades_interes"] = string(unidadesRegistroJSON)
-	return registro
 }
 
 func ObtenerArrayUnidadesInteres(body map[string]interface{}) ([]map[string]interface{}, error) {
@@ -243,16 +394,6 @@ func ObtenerArrayUnidadesInteres(body map[string]interface{}) ([]map[string]inte
 	return unidades, nil
 }
 
-func eliminarUnidad(unidades []map[string]interface{}, id int) []map[string]interface{} {
-	for i, unidad := range unidades {
-		if unidad["Id"].(int) == id {
-			// Eliminar la unidad del slice
-			unidades = append(unidades[:i], unidades[i+1:]...)
-		}
-	}
-	return unidades
-}
-
 // ConsultarFechasIniciativasFormulacion devuelve las fechas de formulación
 // parametrizadas para una vigencia (periodoId) y una unidad (dependenciaId).
 func ConsultarFechasIniciativasFormulacion(body map[string]interface{}) map[string]interface{} {
@@ -269,7 +410,7 @@ func ConsultarFechasIniciativasFormulacion(body map[string]interface{}) map[stri
 	dependenciaId := fmt.Sprint(body["dependenciaId"])
 
 	// 1. Obtener el tipo de seguimiento de formulación de iniciativas
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/tipo-seguimiento/?query=codigo_abreviacion:FIPI_SP", &resTipoSeguimiento); err != nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/tipo-seguimiento/?query=codigo_abreviacion:FIPI_SP", &resTipoSeguimiento); err != nil {
 		panic(map[string]interface{}{"funcion": "ConsultarFechasIniciativasFormulacion", "err": "Error al obtener el tipo de seguimiento", "status": "400", "log": err})
 	}
 	helpers.LimpiezaRespuestaRefactor(resTipoSeguimiento, &tipoSeguimiento)
@@ -279,7 +420,7 @@ func ConsultarFechasIniciativasFormulacion(body map[string]interface{}) map[stri
 
 	// 2. Traer los registros activos de la vigencia, el más reciente primero
 	consulta := "periodo_id:" + url.QueryEscape(periodoId) + ",tipo_seguimiento_id:" + tipoSeguimiento[0]["_id"].(string) + ",activo:true"
-	if err := request.GetJson("http://"+beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas?query="+consulta+"&sortby=fecha_modificacion&order=desc&limit=0", &resFechas); err != nil {
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas?query="+consulta+"&sortby=fecha_modificacion&order=desc&limit=0", &resFechas); err != nil {
 		panic(map[string]interface{}{"funcion": "ConsultarFechasIniciativasFormulacion", "err": "Error al obtener las fechas", "status": "400", "log": err})
 	}
 	helpers.LimpiezaRespuestaRefactor(resFechas, &fechas)
@@ -299,18 +440,6 @@ func ConsultarFechasIniciativasFormulacion(body map[string]interface{}) map[stri
 // registroIncluyeUnidad indica si el registro tiene la unidad en unidades_interes.
 // Compara el Id como texto, por lo que 14 y "14" se consideran iguales.
 func registroIncluyeUnidad(registro map[string]interface{}, dependenciaId string) bool {
-	unidadesTexto, ok := registro["unidades_interes"].(string)
-	if !ok {
-		return false
-	}
-	var unidades []map[string]interface{}
-	if err := json.Unmarshal([]byte(unidadesTexto), &unidades); err != nil {
-		return false
-	}
-	for _, unidad := range unidades {
-		if fmt.Sprint(unidad["Id"]) == dependenciaId {
-			return true
-		}
-	}
-	return false
+	incluye, err := periodoIncluyeUnidad(registro, dependenciaId)
+	return err == nil && incluye
 }
