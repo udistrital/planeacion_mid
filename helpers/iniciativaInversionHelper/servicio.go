@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -29,6 +30,10 @@ type Servicio struct {
 	sistema      *catalogosSistema
 	normalizador *Normalizador
 	validador    *Validador
+
+	// dependencias consulta el nombre de las dependencias (Oikos) para el listado.
+	// Si es nil, el listado sale sin nombre de dependencia.
+	dependencias FuenteNombreDependencia
 }
 
 // NuevoServicio arma el servicio con sus dependencias.
@@ -48,12 +53,15 @@ func NuevoServicio(repo Repositorio, definiciones FuenteDefiniciones, catalogos 
 // esquema, como en conf/app.conf), con caché de definiciones y de catálogos: los de la colección
 // elemento_catalogo; para el catálogo sedes, los espacios físicos de tipo SEDE de Oikos, y para
 // los del Plan Distrital de Desarrollo, el Plan Estratégico de Desarrollo y el Plan Indicativo,
-// el árbol de esos planes.
+// el árbol de esos planes. Oikos también da el nombre de la dependencia en el listado de iniciativas.
 func NuevoServicioPorDefecto(hostCrud, hostOikos, hostGestor string) *Servicio {
 	crud := NuevoClienteCrud(hostCrud)
 	definiciones := NuevaCacheDefiniciones(NuevoCargadorDefiniciones(crud, crud, 8), 10*time.Minute)
 	catalogos := NuevoRepositorioConInstrumentos(NuevoRepositorioConSedes(crud, NuevoClienteSedesOikos(hostOikos)), crud, time.Minute, 8)
-	return NuevoServicio(crud, definiciones, NuevosCatalogosConCache(catalogos, 10*time.Minute), NuevoClienteGestorDocumental(hostGestor))
+	servicio := NuevoServicio(crud, definiciones, NuevosCatalogosConCache(catalogos, 10*time.Minute), NuevoClienteGestorDocumental(hostGestor))
+	// Solo se usa NombreDependencia, que consulta Oikos; el host de Terceros no interviene.
+	servicio.dependencias = NuevoClienteUnidades("", hostOikos)
+	return servicio
 }
 
 // ---------------------------------------------------------------------------
@@ -131,6 +139,7 @@ func (s *Servicio) ListarIniciativas(dependencias []string) ([]IniciativaListado
 	}
 
 	responsables := nombresResponsables{}
+	nombresDeDependencias := nombresDependencias{fuente: s.dependencias, nombres: map[string]string{}}
 	iniciativas := make([]IniciativaListado, 0, len(planes))
 	for _, plan := range planes {
 		if !plan.Activo || (len(deInteres) > 0 && !deInteres[plan.DependenciaID]) {
@@ -141,14 +150,15 @@ func (s *Servicio) ListarIniciativas(dependencias []string) ([]IniciativaListado
 			return nil, err
 		}
 		iniciativas = append(iniciativas, IniciativaListado{
-			ID:            plan.ID,
-			Numero:        numeros[plan.ID],
-			Nombre:        plan.Nombre,
-			DependenciaID: plan.DependenciaID,
-			Responsable:   responsables.de(plan.ID, plan.Responsable),
-			Estado:        estado,
-			PermiteEditar: PermiteEditar(estado.Codigo),
-			FechaCreacion: plan.FechaCreacion,
+			ID:                plan.ID,
+			Numero:            numeros[plan.ID],
+			Nombre:            plan.Nombre,
+			DependenciaID:     plan.DependenciaID,
+			DependenciaNombre: nombresDeDependencias.de(plan.ID, plan.DependenciaID),
+			Responsable:       responsables.de(plan.ID, plan.Responsable),
+			Estado:            estado,
+			PermiteEditar:     PermiteEditar(estado.Codigo),
+			FechaCreacion:     plan.FechaCreacion,
 		})
 	}
 	sort.SliceStable(iniciativas, func(i, j int) bool { return iniciativas[i].Numero > iniciativas[j].Numero })
@@ -196,6 +206,42 @@ func nombreTercero(documento string) (string, error) {
 		}
 	}
 	return "", errors.New("el documento no está en Terceros")
+}
+
+// FuenteNombreDependencia devuelve el nombre de una dependencia (la implementa ClienteUnidades).
+type FuenteNombreDependencia interface {
+	NombreDependencia(dependenciaID int) (string, error)
+}
+
+// nombresDependencias guarda, durante un listado, el nombre de cada dependencia según
+// Oikos, para consultar cada una una sola vez.
+type nombresDependencias struct {
+	fuente  FuenteNombreDependencia
+	nombres map[string]string
+}
+
+// de devuelve el nombre de la dependencia de la iniciativa planID. Queda vacío si no hay
+// fuente, si el id no es un número o si Oikos falla; en esos casos el motivo va al log
+// y el listado sale igual.
+func (n nombresDependencias) de(planID, dependenciaID string) string {
+	dependenciaID = strings.TrimSpace(dependenciaID)
+	if n.fuente == nil || dependenciaID == "" {
+		return ""
+	}
+	if nombre, consultada := n.nombres[dependenciaID]; consultada {
+		return nombre
+	}
+	nombre := ""
+	id, err := strconv.Atoi(dependenciaID) // NombreDependencia recibe un int
+	if err == nil {
+		nombre, err = n.fuente.NombreDependencia(id)
+	}
+	if err != nil {
+		logs.Warn("iniciativaInversion: sin nombre para la dependencia %q de la iniciativa %s: %v", dependenciaID, planID, err)
+		nombre = ""
+	}
+	n.nombres[dependenciaID] = nombre
+	return nombre
 }
 
 // numerarPorCreacion da a cada plan su consecutivo por fecha de creación (y por

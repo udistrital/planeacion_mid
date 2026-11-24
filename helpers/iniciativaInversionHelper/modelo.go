@@ -427,6 +427,7 @@ type IniciativaListado struct {
 	Numero        int    `json:"numero"`
 	Nombre        string `json:"nombre"`
 	DependenciaID string `json:"dependencia_id"`
+	DependenciaNombre string `json:"dependencia_nombre"`
 	Responsable   string `json:"responsable"`
 	Estado        Estado `json:"estado"`
 	PermiteEditar bool   `json:"permite_editar"`
