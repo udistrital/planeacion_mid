@@ -57,7 +57,7 @@ func NuevoServicio(repo Repositorio, definiciones FuenteDefiniciones, catalogos 
 // iniciativas, y Terceros, el de quien crea la iniciativa, comenta o sube un anexo.
 func NuevoServicioPorDefecto(hostCrud, hostTerceros, hostOikos, hostGestor string) *Servicio {
 	crud := NuevoClienteCrud(hostCrud)
-	definiciones := NuevaCacheDefiniciones(NuevoCargadorDefiniciones(crud, crud, 8), 10*time.Minute)
+	definiciones := NuevaCacheDefiniciones(NuevoCargadorDefiniciones(crud, crud, 8))
 	catalogos := NuevoRepositorioConInstrumentos(NuevoRepositorioConSedes(crud, NuevoClienteSedesOikos(hostOikos)), crud, time.Minute, 8)
 	servicio := NuevoServicio(crud, definiciones, NuevosCatalogosConCache(catalogos, 10*time.Minute), NuevoClienteGestorDocumental(hostGestor))
 	personas := NuevoClienteUnidades(hostTerceros, hostOikos)

@@ -2,9 +2,9 @@ package iniciativaInversionHelper
 
 import (
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
-	"time"
 )
 
 // arbolDePrueba sirve un árbol pequeño:
@@ -110,24 +110,127 @@ func TestLasClavesDeSubmoduloNoSeRepitenEntreModulos(t *testing.T) {
 	}
 }
 
-func TestCacheEvitaRecargarHastaQueVence(t *testing.T) {
+// fuenteContada cuenta las lecturas y responde con leer.
+type fuenteContada struct {
+	lecturas int32
+	leer     func(lectura int32) (*Definicion, error)
+}
+
+func (f *fuenteContada) Definicion(plantillaID string) (*Definicion, error) {
+	return f.leer(atomic.AddInt32(&f.lecturas, 1))
+}
+
+func TestCacheLeeCadaPlantillaUnaSolaVez(t *testing.T) {
 	arbol := nuevoArbolDePrueba(true)
-	cache := NuevaCacheDefiniciones(NuevoCargadorDefiniciones(arbol, arbol, 2), time.Minute).(*definicionesEnCache)
-	ahora := time.Now()
-	cache.ahora = func() time.Time { return ahora }
+	cache := NuevaCacheDefiniciones(NuevoCargadorDefiniciones(arbol, arbol, 2))
 
 	for i := 0; i < 3; i++ {
 		if _, err := cache.Definicion("plantilla"); err != nil {
 			t.Fatal(err)
 		}
 	}
-	consultasIniciales := atomic.LoadInt32(&arbol.consultasHijo)
-
-	ahora = ahora.Add(2 * time.Minute)
-	if _, err := cache.Definicion("plantilla"); err != nil {
-		t.Fatal(err)
+	// Dos consultas de hijos: las de la plantilla y las del módulo A.
+	if consultas := atomic.LoadInt32(&arbol.consultasHijo); consultas != 2 {
+		t.Fatalf("se esperaba leer el árbol una vez (2 consultas de hijos) y hubo %d", consultas)
 	}
-	if consultasIniciales != 2 || atomic.LoadInt32(&arbol.consultasHijo) != 4 {
-		t.Fatalf("consultas: iniciales=%d finales=%d", consultasIniciales, atomic.LoadInt32(&arbol.consultasHijo))
+}
+
+func TestCacheComparteLaLecturaEnCurso(t *testing.T) {
+	entro := make(chan struct{})
+	liberar := make(chan struct{})
+	fuente := &fuenteContada{leer: func(lectura int32) (*Definicion, error) {
+		if lectura == 1 {
+			close(entro)
+		}
+		<-liberar
+		return &Definicion{PlantillaID: "plantilla"}, nil
+	}}
+	cache := NuevaCacheDefiniciones(fuente)
+
+	const peticiones = 5
+	resultados := make([]*Definicion, peticiones)
+	fallas := make([]error, peticiones)
+	var iniciadas, terminadas sync.WaitGroup
+	iniciadas.Add(peticiones)
+	terminadas.Add(peticiones)
+	for i := 0; i < peticiones; i++ {
+		go func(i int) {
+			defer terminadas.Done()
+			iniciadas.Done()
+			resultados[i], fallas[i] = cache.Definicion("plantilla")
+		}(i)
+	}
+	<-entro
+	iniciadas.Wait()
+	close(liberar)
+	terminadas.Wait()
+
+	if lecturas := atomic.LoadInt32(&fuente.lecturas); lecturas != 1 {
+		t.Fatalf("se esperaba una sola lectura y hubo %d", lecturas)
+	}
+	for i := 0; i < peticiones; i++ {
+		if fallas[i] != nil || resultados[i] != resultados[0] {
+			t.Fatalf("la petición %d no recibió la definición compartida: %v", i, fallas[i])
+		}
+	}
+}
+
+func TestCacheNoGuardaErrores(t *testing.T) {
+	fuente := &fuenteContada{leer: func(lectura int32) (*Definicion, error) {
+		if lectura == 1 {
+			return nil, errorServicio("planes_crud no responde")
+		}
+		return &Definicion{PlantillaID: "plantilla"}, nil
+	}}
+	cache := NuevaCacheDefiniciones(fuente)
+
+	if _, err := cache.Definicion("plantilla"); err == nil {
+		t.Fatal("se esperaba el error de la primera lectura")
+	}
+	for i := 0; i < 2; i++ {
+		if definicion, err := cache.Definicion("plantilla"); err != nil || definicion == nil {
+			t.Fatalf("después del error se esperaba leer de nuevo: %v", err)
+		}
+	}
+	if lecturas := atomic.LoadInt32(&fuente.lecturas); lecturas != 2 {
+		t.Fatalf("se esperaban 2 lecturas (la fallida y la buena) y hubo %d", lecturas)
+	}
+}
+
+func TestCacheSeRecuperaDeUnaLecturaInterrumpida(t *testing.T) {
+	entro := make(chan struct{})
+	liberar := make(chan struct{})
+	fuente := &fuenteContada{leer: func(lectura int32) (*Definicion, error) {
+		if lectura == 1 {
+			close(entro)
+			<-liberar
+			panic("falla inesperada")
+		}
+		return &Definicion{PlantillaID: "plantilla"}, nil
+	}}
+	cache := NuevaCacheDefiniciones(fuente)
+
+	interrumpida := make(chan interface{})
+	go func() {
+		defer func() { interrumpida <- recover() }()
+		cache.Definicion("plantilla")
+	}()
+	<-entro
+	espera := make(chan error)
+	go func() {
+		_, err := cache.Definicion("plantilla")
+		espera <- err
+	}()
+	close(liberar)
+
+	if recuperado := <-interrumpida; recuperado == nil {
+		t.Fatal("el pánico de la fuente debe llegar a quien hizo la lectura")
+	}
+	// Quien esperaba recibe un error o, si llegó después de la falla, una lectura nueva.
+	if err := <-espera; err != nil && !strings.Contains(err.Error(), "se interrumpió") {
+		t.Fatalf("error inesperado para quien esperaba: %v", err)
+	}
+	if definicion, err := cache.Definicion("plantilla"); err != nil || definicion == nil {
+		t.Fatalf("después de la falla se esperaba leer de nuevo: %v", err)
 	}
 }

@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 )
 
 // FuenteDefiniciones entrega la definición (árbol de campos) de una plantilla.
@@ -190,47 +189,66 @@ func ordenDeMarca(descripcion string) int {
 // Caché
 // ---------------------------------------------------------------------------
 
-// definicionesEnCache guarda las definiciones durante un tiempo. Una plantilla
-// con iniciativas no se edita (si cambia el instrumento se carga una nueva), así
-// que la caché evita recorrer el árbol en cada petición.
+// definicionesEnCache guarda cada definición hasta que el mid se reinicia. Una
+// plantilla con iniciativas no se edita (si cambia el instrumento se carga una
+// nueva, con otro id), así que el árbol se recorre una sola vez por plantilla.
+// Si varias peticiones piden a la vez una plantilla que no está en la caché,
+// solo una la lee y las demás esperan ese resultado. Un error no se guarda: la
+// siguiente petición vuelve a leer.
 type definicionesEnCache struct {
-	fuente   FuenteDefiniciones
-	duracion time.Duration
-	ahora    func() time.Time
+	fuente FuenteDefiniciones
 
-	mu       sync.Mutex
-	entradas map[string]entradaDefinicion
+	mu           sync.Mutex
+	definiciones map[string]*Definicion
+	enCurso      map[string]*lecturaDefinicion
 }
 
-type entradaDefinicion struct {
+// lecturaDefinicion es la lectura de una plantilla que está en curso; listo se
+// cierra cuando termina.
+type lecturaDefinicion struct {
+	listo      chan struct{}
 	definicion *Definicion
-	vence      time.Time
+	err        error
 }
 
 // NuevaCacheDefiniciones envuelve una fuente con caché en memoria.
-func NuevaCacheDefiniciones(fuente FuenteDefiniciones, duracion time.Duration) FuenteDefiniciones {
+func NuevaCacheDefiniciones(fuente FuenteDefiniciones) FuenteDefiniciones {
 	return &definicionesEnCache{
-		fuente:   fuente,
-		duracion: duracion,
-		ahora:    time.Now,
-		entradas: make(map[string]entradaDefinicion),
+		fuente:       fuente,
+		definiciones: make(map[string]*Definicion),
+		enCurso:      make(map[string]*lecturaDefinicion),
 	}
 }
 
 func (c *definicionesEnCache) Definicion(plantillaID string) (*Definicion, error) {
 	c.mu.Lock()
-	entrada, existe := c.entradas[plantillaID]
-	c.mu.Unlock()
-	if existe && c.ahora().Before(entrada.vence) {
-		return entrada.definicion, nil
+	if definicion, existe := c.definiciones[plantillaID]; existe {
+		c.mu.Unlock()
+		return definicion, nil
 	}
+	if lectura, existe := c.enCurso[plantillaID]; existe {
+		c.mu.Unlock()
+		<-lectura.listo
+		return lectura.definicion, lectura.err
+	}
+	// El error inicial es el que reciben quienes esperan si la lectura se
+	// interrumpe con un pánico antes de devolver un resultado.
+	lectura := &lecturaDefinicion{
+		listo: make(chan struct{}),
+		err:   errors.New("se interrumpió la lectura de la plantilla " + plantillaID),
+	}
+	c.enCurso[plantillaID] = lectura
+	c.mu.Unlock()
 
-	definicion, err := c.fuente.Definicion(plantillaID)
-	if err != nil {
-		return nil, err
-	}
-	c.mu.Lock()
-	c.entradas[plantillaID] = entradaDefinicion{definicion: definicion, vence: c.ahora().Add(c.duracion)}
-	c.mu.Unlock()
-	return definicion, nil
+	defer func() {
+		c.mu.Lock()
+		delete(c.enCurso, plantillaID)
+		if lectura.err == nil {
+			c.definiciones[plantillaID] = lectura.definicion
+		}
+		c.mu.Unlock()
+		close(lectura.listo)
+	}()
+	lectura.definicion, lectura.err = c.fuente.Definicion(plantillaID)
+	return lectura.definicion, lectura.err
 }

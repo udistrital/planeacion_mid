@@ -19,8 +19,8 @@ Formulación de las iniciativas para proyectos de inversión a partir de plantil
 | Datos de cada submódulo | `submodulo_iniciativa`: un documento por iniciativa y submódulo, con `dato` (JSON legible armado con las claves de la plantilla), `observaciones`, `estado_submodulo_id` y `version` |
 
 **La iniciativa no copia el árbol de la plantilla:**
-- La definición se lee de la plantilla y queda en una caché de 10 minutos.
-- Una plantilla con iniciativas no se edita. Si cambia el instrumento, se carga una plantilla nueva.
+- La definición se lee de la plantilla una sola vez y queda en memoria hasta que se reinicia el mid. Si varias peticiones la piden a la vez, una la lee y las demás esperan ese resultado; un error no se guarda.
+- Una plantilla con iniciativas no se edita. Si cambia el instrumento, se carga una plantilla nueva (con otro id, así que se lee la primera vez que se pide). Una plantilla corregida directamente en la base, en desarrollo, se ve al reiniciar el mid.
 
 **Cada nodo de la plantilla tiene en `dato`:**
 - Una `clave` técnica, única entre hermanos.
@@ -154,7 +154,7 @@ Cada submódulo guarda un **historial** de observaciones en `submodulo_iniciativ
 |---|---|
 | `modelo.go` | Tipos de la definición, documentos del crud, solicitudes y respuestas |
 | `crud.go` | Interfaces pequeñas por recurso (`RepositorioPlanes`, `RepositorioArbol`, `RepositorioCatalogos`, `RepositorioSubmodulos`, `RepositorioPeriodos`, `RepositorioElementosCatalogo`) y el cliente HTTP. A diferencia de `helpers.SendJson`, **trata 4xx/5xx y `Success: false` como error** |
-| `definicion.go` | Lee el árbol de la plantilla. Una llamada para los hijos de cada nodo y otra para su detalle, en paralelo con cupo; marca `[[orden:N]]`; valida que el primer nivel sean módulos y que no se repitan claves de submódulo; caché |
+| `definicion.go` | Lee el árbol de la plantilla. Una llamada para los hijos de cada nodo y otra para su detalle, en paralelo con cupo; marca `[[orden:N]]`; valida que el primer nivel sean módulos y que no se repitan claves de submódulo; caché sin vencimiento con una sola lectura por plantilla |
 | `catalogos.go` | Catálogos. `CatalogosConCache` los lee de planes_crud (`/elemento-catalogo`, a través de `RepositorioElementosCatalogo`) y guarda cada uno 10 minutos en memoria; un catálogo vacío o un error no se guardan. Para pasarlos a Parámetros basta otra implementación de `RepositorioElementosCatalogo` |
 | `normalizacion.go` | Limpieza y campos calculados |
 | `validacion.go` | Una regla por tipo de campo en un mapa: para soportar un tipo nuevo se registra una regla |
@@ -180,7 +180,7 @@ Cubren:
 - Observaciones: quién comenta en cada estado, que no cambien la versión, que el historial no se borre y la validación de la solicitud.
 - Documentos: subir responde la referencia sin cambiar el submódulo; se rechaza (sin llamar al gestor) un campo que no es documento, un formato no permitido, un archivo vacío o muy grande y una iniciativa que no se puede editar; la referencia al guardar y su validación; el cliente del gestor contra un servidor de prueba. Usan un Anexos armado en la prueba (`definicionConAnexos`).
 - Fechas de formulación: fuera de ellas no se crea, no se guarda (tampoco Por corregir), no se suben anexos ni se envía, pero se consulta y la dependencia comenta; en revisión no se consultan; cuenta la unidad de la iniciativa y el listado las lee una vez; si no se pueden revisar o falta `FIPI_SP`, solo se consulta; el cliente del crud pide los registros activos y trata `Success: false` como error.
-- Carga del árbol y caché.
+- Carga del árbol y caché de definiciones: una lectura por plantilla, compartida por las peticiones simultáneas; un error o una lectura interrumpida no se guardan.
 
 **Contra un crud real:** carga el tipo de plan y los estados (`cargar-estados.js`), los catálogos (`cargar-catalogos.js`) y la plantilla (`cargar-construccion.js`), todos en `database local/construccion-proyecto-inversion/`.
 
