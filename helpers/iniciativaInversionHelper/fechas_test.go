@@ -183,7 +183,7 @@ func TestSinTipoDeSeguimientoNoSeFormulaHastaQueSeCargue(t *testing.T) {
 	tipos := repo.catalogos[RecursoTipoSeguimiento]
 	delete(repo.catalogos, RecursoTipoSeguimiento)
 
-	_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: "dep-1"})
+	_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: "dep-1", Responsable: responsableDePrueba})
 	exigirStatus(t, err, http.StatusInternalServerError)
 	exigirMensajeParaUsuario(t, err, "cargar-estados.js")
 

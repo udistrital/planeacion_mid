@@ -100,8 +100,9 @@ func (u *Unidades) De(documento string) ([]Unidad, error) {
 // Cliente HTTP de Terceros y Oikos
 // ---------------------------------------------------------------------------
 
-// ClienteUnidades implementa FuenteUnidades con HTTP. Trata como error cualquier
-// respuesta distinta de 200.
+// ClienteUnidades implementa FuenteUnidades con HTTP; también da al servicio de iniciativas
+// el nombre de las personas (FuenteNombreTercero) y el de las dependencias
+// (FuenteNombreDependencia). Trata como error cualquier respuesta distinta de 200.
 type ClienteUnidades struct {
 	terceros string
 	oikos    string
@@ -117,24 +118,54 @@ func NuevoClienteUnidades(hostTerceros, hostOikos string) *ClienteUnidades {
 	}
 }
 
-// TerceroDe busca el tercero por número de documento. Terceros responde [{}]
-// cuando no hay resultados.
+// TerceroDe busca el tercero activo por número de documento.
 func (c *ClienteUnidades) TerceroDe(documento string) (int, error) {
+	tercero, err := c.terceroActivo(documento)
+	if err != nil || tercero == nil {
+		return 0, err
+	}
+	return tercero.ID, nil
+}
+
+// NombreTercero devuelve el nombre completo del tercero activo con ese documento. Si el
+// documento no tiene tercero, responde error.
+func (c *ClienteUnidades) NombreTercero(documento string) (string, error) {
+	tercero, err := c.terceroActivo(documento)
+	if err != nil {
+		return "", err
+	}
+	if tercero == nil {
+		return "", errorNoEncontrado("No se encontró la información solicitada.").conDetalle("el documento no está en Terceros")
+	}
+	return tercero.NombreCompleto, nil
+}
+
+// terceroDeTerceros es la parte del tercero que se usa aquí.
+type terceroDeTerceros struct {
+	ID             int    `json:"Id"`
+	NombreCompleto string `json:"NombreCompleto"`
+}
+
+// terceroActivo busca el tercero activo con ese documento, o nil si no hay. Terceros responde
+// [{}] cuando no hay resultados. El documento debe cumplir patronDocumento, porque va dentro
+// de la consulta.
+func (c *ClienteUnidades) terceroActivo(documento string) (*terceroDeTerceros, error) {
+	if !patronDocumento.MatchString(documento) {
+		return nil, errorFormatoSolicitud("el documento no cumple el formato: solo letras y números, máximo 20")
+	}
 	var datos []struct {
-		TerceroID *struct {
-			ID int `json:"Id"`
-		} `json:"TerceroId"`
+		TerceroID *terceroDeTerceros `json:"TerceroId"`
 	}
 	consulta := url.QueryEscape("Numero:" + documento + ",Activo:true")
-	if err := c.obtener("Terceros", c.terceros+"/datos_identificacion?query="+consulta+"&fields=TerceroId", &datos); err != nil {
-		return 0, err
+	if err := c.obtener("Terceros", c.terceros+"/datos_identificacion?query="+consulta, &datos); err != nil {
+		return nil, err
 	}
 	for _, dato := range datos {
 		if dato.TerceroID != nil && dato.TerceroID.ID != 0 {
-			return dato.TerceroID.ID, nil
+			return dato.TerceroID, nil
 		}
 	}
-	return 0, nil
+	return nil, nil
 }
 
 // VinculacionesActivas devuelve todas las vinculaciones activas del tercero.

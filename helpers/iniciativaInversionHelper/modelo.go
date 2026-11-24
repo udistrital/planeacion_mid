@@ -276,7 +276,9 @@ type Totales struct {
 // ---------------------------------------------------------------------------
 
 // Plan es la vista del documento plan que usa este paquete. Al actualizar se
-// reenvía completo porque PUT /plan/:id del crud valida el documento entero.
+// reenvía completo porque PUT /plan/:id del crud valida el documento entero. En
+// una iniciativa, Responsable es el documento de quien la creó y ResponsableNombre,
+// su nombre en Terceros al crearla (vacío si no se obtuvo).
 type Plan struct {
 	ID                string `json:"_id,omitempty"`
 	Nombre            string `json:"nombre"`
@@ -284,6 +286,7 @@ type Plan struct {
 	TipoPlanID        string `json:"tipo_plan_id"`
 	AplicativoID      string `json:"aplicativo_id"`
 	Responsable       string `json:"responsable,omitempty"`
+	ResponsableNombre string `json:"responsable_nombre,omitempty"`
 	Activo            bool   `json:"activo"`
 	Formato           bool   `json:"formato"`
 	FormatoID         string `json:"formato_id,omitempty"`
@@ -380,8 +383,9 @@ type ErrorCampo struct {
 	Mensaje string `json:"mensaje"`
 }
 
-// SolicitudCrearIniciativa es el cuerpo de POST /iniciativas. Sin PlantillaID se usa
-// la plantilla más reciente; Nombre y Vigencias también son opcionales.
+// SolicitudCrearIniciativa es el cuerpo de POST /iniciativas. Responsable es el documento
+// de quien la crea (obligatorio). Sin PlantillaID se usa la plantilla más reciente; Nombre
+// y Vigencias también son opcionales.
 type SolicitudCrearIniciativa struct {
 	PlantillaID   string          `json:"plantilla_id"`
 	DependenciaID string          `json:"dependencia_id"`
@@ -422,6 +426,8 @@ type PlantillaResumen struct {
 //   - Numero: consecutivo por orden de creación (1 = la primera). Se cuenta sobre
 //     todas las iniciativas, activas o no, para que no cambie al desactivar otra.
 //   - Estado: estado general de la iniciativa.
+//   - Responsable: nombre de quien la creó, el que se guardó al crearla (vacío si no se
+//     obtuvo de Terceros).
 //   - PermiteEditar: su estado permite editarla.
 //   - FueraDeFechas: su estado permite editarla, pero hoy no hay fechas de formulación
 //     habilitadas para su unidad, así que solo se consulta.

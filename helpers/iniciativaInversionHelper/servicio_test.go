@@ -5,14 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"strings"
-	"sync/atomic"
 	"testing"
 	"time"
-
-	"github.com/astaxie/beego"
-	"github.com/udistrital/planeacion_mid/models"
 )
 
 // repoMemoria imita a planes_crud en memoria, incluido el bloqueo optimista de
@@ -220,36 +215,34 @@ func (d definicionFija) Definicion(string) (*Definicion, error) { return d.defin
 // responsableDePrueba es el documento de quien crea las iniciativas de prueba.
 const responsableDePrueba = "52123456"
 
-// personasDePrueba son los terceros que conoce tercerosDePrueba: documento -> nombre completo.
+// personasDePrueba son los terceros que conocen las pruebas: documento -> nombre completo.
 var personasDePrueba = map[string]string{
 	responsableDePrueba: "LAURA GOMEZ RIOS",
 	"1012345678":        "CARLOS RUIZ PENA", // Planeación (dePlaneacion)
 	"79876543":          "MARTA LOPEZ DIAZ", // gestor de la unidad (delGestor)
 }
 
-// tercerosDePrueba imita a Terceros (datos_identificacion por número de documento) con
-// personasDePrueba.
-func tercerosDePrueba(t *testing.T) {
-	t.Helper()
-	usarTerceros(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		documento := strings.TrimPrefix(r.URL.Query().Get("query"), "Numero:")
-		nombre, existe := personasDePrueba[documento]
-		if r.URL.Path != "/datos_identificacion/" || !existe {
-			t.Errorf("consulta inesperada a Terceros: %s", r.URL.String())
-		}
-		json.NewEncoder(w).Encode([]models.DatosIdentificacion{{Numero: documento, TerceroID: models.TerceroID{ID: 1, NombreCompleto: nombre}}})
-	}))
+// tercerosFalsos imita a Terceros (nombre por documento) y cuenta las consultas. Un documento
+// que no está en nombres responde con error, como si no estuviera o Terceros fallara.
+type tercerosFalsos struct {
+	nombres   map[string]string
+	consultas int
 }
 
-// usarTerceros deja el manejador como TercerosService mientras dura la prueba.
-func usarTerceros(t *testing.T, manejador http.Handler) *httptest.Server {
-	t.Helper()
-	servidor := httptest.NewServer(manejador)
-	t.Cleanup(servidor.Close)
-	anterior := beego.AppConfig.String("TercerosService")
-	beego.AppConfig.Set("TercerosService", servidor.URL)
-	t.Cleanup(func() { beego.AppConfig.Set("TercerosService", anterior) })
-	return servidor
+func (f *tercerosFalsos) NombreTercero(documento string) (string, error) {
+	f.consultas++
+	nombre, existe := f.nombres[documento]
+	if !existe {
+		return "", errorServicio("Terceros no respondió")
+	}
+	return nombre, nil
+}
+
+// tercerosCaidos deja al servicio con un Terceros que no responde.
+func tercerosCaidos(servicio *Servicio) *tercerosFalsos {
+	caidos := &tercerosFalsos{}
+	servicio.terceros = caidos
+	return caidos
 }
 
 // dependenciasFalsas imita a Oikos (nombre de una dependencia por id) y cuenta las
@@ -277,9 +270,10 @@ func (o *dependenciasFalsas) NombreDependencia(id int) (string, error) {
 
 func nuevoServicioDePrueba(t *testing.T) (*Servicio, *repoMemoria) {
 	t.Helper()
-	tercerosDePrueba(t)
 	repo := nuevoRepoMemoria()
-	return NuevoServicio(repo, definicionFija{definicionDePrueba(t)}, catalogosDePrueba(), nil), repo
+	servicio := NuevoServicio(repo, definicionFija{definicionDePrueba(t)}, catalogosDePrueba(), nil)
+	servicio.terceros = &tercerosFalsos{nombres: personasDePrueba}
+	return servicio, repo
 }
 
 func crearIniciativaDePrueba(t *testing.T, servicio *Servicio) *ResumenIniciativa {
@@ -367,7 +361,7 @@ func TestCrearIniciativaDesactivaElPlanSiFallanLosSubmodulos(t *testing.T) {
 	servicio, repo := nuevoServicioDePrueba(t)
 	repo.fallarSubmodulos = true
 
-	if _, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: "dep-1"}); err == nil {
+	if _, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: "dep-1", Responsable: responsableDePrueba}); err == nil {
 		t.Fatal("se esperaba un error")
 	}
 	for _, plan := range repo.planes {
@@ -379,8 +373,64 @@ func TestCrearIniciativaDesactivaElPlanSiFallanLosSubmodulos(t *testing.T) {
 
 func TestCrearIniciativaExigeDependencia(t *testing.T) {
 	servicio, _ := nuevoServicioDePrueba(t)
-	_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1"})
+	_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", Responsable: responsableDePrueba})
 	exigirStatus(t, err, http.StatusBadRequest)
+}
+
+// El responsable es el documento de quien la crea: sin él, o con algo que no es un documento,
+// no se crea nada ni se consulta Terceros.
+func TestCrearIniciativaExigeElDocumentoDelResponsable(t *testing.T) {
+	servicio, repo := nuevoServicioDePrueba(t)
+	terceros := servicio.terceros.(*tercerosFalsos)
+	for _, responsable := range []string{"", "   ", "123,Activo:false", "12 34", "123456789012345678901"} {
+		_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: "dep-1", Responsable: responsable})
+		exigirStatus(t, err, http.StatusBadRequest)
+		exigirMensajeParaUsuario(t, err, "responsable")
+	}
+	if len(repo.planes) != 0 || terceros.consultas != 0 {
+		t.Fatalf("planes = %d, consultas a Terceros = %d; se esperaba 0 y 0", len(repo.planes), terceros.consultas)
+	}
+}
+
+// Al crear se guardan el documento (sin espacios) y el nombre del responsable; el listado los
+// muestra sin consultar Terceros.
+func TestElNombreDelResponsableSeGuardaAlCrearYElListadoNoConsultaTerceros(t *testing.T) {
+	servicio, repo := nuevoServicioDePrueba(t)
+	terceros := servicio.terceros.(*tercerosFalsos)
+	resumen, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: "dep-1", Responsable: " " + responsableDePrueba + " "})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plan := repo.planes[resumen.ID]; plan.Responsable != responsableDePrueba || plan.ResponsableNombre != personasDePrueba[responsableDePrueba] {
+		t.Fatalf("responsable = %q, nombre = %q", plan.Responsable, plan.ResponsableNombre)
+	}
+
+	terceros.consultas = 0
+	listado, err := servicio.ListarIniciativas(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listado) != 1 || listado[0].Responsable != personasDePrueba[responsableDePrueba] || terceros.consultas != 0 {
+		t.Fatalf("listado = %+v, consultas a Terceros = %d", listado, terceros.consultas)
+	}
+}
+
+// Si Terceros no da el nombre, la iniciativa se crea igual y el listado la muestra sin él.
+func TestSiTercerosNoRespondeLaIniciativaSeCreaSinNombre(t *testing.T) {
+	servicio, repo := nuevoServicioDePrueba(t)
+	tercerosCaidos(servicio)
+	resumen := crearIniciativaDePrueba(t, servicio)
+
+	if plan := repo.planes[resumen.ID]; plan.Responsable != responsableDePrueba || plan.ResponsableNombre != "" {
+		t.Fatalf("responsable = %q, nombre = %q", plan.Responsable, plan.ResponsableNombre)
+	}
+	listado, err := servicio.ListarIniciativas(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listado) != 1 || listado[0].Responsable != "" {
+		t.Fatalf("listado = %+v", listado)
+	}
 }
 
 func TestSinPlantillaSeCreaConLaMasReciente(t *testing.T) {
@@ -391,7 +441,7 @@ func TestSinPlantillaSeCreaConLaMasReciente(t *testing.T) {
 	anterior.PlantillaID, reciente.PlantillaID = "anterior", "reciente"
 	servicio := NuevoServicio(repo, definicionesPorPlantilla{"anterior": anterior, "reciente": reciente}, catalogosDePrueba(), nil)
 
-	resumen, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{DependenciaID: "dep-1"})
+	resumen, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{DependenciaID: "dep-1", Responsable: responsableDePrueba})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -402,7 +452,7 @@ func TestSinPlantillaSeCreaConLaMasReciente(t *testing.T) {
 
 func TestSinPlantillasNoSeCreaLaIniciativa(t *testing.T) {
 	servicio := NuevoServicio(nuevoRepoMemoria(), definicionesPorPlantilla{}, catalogosDePrueba(), nil)
-	_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{DependenciaID: "dep-1"})
+	_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{DependenciaID: "dep-1", Responsable: responsableDePrueba})
 	exigirStatus(t, err, http.StatusConflict)
 }
 
@@ -436,49 +486,6 @@ func TestListarNumeraYFiltraPorUnidad(t *testing.T) {
 	}
 	if len(deUnaUnidad) != 1 || deUnaUnidad[0].ID != activa {
 		t.Fatalf("listado de dep-1 = %+v", deUnaUnidad)
-	}
-}
-
-// Sin responsable o con un documento no válido no se consulta Terceros; un documento
-// repetido se consulta una vez, y si Terceros no lo tiene la fila sale sin nombre.
-func TestListarConsultaCadaDocumentoValidoUnaSolaVez(t *testing.T) {
-	servicio, _ := nuevoServicioDePrueba(t)
-	var consultas int32
-	usarTerceros(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		atomic.AddInt32(&consultas, 1)
-		w.Write([]byte("[]"))
-	}))
-	for _, responsable := range []string{"", "123,Activo:false", "999999", "999999"} {
-		if _, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: "dep-1", Responsable: responsable}); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	listado, err := servicio.ListarIniciativas(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if n := atomic.LoadInt32(&consultas); len(listado) != 4 || n != 1 {
-		t.Fatalf("iniciativas = %d, consultas a Terceros = %d", len(listado), n)
-	}
-	for _, fila := range listado {
-		if fila.Responsable != "" {
-			t.Fatalf("responsable = %q, se esperaba vacío", fila.Responsable)
-		}
-	}
-}
-
-func TestListarSaleSinNombreSiTercerosNoResponde(t *testing.T) {
-	servicio, _ := nuevoServicioDePrueba(t)
-	crearIniciativaDePrueba(t, servicio)
-	usarTerceros(t, http.NotFoundHandler()).Close()
-
-	listado, err := servicio.ListarIniciativas(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(listado) != 1 || listado[0].Responsable != "" {
-		t.Fatalf("listado = %+v", listado)
 	}
 }
 
@@ -866,7 +873,7 @@ func TestObservacionInvalidaResponde400(t *testing.T) {
 func TestLaObservacionSePublicaSinNombreSiTercerosNoResponde(t *testing.T) {
 	servicio, _ := nuevoServicioDePrueba(t)
 	iniciativa := crearIniciativaDePrueba(t, servicio)
-	usarTerceros(t, http.NotFoundHandler()).Close()
+	tercerosCaidos(servicio)
 
 	vista := comentar(t, servicio, iniciativa.ID, "nombre", delGestor("El nombre se ajustó con la OAPC."))
 	if len(vista.Observaciones) != 1 || vista.Observaciones[0].Usuario != "79876543" || vista.Observaciones[0].UsuarioNombre != "" {

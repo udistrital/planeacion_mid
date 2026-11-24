@@ -123,7 +123,7 @@ func (s *Servicio) SubirDocumento(iniciativaID, claveSubmodulo string, solicitud
 	if err != nil {
 		return nil, err
 	}
-	usuarioNombre, err := nombreTercero(usuario)
+	usuarioNombre, err := s.nombreTercero(usuario)
 	if err != nil {
 		logs.Warn("iniciativaInversion: el documento %q de la iniciativa %s se sube sin el nombre de quien lo sube: %v", solicitud.Clave, iniciativaID, err)
 	}

@@ -51,7 +51,7 @@ func (s *Servicio) AgregarObservacion(iniciativaID, clave string, solicitud Soli
 		return nil, errorConflicto("La iniciativa está «%s»; ya no recibe observaciones.", ctx.estado.Nombre)
 	}
 
-	nombre, err := nombreTercero(nueva.Usuario)
+	nombre, err := s.nombreTercero(nueva.Usuario)
 	if err != nil {
 		logs.Warn("iniciativaInversion: la observación del submódulo %s de la iniciativa %s se publica sin nombre: %v", clave, iniciativaID, err)
 	}

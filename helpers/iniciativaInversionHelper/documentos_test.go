@@ -46,10 +46,10 @@ func definicionConAnexos(t *testing.T) *Definicion {
 
 func servicioConAnexos(t *testing.T) (*Servicio, *repoMemoria, *gestorMemoria, string) {
 	t.Helper()
-	tercerosDePrueba(t)
 	repo := nuevoRepoMemoria()
 	gestor := &gestorMemoria{}
 	servicio := NuevoServicio(repo, definicionFija{definicionConAnexos(t)}, catalogosDePrueba(), gestor)
+	servicio.terceros = &tercerosFalsos{nombres: personasDePrueba}
 	return servicio, repo, gestor, crearIniciativaDePrueba(t, servicio).ID
 }
 
@@ -145,7 +145,7 @@ func TestSubirDocumentoEnIniciativaQueNoSePuedeEditar(t *testing.T) {
 
 func TestSubirDocumentoSinNombreSiTercerosNoResponde(t *testing.T) {
 	servicio, _, gestor, iniciativaID := servicioConAnexos(t)
-	usarTerceros(t, http.NotFoundHandler()).Close()
+	tercerosCaidos(servicio)
 
 	referencia, err := servicio.SubirDocumento(iniciativaID, "anexos", SolicitudDocumento{Clave: "carta_presentacion", Nombre: "carta.pdf", Archivo: archivoDePrueba(bytesMinimos), Usuario: responsableDePrueba})
 	if err != nil {

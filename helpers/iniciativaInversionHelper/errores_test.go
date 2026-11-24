@@ -54,7 +54,7 @@ func TestSinEstadoDeSubmoduloElUsuarioNoVeElScriptDeCarga(t *testing.T) {
 
 func TestSinPlantillaElUsuarioNoVeElScriptDeCarga(t *testing.T) {
 	servicio := NuevoServicio(nuevoRepoMemoria(), definicionesPorPlantilla{}, catalogosDePrueba(), nil)
-	_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{DependenciaID: "dep-1"})
+	_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{DependenciaID: "dep-1", Responsable: responsableDePrueba})
 	exigirStatus(t, err, http.StatusConflict)
 	exigirMensajeParaUsuario(t, err, "cargar-construccion.js")
 }

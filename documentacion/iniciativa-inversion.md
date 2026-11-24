@@ -15,7 +15,7 @@ Formulación de las iniciativas para proyectos de inversión a partir de plantil
 | Qué | Dónde (planes_crud) |
 |---|---|
 | Plantilla | `plan` con `formato: true` y `tipo_plan_id` = tipo `IPI_SP`; sus nodos en `subgrupo` / `subgrupo_detalle` (se carga con `database local/construccion-proyecto-inversion/cargar-construccion.js`). **Primer nivel = módulos** (`dato.modulo: true`: Identificación, Preparación y Anexos; el mid no depende de cuántos haya). **Segundo nivel = submódulos (hojas)**, con clave única en toda la plantilla |
-| Iniciativa | `plan` de tipo `IPI_SP` con `formato: false`, `formato_id` = plantilla, `dependencia_id`, `estado_plan_id` (estado general) y, si se enviaron, `vigencia_aplica` (JSON de vigencias) |
+| Iniciativa | `plan` de tipo `IPI_SP` con `formato: false`, `formato_id` = plantilla, `dependencia_id`, `estado_plan_id` (estado general), `responsable` (documento de quien la creó) y `responsable_nombre` (su nombre en Terceros al crearla) y, si se enviaron, `vigencia_aplica` (JSON de vigencias) |
 | Datos de cada submódulo | `submodulo_iniciativa`: un documento por iniciativa y submódulo, con `dato` (JSON legible armado con las claves de la plantilla), `observaciones`, `estado_submodulo_id` y `version` |
 
 **La iniciativa no copia el árbol de la plantilla:**
@@ -51,8 +51,8 @@ Todos responden `{ Success, Status, Message, Data }` con el **código HTTP real*
 | Método y ruta | Qué hace | Errores |
 |---|---|---|
 | `GET /plantillas` | Plantillas activas con las que se pueden crear iniciativas, de la más reciente a la más antigua | 502 si falla el crud |
-| `GET /iniciativas?dependencias=1,2` | Iniciativas activas de esas dependencias (sin el filtro, todas), de la más reciente a la más antigua. Cada fila trae `numero` (consecutivo por orden de creación, contado sobre todas las iniciativas, activas o no), `estado` (general), `permite_editar`, `fuera_de_fechas` (ver «Fechas de formulación») y `responsable` (nombre en Terceros de quien la creó, consultado una vez por documento; vacío si la iniciativa no tiene responsable o no se obtiene el nombre) | |
-| `POST /iniciativas` | Crea la iniciativa y todos sus submódulos en "Sin formular" (la iniciativa también). Cuerpo: `{ dependencia_id, responsable, plantilla_id?, nombre?, vigencias? }`, con `responsable` = documento de quien la crea (el mid no lo exige). Sin `plantilla_id` usa la plantilla más reciente; sin `nombre`, "Iniciativa de inversión sin nombre" | 400 si falta `dependencia_id`; 409 si no hay plantillas o si la unidad está fuera de sus fechas de formulación |
+| `GET /iniciativas?dependencias=1,2` | Iniciativas activas de esas dependencias (sin el filtro, todas), de la más reciente a la más antigua. Cada fila trae `numero` (consecutivo por orden de creación, contado sobre todas las iniciativas, activas o no), `estado` (general), `permite_editar`, `fuera_de_fechas` (ver «Fechas de formulación») y `responsable` (nombre de quien la creó, el que se guardó al crearla en `responsable_nombre`; vacío si no se obtuvo de Terceros). El listado no consulta Terceros | |
+| `POST /iniciativas` | Crea la iniciativa y todos sus submódulos en "Sin formular" (la iniciativa también). Cuerpo: `{ dependencia_id, responsable, plantilla_id?, nombre?, vigencias? }`, con `responsable` = documento de quien la crea (letras y números, máx. 20). El plan guarda el documento en `responsable` y su nombre en Terceros (`TercerosService`) en `responsable_nombre`; si no se obtiene el nombre, la crea igual, sin él. Sin `plantilla_id` usa la plantilla más reciente; sin `nombre`, "Iniciativa de inversión sin nombre" | 400 si falta `dependencia_id` o `responsable` no es un documento; 409 si no hay plantillas o si la unidad está fuera de sus fechas de formulación |
 | `GET /iniciativas/:id` | Vista general: estado general y `modulos: [{ clave, nombre, submodulos: [{ clave, nombre, estado (con color), observaciones }] }]`, más `permite_editar`, `permite_revisar`, `fuera_de_fechas` y `acciones_posibles` | 404 |
 | `GET /iniciativas/:id/definicion` | Construcción de la plantilla: `modulos`, y en cada uno sus submódulos y campos | 404 |
 | `GET /iniciativas/:id/submodulos/:clave` | Datos, errores vigentes, historial de observaciones y `relacionadas` (datos de los submódulos de los que depende para espejos y referencias) | 404 |
@@ -146,7 +146,7 @@ Cada submódulo guarda un **historial** de observaciones en `submodulo_iniciativ
 - **Se agregan, nunca se reemplazan.** Forman un hilo, como un blog, con las rondas de revisión. Aprobar (`PUT /revision`) cambia el estado, pero no borra el historial.
 - **No cambian la `version` del submódulo.** Comentar no provoca un 409 a quien tiene el formulario abierto.
 - **`rol` y `usuario` los envía el cliente.** El cliente toma el documento del token y el rol que corresponde al momento: uno de Planeación al revisar, uno de la dependencia al formular. El mid no valida el token, igual que el resto de SISGPLAN.
-- **`usuario_nombre` lo pone el mid** al publicar: busca el documento en Terceros (`nombreTercero`, en `servicio.go`). Si el documento no está o Terceros no responde, la observación se publica sin nombre y el motivo va al log.
+- **`usuario_nombre` lo pone el mid** al publicar: busca el documento en Terceros con el cliente que recibe el servicio (`FuenteNombreTercero`, que implementa `ClienteUnidades` en `unidades.go`). Si el documento no está o Terceros no responde, la observación se publica sin nombre y el motivo va al log.
 
 ## Organización del paquete
 
@@ -163,7 +163,7 @@ Cada submódulo guarda un **historial** de observaciones en `submodulo_iniciativ
 | `fechas.go` | Fechas de formulación: cierra crear, guardar, subir anexos y enviar fuera de ellas, y calcula `fuera_de_fechas` para las consultas |
 | `observaciones.go` | Caso de uso de agregar observaciones: validación y quién comenta en cada estado |
 | `documentos.go` | Campos `documento`: caso de uso de subir el archivo (permiso, campo, formato y tamaño), referencia que se guarda y cliente HTTP del gestor documental (`GestorDocumental`, inyectado como los demás) |
-| `unidades.go` | Unidades del usuario (Terceros + Oikos), con su propio cliente HTTP |
+| `unidades.go` | Unidades del usuario (Terceros + Oikos), con su propio cliente HTTP, que el servicio también recibe para el nombre de las personas (Terceros) y el de las dependencias (Oikos) |
 | `errores.go` | `ErrorNegocio`: código HTTP, `Mensaje` para el usuario y `Detalle` técnico, que solo va al log |
 
 ## Pruebas
@@ -176,7 +176,7 @@ Cubren:
 - Validación de la iniciativa de ejemplo (`testdata/iniciativa_ejemplo.json`, copia de `database local/construccion-proyecto-inversion/iniciativa.ejemplo.json`) con la plantilla vigente sin Anexos (`testdata/iniciativa.plantilla.json`) y copias de los catálogos (`testdata/catalogos/`).
 - Caché de catálogos: vigencia, catálogo vacío, error del crud y nombre inválido.
 - Estados y transiciones.
-- Servicio completo con un repositorio en memoria (crear con la plantilla indicada o la más reciente, listado con número y filtro por unidad, guardar, 409 por versión, revalidación de dependientes, flujo de revisión hasta el aval, y que un plan de otro tipo no sea iniciativa).
+- Servicio completo con un repositorio en memoria y Terceros y Oikos falsos (crear con la plantilla indicada o la más reciente, con el documento del responsable obligatorio y su nombre guardado, o sin él si Terceros no responde; listado con número y filtro por unidad, sin consultar Terceros; guardar, 409 por versión, revalidación de dependientes, flujo de revisión hasta el aval, y que un plan de otro tipo no sea iniciativa).
 - Observaciones: quién comenta en cada estado, que no cambien la versión, que el historial no se borre y la validación de la solicitud.
 - Documentos: subir responde la referencia sin cambiar el submódulo; se rechaza (sin llamar al gestor) un campo que no es documento, un formato no permitido, un archivo vacío o muy grande y una iniciativa que no se puede editar; la referencia al guardar y su validación; el cliente del gestor contra un servidor de prueba. Usan un Anexos armado en la prueba (`definicionConAnexos`).
 - Fechas de formulación: fuera de ellas no se crea, no se guarda (tampoco Por corregir), no se suben anexos ni se envía, pero se consulta y la dependencia comenta; en revisión no se consultan; cuenta la unidad de la iniciativa y el listado las lee una vez; si no se pueden revisar o falta `FIPI_SP`, solo se consulta; el cliente del crud pide los registros activos y trata `Success: false` como error.

@@ -3,6 +3,7 @@ package iniciativaInversionHelper
 import (
 	"errors"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -59,6 +60,43 @@ func TestUnidadesExigeUnDocumentoValido(t *testing.T) {
 	for _, documento := range []string{"  ", "123,Activo:false", "12 34", "123456789012345678901"} {
 		_, err := NuevasUnidades(fuenteUnidadesFija{}).De(documento)
 		exigirStatus(t, err, http.StatusBadRequest)
+	}
+}
+
+// ClienteUnidades busca el tercero activo por documento: NombreTercero da su nombre y TerceroDe,
+// su id. Un documento sin tercero ([{}]) no tiene nombre, y lo que no es un documento no se
+// consulta.
+func TestClienteUnidadesBuscaElTerceroActivoPorDocumento(t *testing.T) {
+	consultas := 0
+	servidor := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		consultas++
+		if r.URL.Path != "/datos_identificacion" {
+			t.Errorf("ruta inesperada: %s", r.URL.Path)
+		}
+		if r.URL.Query().Get("query") == "Numero:52123456,Activo:true" {
+			w.Write([]byte(`[{"Numero":"52123456","TerceroId":{"Id":7,"NombreCompleto":"LAURA GOMEZ RIOS"}}]`))
+			return
+		}
+		w.Write([]byte(`[{}]`))
+	}))
+	defer servidor.Close()
+	cliente := NuevoClienteUnidades(servidor.URL, "")
+
+	if nombre, err := cliente.NombreTercero("52123456"); err != nil || nombre != "LAURA GOMEZ RIOS" {
+		t.Fatalf("nombre = %q, err = %v", nombre, err)
+	}
+	if id, err := cliente.TerceroDe("52123456"); err != nil || id != 7 {
+		t.Fatalf("id = %d, err = %v", id, err)
+	}
+	if _, err := cliente.NombreTercero("999"); err == nil {
+		t.Fatal("un documento sin tercero no tiene nombre: se esperaba un error")
+	}
+	if id, err := cliente.TerceroDe("999"); err != nil || id != 0 {
+		t.Fatalf("id = %d, err = %v", id, err)
+	}
+	antes := consultas
+	if _, err := cliente.NombreTercero("123,Activo:false"); err == nil || consultas != antes {
+		t.Fatalf("lo que no es un documento no se consulta: err = %v, consultas = %d", err, consultas-antes)
 	}
 }
 

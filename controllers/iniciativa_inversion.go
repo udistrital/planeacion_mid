@@ -30,7 +30,8 @@ var (
 func servicioIniciativas() *iniciativaInversionHelper.Servicio {
 	servicioIniciativaUnaVez.Do(func() {
 		servicioIniciativa = iniciativaInversionHelper.NuevoServicioPorDefecto(
-			beego.AppConfig.String("PlanesService"), beego.AppConfig.String("OikosService"), beego.AppConfig.String("GestorDocumental"))
+			beego.AppConfig.String("PlanesService"), beego.AppConfig.String("TercerosService"),
+			beego.AppConfig.String("OikosService"), beego.AppConfig.String("GestorDocumental"))
 	})
 	return servicioIniciativa
 }

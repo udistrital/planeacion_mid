@@ -3,17 +3,13 @@ package iniciativaInversionHelper
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
-	"github.com/udistrital/planeacion_mid/models"
-	"github.com/udistrital/utils_oas/request"
 )
 
 const (
@@ -34,6 +30,10 @@ type Servicio struct {
 	// dependencias consulta el nombre de las dependencias (Oikos) para el listado.
 	// Si es nil, el listado sale sin nombre de dependencia.
 	dependencias FuenteNombreDependencia
+
+	// terceros consulta en Terceros el nombre de quien crea la iniciativa, comenta o sube
+	// un anexo. Si es nil, se guardan sin nombre.
+	terceros FuenteNombreTercero
 }
 
 // NuevoServicio arma el servicio con sus dependencias.
@@ -49,18 +49,20 @@ func NuevoServicio(repo Repositorio, definiciones FuenteDefiniciones, catalogos 
 	}
 }
 
-// NuevoServicioPorDefecto conecta con planes_crud, Oikos y el gestor documental (hosts con
-// esquema, como en conf/app.conf), con caché de definiciones y de catálogos: los de la colección
+// NuevoServicioPorDefecto conecta con planes_crud, Terceros, Oikos y el gestor documental (hosts
+// con esquema, como en conf/app.conf), con caché de definiciones y de catálogos: los de la colección
 // elemento_catalogo; para el catálogo sedes, los espacios físicos de tipo SEDE de Oikos, y para
 // los del Plan Distrital de Desarrollo, el Plan Estratégico de Desarrollo y el Plan Indicativo,
-// el árbol de esos planes. Oikos también da el nombre de la dependencia en el listado de iniciativas.
-func NuevoServicioPorDefecto(hostCrud, hostOikos, hostGestor string) *Servicio {
+// el árbol de esos planes. Oikos también da el nombre de la dependencia en el listado de
+// iniciativas, y Terceros, el de quien crea la iniciativa, comenta o sube un anexo.
+func NuevoServicioPorDefecto(hostCrud, hostTerceros, hostOikos, hostGestor string) *Servicio {
 	crud := NuevoClienteCrud(hostCrud)
 	definiciones := NuevaCacheDefiniciones(NuevoCargadorDefiniciones(crud, crud, 8), 10*time.Minute)
 	catalogos := NuevoRepositorioConInstrumentos(NuevoRepositorioConSedes(crud, NuevoClienteSedesOikos(hostOikos)), crud, time.Minute, 8)
 	servicio := NuevoServicio(crud, definiciones, NuevosCatalogosConCache(catalogos, 10*time.Minute), NuevoClienteGestorDocumental(hostGestor))
-	// Solo se usa NombreDependencia, que consulta Oikos; el host de Terceros no interviene.
-	servicio.dependencias = NuevoClienteUnidades("", hostOikos)
+	personas := NuevoClienteUnidades(hostTerceros, hostOikos)
+	servicio.dependencias = personas
+	servicio.terceros = personas
 	return servicio
 }
 
@@ -138,7 +140,6 @@ func (s *Servicio) ListarIniciativas(dependencias []string) ([]IniciativaListado
 		deInteres[dependencia] = true
 	}
 
-	responsables := nombresResponsables{}
 	nombresDeDependencias := nombresDependencias{fuente: s.dependencias, nombres: map[string]string{}}
 	fechas := fechasDeConsulta{servicio: s}
 	iniciativas := make([]IniciativaListado, 0, len(planes))
@@ -156,7 +157,7 @@ func (s *Servicio) ListarIniciativas(dependencias []string) ([]IniciativaListado
 			Nombre:            plan.Nombre,
 			DependenciaID:     plan.DependenciaID,
 			DependenciaNombre: nombresDeDependencias.de(plan.ID, plan.DependenciaID),
-			Responsable:       responsables.de(plan.ID, plan.Responsable),
+			Responsable:       plan.ResponsableNombre,
 			Estado:            estado,
 			PermiteEditar:     PermiteEditar(estado.Codigo),
 			FueraDeFechas:     fechas.fueraDeFechas(&plan, estado.Codigo),
@@ -167,47 +168,19 @@ func (s *Servicio) ListarIniciativas(dependencias []string) ([]IniciativaListado
 	return iniciativas, nil
 }
 
-// nombresResponsables guarda, durante un listado, el nombre completo de cada
-// responsable según Terceros, para consultar cada documento una sola vez.
-type nombresResponsables map[string]string
-
-// de devuelve el nombre del responsable de la iniciativa planID. Queda vacío si la
-// iniciativa no tiene responsable, o si su documento no es válido, no está en
-// Terceros o Terceros no responde; en esos tres casos el motivo va al log y el
-// listado sale igual.
-func (n nombresResponsables) de(planID, documento string) string {
-	documento = strings.TrimSpace(documento)
-	if documento == "" {
-		return ""
-	}
-	if nombre, consultado := n[documento]; consultado {
-		return nombre
-	}
-	nombre, err := nombreTercero(documento)
-	if err != nil {
-		logs.Warn("iniciativaInversion: sin nombre para el responsable de la iniciativa %s: %v", planID, err)
-	}
-	n[documento] = nombre
-	return nombre
+// FuenteNombreTercero devuelve el nombre completo de quien tiene un documento en Terceros (la
+// implementa ClienteUnidades).
+type FuenteNombreTercero interface {
+	NombreTercero(documento string) (string, error)
 }
 
-// nombreTercero devuelve el nombre completo de quien tiene ese documento en Terceros.
-func nombreTercero(documento string) (string, error) {
-	if !patronDocumento.MatchString(documento) {
-		return "", errors.New("el documento no cumple el formato: solo letras y números, máximo 20")
+// nombreTercero devuelve el nombre en Terceros de quien tiene el documento. Si falla, quien
+// llama guarda sin nombre y deja el motivo en el log.
+func (s *Servicio) nombreTercero(documento string) (string, error) {
+	if s.terceros == nil {
+		return "", errors.New("el servicio no tiene cliente de Terceros")
 	}
-	var datos []models.DatosIdentificacion
-	ruta := beego.AppConfig.String("TercerosService") + "/datos_identificacion/?query=Numero:" + documento
-	if err := request.GetJson(ruta, &datos); err != nil {
-		return "", fmt.Errorf("no se pudo consultar Terceros: %v", err)
-	}
-	// Terceros responde [{}] cuando no hay resultados.
-	for _, dato := range datos {
-		if dato.TerceroID.ID != 0 {
-			return dato.TerceroID.NombreCompleto, nil
-		}
-	}
-	return "", errors.New("el documento no está en Terceros")
+	return s.terceros.NombreTercero(documento)
 }
 
 // FuenteNombreDependencia devuelve el nombre de una dependencia (la implementa ClienteUnidades).
@@ -267,9 +240,18 @@ func numerarPorCreacion(planes []Plan) map[string]int {
 // submódulo de la plantilla (la indicada o, si no se indica, la más reciente). Si
 // falla la creación de los submódulos, desactiva el plan. Fuera de las fechas de
 // formulación de la unidad responde 409.
+//
+// El plan guarda el documento del responsable (quien la crea) y su nombre en Terceros,
+// que el listado muestra sin volver a consultarlo. Si no se obtiene el nombre, la
+// iniciativa se crea igual, sin él, y el motivo va al log.
 func (s *Servicio) CrearIniciativa(solicitud SolicitudCrearIniciativa) (*ResumenIniciativa, error) {
 	if strings.TrimSpace(solicitud.DependenciaID) == "" {
 		return nil, errorSolicitud("Seleccione la unidad para la que se crea la iniciativa.")
+	}
+	responsable := strings.TrimSpace(solicitud.Responsable)
+	if !patronDocumento.MatchString(responsable) {
+		return nil, errorSolicitud("No se pudo identificar su documento. Vuelva a iniciar sesión e intente de nuevo.").
+			conDetalle("responsable debe ser el documento de quien crea la iniciativa: solo letras y números, máximo 20")
 	}
 	vigencias, err := textoVigencias(solicitud.Vigencias)
 	if err != nil {
@@ -313,18 +295,23 @@ func (s *Servicio) CrearIniciativa(solicitud SolicitudCrearIniciativa) (*Resumen
 	if nombre == "" {
 		nombre = nombreIniciativaInicial
 	}
+	responsableNombre, err := s.nombreTercero(responsable)
+	if err != nil {
+		logs.Warn("iniciativaInversion: la iniciativa de la dependencia %s se crea sin el nombre de su responsable: %v", solicitud.DependenciaID, err)
+	}
 	creado, err := s.repo.CrearPlan(Plan{
-		Nombre:         nombre,
-		Descripcion:    "Iniciativa de inversión formulada con la plantilla «" + definicion.Nombre + "»",
-		TipoPlanID:     tipo.ID,
-		AplicativoID:   aplicativoPlaneacion,
-		Responsable:    solicitud.Responsable,
-		Activo:         true,
-		Formato:        false,
-		FormatoID:      definicion.PlantillaID,
-		DependenciaID:  solicitud.DependenciaID,
-		EstadoPlanID:   iniciativaSinFormular.ID,
-		VigenciaAplica: vigencias,
+		Nombre:            nombre,
+		Descripcion:       "Iniciativa de inversión formulada con la plantilla «" + definicion.Nombre + "»",
+		TipoPlanID:        tipo.ID,
+		AplicativoID:      aplicativoPlaneacion,
+		Responsable:       responsable,
+		ResponsableNombre: responsableNombre,
+		Activo:            true,
+		Formato:           false,
+		FormatoID:         definicion.PlantillaID,
+		DependenciaID:     solicitud.DependenciaID,
+		EstadoPlanID:      iniciativaSinFormular.ID,
+		VigenciaAplica:    vigencias,
 	})
 	if err != nil {
 		return nil, err
