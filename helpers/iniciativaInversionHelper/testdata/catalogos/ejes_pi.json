@@ -1,0 +1,14 @@
+{
+  "catalogo": "ejes_pi",
+  "nombre": "Ejes transformadores del PI",
+  "modulo": "Identificación",
+  "fuente": "Catálogo de prueba. En los ambientes sale de los planes PLI_SP armados en Construcción de planes (RepositorioConInstrumentos, en instrumentos.go).",
+  "observaciones": [],
+  "items": [
+    {
+      "codigo": "pi-1-e1",
+      "nombre": "Eje transformador de prueba",
+      "padre": "pi-1"
+    }
+  ]
+}

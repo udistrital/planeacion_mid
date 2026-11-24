@@ -60,26 +60,114 @@
           "dato": { "clave": "articulacion_pnd" },
           "hijos": [
             {
-              "nombre": "Sector",
-              "descripcion": "Sector del Plan Nacional de Desarrollo.",
-              "dato": { "clave": "sector", "type": "catalogo", "required": "true", "catalogo": "sectores_pnd" }
+              "nombre": "Plan Nacional de Desarrollo",
+              "descripcion": "Sector y programa del Plan Nacional de Desarrollo a los que contribuye el proyecto.",
+              "dato": { "clave": "pnd" },
+              "hijos": [
+                {
+                  "nombre": "Sector",
+                  "descripcion": "Sector del Plan Nacional de Desarrollo.",
+                  "dato": { "clave": "sector", "type": "catalogo", "required": "true", "catalogo": "sectores_pnd" }
+                },
+                {
+                  "nombre": "Programa",
+                  "descripcion": "Programa del sector seleccionado.",
+                  "dato": { "clave": "programa", "type": "catalogo", "required": "true", "catalogo": "programas_pnd", "depende_de": "sector" }
+                }
+              ]
             },
             {
-              "nombre": "Programa",
-              "descripcion": "Programa del sector seleccionado.",
-              "dato": { "clave": "programa", "type": "catalogo", "required": "true", "catalogo": "programas_pnd", "depende_de": "sector" }
+              "nombre": "Plan Distrital de Desarrollo",
+              "descripcion": "Objetivos estratégicos, estrategias y programas intersectoriales del Plan Distrital de Desarrollo a los que contribuye el proyecto.",
+              "dato": { "clave": "pdd" },
+              "hijos": [
+                {
+                  "nombre": "Plan distrital",
+                  "descripcion": "Plan Distrital de Desarrollo con el que se articula el proyecto.",
+                  "dato": { "clave": "plan", "type": "catalogo", "required": "true", "catalogo": "planes_pdd", "sin_codigo": true }
+                },
+                {
+                  "nombre": "Objetivo estratégico",
+                  "descripcion": "Objetivos del plan seleccionado.",
+                  "dato": { "clave": "objetivo_estrategico", "type": "catalogo", "required": "true", "catalogo": "objetivos_pdd", "depende_de": "plan", "sin_codigo": true, "multiple": true }
+                },
+                {
+                  "nombre": "Estrategia",
+                  "descripcion": "Estrategias de los objetivos seleccionados.",
+                  "dato": { "clave": "estrategia", "type": "catalogo", "required": "true", "catalogo": "estrategias_pdd", "depende_de": "objetivo_estrategico", "sin_codigo": true, "multiple": true }
+                },
+                {
+                  "nombre": "Programa intersectorial",
+                  "descripcion": "Programas intersectoriales de las estrategias seleccionadas.",
+                  "dato": { "clave": "programa_intersectorial", "type": "catalogo", "required": "true", "catalogo": "programas_pdd", "depende_de": "estrategia", "sin_codigo": true, "multiple": true }
+                }
+              ]
+            },
+            {
+              "nombre": "Plan Estratégico de Desarrollo",
+              "descripcion": "Lineamientos y metas del Plan Estratégico de Desarrollo de la Universidad a los que contribuye el proyecto.",
+              "dato": { "clave": "ped" },
+              "hijos": [
+                {
+                  "nombre": "Plan estratégico",
+                  "descripcion": "Plan Estratégico de Desarrollo de la Universidad con el que se articula el proyecto.",
+                  "dato": { "clave": "plan", "type": "catalogo", "required": "true", "catalogo": "planes_ped", "sin_codigo": true }
+                },
+                {
+                  "nombre": "Lineamiento estratégico",
+                  "descripcion": "Lineamientos del plan seleccionado.",
+                  "dato": { "clave": "lineamiento_estrategico", "type": "catalogo", "required": "true", "catalogo": "lineamientos_ped", "depende_de": "plan", "sin_codigo": true, "multiple": true }
+                },
+                {
+                  "nombre": "Meta estratégica",
+                  "descripcion": "Metas de los lineamientos seleccionados.",
+                  "dato": { "clave": "meta_estrategica", "type": "catalogo", "required": "true", "catalogo": "metas_ped", "depende_de": "lineamiento_estrategico", "sin_codigo": true, "multiple": true }
+                }
+              ]
+            },
+            {
+              "nombre": "Plan Indicativo",
+              "descripcion": "Ejes transformadores, lineamientos de acción y estrategias del Plan Indicativo de la Universidad a los que contribuye el proyecto.",
+              "dato": { "clave": "pi" },
+              "hijos": [
+                {
+                  "nombre": "Plan indicativo",
+                  "descripcion": "Plan Indicativo de la Universidad con el que se articula el proyecto.",
+                  "dato": { "clave": "plan", "type": "catalogo", "required": "true", "catalogo": "planes_pi", "sin_codigo": true }
+                },
+                {
+                  "nombre": "Eje transformador",
+                  "descripcion": "Ejes del plan seleccionado.",
+                  "dato": { "clave": "eje_transformador", "type": "catalogo", "required": "true", "catalogo": "ejes_pi", "depende_de": "plan", "sin_codigo": true, "multiple": true }
+                },
+                {
+                  "nombre": "Lineamiento de acción",
+                  "descripcion": "Lineamientos de los ejes seleccionados.",
+                  "dato": { "clave": "lineamiento_accion", "type": "catalogo", "required": "true", "catalogo": "lineamientos_pi", "depende_de": "eje_transformador", "sin_codigo": true, "multiple": true }
+                },
+                {
+                  "nombre": "Estrategia",
+                  "descripcion": "Estrategias de los lineamientos seleccionados.",
+                  "dato": { "clave": "estrategia", "type": "catalogo", "required": "true", "catalogo": "estrategias_pi", "depende_de": "lineamiento_accion", "sin_codigo": true, "multiple": true }
+                }
+              ]
             }
           ]
         },
         {
           "nombre": "Justificación",
-          "descripcion": "Por qué se justifica el proyecto y normativa que lo enmarca.",
+          "descripcion": "Por qué se justifica el proyecto, en lo técnico y en lo financiero, y normativa que lo enmarca.",
           "dato": { "clave": "justificacion" },
           "hijos": [
             {
-              "nombre": "Descripción",
-              "descripcion": "Por qué se justifica el proyecto.",
-              "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
+              "nombre": "Descripción técnica",
+              "descripcion": "Por qué se justifica el proyecto desde lo técnico.",
+              "dato": { "clave": "descripcion_tecnica", "type": "input", "required": "true", "multilinea": true }
+            },
+            {
+              "nombre": "Descripción financiera",
+              "descripcion": "Por qué se justifica el proyecto desde lo financiero.",
+              "dato": { "clave": "descripcion_financiera", "type": "input", "required": "true", "multilinea": true }
             },
             {
               "nombre": "Aspectos legales",
@@ -257,12 +345,13 @@
                 "required": "false",
                 "min": 0,
                 "decimales": 0,
-                "totales": { "filas": true, "columnas": true },
+                "totales": { "filas": true, "columnas": true, "titulo_filas": "SUBTOTALES", "titulo_columnas": "TOTAL DE POBLACIÓN DE REFERENCIA" },
+                "etiqueta_fila": "Grupo etáreo y ciclo de vida",
                 "filas": [
                   { "clave": "primera_infancia", "nombre": "Primera infancia 0 - 5 años" },
                   { "clave": "infancia", "nombre": "Infancia 6 - 11 años" },
                   { "clave": "adolescencia", "nombre": "Adolescencia 12 - 18 años" },
-                  { "clave": "juventud", "nombre": "Juventud 19 - 26 años" },
+                  { "clave": "juventud", "nombre": "Juventud 14 - 26 años" },
                   { "clave": "adultez", "nombre": "Adultez 27 - 59 años" },
                   { "clave": "vejez", "nombre": "Vejez 60 años y más" },
                   { "clave": "de_0_a_14", "nombre": "0 a 14 años" },
@@ -320,12 +409,13 @@
                 "required": "false",
                 "min": 0,
                 "decimales": 0,
-                "totales": { "filas": true, "columnas": true },
+                "totales": { "filas": true, "columnas": true, "titulo_filas": "SUBTOTALES", "titulo_columnas": "TOTAL DE POBLACIÓN DE REFERENCIA" },
+                "etiqueta_fila": "Grupo etáreo y ciclo de vida",
                 "filas": [
                   { "clave": "primera_infancia", "nombre": "Primera infancia 0 - 5 años" },
                   { "clave": "infancia", "nombre": "Infancia 6 - 11 años" },
                   { "clave": "adolescencia", "nombre": "Adolescencia 12 - 18 años" },
-                  { "clave": "juventud", "nombre": "Juventud 19 - 26 años" },
+                  { "clave": "juventud", "nombre": "Juventud 14 - 26 años" },
                   { "clave": "adultez", "nombre": "Adultez 27 - 59 años" },
                   { "clave": "vejez", "nombre": "Vejez 60 años y más" },
                   { "clave": "de_0_a_14", "nombre": "0 a 14 años" },
@@ -383,7 +473,7 @@
           "hijos": [
             {
               "nombre": "El proyecto contribuye Sí / No a los siguientes trazadores presupuestales",
-              "descripcion": "Diligencie solo los trazadores a los que contribuye el proyecto; los demás se dejan vacíos. Debajo del nombre de cada trazador está su definición. En Grupos Étnicos, diligencie el número de beneficiarios de cada comunidad a la que llega el proyecto.",
+              "descripcion": "Diligencie solo los trazadores a los que contribuye el proyecto; los demás se dejan vacíos. Debajo del nombre de cada trazador está su definición. En Grupos Étnicos, diligencie el número de beneficiarios de cada comunidad a la que llega el proyecto. Si contribuye a un trazador que no está en la lista, agréguelo con «Agregar otro trazador», debajo de la tabla (máximo 2), y escriba cuál.",
               "dato": {
                 "clave": "trazadores",
                 "type": "repetible",
@@ -391,9 +481,15 @@
                 "espejo_de": "catalogo.trazadores_presupuestales",
                 "mostrar": "nombre",
                 "filas_opcionales": true,
+                "filas_adicionales": { "origen": "Otro", "max": 2, "nombre": "Otro: ¿Cuál?", "etiqueta": "Otro trazador" },
                 "etiqueta_fila": "Nombre completo del trazador presupuestal"
               },
               "hijos": [
+                {
+                  "nombre": "¿Cuál?",
+                  "descripcion": "Nombre completo del trazador presupuestal que no está en la lista.",
+                  "dato": { "clave": "cual", "type": "input", "required": "true", "maxlength": 300, "solo_si": { "campo": "origen", "valor": "Otro" } }
+                },
                 {
                   "nombre": "Descripción",
                   "descripcion": "Cómo contribuye el proyecto al trazador.",
@@ -423,6 +519,16 @@
                   }
                 },
                 {
+                  "nombre": "Actividad",
+                  "descripcion": "Actividad del proyecto con la que se contribuye al trazador, si aplica.",
+                  "dato": { "clave": "actividad", "type": "input", "required": "false", "multilinea": true }
+                },
+                {
+                  "nombre": "Presupuesto",
+                  "descripcion": "Presupuesto que se destina al trazador, si aplica.",
+                  "dato": { "clave": "presupuesto", "type": "input", "required": "false", "maxlength": 300 }
+                },
+                {
                   "nombre": "Comunidades",
                   "descripcion": "Comunidades del trazador de Grupos Étnicos: diligencie el número de beneficiarios de al menos una.",
                   "dato": {
@@ -449,18 +555,18 @@
           ]
         },
         {
-          "nombre": "Objetivos generales y específicos",
-          "descripcion": "Objetivo central, un objetivo específico por cada causa directa de la Problemática, resultados esperados e impactos esperados.",
+          "nombre": "Objetivo general y objetivos específicos",
+          "descripcion": "Objetivo general, un objetivo específico por cada causa directa y un medio por cada causa indirecta de la Problemática, resultados esperados e impactos esperados.",
           "dato": { "clave": "objetivos" },
           "hijos": [
             {
-              "nombre": "Objetivo central",
+              "nombre": "Objetivo general",
               "descripcion": "Situación positiva que se alcanza al resolver el problema central.",
               "dato": { "clave": "objetivo_central", "type": "input", "required": "true", "multilinea": true }
             },
             {
               "nombre": "Indicador de propósito",
-              "descripcion": "Indicador con el que se mide el logro del objetivo central.",
+              "descripcion": "Indicador con el que se mide el logro del objetivo general.",
               "dato": { "clave": "indicador_proposito", "type": "input", "required": "true", "multilinea": true }
             },
             {
@@ -470,8 +576,8 @@
             },
             {
               "nombre": "Tipo de fuente de verificación",
-              "descripcion": "Tipo de documento con el que se verifica el indicador (por ejemplo, informe).",
-              "dato": { "clave": "tipo_fuente_verificacion", "type": "input", "required": "true", "maxlength": 200 }
+              "descripcion": "Tipo de documento con el que se verifica el indicador.",
+              "dato": { "clave": "tipo_fuente_verificacion", "type": "catalogo", "required": "true", "catalogo": "tipos_fuente_verificacion" }
             },
             {
               "nombre": "Fuente de verificación",
@@ -492,19 +598,44 @@
               "hijos": [
                 {
                   "nombre": "Objetivo específico",
-                  "descripcion": "Objetivo que resuelve la causa directa y contribuye al objetivo central.",
+                  "descripcion": "Objetivo que resuelve la causa directa y contribuye al objetivo general.",
                   "dato": { "clave": "objetivo_especifico", "type": "input", "required": "true", "multilinea": true }
                 },
                 {
-                  "nombre": "Línea base",
-                  "descripcion": "Situación actual medible del objetivo específico.",
+                  "nombre": "Indicador",
+                  "descripcion": "Indicador con el que se mide el logro del objetivo específico.",
                   "dato": { "clave": "linea_base", "type": "input", "required": "true", "multilinea": true }
                 }
               ]
             },
             {
+              "nombre": "Medios",
+              "descripcion": "Un medio por cada causa indirecta de la Problemática. Se numeran por causa directa: 1.2 es el medio de la segunda causa indirecta de la causa directa 1, que corresponde al objetivo específico 1.",
+              "dato": {
+                "clave": "medios",
+                "type": "repetible",
+                "required": "true",
+                "espejo_de": "problematica.causas_directas.causas_indirectas",
+                "mostrar": "descripcion",
+                "numerar_por": "causas_directas",
+                "etiqueta_fila": "Causa indirecta"
+              },
+              "hijos": [
+                {
+                  "nombre": "Medio",
+                  "descripcion": "Situación positiva que resuelve la causa indirecta.",
+                  "dato": { "clave": "medio", "type": "input", "required": "true", "multilinea": true }
+                },
+                {
+                  "nombre": "Indicador",
+                  "descripcion": "Indicador con el que se mide el logro del medio.",
+                  "dato": { "clave": "linea_base", "type": "input", "required": "false", "multilinea": true }
+                }
+              ]
+            },
+            {
               "nombre": "Resultados esperados",
-              "descripcion": "Los resultados de estudiantes, docentes y administrativos beneficiados son obligatorios. De los demás, diligencie la cantidad y la sede solo de los que apliquen; los que no apliquen se dejan vacíos. Si el proyecto tiene un resultado que no está en la lista, escríbalo en la última fila («Otro»).",
+              "descripcion": "Los resultados de estudiantes, docentes y administrativos beneficiados son obligatorios. De los demás, diligencie la cantidad y las sedes solo de los que apliquen; los que no apliquen se dejan vacíos. Marque todas las sedes donde se logra cada resultado y, si aplica, escriba los espacios específicos (laboratorios, canchas u otros espacios a intervenir). Si el proyecto tiene un resultado que no está en la lista, escríbalo en la última fila («Otro»).",
               "dato": {
                 "clave": "resultados_esperados",
                 "type": "repetible",
@@ -532,8 +663,13 @@
                 },
                 {
                   "nombre": "Localización (Sede)",
-                  "descripcion": "Sedes donde se logra el resultado. Mencione también los laboratorios, canchas u otros espacios a intervenir.",
-                  "dato": { "clave": "localizacion_sede", "type": "input", "required": "true", "multilinea": true }
+                  "descripcion": "Sedes de la Universidad donde se logra el resultado; se pueden marcar varias.",
+                  "dato": { "clave": "sedes", "type": "catalogo", "required": "true", "catalogo": "sedes", "multiple": true }
+                },
+                {
+                  "nombre": "Espacios específicos (laboratorios, canchas u otros espacios a intervenir)",
+                  "descripcion": "Laboratorios, canchas u otros espacios a intervenir en las sedes, si aplica.",
+                  "dato": { "clave": "espacios_especificos", "type": "input", "required": "false", "multilinea": true }
                 }
               ]
             },
@@ -548,9 +684,20 @@
                   "dato": { "clave": "descripcion", "type": "input", "required": "true", "multilinea": true }
                 },
                 {
-                  "nombre": "Línea base",
-                  "descripcion": "Situación actual medible frente a la que se compara el impacto.",
+                  "nombre": "Indicador",
+                  "descripcion": "Indicador con el que se mide el impacto esperado.",
                   "dato": { "clave": "linea_base", "type": "input", "required": "false", "multilinea": true }
+                },
+                {
+                  "nombre": "Objetivo específico",
+                  "descripcion": "Objetivo específico al que se asocia el impacto, si aplica.",
+                  "dato": {
+                    "clave": "objetivo_especifico",
+                    "type": "referencia",
+                    "required": "false",
+                    "opciones_desde": "objetivos.objetivos_especificos",
+                    "mostrar": "objetivo_especifico"
+                  }
                 }
               ]
             }
@@ -774,17 +921,17 @@
         },
         {
           "nombre": "Cadena de valor",
-          "descripcion": "Objetivo general y, por cada objetivo específico, sus productos con sus actividades y costos por periodo.",
+          "descripcion": "Objetivo general y, por cada objetivo específico, su producto con sus actividades y costos por año.",
           "dato": { "clave": "cadena_valor" },
           "hijos": [
             {
               "nombre": "Objetivo general",
-              "descripcion": "Se trae del objetivo central del submódulo Objetivos.",
+              "descripcion": "Se trae del submódulo Objetivo general y objetivos específicos.",
               "dato": { "clave": "objetivo_general", "type": "calculado", "required": "false", "desde": "objetivos.objetivo_central" }
             },
             {
-              "nombre": "Productos y actividades por objetivo específico",
-              "descripcion": "Una sección por cada objetivo específico: arriba los datos de cada producto y debajo sus actividades con el costo por periodo.",
+              "nombre": "Producto y actividades por objetivo específico",
+              "descripcion": "Una sección por cada objetivo específico: arriba su único producto y debajo sus actividades con el costo por año.",
               "dato": {
                 "clave": "productos_por_objetivo",
                 "type": "repetible",
@@ -795,78 +942,66 @@
               },
               "hijos": [
                 {
-                  "nombre": "Productos",
-                  "descripcion": "Bienes o servicios que se generan para cumplir el objetivo específico.",
-                  "dato": { "clave": "productos", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Producto" },
+                  "nombre": "Producto",
+                  "descripcion": "Bien o servicio del catálogo de productos que se genera para cumplir el objetivo específico.",
+                  "dato": { "clave": "producto", "type": "catalogo", "required": "true", "catalogo": "productos" }
+                },
+                {
+                  "nombre": "Actividades",
+                  "descripcion": "Actividades con las que se genera el producto, con su costo en cada año. Se numeran por objetivo específico: 1.1, 1.2… son las del objetivo específico 1. El costo total se calcula: la suma de los años.",
+                  "dato": { "clave": "actividades", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Actividad", "numerar_por": "productos_por_objetivo" },
                   "hijos": [
                     {
-                      "nombre": "Producto",
-                      "descripcion": "Producto del catálogo de productos.",
-                      "dato": { "clave": "producto", "type": "catalogo", "required": "true", "catalogo": "productos" }
+                      "nombre": "Actividad",
+                      "descripcion": "Qué se hace para generar el producto.",
+                      "dato": { "clave": "actividad", "type": "input", "required": "true", "multilinea": true }
                     },
                     {
-                      "nombre": "Indicador de producto",
-                      "descripcion": "Indicador con el que se mide el producto (por ejemplo, número de sedes).",
-                      "dato": { "clave": "indicador_producto", "type": "input", "required": "true", "maxlength": 500 }
+                      "nombre": "Insumos",
+                      "descripcion": "Tipo de insumo de la actividad (por ejemplo, mano de obra calificada, maquinaria y equipo, otros servicios).",
+                      "dato": { "clave": "insumos", "type": "input", "required": "true", "maxlength": 300 }
                     },
                     {
                       "nombre": "Unidad de medida",
-                      "descripcion": "Unidad de medida del indicador de producto.",
+                      "descripcion": "Unidad en que se mide la cantidad de la actividad.",
                       "dato": { "clave": "unidad_medida", "type": "catalogo", "required": "true", "catalogo": "unidades_medida_cadena_valor" }
                     },
                     {
-                      "nombre": "Actividades",
-                      "descripcion": "Actividades con las que se genera el producto, con su costo en cada periodo. Se numeran por objetivo específico: 1.1, 1.2… son las del objetivo específico 1, aunque estén en productos distintos. El costo total se calcula: la suma de los periodos.",
-                      "dato": { "clave": "actividades", "type": "repetible", "required": "true", "min": 1, "max": null, "etiqueta_fila": "Actividad", "numerar_por": "productos_por_objetivo" },
-                      "hijos": [
-                        {
-                          "nombre": "Actividad",
-                          "descripcion": "Qué se hace para generar el producto.",
-                          "dato": { "clave": "actividad", "type": "input", "required": "true", "multilinea": true }
-                        },
-                        {
-                          "nombre": "Insumos",
-                          "descripcion": "Tipo de insumo de la actividad (por ejemplo, mano de obra calificada, maquinaria y equipo, otros servicios).",
-                          "dato": { "clave": "insumos", "type": "input", "required": "true", "maxlength": 300 }
-                        },
-                        {
-                          "nombre": "Costo total",
-                          "descripcion": "Se calcula: la suma de los periodos, en pesos.",
-                          "dato": {
-                            "clave": "costo_total",
-                            "type": "calculado",
-                            "required": "true",
-                            "decimales": 2,
-                            "operacion": "suma",
-                            "operandos": ["periodo_0", "periodo_1", "periodo_2", "periodo_3", "periodo_4"]
-                          }
-                        },
-                        {
-                          "nombre": "Periodo 0",
-                          "descripcion": "Costo de la actividad en el periodo 0, en pesos. Déjelo vacío si no tiene costo en ese periodo.",
-                          "dato": { "clave": "periodo_0", "type": "numeric", "required": "false", "min": 0, "decimales": 2 }
-                        },
-                        {
-                          "nombre": "Periodo 1",
-                          "descripcion": "Costo de la actividad en el periodo 1, en pesos. Déjelo vacío si no tiene costo en ese periodo.",
-                          "dato": { "clave": "periodo_1", "type": "numeric", "required": "false", "min": 0, "decimales": 2 }
-                        },
-                        {
-                          "nombre": "Periodo 2",
-                          "descripcion": "Costo de la actividad en el periodo 2, en pesos. Déjelo vacío si no tiene costo en ese periodo.",
-                          "dato": { "clave": "periodo_2", "type": "numeric", "required": "false", "min": 0, "decimales": 2 }
-                        },
-                        {
-                          "nombre": "Periodo 3",
-                          "descripcion": "Costo de la actividad en el periodo 3, en pesos. Déjelo vacío si no tiene costo en ese periodo.",
-                          "dato": { "clave": "periodo_3", "type": "numeric", "required": "false", "min": 0, "decimales": 2 }
-                        },
-                        {
-                          "nombre": "Periodo 4",
-                          "descripcion": "Costo de la actividad en el periodo 4, en pesos. Déjelo vacío si no tiene costo en ese periodo.",
-                          "dato": { "clave": "periodo_4", "type": "numeric", "required": "false", "min": 0, "decimales": 2 }
-                        }
-                      ]
+                      "nombre": "Cantidad",
+                      "descripcion": "Cantidad de la actividad, en su unidad de medida.",
+                      "dato": { "clave": "cantidad", "type": "numeric", "required": "true", "min": 0, "decimales": 2 }
+                    },
+                    {
+                      "nombre": "Costo total",
+                      "descripcion": "Se calcula: la suma de los años, en pesos.",
+                      "dato": {
+                        "clave": "costo_total",
+                        "type": "calculado",
+                        "required": "true",
+                        "decimales": 2,
+                        "operacion": "suma",
+                        "operandos": ["anio_0", "anio_1", "anio_2", "anio_3"]
+                      }
+                    },
+                    {
+                      "nombre": "Año 0",
+                      "descripcion": "Costo de la actividad en el año 0, en pesos. Déjelo vacío si no tiene costo en ese año.",
+                      "dato": { "clave": "anio_0", "type": "numeric", "required": "false", "min": 0, "decimales": 2 }
+                    },
+                    {
+                      "nombre": "Año 1",
+                      "descripcion": "Costo de la actividad en el año 1, en pesos. Déjelo vacío si no tiene costo en ese año.",
+                      "dato": { "clave": "anio_1", "type": "numeric", "required": "false", "min": 0, "decimales": 2 }
+                    },
+                    {
+                      "nombre": "Año 2",
+                      "descripcion": "Costo de la actividad en el año 2, en pesos. Déjelo vacío si no tiene costo en ese año.",
+                      "dato": { "clave": "anio_2", "type": "numeric", "required": "false", "min": 0, "decimales": 2 }
+                    },
+                    {
+                      "nombre": "Año 3",
+                      "descripcion": "Costo de la actividad en el año 3, en pesos. Déjelo vacío si no tiene costo en ese año.",
+                      "dato": { "clave": "anio_3", "type": "numeric", "required": "false", "min": 0, "decimales": 2 }
                     }
                   ]
                 }
@@ -881,12 +1016,12 @@
           "hijos": [
             {
               "nombre": "Actividades",
-              "descripcion": "Las actividades de la Cadena de valor con su número: 1.1 es la primera actividad del objetivo específico 1. En la programación física escriba los meses en que se ejecuta cada actividad en cada año; es obligatoria en los años en que la actividad tiene costo. La programación financiera se trae de los costos por periodo de la Cadena de valor (Año 0 = Periodo 0) y se cambia allí.",
+              "descripcion": "Las actividades de la Cadena de valor con su número: 1.1 es la primera actividad del objetivo específico 1. En la programación física escriba los meses en que se ejecuta cada actividad en cada año; es obligatoria en los años en que la actividad tiene costo. La programación financiera se trae de los costos por año de la Cadena de valor y se cambia allí.",
               "dato": {
                 "clave": "actividades",
                 "type": "repetible",
                 "required": "true",
-                "espejo_de": "cadena_valor.productos_por_objetivo.productos.actividades",
+                "espejo_de": "cadena_valor.productos_por_objetivo.actividades",
                 "mostrar": "actividad",
                 "numerar_por": "productos_por_objetivo",
                 "etiqueta_fila": "Actividad"
@@ -899,28 +1034,23 @@
                   "hijos": [
                     {
                       "nombre": "Año 0",
-                      "descripcion": "Meses en que se ejecuta la actividad en el año 0. Obligatorio si la actividad tiene costo en el periodo 0.",
-                      "dato": { "clave": "anio_0", "type": "input", "required": "false", "obligatorio_si": "origen.periodo_0", "maxlength": 100 }
+                      "descripcion": "Meses en que se ejecuta la actividad en el año 0. Obligatorio si la actividad tiene costo en ese año.",
+                      "dato": { "clave": "anio_0", "type": "input", "required": "false", "obligatorio_si": "origen.anio_0", "maxlength": 100 }
                     },
                     {
                       "nombre": "Año 1",
-                      "descripcion": "Meses en que se ejecuta la actividad en el año 1. Obligatorio si la actividad tiene costo en el periodo 1.",
-                      "dato": { "clave": "anio_1", "type": "input", "required": "false", "obligatorio_si": "origen.periodo_1", "maxlength": 100 }
+                      "descripcion": "Meses en que se ejecuta la actividad en el año 1. Obligatorio si la actividad tiene costo en ese año.",
+                      "dato": { "clave": "anio_1", "type": "input", "required": "false", "obligatorio_si": "origen.anio_1", "maxlength": 100 }
                     },
                     {
                       "nombre": "Año 2",
-                      "descripcion": "Meses en que se ejecuta la actividad en el año 2. Obligatorio si la actividad tiene costo en el periodo 2.",
-                      "dato": { "clave": "anio_2", "type": "input", "required": "false", "obligatorio_si": "origen.periodo_2", "maxlength": 100 }
+                      "descripcion": "Meses en que se ejecuta la actividad en el año 2. Obligatorio si la actividad tiene costo en ese año.",
+                      "dato": { "clave": "anio_2", "type": "input", "required": "false", "obligatorio_si": "origen.anio_2", "maxlength": 100 }
                     },
                     {
                       "nombre": "Año 3",
-                      "descripcion": "Meses en que se ejecuta la actividad en el año 3. Obligatorio si la actividad tiene costo en el periodo 3.",
-                      "dato": { "clave": "anio_3", "type": "input", "required": "false", "obligatorio_si": "origen.periodo_3", "maxlength": 100 }
-                    },
-                    {
-                      "nombre": "Año 4",
-                      "descripcion": "Meses en que se ejecuta la actividad en el año 4. Obligatorio si la actividad tiene costo en el periodo 4.",
-                      "dato": { "clave": "anio_4", "type": "input", "required": "false", "obligatorio_si": "origen.periodo_4", "maxlength": 100 }
+                      "descripcion": "Meses en que se ejecuta la actividad en el año 3. Obligatorio si la actividad tiene costo en ese año.",
+                      "dato": { "clave": "anio_3", "type": "input", "required": "false", "obligatorio_si": "origen.anio_3", "maxlength": 100 }
                     }
                   ]
                 },
@@ -931,28 +1061,23 @@
                   "hijos": [
                     {
                       "nombre": "Año 0",
-                      "descripcion": "Costo de la actividad en el periodo 0 de la Cadena de valor, en pesos.",
-                      "dato": { "clave": "anio_0", "type": "calculado", "required": "false", "desde": "origen.periodo_0" }
+                      "descripcion": "Costo de la actividad en el año 0 de la Cadena de valor, en pesos.",
+                      "dato": { "clave": "anio_0", "type": "calculado", "required": "false", "desde": "origen.anio_0" }
                     },
                     {
                       "nombre": "Año 1",
-                      "descripcion": "Costo de la actividad en el periodo 1 de la Cadena de valor, en pesos.",
-                      "dato": { "clave": "anio_1", "type": "calculado", "required": "false", "desde": "origen.periodo_1" }
+                      "descripcion": "Costo de la actividad en el año 1 de la Cadena de valor, en pesos.",
+                      "dato": { "clave": "anio_1", "type": "calculado", "required": "false", "desde": "origen.anio_1" }
                     },
                     {
                       "nombre": "Año 2",
-                      "descripcion": "Costo de la actividad en el periodo 2 de la Cadena de valor, en pesos.",
-                      "dato": { "clave": "anio_2", "type": "calculado", "required": "false", "desde": "origen.periodo_2" }
+                      "descripcion": "Costo de la actividad en el año 2 de la Cadena de valor, en pesos.",
+                      "dato": { "clave": "anio_2", "type": "calculado", "required": "false", "desde": "origen.anio_2" }
                     },
                     {
                       "nombre": "Año 3",
-                      "descripcion": "Costo de la actividad en el periodo 3 de la Cadena de valor, en pesos.",
-                      "dato": { "clave": "anio_3", "type": "calculado", "required": "false", "desde": "origen.periodo_3" }
-                    },
-                    {
-                      "nombre": "Año 4",
-                      "descripcion": "Costo de la actividad en el periodo 4 de la Cadena de valor, en pesos.",
-                      "dato": { "clave": "anio_4", "type": "calculado", "required": "false", "desde": "origen.periodo_4" }
+                      "descripcion": "Costo de la actividad en el año 3 de la Cadena de valor, en pesos.",
+                      "dato": { "clave": "anio_3", "type": "calculado", "required": "false", "desde": "origen.anio_3" }
                     },
                     {
                       "nombre": "Valor total",
@@ -1021,12 +1146,12 @@
           "hijos": [
             {
               "nombre": "Presupuesto por actividad",
-              "descripcion": "Se trae de la Cadena de valor (Año 0 = Periodo 0) y se cambia allí; 1.1 es la primera actividad del objetivo específico 1. Revise el resumen y guárdelo para dejar el submódulo formulado.",
+              "descripcion": "Se trae de la Cadena de valor y se cambia allí; 1.1 es la primera actividad del objetivo específico 1. Revise el resumen y guárdelo para dejar el submódulo formulado.",
               "dato": {
                 "clave": "actividades",
                 "type": "repetible",
                 "required": "true",
-                "espejo_de": "cadena_valor.productos_por_objetivo.productos.actividades",
+                "espejo_de": "cadena_valor.productos_por_objetivo.actividades",
                 "mostrar": "actividad",
                 "numerar_por": "productos_por_objetivo",
                 "etiqueta_fila": "Actividad",
@@ -1036,7 +1161,7 @@
                 {
                   "nombre": "Producto",
                   "descripcion": "Producto de la Cadena de valor al que pertenece la actividad.",
-                  "dato": { "clave": "producto", "type": "calculado", "required": "false", "desde": "cadena_valor.productos_por_objetivo.productos.producto", "catalogo": "productos" }
+                  "dato": { "clave": "producto", "type": "calculado", "required": "false", "desde": "cadena_valor.productos_por_objetivo.producto", "catalogo": "productos" }
                 },
                 {
                   "nombre": "Actividad",
@@ -1045,33 +1170,95 @@
                 },
                 {
                   "nombre": "Año 0",
-                  "descripcion": "Costo de la actividad en el periodo 0 de la Cadena de valor, en pesos.",
-                  "dato": { "clave": "anio_0", "type": "calculado", "required": "false", "desde": "origen.periodo_0" }
+                  "descripcion": "Costo de la actividad en el año 0 de la Cadena de valor, en pesos.",
+                  "dato": { "clave": "anio_0", "type": "calculado", "required": "false", "desde": "origen.anio_0" }
                 },
                 {
                   "nombre": "Año 1",
-                  "descripcion": "Costo de la actividad en el periodo 1 de la Cadena de valor, en pesos.",
-                  "dato": { "clave": "anio_1", "type": "calculado", "required": "false", "desde": "origen.periodo_1" }
+                  "descripcion": "Costo de la actividad en el año 1 de la Cadena de valor, en pesos.",
+                  "dato": { "clave": "anio_1", "type": "calculado", "required": "false", "desde": "origen.anio_1" }
                 },
                 {
                   "nombre": "Año 2",
-                  "descripcion": "Costo de la actividad en el periodo 2 de la Cadena de valor, en pesos.",
-                  "dato": { "clave": "anio_2", "type": "calculado", "required": "false", "desde": "origen.periodo_2" }
+                  "descripcion": "Costo de la actividad en el año 2 de la Cadena de valor, en pesos.",
+                  "dato": { "clave": "anio_2", "type": "calculado", "required": "false", "desde": "origen.anio_2" }
                 },
                 {
                   "nombre": "Año 3",
-                  "descripcion": "Costo de la actividad en el periodo 3 de la Cadena de valor, en pesos.",
-                  "dato": { "clave": "anio_3", "type": "calculado", "required": "false", "desde": "origen.periodo_3" }
-                },
-                {
-                  "nombre": "Año 4",
-                  "descripcion": "Costo de la actividad en el periodo 4 de la Cadena de valor, en pesos.",
-                  "dato": { "clave": "anio_4", "type": "calculado", "required": "false", "desde": "origen.periodo_4" }
+                  "descripcion": "Costo de la actividad en el año 3 de la Cadena de valor, en pesos.",
+                  "dato": { "clave": "anio_3", "type": "calculado", "required": "false", "desde": "origen.anio_3" }
                 },
                 {
                   "nombre": "Valor total",
                   "descripcion": "Costo total de la actividad en la Cadena de valor, en pesos.",
                   "dato": { "clave": "valor_total", "type": "calculado", "required": "false", "desde": "origen.costo_total" }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nombre": "Fuentes de financiación",
+          "descripcion": "Fuentes con las que se financia el proyecto y el valor que aporta cada una por año.",
+          "dato": { "clave": "fuentes_financiacion" },
+          "hijos": [
+            {
+              "nombre": "Fuentes de financiación",
+              "descripcion": "Diligencie el valor por año, en pesos, de las fuentes que financian el proyecto; las demás se dejan vacías. Si una fuente no está en la lista, agréguela con «Agregar otra fuente», debajo de la tabla, y escriba cuál.",
+              "dato": {
+                "clave": "fuentes",
+                "type": "repetible",
+                "required": "true",
+                "espejo_de": "catalogo.fuentes_financiacion",
+                "mostrar": "nombre",
+                "filas_opcionales": true,
+                "min": 1,
+                "filas_adicionales": { "origen": "Otra", "nombre": "Otras, ¿cuáles?", "etiqueta": "Otra fuente" },
+                "columna_codigo": { "nombre": "Código", "campo": "codigo" },
+                "etiqueta_fila": "Fuente de financiación"
+              },
+              "hijos": [
+                {
+                  "nombre": "Código",
+                  "descripcion": "Código de la fuente que no está en la lista, si lo tiene.",
+                  "dato": { "clave": "codigo", "type": "input", "required": "false", "maxlength": 50, "solo_si": { "campo": "origen", "valor": "Otra" } }
+                },
+                {
+                  "nombre": "¿Cuál?",
+                  "descripcion": "Nombre de la fuente que no está en la lista.",
+                  "dato": { "clave": "cual", "type": "input", "required": "true", "maxlength": 300, "solo_si": { "campo": "origen", "valor": "Otra" } }
+                },
+                {
+                  "nombre": "Año 0",
+                  "descripcion": "Valor que aporta la fuente en el año 0, en pesos. Déjelo vacío si no aporta en ese año.",
+                  "dato": { "clave": "anio_0", "type": "numeric", "required": "false", "min": 0, "decimales": 2 }
+                },
+                {
+                  "nombre": "Año 1",
+                  "descripcion": "Valor que aporta la fuente en el año 1, en pesos. Déjelo vacío si no aporta en ese año.",
+                  "dato": { "clave": "anio_1", "type": "numeric", "required": "false", "min": 0, "decimales": 2 }
+                },
+                {
+                  "nombre": "Año 2",
+                  "descripcion": "Valor que aporta la fuente en el año 2, en pesos. Déjelo vacío si no aporta en ese año.",
+                  "dato": { "clave": "anio_2", "type": "numeric", "required": "false", "min": 0, "decimales": 2 }
+                },
+                {
+                  "nombre": "Año 3",
+                  "descripcion": "Valor que aporta la fuente en el año 3, en pesos. Déjelo vacío si no aporta en ese año.",
+                  "dato": { "clave": "anio_3", "type": "numeric", "required": "false", "min": 0, "decimales": 2 }
+                },
+                {
+                  "nombre": "Valor total",
+                  "descripcion": "Se calcula: la suma de los años, en pesos.",
+                  "dato": {
+                    "clave": "valor_total",
+                    "type": "calculado",
+                    "required": "true",
+                    "decimales": 2,
+                    "operacion": "suma",
+                    "operandos": ["anio_0", "anio_1", "anio_2", "anio_3"]
+                  }
                 }
               ]
             }

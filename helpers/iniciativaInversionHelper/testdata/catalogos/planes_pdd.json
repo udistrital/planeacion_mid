@@ -1,0 +1,13 @@
+{
+  "catalogo": "planes_pdd",
+  "nombre": "Planes distritales de desarrollo",
+  "modulo": "Identificación",
+  "fuente": "Catálogo de prueba. En los ambientes sale de los planes PDD_SP armados en Construcción de planes (RepositorioConInstrumentos, en instrumentos.go).",
+  "observaciones": [],
+  "items": [
+    {
+      "codigo": "pdd-1",
+      "nombre": "Plan Distrital de Desarrollo de prueba"
+    }
+  ]
+}

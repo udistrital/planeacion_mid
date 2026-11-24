@@ -1,0 +1,14 @@
+{
+  "catalogo": "estrategias_pi",
+  "nombre": "Estrategias del PI",
+  "modulo": "Identificación",
+  "fuente": "Catálogo de prueba. En los ambientes sale de los planes PLI_SP armados en Construcción de planes (RepositorioConInstrumentos, en instrumentos.go).",
+  "observaciones": [],
+  "items": [
+    {
+      "codigo": "pi-1-e1-l1-s1",
+      "nombre": "Estrategia de prueba",
+      "padre": "pi-1-e1-l1"
+    }
+  ]
+}

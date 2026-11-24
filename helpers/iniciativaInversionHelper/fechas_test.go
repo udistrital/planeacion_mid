@@ -192,13 +192,14 @@ func TestSinTipoDeSeguimientoNoSeFormulaHastaQueSeCargue(t *testing.T) {
 }
 
 // ClienteCrud pide los registros activos del tipo de seguimiento con los campos que usa la
-// validación, y trata como error la respuesta con Success: false.
+// validación, el más reciente primero, y trata como error la respuesta con Success: false.
 func TestClienteCrudPeriodosActivos(t *testing.T) {
 	periodo := map[string]interface{}{"_id": "p1", "fecha_inicio": "2026-11-20T00:00:00.000Z", "fecha_fin": "2026-12-10T00:00:00.000Z", "unidades_interes": `[{"Id":14,"Nombre":"FACULTAD DE INGENIERIA"}]`}
 	exito := true
 	servidor := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		consulta := r.URL.Query()
-		if r.URL.Path != "/periodo-seguimiento" || consulta.Get("query") != "activo:true,tipo_seguimiento_id:ts-1" || consulta.Get("fields") != "fecha_inicio,fecha_fin,unidades_interes" {
+		if r.URL.Path != "/periodo-seguimiento" || consulta.Get("query") != "activo:true,tipo_seguimiento_id:ts-1" || consulta.Get("fields") != "fecha_inicio,fecha_fin,unidades_interes" ||
+			consulta.Get("sortby") != "fecha_modificacion" || consulta.Get("order") != "desc" {
 			t.Errorf("consulta inesperada: %s", r.URL.String())
 		}
 		if !exito {

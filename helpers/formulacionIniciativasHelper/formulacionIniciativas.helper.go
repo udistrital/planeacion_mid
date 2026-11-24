@@ -24,9 +24,10 @@ var (
 )
 
 // DefinirFechasIniciativasFormulacion habilita el rango de fechas para las unidades elegidas en
-// una vigencia. Cada unidad queda en un solo registro activo por vigencia: se les quita a los
-// demás registros y se agrega al registro que ya tenga ese rango, o a uno nuevo.
-// Devuelve los registros escritos.
+// una vigencia. Cada unidad queda en un solo registro activo del tipo de seguimiento, de
+// cualquier vigencia, porque la iniciativa no guarda la vigencia y lo último que se guarda es lo
+// que vale: se les quita a los demás registros y se agrega al registro de esa vigencia que ya
+// tenga ese rango, o a uno nuevo. Devuelve los registros escritos.
 func DefinirFechasIniciativasFormulacion(body map[string]interface{}) []interface{} {
 	// 1. Validar la entrada
 	periodoID := campoTexto(body, "periodo_id")
@@ -47,19 +48,19 @@ func DefinirFechasIniciativasFormulacion(body map[string]interface{}) []interfac
 		panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Debe elegir al menos una unidad", "status": "400"})
 	}
 
-	// 2. Traer los registros activos de la vigencia y el tipo de seguimiento
+	// 2. Traer los registros activos del tipo de seguimiento, de todas las vigencias
 	urlRegistros := beego.AppConfig.String("PlanesService") + "/periodo-seguimiento-iniciativas"
-	consulta := "tipo_seguimiento_id:" + tipoSeguimientoID + ",periodo_id:" + periodoID + ",activo:true"
+	consulta := "tipo_seguimiento_id:" + tipoSeguimientoID + ",activo:true"
 	var resRegistros map[string]interface{}
 	var registros []map[string]interface{}
 	if err := helpers.SendJson(urlRegistros+"?query="+url.QueryEscape(consulta)+"&sortby=fecha_modificacion&order=desc&limit=0", "GET", &resRegistros, nil); err != nil {
-		panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Error al obtener los registros de fechas de la vigencia", "status": "400", "log": err})
+		panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Error al obtener los registros de fechas", "status": "400", "log": err})
 	}
-	exigirExito(resRegistros, "DefinirFechasIniciativasFormulacion", "Error al obtener los registros de fechas de la vigencia")
+	exigirExito(resRegistros, "DefinirFechasIniciativasFormulacion", "Error al obtener los registros de fechas")
 	helpers.LimpiezaRespuestaRefactor(resRegistros, &registros)
 
 	// 3. Repartir las unidades
-	actualizar, crear := repartirUnidades(registros, seleccion, inicio, fin)
+	actualizar, crear := repartirUnidades(registros, seleccion, periodoID, inicio, fin)
 	usuario := campoTexto(body, "usuario_modificacion")
 
 	// 4. Guardar: primero el registro que queda con las unidades y después los demás, para que
@@ -103,15 +104,16 @@ func exigirExito(respuesta map[string]interface{}, funcion, mensaje string) {
 }
 
 // repartirUnidades calcula qué escribir para que las unidades de la selección queden solo en el
-// registro con el rango [inicio, fin]. El destino es el primer registro con las mismas fechas,
-// comparando por día. A los demás se les quitan las unidades de la selección y, si quedan sin
-// unidades, se inactivan. Las unidades se comparan solo por Id.
+// registro de la vigencia periodoID con el rango [inicio, fin]. El destino es el primer registro
+// de esa vigencia con las mismas fechas, comparando por día. A los demás, de cualquier vigencia,
+// se les quitan las unidades de la selección y, si quedan sin unidades, se inactivan. Las
+// unidades se comparan solo por Id.
 //
 // Devuelve los registros que cambiaron, con el destino de primero, y, si no hay destino, el
 // registro a crear. Ese registro trae las fechas, las unidades, planes_interes y activo; quien
 // llama completa periodo_id, tipo_seguimiento_id y usuario_modificacion. No modifica los
 // registros recibidos.
-func repartirUnidades(registros []map[string]interface{}, seleccion []map[string]interface{}, inicio, fin time.Time) (actualizar []map[string]interface{}, crear map[string]interface{}) {
+func repartirUnidades(registros []map[string]interface{}, seleccion []map[string]interface{}, periodoID string, inicio, fin time.Time) (actualizar []map[string]interface{}, crear map[string]interface{}) {
 	seleccion = unidadesSinRepetir(seleccion)
 	idsSeleccion := make(map[int]bool, len(seleccion))
 	for _, unidad := range seleccion {
@@ -120,7 +122,7 @@ func repartirUnidades(registros []map[string]interface{}, seleccion []map[string
 
 	indiceDestino := -1
 	for i, registro := range registros {
-		if mismoRango(registro, inicio, fin) {
+		if campoTexto(registro, "periodo_id") == periodoID && mismoRango(registro, inicio, fin) {
 			indiceDestino = i
 			break
 		}
@@ -269,9 +271,11 @@ func textoID(valor interface{}) string {
 	}
 }
 
-// UnidadHabilitada indica si alguno de los periodos que incluyen la dependencia cubre el día de
-// hoy en Bogotá, inclusivo en los dos extremos. Revisa los periodos de todas las vigencias. El Id
-// se compara como texto, así que 14 y "14" son iguales. Responde error si un periodo tiene
+// UnidadHabilitada indica si el periodo que rige a la dependencia cubre el día de hoy en Bogotá,
+// inclusivo en los dos extremos. Los periodos, de todas las vigencias, llegan del más reciente
+// (fecha_modificacion) al más antiguo, y rige el primero que incluye la dependencia: si una
+// unidad quedó en dos periodos, por dos guardados al mismo tiempo, vale lo último que se guardó.
+// El Id se compara como texto, así que 14 y "14" son iguales. Responde error si un periodo tiene
 // unidades_interes o fechas inválidas.
 func UnidadHabilitada(periodos []map[string]interface{}, dependenciaID string, hoy time.Time) (bool, error) {
 	ahora := hoy.In(zonaBogota)
@@ -294,9 +298,7 @@ func UnidadHabilitada(periodos []map[string]interface{}, dependenciaID string, h
 		if err != nil {
 			return false, fmt.Errorf("fecha_fin inválida en el periodo %v: %w", periodo["_id"], err)
 		}
-		if !dia.Before(inicio) && !dia.After(fin) {
-			return true, nil
-		}
+		return !dia.Before(inicio) && !dia.After(fin), nil
 	}
 	return false, nil
 }

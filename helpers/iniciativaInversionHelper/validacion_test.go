@@ -56,10 +56,10 @@ func TestCadaAlternativaExigeSuDescripcion(t *testing.T) {
 
 func TestElProgramaDebePertenecerAlSectorElegido(t *testing.T) {
 	iniciativa := iniciativaDeEjemplo(t)
-	iniciativa["articulacion_pnd"]["programa"] = "4599" // programa del sector 45, no del 22
+	iniciativa["articulacion_pnd"]["pnd"].(map[string]interface{})["programa"] = "4599" // programa del sector 45, no del 22
 
 	errores := validarIniciativa(t, definicionDePrueba(t), iniciativa)["articulacion_pnd"]
-	exigirError(t, errores, "programa", "no pertenece")
+	exigirError(t, errores, "pnd.programa", "no pertenece")
 }
 
 func TestCodigoInexistenteEnCatalogo(t *testing.T) {

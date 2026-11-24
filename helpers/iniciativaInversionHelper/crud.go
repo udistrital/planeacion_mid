@@ -45,7 +45,8 @@ type RepositorioSubmodulos interface {
 // RepositorioPeriodos lee los registros de fechas de periodo_seguimiento.
 type RepositorioPeriodos interface {
 	// PeriodosActivos devuelve los registros activos del tipo de seguimiento, de todas las
-	// vigencias, con _id, fecha_inicio, fecha_fin y unidades_interes (un texto JSON).
+	// vigencias y del más reciente (fecha_modificacion) al más antiguo, con _id, fecha_inicio,
+	// fecha_fin y unidades_interes (un texto JSON).
 	PeriodosActivos(tipoSeguimientoID string) ([]map[string]interface{}, error)
 }
 
@@ -307,7 +308,7 @@ func (c *ClienteCrud) AgregarObservacion(id string, nueva NuevaObservacion) (*Su
 // PeriodosActivos implementa RepositorioPeriodos.
 func (c *ClienteCrud) PeriodosActivos(tipoSeguimientoID string) ([]map[string]interface{}, error) {
 	var periodos []map[string]interface{}
-	ruta := "/periodo-seguimiento?" + consulta(map[string]string{"tipo_seguimiento_id": tipoSeguimientoID, "activo": "true"}) + "&fields=fecha_inicio,fecha_fin,unidades_interes"
+	ruta := "/periodo-seguimiento?" + consulta(map[string]string{"tipo_seguimiento_id": tipoSeguimientoID, "activo": "true"}) + "&fields=fecha_inicio,fecha_fin,unidades_interes&sortby=fecha_modificacion&order=desc"
 	err := c.llamar(http.MethodGet, ruta, nil, &periodos)
 	return periodos, err
 }

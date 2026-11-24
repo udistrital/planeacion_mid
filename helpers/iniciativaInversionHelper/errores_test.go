@@ -105,7 +105,7 @@ func TestLaAccionNoPermitidaSeNombraComoEnPantalla(t *testing.T) {
 
 func TestElCatalogoDependienteNombraElCampoYNoSuClave(t *testing.T) {
 	iniciativa := iniciativaDeEjemplo(t)
-	iniciativa["articulacion_pnd"]["sector"] = ""
+	iniciativa["articulacion_pnd"]["pnd"].(map[string]interface{})["sector"] = ""
 
-	exigirError(t, validarIniciativa(t, definicionDePrueba(t), iniciativa)["articulacion_pnd"], "programa", "primero seleccione «Sector»")
+	exigirError(t, validarIniciativa(t, definicionDePrueba(t), iniciativa)["articulacion_pnd"], "pnd.programa", "primero seleccione «Sector»")
 }

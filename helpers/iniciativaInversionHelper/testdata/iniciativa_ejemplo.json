@@ -5,9 +5,15 @@
     "localizacion": "Bogotá D.C.",
     "producto_principal": "2202051"
   },
-  "articulacion_pnd": { "sector": "22", "programa": "2202" },
+  "articulacion_pnd": {
+    "pnd": { "sector": "22", "programa": "2202" },
+    "pdd": { "plan": "pdd-1", "objetivo_estrategico": ["pdd-1-o1"], "estrategia": ["pdd-1-o1-e1"], "programa_intersectorial": ["pdd-1-o1-e1-p1"] },
+    "ped": { "plan": "ped-1", "lineamiento_estrategico": ["ped-1-l1"], "meta_estrategica": ["ped-1-l1-m1"] },
+    "pi": { "plan": "pi-1", "eje_transformador": ["pi-1-e1"], "lineamiento_accion": ["pi-1-e1-l1"], "estrategia": ["pi-1-e1-l1-s1"] }
+  },
   "justificacion": {
-    "descripcion": "La Universidad soporta sus procesos académicos y administrativos en una infraestructura tecnológica con una obsolescencia general del 54,6% y un uso del 82% de su capacidad instalada. Sin una renovación planificada aumentan el riesgo de interrupción de los servicios, la pérdida de información y los costos de mantenimiento correctivo. El proyecto permite cumplir los lineamientos de la Política de Gobierno Digital, proteger la información institucional y dar soporte tecnológico a la cobertura académica.",
+    "descripcion_tecnica": "La Universidad soporta sus procesos académicos y administrativos en una infraestructura tecnológica con una obsolescencia general del 54,6% y un uso del 82% de su capacidad instalada. Sin una renovación planificada aumentan el riesgo de interrupción de los servicios y la pérdida de información. El proyecto permite cumplir los lineamientos de la Política de Gobierno Digital, proteger la información institucional y dar soporte tecnológico a la cobertura académica.",
+    "descripcion_financiera": "Una renovación planificada cuesta menos que seguir atendiendo las fallas de equipos sin soporte del fabricante con mantenimiento correctivo, cuyos costos crecen con la obsolescencia. La inversión se programa por periodos en la Cadena de valor, de modo que cada vigencia financia solo lo que se ejecuta en ella.",
     "aspectos_legales": [
       {
         "id": "nl-1",
@@ -204,6 +210,8 @@
         "id": "tz-1",
         "origen": "Trazador Presupuestal de Grupos Étnicos",
         "descripcion": "Los estudiantes de comunidades étnicas acceden en igualdad de condiciones a los servicios tecnológicos y a los contenidos virtuales de sus programas.",
+        "actividad": "Renovar los equipos de cómputo de soporte técnico y pedagógico de las salas de los programas académicos.",
+        "presupuesto": "$ 75.000.000 de la actividad 2.1",
         "grupos_etnicos": [
           { "id": "ge-1", "origen": "Comunidades Negras, Afrocolombianos y Palenquera y comunidad raizal", "numero_beneficiarios": 788 },
           { "id": "ge-2", "origen": "Comunidades indígenas", "numero_beneficiarios": 349 }
@@ -212,16 +220,30 @@
       {
         "id": "tz-2",
         "origen": "Trazador Presupuestal de Juventud",
-        "descripcion": "El proyecto moderniza la infraestructura tecnológica que usan en su formación los estudiantes, en su mayoría jóvenes de 19 a 26 años.",
-        "discriminado": "Estudiantes de 19 a 26 años",
-        "numero_beneficiarios": 20200
+        "descripcion": "El proyecto moderniza la infraestructura tecnológica que usan en su formación los estudiantes, en su mayoría jóvenes de 14 a 26 años.",
+        "discriminado": "Estudiantes de 14 a 26 años",
+        "numero_beneficiarios": 20200,
+        "actividad": "Renovar las licencias de software para la virtualización de contenidos y desarrollar herramientas digitales para los programas académicos.",
+        "presupuesto": "$ 1.000.000.000 (toda la actividad 2.2)"
       },
       {
         "id": "tz-3",
         "origen": "Trazador Presupuestal para Población con Discapacidad",
         "descripcion": "Las herramientas digitales y los contenidos virtuales se desarrollan con criterios de accesibilidad para las personas con discapacidad.",
         "discriminado": "Estudiantes, docentes y administrativos con discapacidad",
-        "numero_beneficiarios": 322
+        "numero_beneficiarios": 322,
+        "actividad": "Renovar las licencias de software para la virtualización de contenidos y desarrollar herramientas digitales para los programas académicos.",
+        "presupuesto": "$ 120.000.000 de la actividad 2.2, para las funciones de accesibilidad"
+      },
+      {
+        "id": "tz-4",
+        "origen": "Otro",
+        "cual": "Trazador Presupuestal de Ciencia, Tecnología e Innovación",
+        "descripcion": "La plataforma centralizada de gestión de datos da soporte a los grupos de investigación de la Universidad.",
+        "discriminado": "Investigadores y semilleros de investigación",
+        "numero_beneficiarios": 1500,
+        "actividad": "Implementar una plataforma centralizada de gestión de datos articulada con el plan nacional de infraestructura de datos.",
+        "presupuesto": "$ 300.000.000 de la actividad 3.2"
       }
     ]
   },
@@ -251,29 +273,90 @@
         "linea_base": "Alinear en un 2,5% la arquitectura de los sistemas de información con las necesidades de transformación digital."
       }
     ],
+    "medios": [
+      {
+        "id": "me-1",
+        "origen": "ci-1",
+        "medio": "Modernizar y ampliar la infraestructura de telecomunicaciones, data center y la capacidad de la infraestructura de almacenamiento y procesamiento que soporta los servicios tecnológicos.",
+        "linea_base": "Para el año 2028, con el presupuesto distribuido se modernizará el 22% de los equipos de networking obsoletos."
+      },
+      {
+        "id": "me-2",
+        "origen": "ci-2",
+        "medio": "Contar con capacidad de los sistemas de almacenamiento, sistema de respaldo y ciberseguridad de acuerdo con las necesidades de la Universidad.",
+        "linea_base": "Para el año 2028 no es posible aumentar la capacidad de almacenamiento."
+      },
+      {
+        "id": "me-3",
+        "origen": "ci-3",
+        "medio": "Garantizar el mantenimiento preventivo y correctivo y el soporte oportuno de los equipos, con los recursos necesarios para su sostenibilidad."
+      },
+      {
+        "id": "me-4",
+        "origen": "ci-4",
+        "medio": "Renovar y aumentar la infraestructura tecnológica que apoya los procesos académicos para ampliar la cobertura y las herramientas de enseñanza y aprendizaje.",
+        "linea_base": "Para el año 2028, con el presupuesto distribuido se modernizará el 30% de los equipos de cómputo de soporte técnico y pedagógico."
+      },
+      {
+        "id": "me-5",
+        "origen": "ci-5",
+        "medio": "Potenciar la adquisición, renovación y desarrollo de software, recursos tecnológicos y capital humano para apoyar los programas académicos mediante las TIC.",
+        "linea_base": "Para el año 2028, con el presupuesto distribuido no es posible aumentar la capacidad de licencias de software para los procesos académicos."
+      },
+      {
+        "id": "me-6",
+        "origen": "ci-6",
+        "medio": "Implementar las mejores prácticas en seguridad de la información para proteger la infraestructura tecnológica de la Universidad.",
+        "linea_base": "Brecha de seguridad: 100% MSPI, 90% en el PHVA y 82% de los controles ISO 27001."
+      },
+      {
+        "id": "me-7",
+        "origen": "ci-7",
+        "medio": "Mantener actualizada la Estrategia de TI, con base en las necesidades, requerimientos, metas y normatividad vigente.",
+        "linea_base": "Sistemas de información desarrollados en un 70% con nuevas tecnologías."
+      },
+      {
+        "id": "me-8",
+        "origen": "ci-8",
+        "medio": "Implementar una plataforma centralizada de gestión de datos que permita la articulación con el plan nacional de infraestructura de datos.",
+        "linea_base": "Implementación en 80% de las directrices del plan nacional de infraestructura de datos de forma institucionalizada."
+      }
+    ],
     "resultados_esperados": [
       {
         "id": "re-1",
         "origen": "Número de estudiantes beneficiados",
         "cantidad": 26257,
-        "localizacion_sede": "Todas las sedes de la Universidad: salas de cómputo y servicios tecnológicos de las facultades."
+        "sedes": ["1"],
+        "espacios_especificos": "Salas de cómputo y servicios tecnológicos de las facultades."
       },
-      { "id": "re-2", "origen": "Número de docentes beneficiados", "cantidad": 1950, "localizacion_sede": "Todas las sedes de la Universidad." },
-      { "id": "re-3", "origen": "Número de administrativos beneficiados", "cantidad": 980, "localizacion_sede": "Sedes administrativas y data center principal." },
-      { "id": "re-4", "origen": "Número de equipos tecnológicos adquiridos", "cantidad": 640, "localizacion_sede": "Data center principal y salas de cómputo de las facultades." },
-      { "id": "re-5", "origen": "Número de licencias de Software o Hardware adquiridas", "cantidad": 1200, "localizacion_sede": "Todas las sedes (licenciamiento institucional)." },
-      { "id": "re-6", "origen": "Número de servidores o sistemas de información adquiridos", "cantidad": 12, "localizacion_sede": "Data center principal." },
-      { "id": "re-7", "origen": "Otro", "cual": "Porcentaje de reducción de la obsolescencia de la infraestructura tecnológica", "cantidad": 30, "localizacion_sede": "Infraestructura administrada por la OATI en todas las sedes." }
+      { "id": "re-2", "origen": "Número de docentes beneficiados", "cantidad": 1950, "sedes": ["1"] },
+      { "id": "re-3", "origen": "Número de administrativos beneficiados", "cantidad": 980, "sedes": ["1"], "espacios_especificos": "Data center principal." },
+      { "id": "re-4", "origen": "Número de equipos tecnológicos adquiridos", "cantidad": 640, "sedes": ["1"], "espacios_especificos": "Data center principal y salas de cómputo de las facultades." },
+      { "id": "re-5", "origen": "Número de licencias de Software o Hardware adquiridas", "cantidad": 1200, "sedes": ["1"] },
+      { "id": "re-6", "origen": "Número de servidores o sistemas de información adquiridos", "cantidad": 12, "sedes": ["1"], "espacios_especificos": "Data center principal." },
+      { "id": "re-7", "origen": "Otro", "cual": "Porcentaje de reducción de la obsolescencia de la infraestructura tecnológica", "cantidad": 30, "sedes": ["1"], "espacios_especificos": "Infraestructura administrada por la OATI." }
     ],
     "impactos_esperados": [
       { "id": "ie-1", "descripcion": "Mayor cubrimiento de las necesidades de servicios tecnológicos a los usuarios.", "linea_base": "Cobertura de proyectos frente a las condiciones de TI de la Universidad: 25%." },
       {
         "id": "ie-2",
         "descripcion": "Mayor nivel de disponibilidad y capacidad de los servicios; usuarios con acceso permanente a los servicios.",
-        "linea_base": "Disponibilidad de los servicios de la OATI: 99%."
+        "linea_base": "Disponibilidad de los servicios de la OATI: 99%.",
+        "objetivo_especifico": "oe-1"
       },
-      { "id": "ie-3", "descripcion": "Integridad en los datos para soporte a la toma de decisiones.", "linea_base": "Implementación en 0% de las directrices del plan nacional de infraestructura de datos." },
-      { "id": "ie-4", "descripcion": "Lineamientos en los procesos referentes a la seguridad de la información.", "linea_base": "Brecha de seguridad del 54% frente al MSPI." }
+      {
+        "id": "ie-3",
+        "descripcion": "Integridad en los datos para soporte a la toma de decisiones.",
+        "linea_base": "Implementación en 0% de las directrices del plan nacional de infraestructura de datos.",
+        "objetivo_especifico": "oe-3"
+      },
+      {
+        "id": "ie-4",
+        "descripcion": "Lineamientos en los procesos referentes a la seguridad de la información.",
+        "linea_base": "Brecha de seguridad del 54% frente al MSPI.",
+        "objetivo_especifico": "oe-3"
+      }
     ]
   },
   "alternativas": {
@@ -353,98 +436,89 @@
       {
         "id": "po-1",
         "origen": "oe-1",
-        "productos": [
+        "producto": "2202051",
+        "actividades": [
           {
-            "id": "pr-1",
-            "producto": "2202051",
-            "indicador_producto": "Sedes dotadas con infraestructura tecnológica modernizada",
-            "unidad_medida": "Número de herramientas y equipos para fortalecer la infraestructura tecnológica",
-            "actividades": [
-              {
-                "id": "ac-1",
-                "actividad": "Adquirir los equipos de networking, comunicaciones unificadas y seguridad perimetral que reemplazan a los que perdieron el soporte del fabricante.",
-                "insumos": "Maquinaria y equipo",
-                "periodo_0": 1200000000,
-                "periodo_1": 800000000,
-                "periodo_2": 600000000
-              },
-              {
-                "id": "ac-2",
-                "actividad": "Ampliar la capacidad de almacenamiento (nube privada), respaldo y procesamiento del data center.",
-                "insumos": "Maquinaria y equipo",
-                "periodo_0": 900000000,
-                "periodo_1": 500000000
-              },
-              {
-                "id": "ac-3",
-                "actividad": "Contratar el soporte y el mantenimiento preventivo y correctivo de la infraestructura tecnológica.",
-                "insumos": "Otros servicios",
-                "periodo_0": 300000000,
-                "periodo_1": 300000000,
-                "periodo_2": 300000000,
-                "periodo_3": 300000000,
-                "periodo_4": 300000000
-              }
-            ]
+            "id": "ac-1",
+            "actividad": "Adquirir los equipos de networking, comunicaciones unificadas y seguridad perimetral que reemplazan a los que perdieron el soporte del fabricante.",
+            "insumos": "Maquinaria y equipo",
+            "unidad_medida": "Número de equipos",
+            "cantidad": 180,
+            "anio_0": 1200000000,
+            "anio_1": 800000000,
+            "anio_2": 600000000
+          },
+          {
+            "id": "ac-2",
+            "actividad": "Ampliar la capacidad de almacenamiento (nube privada), respaldo y procesamiento del data center.",
+            "insumos": "Maquinaria y equipo",
+            "unidad_medida": "Número de infraestructura para almacenamiento",
+            "cantidad": 2,
+            "anio_0": 900000000,
+            "anio_1": 500000000
+          },
+          {
+            "id": "ac-3",
+            "actividad": "Contratar el soporte y el mantenimiento preventivo y correctivo de la infraestructura tecnológica.",
+            "insumos": "Otros servicios",
+            "unidad_medida": "Número de contratos",
+            "cantidad": 4,
+            "anio_0": 375000000,
+            "anio_1": 375000000,
+            "anio_2": 375000000,
+            "anio_3": 375000000
           }
         ]
       },
       {
         "id": "po-2",
         "origen": "oe-2",
-        "productos": [
+        "producto": "2202050",
+        "actividades": [
           {
-            "id": "pr-2",
-            "producto": "2202050",
-            "indicador_producto": "Ambientes de aprendizaje dotados con equipos de cómputo y herramientas TIC",
+            "id": "ac-4",
+            "actividad": "Renovar los equipos de cómputo de soporte técnico y pedagógico de las salas de los programas académicos.",
+            "insumos": "Maquinaria y equipo",
             "unidad_medida": "Número de equipos",
-            "actividades": [
-              {
-                "id": "ac-4",
-                "actividad": "Renovar los equipos de cómputo de soporte técnico y pedagógico de las salas de los programas académicos.",
-                "insumos": "Maquinaria y equipo",
-                "periodo_0": 700000000,
-                "periodo_1": 700000000
-              },
-              {
-                "id": "ac-5",
-                "actividad": "Renovar las licencias de software para la virtualización de contenidos y desarrollar herramientas digitales para los programas académicos.",
-                "insumos": "Mano de obra calificada",
-                "periodo_1": 400000000,
-                "periodo_2": 400000000,
-                "periodo_3": 200000000
-              }
-            ]
+            "cantidad": 450,
+            "anio_0": 700000000,
+            "anio_1": 700000000
+          },
+          {
+            "id": "ac-5",
+            "actividad": "Renovar las licencias de software para la virtualización de contenidos y desarrollar herramientas digitales para los programas académicos.",
+            "insumos": "Mano de obra calificada",
+            "unidad_medida": "Número",
+            "cantidad": 1200,
+            "anio_1": 400000000,
+            "anio_2": 400000000,
+            "anio_3": 200000000
           }
         ]
       },
       {
         "id": "po-3",
         "origen": "oe-3",
-        "productos": [
+        "producto": "2202054",
+        "actividades": [
           {
-            "id": "pr-3",
-            "producto": "2202054",
-            "indicador_producto": "Sistemas de información implementados con arquitectura moderna e interoperable",
-            "unidad_medida": "Número de sistemas de información",
-            "actividades": [
-              {
-                "id": "ac-6",
-                "actividad": "Implementar los controles del Modelo de Seguridad y Privacidad de la Información (MSPI) y de la norma ISO 27001 en los procesos de la Universidad.",
-                "insumos": "Mano de obra calificada",
-                "periodo_0": 250000000,
-                "periodo_1": 250000000,
-                "periodo_2": 150000000
-              },
-              {
-                "id": "ac-7",
-                "actividad": "Implementar una plataforma centralizada de gestión de datos articulada con el plan nacional de infraestructura de datos.",
-                "insumos": "Mano de obra calificada",
-                "periodo_2": 500000000,
-                "periodo_3": 400000000,
-                "periodo_4": 200000000
-              }
-            ]
+            "id": "ac-6",
+            "actividad": "Implementar los controles del Modelo de Seguridad y Privacidad de la Información (MSPI) y de la norma ISO 27001 en los procesos de la Universidad.",
+            "insumos": "Mano de obra calificada",
+            "unidad_medida": "Porcentaje implementación",
+            "cantidad": 100,
+            "anio_0": 250000000,
+            "anio_1": 250000000,
+            "anio_2": 150000000
+          },
+          {
+            "id": "ac-7",
+            "actividad": "Implementar una plataforma centralizada de gestión de datos articulada con el plan nacional de infraestructura de datos.",
+            "insumos": "Mano de obra calificada",
+            "unidad_medida": "Número de plataformas tecnologícas",
+            "cantidad": 1,
+            "anio_2": 500000000,
+            "anio_3": 600000000
           }
         ]
       }
@@ -465,7 +539,7 @@
       {
         "id": "cr-3",
         "origen": "ac-3",
-        "programacion_fisica": { "anio_0": "Enero - Diciembre", "anio_1": "Enero - Diciembre", "anio_2": "Enero - Diciembre", "anio_3": "Enero - Diciembre", "anio_4": "Enero - Diciembre" }
+        "programacion_fisica": { "anio_0": "Enero - Diciembre", "anio_1": "Enero - Diciembre", "anio_2": "Enero - Diciembre", "anio_3": "Enero - Diciembre" }
       },
       {
         "id": "cr-4",
@@ -485,7 +559,7 @@
       {
         "id": "cr-7",
         "origen": "ac-7",
-        "programacion_fisica": { "anio_2": "Marzo - Diciembre", "anio_3": "Febrero - Diciembre", "anio_4": "Febrero - Junio" }
+        "programacion_fisica": { "anio_2": "Marzo - Diciembre", "anio_3": "Febrero - Diciembre" }
       }
     ]
   },
@@ -542,6 +616,14 @@
       { "id": "pi-5", "origen": "ac-5" },
       { "id": "pi-6", "origen": "ac-6" },
       { "id": "pi-7", "origen": "ac-7" }
+    ]
+  },
+  "fuentes_financiacion": {
+    "fuentes": [
+      { "id": "ff-1", "origen": "1-100-I013", "anio_0": 2000000000, "anio_1": 1800000000, "anio_2": 1200000000, "anio_3": 700000000 },
+      { "id": "ff-2", "origen": "1-200-I066", "anio_0": 425000000 },
+      { "id": "ff-3", "origen": "3-100-I006", "anio_0": 1000000000, "anio_1": 900000000, "anio_2": 600000000, "anio_3": 300000000 },
+      { "id": "ff-4", "origen": "Otra", "cual": "Recursos de cooperación con el Ministerio de Educación Nacional", "anio_1": 325000000, "anio_2": 225000000, "anio_3": 175000000 }
     ]
   },
   "sostenibilidad": {

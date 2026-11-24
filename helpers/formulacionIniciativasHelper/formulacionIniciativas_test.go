@@ -2,6 +2,7 @@ package formulacionIniciativasHelper
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -49,7 +50,8 @@ func enBogota(dia string, hora, minuto int) time.Time {
 
 func TestUnidadHabilitada(t *testing.T) {
 	casos := []struct {
-		nombre           string
+		nombre string
+		// periodos va del más reciente al más antiguo, como los entrega el crud.
 		periodos         []map[string]interface{}
 		dependenciaID    string
 		hoy              time.Time
@@ -65,13 +67,22 @@ func TestUnidadHabilitada(t *testing.T) {
 			quiereHabilitada: true,
 		},
 		{
-			nombre: "el primer registro está vencido y el segundo vigente (F2)",
+			nombre: "un registro vencido más antiguo con la unidad no la bloquea (F2)",
 			periodos: []map[string]interface{}{
-				periodoDePrueba("viejo", "11", "2025-11-01", "2025-11-30", rectoria, ingenieria),
 				periodoDePrueba("B", "12", "2026-11-20", "2026-12-10", ingenieria),
+				periodoDePrueba("viejo", "11", "2025-11-01", "2025-11-30", rectoria, ingenieria),
 			},
 			dependenciaID: "14", hoy: enBogota("2026-11-25", 10, 0),
 			quiereHabilitada: true,
+		},
+		{
+			nombre: "rige el registro más reciente aunque uno más antiguo de otra vigencia cubra hoy",
+			periodos: []map[string]interface{}{
+				periodoDePrueba("cierre", "39", "2026-11-10", "2026-11-14", rectoria, ingenieria),
+				periodoDePrueba("apertura", "83", "2026-11-17", "2026-11-30", rectoria, ingenieria),
+			},
+			dependenciaID: "14", hoy: enBogota("2026-11-24", 10, 0),
+			quiereHabilitada: false,
 		},
 		{
 			nombre: "un registro vencido que no tiene la unidad no la bloquea (F2)",
@@ -223,13 +234,32 @@ func TestRepartirUnidades(t *testing.T) {
 		activo bool
 	}
 	casos := []struct {
-		nombre         string
-		registros      []map[string]interface{}
-		seleccion      []map[string]interface{}
+		nombre    string
+		registros []map[string]interface{}
+		seleccion []map[string]interface{}
+		// vigencia es la que se elige al habilitar; si se omite, la 12.
+		vigencia       string
 		inicio, fin    string
 		quiereActuales []esperado
 		quiereCrear    *esperado
 	}{
+		{
+			nombre:    "la selección se quita del registro de otra vigencia",
+			registros: []map[string]interface{}{periodoDePrueba("A", "83", "2026-11-17", "2026-11-30", rectoria, ingenieria)},
+			seleccion: seleccionDePrueba(rectoria, ingenieria),
+			vigencia:  "39",
+			inicio:    "2026-11-10T00:00:00.000Z", fin: "2026-11-14T00:00:00.000Z",
+			quiereActuales: []esperado{{"A", []int{}, false}},
+			quiereCrear:    &esperado{"", []int{7, 14}, true},
+		},
+		{
+			nombre:    "un registro de otra vigencia con el mismo rango no es el destino",
+			registros: []map[string]interface{}{periodoDePrueba("A", "11", "2026-11-20", "2026-12-10", rectoria, ingenieria)},
+			seleccion: seleccionDePrueba(ingenieria),
+			inicio:    "2026-11-20T00:00:00.000Z", fin: "2026-12-10T00:00:00.000Z",
+			quiereActuales: []esperado{{"A", []int{7}, true}},
+			quiereCrear:    &esperado{"", []int{14}, true},
+		},
 		{
 			nombre:    "ejemplo A y B: Ingeniería cambia de rango",
 			registros: []map[string]interface{}{periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", rectoria, ingenieria)},
@@ -326,7 +356,11 @@ func TestRepartirUnidades(t *testing.T) {
 	for _, caso := range casos {
 		t.Run(caso.nombre, func(t *testing.T) {
 			inicio, fin := fecha(caso.inicio), fecha(caso.fin)
-			actualizar, crear := repartirUnidades(caso.registros, caso.seleccion, inicio, fin)
+			vigencia := caso.vigencia
+			if vigencia == "" {
+				vigencia = "12"
+			}
+			actualizar, crear := repartirUnidades(caso.registros, caso.seleccion, vigencia, inicio, fin)
 
 			if len(actualizar) != len(caso.quiereActuales) {
 				t.Fatalf("se esperaban %d registros para actualizar y llegaron %d: %v", len(caso.quiereActuales), len(actualizar), actualizar)
@@ -376,7 +410,7 @@ func TestRepartirUnidadesNoModificaLosRegistrosRecibidos(t *testing.T) {
 	}
 	antes := []map[string]interface{}{copiarRegistro(registros[0]), copiarRegistro(registros[1])}
 
-	repartirUnidades(registros, seleccionDePrueba(ingenieria), fecha("2026-11-20T00:00:00.000Z"), fecha("2026-12-10T00:00:00.000Z"))
+	repartirUnidades(registros, seleccionDePrueba(ingenieria), "12", fecha("2026-11-20T00:00:00.000Z"), fecha("2026-12-10T00:00:00.000Z"))
 
 	if !reflect.DeepEqual(registros, antes) {
 		t.Fatalf("los registros recibidos cambiaron:\nantes:   %v\ndespués: %v", antes, registros)
@@ -385,12 +419,12 @@ func TestRepartirUnidadesNoModificaLosRegistrosRecibidos(t *testing.T) {
 
 func TestEjemploAyBQuedaCadaUnidadEnUnSoloRegistro(t *testing.T) {
 	// 1. Rectoría e Ingeniería del 10 al 30 de noviembre: se crea A.
-	_, crearA := repartirUnidades(nil, seleccionDePrueba(rectoria, ingenieria), fecha("2026-11-10T00:00:00.000Z"), fecha("2026-11-30T00:00:00.000Z"))
+	_, crearA := repartirUnidades(nil, seleccionDePrueba(rectoria, ingenieria), "12", fecha("2026-11-10T00:00:00.000Z"), fecha("2026-11-30T00:00:00.000Z"))
 	crearA["_id"] = "A"
 	crearA["periodo_id"] = "12"
 
 	// 2. Ingeniería pasa al 20 de noviembre-10 de diciembre: A se queda con Rectoría y se crea B.
-	actualizar, crearB := repartirUnidades([]map[string]interface{}{crearA}, seleccionDePrueba(ingenieria), fecha("2026-11-20T00:00:00.000Z"), fecha("2026-12-10T00:00:00.000Z"))
+	actualizar, crearB := repartirUnidades([]map[string]interface{}{crearA}, seleccionDePrueba(ingenieria), "12", fecha("2026-11-20T00:00:00.000Z"), fecha("2026-12-10T00:00:00.000Z"))
 	if len(actualizar) != 1 || crearB == nil {
 		t.Fatalf("se esperaba actualizar A y crear B: %v %v", actualizar, crearB)
 	}
@@ -411,5 +445,112 @@ func TestEjemploAyBQuedaCadaUnidadEnUnSoloRegistro(t *testing.T) {
 	}
 	if habilitada, _ := UnidadHabilitada(periodos, "14", enBogota("2026-12-05", 10, 0)); !habilitada {
 		t.Fatal("Ingeniería debería estar habilitada el 5 de diciembre")
+	}
+}
+
+// baseDePrueba simula la colección periodo_seguimiento: guarda lo que calcula repartirUnidades
+// y entrega los registros activos del más reciente al más antiguo, como los pide el mid.
+type baseDePrueba struct {
+	registros []map[string]interface{} // del más reciente al más antiguo
+	creados   int
+}
+
+func (b *baseDePrueba) activos() []map[string]interface{} {
+	activos := []map[string]interface{}{}
+	for _, registro := range b.registros {
+		if registro["activo"] == true {
+			activos = append(activos, registro)
+		}
+	}
+	return activos
+}
+
+// calcular lee los registros activos y reparte la selección como al habilitar, sin guardar.
+func (b *baseDePrueba) calcular(vigencia, inicio, fin string, unidades ...string) ([]map[string]interface{}, map[string]interface{}) {
+	actualizar, crear := repartirUnidades(b.activos(), seleccionDePrueba(unidades...), vigencia, fecha(inicio+"T00:00:00.000Z"), fecha(fin+"T00:00:00.000Z"))
+	if crear != nil {
+		b.creados++
+		crear["_id"] = fmt.Sprintf("nuevo-%d", b.creados)
+		crear["periodo_id"] = vigencia
+	}
+	return actualizar, crear
+}
+
+// escribir guarda en el orden del mid, primero el registro nuevo y después los demás; cada
+// registro que se escribe pasa a ser el más reciente.
+func (b *baseDePrueba) escribir(actualizar []map[string]interface{}, crear map[string]interface{}) {
+	escritos := actualizar
+	if crear != nil {
+		escritos = append([]map[string]interface{}{crear}, actualizar...)
+	}
+	for _, escrito := range escritos {
+		registros := []map[string]interface{}{escrito}
+		for _, registro := range b.registros {
+			if registro["_id"] != escrito["_id"] {
+				registros = append(registros, registro)
+			}
+		}
+		b.registros = registros
+	}
+}
+
+func (b *baseDePrueba) habilitar(vigencia, inicio, fin string, unidades ...string) {
+	b.escribir(b.calcular(vigencia, inicio, fin, unidades...))
+}
+
+// Entre vigencias vale lo último que se guarda, sea para abrir o para cerrar.
+func TestEntreVigenciasValeLoUltimoQueSeGuarda(t *testing.T) {
+	hoy := enBogota("2026-11-24", 10, 0)
+	base := &baseDePrueba{}
+	exigir := func(paso string, quiere bool) {
+		t.Helper()
+		for _, dependencia := range []string{"7", "14"} {
+			habilitada, err := UnidadHabilitada(base.activos(), dependencia, hoy)
+			if err != nil || habilitada != quiere {
+				t.Fatalf("%s: la unidad %s quedó habilitada=%v (err=%v) y se esperaba %v", paso, dependencia, habilitada, err, quiere)
+			}
+		}
+	}
+
+	// 1. Rectoría e Ingeniería se abren en la vigencia 83 del 17 al 30 de noviembre.
+	base.habilitar("83", "2026-11-17", "2026-11-30", rectoria, ingenieria)
+	exigir("abrir en la 83", true)
+
+	// 2. Se cierran en la vigencia 39 con un rango que ya pasó: salen del registro de la 83.
+	base.habilitar("39", "2026-11-10", "2026-11-14", rectoria, ingenieria)
+	if activos := base.activos(); len(activos) != 1 || activos[0]["periodo_id"] != "39" {
+		t.Fatalf("solo debe quedar activo el registro de la 39: %v", activos)
+	}
+	exigir("cerrar en la 39", false)
+
+	// 3. Se vuelven a abrir en la 83.
+	base.habilitar("83", "2026-11-17", "2026-11-30", rectoria, ingenieria)
+	exigir("volver a abrir en la 83", true)
+}
+
+// Si dos personas guardan al mismo tiempo, las dos leen los mismos registros y la unidad queda
+// en dos; rige el que se guardó de último.
+func TestDosGuardadosAlMismoTiempoRigeElUltimo(t *testing.T) {
+	for _, abrirDeUltimo := range []bool{false, true} {
+		t.Run(fmt.Sprintf("abrir de último: %v", abrirDeUltimo), func(t *testing.T) {
+			base := &baseDePrueba{}
+			abrirActualizar, abrirCrear := base.calcular("83", "2026-11-17", "2026-11-30", ingenieria)
+			cerrarActualizar, cerrarCrear := base.calcular("39", "2026-11-10", "2026-11-14", ingenieria)
+			if abrirDeUltimo {
+				base.escribir(cerrarActualizar, cerrarCrear)
+				base.escribir(abrirActualizar, abrirCrear)
+			} else {
+				base.escribir(abrirActualizar, abrirCrear)
+				base.escribir(cerrarActualizar, cerrarCrear)
+			}
+			if activos := base.activos(); len(activos) != 2 {
+				t.Fatalf("la unidad debe haber quedado en dos registros: %v", activos)
+			}
+
+			habilitada, err := UnidadHabilitada(base.activos(), "14", enBogota("2026-11-24", 10, 0))
+			if err != nil || habilitada != abrirDeUltimo {
+				t.Fatalf("habilitada=%v (err=%v) y se esperaba %v", habilitada, err, abrirDeUltimo)
+			}
+		})
 	}
 }

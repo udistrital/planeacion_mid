@@ -14,7 +14,7 @@ import (
 // envía a revisión. Consultar, comentar y la revisión de Planeación no dependen de las fechas.
 //
 // Cuenta la unidad de la iniciativa (dependencia_id), no la de quien la abre. Como la iniciativa
-// no guarda la vigencia, sirve un registro de cualquier vigencia que cubra hoy a esa unidad.
+// no guarda la vigencia, rige el registro más reciente que tenga esa unidad, de cualquier vigencia.
 
 // mensajeFueraDeFechas es lo que ve el usuario cuando intenta formular fuera de las fechas.
 const mensajeFueraDeFechas = "La formulación de iniciativas no está habilitada para su unidad en estas fechas."

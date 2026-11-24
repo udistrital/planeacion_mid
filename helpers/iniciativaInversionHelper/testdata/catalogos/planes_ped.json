@@ -1,0 +1,13 @@
+{
+  "catalogo": "planes_ped",
+  "nombre": "Planes estratégicos de desarrollo",
+  "modulo": "Identificación",
+  "fuente": "Catálogo de prueba. En los ambientes sale de los planes PD_SP armados en Construcción de planes (RepositorioConInstrumentos, en instrumentos.go).",
+  "observaciones": [],
+  "items": [
+    {
+      "codigo": "ped-1",
+      "nombre": "Plan Estratégico de Desarrollo de prueba"
+    }
+  ]
+}

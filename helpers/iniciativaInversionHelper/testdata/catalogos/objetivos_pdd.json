@@ -1,0 +1,14 @@
+{
+  "catalogo": "objetivos_pdd",
+  "nombre": "Objetivos estratégicos del PDD",
+  "modulo": "Identificación",
+  "fuente": "Catálogo de prueba. En los ambientes sale de los planes PDD_SP armados en Construcción de planes (RepositorioConInstrumentos, en instrumentos.go).",
+  "observaciones": [],
+  "items": [
+    {
+      "codigo": "pdd-1-o1",
+      "nombre": "Objetivo estratégico de prueba",
+      "padre": "pdd-1"
+    }
+  ]
+}

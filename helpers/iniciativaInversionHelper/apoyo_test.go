@@ -13,10 +13,14 @@ import (
 //     iniciativa de ejemplo no trae documentos, así que no quedaría completa para enviarla a
 //     revisión. Las pruebas de los documentos arman su propio Anexos (definicionConAnexos).
 //   - testdata/iniciativa_ejemplo.json: database local/construccion-proyecto-inversion/
-//     iniciativa.ejemplo.json con la sede de prueba «1» en Localización. Todos sus submódulos
-//     quedan formulados.
+//     iniciativa.ejemplo.json sin su "descripcion" y con lo que cargar-iniciativa-ejemplo.js toma
+//     del ambiente: la sede de prueba «1» en Localización y en cada resultado esperado de
+//     Objetivos, y en Articulación los planes de prueba del PDD, el PED y el PI. Todos sus
+//     submódulos quedan formulados.
 //   - testdata/catalogos/: copias de database local/catalogos con los catálogos que usa la
-//     plantilla, y sedes.json, de prueba (en producción las sedes salen de Oikos).
+//     plantilla y, de prueba, los que en los ambientes salen de otros servicios: sedes.json
+//     (Oikos) y los del PDD, el PED y el PI (planes_pdd.json, objetivos_pdd.json…, de los
+//     planes armados en Construcción de planes), con una cadena de niveles por plan.
 
 const tipoPlanDePrueba = "tipo-iniciativa"
 

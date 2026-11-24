@@ -1,0 +1,14 @@
+{
+  "catalogo": "lineamientos_ped",
+  "nombre": "Lineamientos estratégicos del PED",
+  "modulo": "Identificación",
+  "fuente": "Catálogo de prueba. En los ambientes sale de los planes PD_SP armados en Construcción de planes (RepositorioConInstrumentos, en instrumentos.go).",
+  "observaciones": [],
+  "items": [
+    {
+      "codigo": "ped-1-l1",
+      "nombre": "Lineamiento estratégico de prueba",
+      "padre": "ped-1"
+    }
+  ]
+}

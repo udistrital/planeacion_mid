@@ -1,0 +1,15 @@
+{
+  "catalogo": "metas_ped",
+  "nombre": "Metas estratégicas del PED",
+  "modulo": "Identificación",
+  "fuente": "Catálogo de prueba. En los ambientes sale de los planes PD_SP armados en Construcción de planes (RepositorioConInstrumentos, en instrumentos.go).",
+  "observaciones": [],
+  "items": [
+    {
+      "codigo": "ped-1-l1-m1",
+      "nombre": "Meta estratégica de prueba",
+      "padre": "ped-1-l1",
+      "descripcion": "Enunciado de la meta estratégica de prueba."
+    }
+  ]
+}

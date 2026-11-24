@@ -1,0 +1,17 @@
+{
+  "catalogo": "fuentes_financiacion",
+  "nombre": "Fuentes de financiación",
+  "modulo": "Preparación",
+  "fuente": "Formato de Planeación «Fuentes de financiación» (imagen, 19 nov 2026). No sale del Excel del instrumento: extraer-catalogos.js no la genera.",
+  "observaciones": [
+    "Se usa en Fuentes de financiación: una fila por fuente; se llenan solo las que financian el proyecto.",
+    "El formato trae el código y el nombre juntos (p. ej. «1-100-I013_VA-Estampilla Universidad Distrital»): el código es lo que va antes del primer «_» o espacio y el nombre, lo demás. El formulario muestra el código en su propia columna, antes del nombre.",
+    "«Otras, ¿cuáles?» no es un elemento: son las filas que agrega el usuario (filas_adicionales con origen «Otra»), con su código (opcional) y su nombre."
+  ],
+  "items": [
+    { "codigo": "1-100-I013", "nombre": "VA-Estampilla Universidad Distrital" },
+    { "codigo": "1-200-I066", "nombre": "RB-Estampilla Universidad Distrital y Nacional" },
+    { "codigo": "3-100-I006", "nombre": "VA-Estampilla prouniversidades estatales" },
+    { "codigo": "3-100-F002", "nombre": "VA-Administrados de libre destinación (JÓVENES A LA U)" }
+  ]
+}

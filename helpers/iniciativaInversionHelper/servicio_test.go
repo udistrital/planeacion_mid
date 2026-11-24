@@ -675,7 +675,7 @@ func TestEnviarRevalidaLosSubmodulosAunqueSuEstadoDigaFormulado(t *testing.T) {
 
 	_, err := servicio.EjecutarAccion(iniciativa.ID, AccionEnviar)
 	exigirStatus(t, err, http.StatusConflict)
-	if !strings.Contains(err.Error(), "«Objetivos generales y específicos»") {
+	if !strings.Contains(err.Error(), "«"+definicionDePrueba(t).Submodulo("objetivos").Nombre+"»") {
 		t.Fatalf("el mensaje debe nombrar el submódulo con pendientes: %v", err)
 	}
 	if estado := repo.planes[iniciativa.ID].EstadoPlanID; estado != "ep-ef" {

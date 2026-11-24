@@ -1,0 +1,13 @@
+{
+  "catalogo": "planes_pi",
+  "nombre": "Planes indicativos",
+  "modulo": "Identificación",
+  "fuente": "Catálogo de prueba. En los ambientes sale de los planes PLI_SP armados en Construcción de planes (RepositorioConInstrumentos, en instrumentos.go).",
+  "observaciones": [],
+  "items": [
+    {
+      "codigo": "pi-1",
+      "nombre": "Plan Indicativo de prueba"
+    }
+  ]
+}

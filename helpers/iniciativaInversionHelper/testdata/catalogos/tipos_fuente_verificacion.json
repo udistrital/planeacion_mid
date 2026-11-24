@@ -1,0 +1,20 @@
+{
+  "catalogo": "tipos_fuente_verificacion",
+  "nombre": "Tipos de fuente de verificación",
+  "modulo": "Identificación",
+  "fuente": "Hoja 'Resumen del proyecto+' G25:G33",
+  "observaciones": [
+    "La lista está en la hoja \"Resumen del proyecto\" (Programación), pero corresponde al campo \"Tipo de fuente de verificación\" de Objetivos (el ejemplo dice \"Informe\")."
+  ],
+  "items": [
+    {"codigo":"Documento oficial","nombre":"Documento oficial"},
+    {"codigo":"Encuesta","nombre":"Encuesta"},
+    {"codigo":"Entrevista","nombre":"Entrevista"},
+    {"codigo":"Estadísticas","nombre":"Estadísticas"},
+    {"codigo":"Evaluación","nombre":"Evaluación"},
+    {"codigo":"Informe","nombre":"Informe"},
+    {"codigo":"Inspección","nombre":"Inspección"},
+    {"codigo":"Publicación","nombre":"Publicación"},
+    {"codigo":"Registros contables","nombre":"Registros contables"}
+  ]
+}
