@@ -422,16 +422,20 @@ type PlantillaResumen struct {
 //   - Numero: consecutivo por orden de creación (1 = la primera). Se cuenta sobre
 //     todas las iniciativas, activas o no, para que no cambie al desactivar otra.
 //   - Estado: estado general de la iniciativa.
+//   - PermiteEditar: su estado permite editarla.
+//   - FueraDeFechas: su estado permite editarla, pero hoy no hay fechas de formulación
+//     habilitadas para su unidad, así que solo se consulta.
 type IniciativaListado struct {
-	ID            string `json:"id"`
-	Numero        int    `json:"numero"`
-	Nombre        string `json:"nombre"`
-	DependenciaID string `json:"dependencia_id"`
+	ID                string `json:"id"`
+	Numero            int    `json:"numero"`
+	Nombre            string `json:"nombre"`
+	DependenciaID     string `json:"dependencia_id"`
 	DependenciaNombre string `json:"dependencia_nombre"`
-	Responsable   string `json:"responsable"`
-	Estado        Estado `json:"estado"`
-	PermiteEditar bool   `json:"permite_editar"`
-	FechaCreacion string `json:"fecha_creacion"`
+	Responsable       string `json:"responsable"`
+	Estado            Estado `json:"estado"`
+	PermiteEditar     bool   `json:"permite_editar"`
+	FueraDeFechas     bool   `json:"fuera_de_fechas"`
+	FechaCreacion     string `json:"fecha_creacion"`
 }
 
 // ResumenSubmodulo es una fila de la vista general de la iniciativa.
@@ -450,12 +454,16 @@ type ResumenModulo struct {
 }
 
 // ResumenIniciativa es la vista general: estado de la iniciativa y de cada submódulo, por módulo.
+// PermiteEditar depende solo del estado; FueraDeFechas, como en el listado, indica que el estado
+// permite editarla pero hoy no hay fechas de formulación habilitadas para su unidad: no se guarda
+// ni se envía, aunque la dependencia sí puede comentar.
 type ResumenIniciativa struct {
 	ID               string          `json:"id"`
 	Nombre           string          `json:"nombre"`
 	Estado           Estado          `json:"estado"`
 	PermiteEditar    bool            `json:"permite_editar"`
 	PermiteRevisar   bool            `json:"permite_revisar"`
+	FueraDeFechas    bool            `json:"fuera_de_fechas"`
 	AccionesPosibles []string        `json:"acciones_posibles"`
 	Modulos          []ResumenModulo `json:"modulos"`
 }

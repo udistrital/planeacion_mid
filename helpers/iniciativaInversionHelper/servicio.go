@@ -119,8 +119,8 @@ func (s *Servicio) motivoPlantillaNoUsable(plantillaID string) string {
 }
 
 // ListarIniciativas lista las iniciativas activas, de la más reciente a la más
-// antigua, con su número y su estado general. Si se indican dependencias, solo
-// las de esas dependencias.
+// antigua, con su número, su estado general y si están fuera de las fechas de
+// formulación de su unidad. Si se indican dependencias, solo las de esas dependencias.
 func (s *Servicio) ListarIniciativas(dependencias []string) ([]IniciativaListado, error) {
 
 	tipo, err := s.sistema.TipoPlanIniciativa()
@@ -140,6 +140,7 @@ func (s *Servicio) ListarIniciativas(dependencias []string) ([]IniciativaListado
 
 	responsables := nombresResponsables{}
 	nombresDeDependencias := nombresDependencias{fuente: s.dependencias, nombres: map[string]string{}}
+	fechas := fechasDeConsulta{servicio: s}
 	iniciativas := make([]IniciativaListado, 0, len(planes))
 	for _, plan := range planes {
 		if !plan.Activo || (len(deInteres) > 0 && !deInteres[plan.DependenciaID]) {
@@ -158,6 +159,7 @@ func (s *Servicio) ListarIniciativas(dependencias []string) ([]IniciativaListado
 			Responsable:       responsables.de(plan.ID, plan.Responsable),
 			Estado:            estado,
 			PermiteEditar:     PermiteEditar(estado.Codigo),
+			FueraDeFechas:     fechas.fueraDeFechas(&plan, estado.Codigo),
 			FechaCreacion:     plan.FechaCreacion,
 		})
 	}
@@ -263,13 +265,17 @@ func numerarPorCreacion(planes []Plan) map[string]int {
 
 // CrearIniciativa crea el plan de la iniciativa y un submódulo vacío por cada
 // submódulo de la plantilla (la indicada o, si no se indica, la más reciente). Si
-// falla la creación de los submódulos, desactiva el plan.
+// falla la creación de los submódulos, desactiva el plan. Fuera de las fechas de
+// formulación de la unidad responde 409.
 func (s *Servicio) CrearIniciativa(solicitud SolicitudCrearIniciativa) (*ResumenIniciativa, error) {
 	if strings.TrimSpace(solicitud.DependenciaID) == "" {
 		return nil, errorSolicitud("Seleccione la unidad para la que se crea la iniciativa.")
 	}
 	vigencias, err := textoVigencias(solicitud.Vigencias)
 	if err != nil {
+		return nil, err
+	}
+	if err := s.exigirFechasHabilitadas(solicitud.DependenciaID); err != nil {
 		return nil, err
 	}
 	tipo, err := s.sistema.TipoPlanIniciativa()
@@ -351,6 +357,7 @@ func textoVigencias(vigencias json.RawMessage) (string, error) {
 }
 
 // Resumen arma la vista general: estado de la iniciativa y de cada submódulo, por módulo.
+// Fuera de las fechas de formulación de la unidad no ofrece enviar a revisión.
 func (s *Servicio) Resumen(iniciativaID string) (*ResumenIniciativa, error) {
 	ctx, err := s.cargarIniciativa(iniciativaID)
 	if err != nil {
@@ -379,15 +386,33 @@ func (s *Servicio) Resumen(iniciativaID string) (*ResumenIniciativa, error) {
 		}
 		modulos = append(modulos, resumenModulo)
 	}
+	fechas := fechasDeConsulta{servicio: s}
+	fueraDeFechas := fechas.fueraDeFechas(ctx.plan, ctx.estado.Codigo)
+	acciones := AccionesPosibles(ctx.estado.Codigo, codigos)
+	if fueraDeFechas {
+		acciones = sinAccion(acciones, AccionEnviar)
+	}
 	return &ResumenIniciativa{
 		ID:               ctx.plan.ID,
 		Nombre:           ctx.plan.Nombre,
 		Estado:           ctx.estado,
 		PermiteEditar:    PermiteEditar(ctx.estado.Codigo),
 		PermiteRevisar:   PermiteRevisar(ctx.estado.Codigo),
-		AccionesPosibles: AccionesPosibles(ctx.estado.Codigo, codigos),
+		FueraDeFechas:    fueraDeFechas,
+		AccionesPosibles: acciones,
 		Modulos:          modulos,
 	}, nil
+}
+
+// sinAccion devuelve las acciones sin la indicada.
+func sinAccion(acciones []string, quitar string) []string {
+	resultado := make([]string, 0, len(acciones))
+	for _, accion := range acciones {
+		if accion != quitar {
+			resultado = append(resultado, accion)
+		}
+	}
+	return resultado
 }
 
 // Definicion devuelve la construcción de la plantilla de la iniciativa.
@@ -459,7 +484,8 @@ func catalogosEspejadosDe(submodulo *Nodo) map[string]bool {
 // GuardarSubmodulo guarda los datos aunque tengan errores (borrador). El submódulo
 // queda Formulado solo si no tiene errores; si no, Formulando (con información) o Sin
 // formular (vacío). La iniciativa pasa de Sin formular a Formulación iniciada con la primera
-// información. Si otra persona la cambió desde que se consultó, responde 409.
+// información. Si otra persona la cambió desde que se consultó, o si está fuera de las fechas de
+// formulación de su unidad, responde 409.
 func (s *Servicio) GuardarSubmodulo(iniciativaID, clave string, solicitud SolicitudGuardarSubmodulo) (*SubmoduloVista, error) {
 	ctx, err := s.cargarIniciativa(iniciativaID)
 	if err != nil {
@@ -467,6 +493,9 @@ func (s *Servicio) GuardarSubmodulo(iniciativaID, clave string, solicitud Solici
 	}
 	if !PermiteEditar(ctx.estado.Codigo) {
 		return nil, errorConflicto("La iniciativa está «%s»; no se puede editar.", ctx.estado.Nombre)
+	}
+	if err := s.exigirFechasHabilitadas(ctx.plan.DependenciaID); err != nil {
+		return nil, err
 	}
 	nodo, documento, err := ctx.submodulo(clave)
 	if err != nil {
@@ -529,7 +558,8 @@ func (s *Servicio) RevisarSubmodulo(iniciativaID, clave string, solicitud Solici
 	return s.vista(*guardada, s.validador.ValidarSubmodulo(nodo, ctx.datosIniciativa()))
 }
 
-// EjecutarAccion cambia el estado general de la iniciativa (enviar, devolver, avalar).
+// EjecutarAccion cambia el estado general de la iniciativa (enviar, devolver, avalar). Enviar
+// exige que la unidad esté dentro de sus fechas de formulación.
 func (s *Servicio) EjecutarAccion(iniciativaID, accion string) (*ResumenIniciativa, error) {
 	if _, existe := transiciones[accion]; !existe {
 		return nil, errorFormatoSolicitud("la acción %q no existe; las válidas son %s", accion, strings.Join(ordenAcciones, ", "))
@@ -547,6 +577,9 @@ func (s *Servicio) EjecutarAccion(iniciativaID, accion string) (*ResumenIniciati
 		return nil, errorConflicto("%s", motivo)
 	}
 	if accion == AccionEnviar {
+		if err := s.exigirFechasHabilitadas(ctx.plan.DependenciaID); err != nil {
+			return nil, err
+		}
 		if err := s.exigirSubmodulosValidos(ctx); err != nil {
 			return nil, err
 		}

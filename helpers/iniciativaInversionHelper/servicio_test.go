@@ -9,29 +9,39 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/astaxie/beego"
 	"github.com/udistrital/planeacion_mid/models"
 )
 
 // repoMemoria imita a planes_crud en memoria, incluido el bloqueo optimista de
-// submodulo_iniciativa (responde 409 si la versión no es la vigente).
+// submodulo_iniciativa (responde 409 si la versión no es la vigente). Empieza con las
+// fechas de formulación habilitadas hoy para las dependencias de las pruebas (periodos).
 type repoMemoria struct {
-	planes           map[string]*Plan
-	submodulos       map[string]*SubmoduloIniciativa
-	catalogos        map[string][]Estado
-	contador         int
-	fallarSubmodulos bool
-	fallarListado    bool
+	planes            map[string]*Plan
+	submodulos        map[string]*SubmoduloIniciativa
+	catalogos         map[string][]Estado
+	periodos          []map[string]interface{}
+	consultasPeriodos int
+	contador          int
+	fallarSubmodulos  bool
+	fallarListado     bool
+	fallarPeriodos    bool
 }
+
+// tipoSeguimientoDePrueba es el id del tipo de seguimiento FIPI_SP en repoMemoria.
+const tipoSeguimientoDePrueba = "ts-fipi"
 
 func nuevoRepoMemoria() *repoMemoria {
 	estado := func(id, codigo, nombre string) Estado { return Estado{ID: id, Codigo: codigo, Nombre: nombre} }
 	return &repoMemoria{
 		planes:     map[string]*Plan{},
 		submodulos: map[string]*SubmoduloIniciativa{},
+		periodos:   []map[string]interface{}{periodoDeFormulacion(-30, 30, "dep-1", "dep-2", "41", "42")},
 		catalogos: map[string][]Estado{
-			RecursoTipoPlan: {estado(tipoPlanDePrueba, CodigoTipoPlanIniciativa, "Iniciativa de inversión")},
+			RecursoTipoSeguimiento: {estado(tipoSeguimientoDePrueba, CodigoTipoSeguimientoFormulacion, "Formulación de Iniciativas de Inversión")},
+			RecursoTipoPlan:        {estado(tipoPlanDePrueba, CodigoTipoPlanIniciativa, "Iniciativa de inversión")},
 			RecursoEstadoPlan: {
 				estado("ep-sf", EstadoIniciativaSinFormular, "Sin formular"),
 				estado("ep-ef", EstadoIniciativaFormulacionIniciada, "Formulación iniciada"),
@@ -174,6 +184,33 @@ func (r *repoMemoria) AgregarObservacion(id string, nueva NuevaObservacion) (*Su
 	copia := *submodulo
 	copia.Observaciones = append([]Observacion(nil), submodulo.Observaciones...)
 	return &copia, nil
+}
+
+// PeriodosActivos devuelve los periodos solo para el tipo de seguimiento FIPI_SP, y cuenta las consultas.
+func (r *repoMemoria) PeriodosActivos(tipoSeguimientoID string) ([]map[string]interface{}, error) {
+	r.consultasPeriodos++
+	if r.fallarPeriodos {
+		return nil, errorServicio("falla simulada")
+	}
+	if tipoSeguimientoID != tipoSeguimientoDePrueba {
+		return nil, errorServicio("se pidieron los periodos del tipo de seguimiento %q", tipoSeguimientoID)
+	}
+	return r.periodos, nil
+}
+
+// periodoDeFormulacion es un registro de fechas de formulación, como lo guarda el crud, que va de
+// desde a hasta días contados a partir de hoy, con las dependencias indicadas.
+func periodoDeFormulacion(desde, hasta int, dependencias ...string) map[string]interface{} {
+	unidades := []map[string]string{}
+	for _, dependencia := range dependencias {
+		unidades = append(unidades, map[string]string{"Id": dependencia, "Nombre": "Unidad " + dependencia})
+	}
+	texto, err := json.Marshal(unidades)
+	if err != nil {
+		panic(err)
+	}
+	dia := func(dias int) string { return time.Now().AddDate(0, 0, dias).Format("2006-01-02") + "T00:00:00.000Z" }
+	return map[string]interface{}{"_id": fmt.Sprintf("periodo%+d%+d", desde, hasta), "fecha_inicio": dia(desde), "fecha_fin": dia(hasta), "unidades_interes": string(texto)}
 }
 
 type definicionFija struct{ definicion *Definicion }

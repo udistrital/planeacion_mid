@@ -70,10 +70,11 @@ type GestorDocumental interface {
 	Subir(documento DocumentoGestor) (*ArchivoGestor, error)
 }
 
-// SubirDocumento revisa que la iniciativa se pueda editar, que clave sea un campo documento del
-// submódulo y que el archivo cumpla sus formatos y su tamaño máximo; lo sube al gestor y responde
-// la referencia, con el nombre en Terceros de quien lo sube. Si no se obtiene el nombre, la
-// referencia va sin él y el motivo queda en el log. No cambia el submódulo.
+// SubirDocumento revisa que la iniciativa se pueda editar y esté dentro de las fechas de
+// formulación de su unidad, que clave sea un campo documento del submódulo y que el archivo cumpla
+// sus formatos y su tamaño máximo; lo sube al gestor y responde la referencia, con el nombre en
+// Terceros de quien lo sube. Si no se obtiene el nombre, la referencia va sin él y el motivo queda
+// en el log. No cambia el submódulo.
 func (s *Servicio) SubirDocumento(iniciativaID, claveSubmodulo string, solicitud SolicitudDocumento) (*ReferenciaDocumento, error) {
 	nombre := strings.TrimSpace(solicitud.Nombre)
 	usuario := strings.TrimSpace(solicitud.Usuario)
@@ -86,6 +87,9 @@ func (s *Servicio) SubirDocumento(iniciativaID, claveSubmodulo string, solicitud
 	}
 	if !PermiteEditar(ctx.estado.Codigo) {
 		return nil, errorConflicto("La iniciativa está «%s»; no se puede editar.", ctx.estado.Nombre)
+	}
+	if err := s.exigirFechasHabilitadas(ctx.plan.DependenciaID); err != nil {
+		return nil, err
 	}
 	submodulo, _, err := ctx.submodulo(claveSubmodulo)
 	if err != nil {

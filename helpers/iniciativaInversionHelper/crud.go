@@ -42,12 +42,20 @@ type RepositorioSubmodulos interface {
 	AgregarObservacion(id string, nueva NuevaObservacion) (*SubmoduloIniciativa, error)
 }
 
+// RepositorioPeriodos lee los registros de fechas de periodo_seguimiento.
+type RepositorioPeriodos interface {
+	// PeriodosActivos devuelve los registros activos del tipo de seguimiento, de todas las
+	// vigencias, con _id, fecha_inicio, fecha_fin y unidades_interes (un texto JSON).
+	PeriodosActivos(tipoSeguimientoID string) ([]map[string]interface{}, error)
+}
+
 // Repositorio reúne todo lo que el servicio necesita de planes_crud.
 type Repositorio interface {
 	RepositorioPlanes
 	RepositorioArbol
 	RepositorioCatalogos
 	RepositorioSubmodulos
+	RepositorioPeriodos
 }
 
 // Recursos de catálogo de planes_crud.
@@ -55,6 +63,7 @@ const (
 	RecursoTipoPlan        = "tipo-plan"
 	RecursoEstadoPlan      = "estado-plan"
 	RecursoEstadoSubmodulo = "estado-submodulo"
+	RecursoTipoSeguimiento = "tipo-seguimiento"
 )
 
 // ClienteCrud implementa Repositorio con HTTP. A diferencia de helpers.SendJson,
@@ -291,4 +300,14 @@ func (c *ClienteCrud) AgregarObservacion(id string, nueva NuevaObservacion) (*Su
 		return nil, err
 	}
 	return &actualizada, nil
+}
+
+// --- RepositorioPeriodos -----------------------------------------------------
+
+// PeriodosActivos implementa RepositorioPeriodos.
+func (c *ClienteCrud) PeriodosActivos(tipoSeguimientoID string) ([]map[string]interface{}, error) {
+	var periodos []map[string]interface{}
+	ruta := "/periodo-seguimiento?" + consulta(map[string]string{"tipo_seguimiento_id": tipoSeguimientoID, "activo": "true"}) + "&fields=fecha_inicio,fecha_fin,unidades_interes"
+	err := c.llamar(http.MethodGet, ruta, nil, &periodos)
+	return periodos, err
 }

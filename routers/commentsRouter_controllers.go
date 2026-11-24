@@ -414,8 +414,8 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionIniciativasController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionIniciativasController"],
         beego.ControllerComments{
-            Method: "DefinirFechasIniciativas",
-            Router: "/habilitar_fechas_iniciativa",
+            Method: "ConsultarFechasIniciativas",
+            Router: "/consultar_fechas_iniciativa",
             AllowHTTPMethods: []string{"post"},
             MethodParams: param.Make(),
             Filters: nil,
@@ -423,8 +423,8 @@ func init() {
 
     beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionIniciativasController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionIniciativasController"],
         beego.ControllerComments{
-            Method: "ValidarFechasIniciativas",
-            Router: "/validar_fechas_iniciativa",
+            Method: "DefinirFechasIniciativas",
+            Router: "/habilitar_fechas_iniciativa",
             AllowHTTPMethods: []string{"post"},
             MethodParams: param.Make(),
             Filters: nil,
@@ -1065,15 +1065,6 @@ func init() {
             Method: "VerificarSeguimiento",
             Router: "/verificar_seguimiento/:id",
             AllowHTTPMethods: []string{"put"},
-            MethodParams: param.Make(),
-            Filters: nil,
-            Params: nil})
-            
-    beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionIniciativasController"] = append(beego.GlobalControllerRouter["github.com/udistrital/planeacion_mid/controllers:FormulacionIniciativasController"],
-        beego.ControllerComments{
-            Method: "ConsultarFechasIniciativas",
-            Router: "/consultar_fechas_iniciativa",
-            AllowHTTPMethods: []string{"post"},
             MethodParams: param.Make(),
             Filters: nil,
             Params: nil})

@@ -32,6 +32,10 @@ const (
 	EstadoSubmoduloFormulado        = "FOR_SUB"
 	EstadoSubmoduloConObservaciones = "CO_SUB"
 	EstadoSubmoduloAprobado         = "SO_SUB"
+
+	// CodigoTipoSeguimientoFormulacion es el tipo de seguimiento de las fechas de formulación
+	// de iniciativas (ver fechas.go).
+	CodigoTipoSeguimientoFormulacion = "FIPI_SP"
 )
 
 var codigosEstadoIniciativa = []string{
@@ -207,6 +211,7 @@ type catalogosSistema struct {
 	iniciativaPorID  map[string]Estado
 	submoduloPorCod  map[string]Estado
 	submoduloPorID   map[string]Estado
+	tipoSeguimiento  *Estado
 }
 
 func nuevosCatalogosSistema(repo RepositorioCatalogos) *catalogosSistema {
@@ -255,8 +260,8 @@ func (c *catalogosSistema) asegurar() error {
 }
 
 // comoCargarEstados va en el log (nunca en la respuesta) cuando faltan el tipo de
-// plan o los estados.
-const comoCargarEstados = "El tipo de plan y los estados se crean con database local/construccion-proyecto-inversion/cargar-estados.js."
+// plan, los estados o el tipo de seguimiento.
+const comoCargarEstados = "El tipo de plan, los estados y el tipo de seguimiento se crean con database local/construccion-proyecto-inversion/cargar-estados.js."
 
 // faltaCatalogo convierte la falta de un registro base (tipo de plan o estado) en
 // un error de configuración. Las fallas del servicio se devuelven tal cual.
@@ -270,6 +275,23 @@ func faltaCatalogo(err error) error {
 		causa = negocio.Mensaje
 	}
 	return errorConfiguracion("%s. %s", causa, comoCargarEstados)
+}
+
+// TipoSeguimientoFormulacion devuelve el tipo de seguimiento de las fechas de formulación. No se
+// carga en asegurar: si falta, las iniciativas se consultan igual y solo queda cerrada la
+// formulación. Se guarda en memoria la primera vez que se encuentra.
+func (c *catalogosSistema) TipoSeguimientoFormulacion() (Estado, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.tipoSeguimiento != nil {
+		return *c.tipoSeguimiento, nil
+	}
+	tipo, err := c.repo.BuscarPorCodigo(RecursoTipoSeguimiento, CodigoTipoSeguimientoFormulacion)
+	if err != nil {
+		return Estado{}, faltaCatalogo(err)
+	}
+	c.tipoSeguimiento = tipo
+	return *tipo, nil
 }
 
 func (c *catalogosSistema) TipoPlanIniciativa() (Estado, error) {

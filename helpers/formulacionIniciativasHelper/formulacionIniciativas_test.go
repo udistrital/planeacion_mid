@@ -52,9 +52,7 @@ func TestUnidadHabilitada(t *testing.T) {
 		nombre           string
 		periodos         []map[string]interface{}
 		dependenciaID    string
-		periodoID        string
 		hoy              time.Time
-		quiereEncontrada bool
 		quiereHabilitada bool
 	}{
 		{
@@ -64,7 +62,7 @@ func TestUnidadHabilitada(t *testing.T) {
 				periodoDePrueba("B", "12", "2026-11-20", "2026-12-10", ingenieria),
 			},
 			dependenciaID: "14", hoy: enBogota("2026-11-25", 10, 0),
-			quiereEncontrada: true, quiereHabilitada: true,
+			quiereHabilitada: true,
 		},
 		{
 			nombre: "el primer registro está vencido y el segundo vigente (F2)",
@@ -73,7 +71,7 @@ func TestUnidadHabilitada(t *testing.T) {
 				periodoDePrueba("B", "12", "2026-11-20", "2026-12-10", ingenieria),
 			},
 			dependenciaID: "14", hoy: enBogota("2026-11-25", 10, 0),
-			quiereEncontrada: true, quiereHabilitada: true,
+			quiereHabilitada: true,
 		},
 		{
 			nombre: "un registro vencido que no tiene la unidad no la bloquea (F2)",
@@ -82,7 +80,7 @@ func TestUnidadHabilitada(t *testing.T) {
 				periodoDePrueba("B", "12", "2026-11-20", "2026-12-10", ingenieria),
 			},
 			dependenciaID: "14", hoy: enBogota("2026-11-25", 10, 0),
-			quiereEncontrada: true, quiereHabilitada: true,
+			quiereHabilitada: true,
 		},
 		{
 			nombre: "la unidad solo está en un registro vencido",
@@ -91,7 +89,7 @@ func TestUnidadHabilitada(t *testing.T) {
 				periodoDePrueba("B", "12", "2026-11-20", "2026-12-10", rectoria),
 			},
 			dependenciaID: "14", hoy: enBogota("2026-11-25", 10, 0),
-			quiereEncontrada: true, quiereHabilitada: false,
+			quiereHabilitada: false,
 		},
 		{
 			nombre: "la unidad no está en ningún registro",
@@ -99,73 +97,63 @@ func TestUnidadHabilitada(t *testing.T) {
 				periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", rectoria, ciencias),
 			},
 			dependenciaID: "14", hoy: enBogota("2026-11-25", 10, 0),
-			quiereEncontrada: false, quiereHabilitada: false,
+			quiereHabilitada: false,
 		},
 		{
 			nombre:        "hoy es el día de inicio",
 			periodos:      []map[string]interface{}{periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", ingenieria)},
 			dependenciaID: "14", hoy: enBogota("2026-11-10", 0, 0),
-			quiereEncontrada: true, quiereHabilitada: true,
+			quiereHabilitada: true,
 		},
 		{
 			nombre:        "hoy es el día de fin, de noche en Bogotá (ya es el día siguiente en UTC)",
 			periodos:      []map[string]interface{}{periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", ingenieria)},
 			dependenciaID: "14", hoy: enBogota("2026-11-30", 23, 30),
-			quiereEncontrada: true, quiereHabilitada: true,
+			quiereHabilitada: true,
 		},
 		{
 			nombre:        "el día anterior al inicio",
 			periodos:      []map[string]interface{}{periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", ingenieria)},
 			dependenciaID: "14", hoy: enBogota("2026-11-09", 23, 59),
-			quiereEncontrada: true, quiereHabilitada: false,
+			quiereHabilitada: false,
 		},
 		{
 			nombre:        "el día siguiente al fin",
 			periodos:      []map[string]interface{}{periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", ingenieria)},
 			dependenciaID: "14", hoy: enBogota("2026-12-01", 0, 0),
-			quiereEncontrada: true, quiereHabilitada: false,
+			quiereHabilitada: false,
 		},
 		{
-			nombre: "con periodoID solo cuenta esa vigencia",
+			nombre: "sirve un registro de cualquier vigencia que cubra hoy",
 			periodos: []map[string]interface{}{
 				periodoDePrueba("otra", "11", "2026-11-10", "2026-11-30", ingenieria),
 				periodoDePrueba("esta", "12", "2026-11-10", "2026-11-30", rectoria),
 			},
-			dependenciaID: "14", periodoID: "12", hoy: enBogota("2026-11-25", 10, 0),
-			quiereEncontrada: false, quiereHabilitada: false,
-		},
-		{
-			nombre: "con periodoID encuentra la unidad en esa vigencia",
-			periodos: []map[string]interface{}{
-				periodoDePrueba("otra", "11", "2026-11-01", "2026-11-05", rectoria),
-				periodoDePrueba("esta", "12", "2026-11-10", "2026-11-30", ingenieria),
-			},
-			dependenciaID: "14", periodoID: "12", hoy: enBogota("2026-11-25", 10, 0),
-			quiereEncontrada: true, quiereHabilitada: true,
+			dependenciaID: "14", hoy: enBogota("2026-11-25", 10, 0),
+			quiereHabilitada: true,
 		},
 		{
 			nombre:        "la unidad 209, con caracteres especiales en el nombre",
 			periodos:      []map[string]interface{}{periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", rectoria, i3)},
 			dependenciaID: "209", hoy: enBogota("2026-11-25", 10, 0),
-			quiereEncontrada: true, quiereHabilitada: true,
+			quiereHabilitada: true,
 		},
 		{
 			nombre:        "un Id guardado como texto se compara igual",
 			periodos:      []map[string]interface{}{periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", `{"Id":"14","Nombre":"FACULTAD DE INGENIERIA"}`)},
 			dependenciaID: "14", hoy: enBogota("2026-11-25", 10, 0),
-			quiereEncontrada: true, quiereHabilitada: true,
+			quiereHabilitada: true,
 		},
 	}
 
 	for _, caso := range casos {
 		t.Run(caso.nombre, func(t *testing.T) {
-			encontrada, habilitada, err := unidadHabilitada(caso.periodos, caso.dependenciaID, caso.periodoID, caso.hoy)
+			habilitada, err := UnidadHabilitada(caso.periodos, caso.dependenciaID, caso.hoy)
 			if err != nil {
 				t.Fatalf("error inesperado: %v", err)
 			}
-			if encontrada != caso.quiereEncontrada || habilitada != caso.quiereHabilitada {
-				t.Fatalf("se esperaba encontrada=%v habilitada=%v y llegó encontrada=%v habilitada=%v",
-					caso.quiereEncontrada, caso.quiereHabilitada, encontrada, habilitada)
+			if habilitada != caso.quiereHabilitada {
+				t.Fatalf("se esperaba habilitada=%v y llegó %v", caso.quiereHabilitada, habilitada)
 			}
 		})
 	}
@@ -182,7 +170,7 @@ func TestUnidadHabilitadaFallaConDatosInvalidos(t *testing.T) {
 	}
 	for _, caso := range casos {
 		t.Run(caso.nombre, func(t *testing.T) {
-			if _, _, err := unidadHabilitada([]map[string]interface{}{caso.periodo}, "14", "", enBogota("2026-11-25", 10, 0)); err == nil {
+			if _, err := UnidadHabilitada([]map[string]interface{}{caso.periodo}, "14", enBogota("2026-11-25", 10, 0)); err == nil {
 				t.Fatal("se esperaba un error")
 			}
 		})
@@ -412,16 +400,16 @@ func TestEjemploAyBQuedaCadaUnidadEnUnSoloRegistro(t *testing.T) {
 
 	// 3. El 25 de noviembre las dos unidades están habilitadas, cada una por su registro.
 	for _, dependencia := range []string{"7", "14"} {
-		encontrada, habilitada, err := unidadHabilitada(periodos, dependencia, "12", enBogota("2026-11-25", 10, 0))
-		if err != nil || !encontrada || !habilitada {
-			t.Fatalf("la unidad %s debería estar habilitada: encontrada=%v habilitada=%v err=%v", dependencia, encontrada, habilitada, err)
+		habilitada, err := UnidadHabilitada(periodos, dependencia, enBogota("2026-11-25", 10, 0))
+		if err != nil || !habilitada {
+			t.Fatalf("la unidad %s debería estar habilitada: habilitada=%v err=%v", dependencia, habilitada, err)
 		}
 	}
 	// El 5 de diciembre solo Ingeniería sigue habilitada.
-	if _, habilitada, _ := unidadHabilitada(periodos, "7", "12", enBogota("2026-12-05", 10, 0)); habilitada {
+	if habilitada, _ := UnidadHabilitada(periodos, "7", enBogota("2026-12-05", 10, 0)); habilitada {
 		t.Fatal("Rectoría no debería estar habilitada el 5 de diciembre")
 	}
-	if _, habilitada, _ := unidadHabilitada(periodos, "14", "12", enBogota("2026-12-05", 10, 0)); !habilitada {
+	if habilitada, _ := UnidadHabilitada(periodos, "14", enBogota("2026-12-05", 10, 0)); !habilitada {
 		t.Fatal("Ingeniería debería estar habilitada el 5 de diciembre")
 	}
 }
