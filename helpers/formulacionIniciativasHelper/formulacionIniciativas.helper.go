@@ -18,22 +18,17 @@ import (
 // zonaBogota es la zona con la que se comparan por día las fechas de formulación.
 var zonaBogota = time.FixedZone("COT", -5*60*60)
 
-var (
-	formatoPeriodoID         = regexp.MustCompile(`^\d+$`)
-	formatoTipoSeguimientoID = regexp.MustCompile(`^[0-9a-fA-F]{24}$`)
-)
+var formatoTipoSeguimientoID = regexp.MustCompile(`^[0-9a-fA-F]{24}$`)
 
-// DefinirFechasIniciativasFormulacion habilita el rango de fechas para las unidades elegidas en
-// una vigencia. Cada unidad queda en un solo registro activo del tipo de seguimiento, de
-// cualquier vigencia, porque la iniciativa no guarda la vigencia y lo último que se guarda es lo
-// que vale: se les quita a los demás registros y se agrega al registro de esa vigencia que ya
-// tenga ese rango, o a uno nuevo. Devuelve los registros escritos.
+// DefinirFechasIniciativasFormulacion habilita el rango de fechas para las unidades elegidas. Las
+// fechas no son de una vigencia: cada unidad queda en un solo registro activo del tipo de
+// seguimiento, y lo último que se guarda es lo que vale. Se les quita a los demás registros y se
+// agrega al registro que ya tenga ese rango, o a uno nuevo. Devuelve los registros escritos.
 func DefinirFechasIniciativasFormulacion(body map[string]interface{}) []interface{} {
 	// 1. Validar la entrada
-	periodoID := campoTexto(body, "periodo_id")
 	tipoSeguimientoID := campoTexto(body, "tipo_seguimiento_id")
-	if !formatoPeriodoID.MatchString(periodoID) || !formatoTipoSeguimientoID.MatchString(tipoSeguimientoID) {
-		panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Se requieren periodo_id y tipo_seguimiento_id válidos", "status": "400"})
+	if !formatoTipoSeguimientoID.MatchString(tipoSeguimientoID) {
+		panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Se requiere un tipo_seguimiento_id válido", "status": "400"})
 	}
 	inicio, errInicio := parseFechaHabilitacion(campoTexto(body, "fecha_inicio"))
 	fin, errFin := parseFechaHabilitacion(campoTexto(body, "fecha_fin"))
@@ -48,7 +43,7 @@ func DefinirFechasIniciativasFormulacion(body map[string]interface{}) []interfac
 		panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Debe elegir al menos una unidad", "status": "400"})
 	}
 
-	// 2. Traer los registros activos del tipo de seguimiento, de todas las vigencias
+	// 2. Traer los registros activos del tipo de seguimiento
 	urlRegistros := beego.AppConfig.String("PlanesService") + "/periodo-seguimiento-iniciativas"
 	consulta := "tipo_seguimiento_id:" + tipoSeguimientoID + ",activo:true"
 	var resRegistros map[string]interface{}
@@ -60,14 +55,13 @@ func DefinirFechasIniciativasFormulacion(body map[string]interface{}) []interfac
 	helpers.LimpiezaRespuestaRefactor(resRegistros, &registros)
 
 	// 3. Repartir las unidades
-	actualizar, crear := repartirUnidades(registros, seleccion, periodoID, inicio, fin)
+	actualizar, crear := repartirUnidades(registros, seleccion, inicio, fin)
 	usuario := campoTexto(body, "usuario_modificacion")
 
 	// 4. Guardar: primero el registro que queda con las unidades y después los demás, para que
 	// una falla a mitad de camino no deje unidades sin fechas.
 	escritos := []interface{}{}
 	if crear != nil {
-		crear["periodo_id"] = periodoID
 		crear["tipo_seguimiento_id"] = tipoSeguimientoID
 		crear["usuario_modificacion"] = usuario
 		escritos = append(escritos, guardarRegistro(urlRegistros, "POST", crear))
@@ -104,16 +98,14 @@ func exigirExito(respuesta map[string]interface{}, funcion, mensaje string) {
 }
 
 // repartirUnidades calcula qué escribir para que las unidades de la selección queden solo en el
-// registro de la vigencia periodoID con el rango [inicio, fin]. El destino es el primer registro
-// de esa vigencia con las mismas fechas, comparando por día. A los demás, de cualquier vigencia,
-// se les quitan las unidades de la selección y, si quedan sin unidades, se inactivan. Las
-// unidades se comparan solo por Id.
+// registro con el rango [inicio, fin]. El destino es el primer registro con las mismas fechas,
+// comparando por día. A los demás se les quitan las unidades de la selección y, si quedan sin
+// unidades, se inactivan. Las unidades se comparan solo por Id.
 //
 // Devuelve los registros que cambiaron, con el destino de primero, y, si no hay destino, el
 // registro a crear. Ese registro trae las fechas, las unidades, planes_interes y activo; quien
-// llama completa periodo_id, tipo_seguimiento_id y usuario_modificacion. No modifica los
-// registros recibidos.
-func repartirUnidades(registros []map[string]interface{}, seleccion []map[string]interface{}, periodoID string, inicio, fin time.Time) (actualizar []map[string]interface{}, crear map[string]interface{}) {
+// llama completa tipo_seguimiento_id y usuario_modificacion. No modifica los registros recibidos.
+func repartirUnidades(registros []map[string]interface{}, seleccion []map[string]interface{}, inicio, fin time.Time) (actualizar []map[string]interface{}, crear map[string]interface{}) {
 	seleccion = unidadesSinRepetir(seleccion)
 	idsSeleccion := make(map[int]bool, len(seleccion))
 	for _, unidad := range seleccion {
@@ -122,7 +114,7 @@ func repartirUnidades(registros []map[string]interface{}, seleccion []map[string
 
 	indiceDestino := -1
 	for i, registro := range registros {
-		if campoTexto(registro, "periodo_id") == periodoID && mismoRango(registro, inicio, fin) {
+		if mismoRango(registro, inicio, fin) {
 			indiceDestino = i
 			break
 		}
@@ -272,8 +264,8 @@ func textoID(valor interface{}) string {
 }
 
 // UnidadHabilitada indica si el periodo que rige a la dependencia cubre el día de hoy en Bogotá,
-// inclusivo en los dos extremos. Los periodos, de todas las vigencias, llegan del más reciente
-// (fecha_modificacion) al más antiguo, y rige el primero que incluye la dependencia: si una
+// inclusivo en los dos extremos. Los periodos llegan del más reciente (fecha_modificacion) al
+// más antiguo, y rige el primero que incluye la dependencia: si una
 // unidad quedó en dos periodos, por dos guardados al mismo tiempo, vale lo último que se guardó.
 // El Id se compara como texto, así que 14 y "14" son iguales. Responde error si un periodo tiene
 // unidades_interes o fechas inválidas.
@@ -367,8 +359,8 @@ func ObtenerArrayUnidadesInteres(body map[string]interface{}) ([]map[string]inte
 	return unidades, nil
 }
 
-// ConsultarFechasIniciativasFormulacion devuelve las fechas de formulación
-// parametrizadas para una vigencia (periodoId) y una unidad (dependenciaId).
+// ConsultarFechasIniciativasFormulacion devuelve las fechas de formulación de una unidad
+// (dependenciaId): las del registro que la rige, el mismo que usa UnidadHabilitada.
 func ConsultarFechasIniciativasFormulacion(body map[string]interface{}) map[string]interface{} {
 	var resTipoSeguimiento map[string]interface{}
 	var resFechas map[string]interface{}
@@ -376,11 +368,10 @@ func ConsultarFechasIniciativasFormulacion(body map[string]interface{}) map[stri
 	var fechas []map[string]interface{}
 	respuesta := map[string]interface{}{"encontrado": false}
 
-	if body["periodoId"] == nil || body["dependenciaId"] == nil {
-		panic(map[string]interface{}{"funcion": "ConsultarFechasIniciativasFormulacion", "err": "Se requieren los campos periodoId y dependenciaId", "status": "400"})
+	if body["dependenciaId"] == nil {
+		panic(map[string]interface{}{"funcion": "ConsultarFechasIniciativasFormulacion", "err": "Se requiere el campo dependenciaId", "status": "400"})
 	}
-	periodoId := fmt.Sprint(body["periodoId"])
-	dependenciaId := fmt.Sprint(body["dependenciaId"])
+	dependenciaId := textoID(body["dependenciaId"])
 
 	// 1. Obtener el tipo de seguimiento de formulación de iniciativas
 	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/tipo-seguimiento/?query=codigo_abreviacion:FIPI_SP", &resTipoSeguimiento); err != nil {
@@ -392,8 +383,8 @@ func ConsultarFechasIniciativasFormulacion(body map[string]interface{}) map[stri
 		panic(map[string]interface{}{"funcion": "ConsultarFechasIniciativasFormulacion", "err": "No se encontró el tipo de seguimiento", "status": "404"})
 	}
 
-	// 2. Traer los registros activos de la vigencia, el más reciente primero
-	consulta := "periodo_id:" + url.QueryEscape(periodoId) + ",tipo_seguimiento_id:" + tipoSeguimiento[0]["_id"].(string) + ",activo:true"
+	// 2. Traer los registros activos, el más reciente primero
+	consulta := "tipo_seguimiento_id:" + tipoSeguimiento[0]["_id"].(string) + ",activo:true"
 	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas?query="+consulta+"&sortby=fecha_modificacion&order=desc&limit=0", &resFechas); err != nil {
 		panic(map[string]interface{}{"funcion": "ConsultarFechasIniciativasFormulacion", "err": "Error al obtener las fechas", "status": "400", "log": err})
 	}

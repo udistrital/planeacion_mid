@@ -55,7 +55,7 @@ func (c *FormulacionIniciativasController) DefinirFechasIniciativas() {
 
 // ConsultarFechasIniciativas ...
 // @Title ConsultarFechasIniciativas
-// @Description Peticion POST para consultar las fechas de formulación de iniciativas de proyectos de inversión de una vigencia y una unidad
+// @Description Peticion POST para consultar las fechas de formulación de iniciativas de proyectos de inversión de una unidad
 // @Param	body		body	{}	true		"body for Project content"
 // @Success 200 {object}
 // @Failure 400 bad request

@@ -44,9 +44,9 @@ type RepositorioSubmodulos interface {
 
 // RepositorioPeriodos lee los registros de fechas de periodo_seguimiento.
 type RepositorioPeriodos interface {
-	// PeriodosActivos devuelve los registros activos del tipo de seguimiento, de todas las
-	// vigencias y del más reciente (fecha_modificacion) al más antiguo, con _id, fecha_inicio,
-	// fecha_fin y unidades_interes (un texto JSON).
+	// PeriodosActivos devuelve los registros activos del tipo de seguimiento, del más reciente
+	// (fecha_modificacion) al más antiguo, con _id, fecha_inicio, fecha_fin y unidades_interes
+	// (un texto JSON).
 	PeriodosActivos(tipoSeguimientoID string) ([]map[string]interface{}, error)
 }
 

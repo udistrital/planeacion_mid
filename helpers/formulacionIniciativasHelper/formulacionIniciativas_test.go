@@ -17,7 +17,7 @@ const (
 
 // periodoDePrueba arma un registro como lo devuelve el crud: fechas a medianoche UTC y
 // unidades_interes como texto JSON.
-func periodoDePrueba(id, periodoID, inicio, fin string, unidades ...string) map[string]interface{} {
+func periodoDePrueba(id, inicio, fin string, unidades ...string) map[string]interface{} {
 	texto := "["
 	for i, unidad := range unidades {
 		if i > 0 {
@@ -28,7 +28,6 @@ func periodoDePrueba(id, periodoID, inicio, fin string, unidades ...string) map[
 	texto += "]"
 	return map[string]interface{}{
 		"_id":                 id,
-		"periodo_id":          periodoID,
 		"tipo_seguimiento_id": "6650c0a1b2c3d4e5f6a7b8c9",
 		"fecha_inicio":        inicio + "T00:00:00.000Z",
 		"fecha_fin":           fin + "T00:00:00.000Z",
@@ -48,6 +47,12 @@ func enBogota(dia string, hora, minuto int) time.Time {
 	return fecha.Add(time.Duration(hora)*time.Hour + time.Duration(minuto)*time.Minute)
 }
 
+// conVigencia agrega periodo_id al registro, como los que se guardaron con una vigencia.
+func conVigencia(registro map[string]interface{}, periodoID string) map[string]interface{} {
+	registro["periodo_id"] = periodoID
+	return registro
+}
+
 func TestUnidadHabilitada(t *testing.T) {
 	casos := []struct {
 		nombre string
@@ -60,8 +65,8 @@ func TestUnidadHabilitada(t *testing.T) {
 		{
 			nombre: "la unidad está en el segundo registro con fechas vigentes (F1)",
 			periodos: []map[string]interface{}{
-				periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", rectoria),
-				periodoDePrueba("B", "12", "2026-11-20", "2026-12-10", ingenieria),
+				periodoDePrueba("A", "2026-11-10", "2026-11-30", rectoria),
+				periodoDePrueba("B", "2026-11-20", "2026-12-10", ingenieria),
 			},
 			dependenciaID: "14", hoy: enBogota("2026-11-25", 10, 0),
 			quiereHabilitada: true,
@@ -69,17 +74,17 @@ func TestUnidadHabilitada(t *testing.T) {
 		{
 			nombre: "un registro vencido más antiguo con la unidad no la bloquea (F2)",
 			periodos: []map[string]interface{}{
-				periodoDePrueba("B", "12", "2026-11-20", "2026-12-10", ingenieria),
-				periodoDePrueba("viejo", "11", "2025-11-01", "2025-11-30", rectoria, ingenieria),
+				periodoDePrueba("B", "2026-11-20", "2026-12-10", ingenieria),
+				periodoDePrueba("viejo", "2025-11-01", "2025-11-30", rectoria, ingenieria),
 			},
 			dependenciaID: "14", hoy: enBogota("2026-11-25", 10, 0),
 			quiereHabilitada: true,
 		},
 		{
-			nombre: "rige el registro más reciente aunque uno más antiguo de otra vigencia cubra hoy",
+			nombre: "rige el registro más reciente aunque uno más antiguo cubra hoy",
 			periodos: []map[string]interface{}{
-				periodoDePrueba("cierre", "39", "2026-11-10", "2026-11-14", rectoria, ingenieria),
-				periodoDePrueba("apertura", "83", "2026-11-17", "2026-11-30", rectoria, ingenieria),
+				periodoDePrueba("cierre", "2026-11-10", "2026-11-14", rectoria, ingenieria),
+				periodoDePrueba("apertura", "2026-11-17", "2026-11-30", rectoria, ingenieria),
 			},
 			dependenciaID: "14", hoy: enBogota("2026-11-24", 10, 0),
 			quiereHabilitada: false,
@@ -87,8 +92,8 @@ func TestUnidadHabilitada(t *testing.T) {
 		{
 			nombre: "un registro vencido que no tiene la unidad no la bloquea (F2)",
 			periodos: []map[string]interface{}{
-				periodoDePrueba("viejo", "11", "2025-11-01", "2025-11-30", rectoria),
-				periodoDePrueba("B", "12", "2026-11-20", "2026-12-10", ingenieria),
+				periodoDePrueba("viejo", "2025-11-01", "2025-11-30", rectoria),
+				periodoDePrueba("B", "2026-11-20", "2026-12-10", ingenieria),
 			},
 			dependenciaID: "14", hoy: enBogota("2026-11-25", 10, 0),
 			quiereHabilitada: true,
@@ -96,8 +101,8 @@ func TestUnidadHabilitada(t *testing.T) {
 		{
 			nombre: "la unidad solo está en un registro vencido",
 			periodos: []map[string]interface{}{
-				periodoDePrueba("A", "12", "2026-11-01", "2026-11-15", ingenieria),
-				periodoDePrueba("B", "12", "2026-11-20", "2026-12-10", rectoria),
+				periodoDePrueba("A", "2026-11-01", "2026-11-15", ingenieria),
+				periodoDePrueba("B", "2026-11-20", "2026-12-10", rectoria),
 			},
 			dependenciaID: "14", hoy: enBogota("2026-11-25", 10, 0),
 			quiereHabilitada: false,
@@ -105,53 +110,53 @@ func TestUnidadHabilitada(t *testing.T) {
 		{
 			nombre: "la unidad no está en ningún registro",
 			periodos: []map[string]interface{}{
-				periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", rectoria, ciencias),
+				periodoDePrueba("A", "2026-11-10", "2026-11-30", rectoria, ciencias),
 			},
 			dependenciaID: "14", hoy: enBogota("2026-11-25", 10, 0),
 			quiereHabilitada: false,
 		},
 		{
 			nombre:        "hoy es el día de inicio",
-			periodos:      []map[string]interface{}{periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", ingenieria)},
+			periodos:      []map[string]interface{}{periodoDePrueba("A", "2026-11-10", "2026-11-30", ingenieria)},
 			dependenciaID: "14", hoy: enBogota("2026-11-10", 0, 0),
 			quiereHabilitada: true,
 		},
 		{
 			nombre:        "hoy es el día de fin, de noche en Bogotá (ya es el día siguiente en UTC)",
-			periodos:      []map[string]interface{}{periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", ingenieria)},
+			periodos:      []map[string]interface{}{periodoDePrueba("A", "2026-11-10", "2026-11-30", ingenieria)},
 			dependenciaID: "14", hoy: enBogota("2026-11-30", 23, 30),
 			quiereHabilitada: true,
 		},
 		{
 			nombre:        "el día anterior al inicio",
-			periodos:      []map[string]interface{}{periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", ingenieria)},
+			periodos:      []map[string]interface{}{periodoDePrueba("A", "2026-11-10", "2026-11-30", ingenieria)},
 			dependenciaID: "14", hoy: enBogota("2026-11-09", 23, 59),
 			quiereHabilitada: false,
 		},
 		{
 			nombre:        "el día siguiente al fin",
-			periodos:      []map[string]interface{}{periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", ingenieria)},
+			periodos:      []map[string]interface{}{periodoDePrueba("A", "2026-11-10", "2026-11-30", ingenieria)},
 			dependenciaID: "14", hoy: enBogota("2026-12-01", 0, 0),
 			quiereHabilitada: false,
 		},
 		{
-			nombre: "sirve un registro de cualquier vigencia que cubra hoy",
+			nombre: "sirve un registro guardado con vigencia que cubra hoy",
 			periodos: []map[string]interface{}{
-				periodoDePrueba("otra", "11", "2026-11-10", "2026-11-30", ingenieria),
-				periodoDePrueba("esta", "12", "2026-11-10", "2026-11-30", rectoria),
+				conVigencia(periodoDePrueba("con vigencia", "2026-11-10", "2026-11-30", ingenieria), "11"),
+				periodoDePrueba("sin vigencia", "2026-11-10", "2026-11-30", rectoria),
 			},
 			dependenciaID: "14", hoy: enBogota("2026-11-25", 10, 0),
 			quiereHabilitada: true,
 		},
 		{
 			nombre:        "la unidad 209, con caracteres especiales en el nombre",
-			periodos:      []map[string]interface{}{periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", rectoria, i3)},
+			periodos:      []map[string]interface{}{periodoDePrueba("A", "2026-11-10", "2026-11-30", rectoria, i3)},
 			dependenciaID: "209", hoy: enBogota("2026-11-25", 10, 0),
 			quiereHabilitada: true,
 		},
 		{
 			nombre:        "un Id guardado como texto se compara igual",
-			periodos:      []map[string]interface{}{periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", `{"Id":"14","Nombre":"FACULTAD DE INGENIERIA"}`)},
+			periodos:      []map[string]interface{}{periodoDePrueba("A", "2026-11-10", "2026-11-30", `{"Id":"14","Nombre":"FACULTAD DE INGENIERIA"}`)},
 			dependenciaID: "14", hoy: enBogota("2026-11-25", 10, 0),
 			quiereHabilitada: true,
 		},
@@ -234,35 +239,31 @@ func TestRepartirUnidades(t *testing.T) {
 		activo bool
 	}
 	casos := []struct {
-		nombre    string
-		registros []map[string]interface{}
-		seleccion []map[string]interface{}
-		// vigencia es la que se elige al habilitar; si se omite, la 12.
-		vigencia       string
+		nombre         string
+		registros      []map[string]interface{}
+		seleccion      []map[string]interface{}
 		inicio, fin    string
 		quiereActuales []esperado
 		quiereCrear    *esperado
 	}{
 		{
-			nombre:    "la selección se quita del registro de otra vigencia",
-			registros: []map[string]interface{}{periodoDePrueba("A", "83", "2026-11-17", "2026-11-30", rectoria, ingenieria)},
+			nombre:    "cerrar con un rango que ya pasó saca a las unidades del registro que las abría",
+			registros: []map[string]interface{}{periodoDePrueba("A", "2026-11-17", "2026-11-30", rectoria, ingenieria)},
 			seleccion: seleccionDePrueba(rectoria, ingenieria),
-			vigencia:  "39",
 			inicio:    "2026-11-10T00:00:00.000Z", fin: "2026-11-14T00:00:00.000Z",
 			quiereActuales: []esperado{{"A", []int{}, false}},
 			quiereCrear:    &esperado{"", []int{7, 14}, true},
 		},
 		{
-			nombre:    "un registro de otra vigencia con el mismo rango no es el destino",
-			registros: []map[string]interface{}{periodoDePrueba("A", "11", "2026-11-20", "2026-12-10", rectoria, ingenieria)},
+			nombre:    "un registro guardado con vigencia y el mismo rango es el destino",
+			registros: []map[string]interface{}{conVigencia(periodoDePrueba("A", "2026-11-20", "2026-12-10", rectoria), "11")},
 			seleccion: seleccionDePrueba(ingenieria),
 			inicio:    "2026-11-20T00:00:00.000Z", fin: "2026-12-10T00:00:00.000Z",
-			quiereActuales: []esperado{{"A", []int{7}, true}},
-			quiereCrear:    &esperado{"", []int{14}, true},
+			quiereActuales: []esperado{{"A", []int{7, 14}, true}},
 		},
 		{
 			nombre:    "ejemplo A y B: Ingeniería cambia de rango",
-			registros: []map[string]interface{}{periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", rectoria, ingenieria)},
+			registros: []map[string]interface{}{periodoDePrueba("A", "2026-11-10", "2026-11-30", rectoria, ingenieria)},
 			seleccion: seleccionDePrueba(ingenieria),
 			inicio:    "2026-11-20T00:00:00.000Z", fin: "2026-12-10T00:00:00.000Z",
 			quiereActuales: []esperado{{"A", []int{7}, true}},
@@ -271,8 +272,8 @@ func TestRepartirUnidades(t *testing.T) {
 		{
 			nombre: "la selección está repartida en dos registros y se quita de los dos (F3)",
 			registros: []map[string]interface{}{
-				periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", rectoria, ingenieria),
-				periodoDePrueba("C", "12", "2026-12-01", "2026-12-15", ciencias, i3),
+				periodoDePrueba("A", "2026-11-10", "2026-11-30", rectoria, ingenieria),
+				periodoDePrueba("C", "2026-12-01", "2026-12-15", ciencias, i3),
 			},
 			seleccion: seleccionDePrueba(ingenieria, i3),
 			inicio:    "2026-11-20T00:00:00.000Z", fin: "2026-12-10T00:00:00.000Z",
@@ -281,7 +282,7 @@ func TestRepartirUnidades(t *testing.T) {
 		},
 		{
 			nombre:    "el registro que queda vacío se inactiva",
-			registros: []map[string]interface{}{periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", ingenieria)},
+			registros: []map[string]interface{}{periodoDePrueba("A", "2026-11-10", "2026-11-30", ingenieria)},
 			seleccion: seleccionDePrueba(ingenieria),
 			inicio:    "2026-11-20T00:00:00.000Z", fin: "2026-12-10T00:00:00.000Z",
 			quiereActuales: []esperado{{"A", []int{}, false}},
@@ -290,8 +291,8 @@ func TestRepartirUnidades(t *testing.T) {
 		{
 			nombre: "ya existe un registro con las mismas fechas: se agregan ahí sin repetir",
 			registros: []map[string]interface{}{
-				periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", rectoria, ingenieria),
-				periodoDePrueba("B", "12", "2026-11-20", "2026-12-10", ciencias),
+				periodoDePrueba("A", "2026-11-10", "2026-11-30", rectoria, ingenieria),
+				periodoDePrueba("B", "2026-11-20", "2026-12-10", ciencias),
 			},
 			seleccion: seleccionDePrueba(ingenieria, ciencias),
 			inicio:    "2026-11-20T00:00:00.000Z", fin: "2026-12-10T00:00:00.000Z",
@@ -299,14 +300,14 @@ func TestRepartirUnidades(t *testing.T) {
 		},
 		{
 			nombre:    "el destino se compara por día aunque el cliente envíe otra hora",
-			registros: []map[string]interface{}{periodoDePrueba("B", "12", "2026-11-20", "2026-12-10", ciencias)},
+			registros: []map[string]interface{}{periodoDePrueba("B", "2026-11-20", "2026-12-10", ciencias)},
 			seleccion: seleccionDePrueba(ingenieria),
 			inicio:    "2026-11-20T05:00:00.000Z", fin: "2026-12-10T05:00:00.000Z",
 			quiereActuales: []esperado{{"B", []int{21, 14}, true}},
 		},
 		{
 			nombre:    "si la selección ya está solo en su destino no se escribe nada",
-			registros: []map[string]interface{}{periodoDePrueba("B", "12", "2026-11-20", "2026-12-10", ingenieria, ciencias)},
+			registros: []map[string]interface{}{periodoDePrueba("B", "2026-11-20", "2026-12-10", ingenieria, ciencias)},
 			seleccion: seleccionDePrueba(ingenieria),
 			inicio:    "2026-11-20T00:00:00.000Z", fin: "2026-12-10T00:00:00.000Z",
 		},
@@ -318,7 +319,7 @@ func TestRepartirUnidades(t *testing.T) {
 		},
 		{
 			nombre:    "la unidad 209 se encuentra aunque su nombre tenga + (F4)",
-			registros: []map[string]interface{}{periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", i3, rectoria)},
+			registros: []map[string]interface{}{periodoDePrueba("A", "2026-11-10", "2026-11-30", i3, rectoria)},
 			seleccion: seleccionDePrueba(i3),
 			inicio:    "2026-11-20T00:00:00.000Z", fin: "2026-12-10T00:00:00.000Z",
 			quiereActuales: []esperado{{"A", []int{7}, true}},
@@ -326,13 +327,13 @@ func TestRepartirUnidades(t *testing.T) {
 		},
 		{
 			nombre:    "la unidad 209 no se duplica en su destino (F4)",
-			registros: []map[string]interface{}{periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", i3, rectoria)},
+			registros: []map[string]interface{}{periodoDePrueba("A", "2026-11-10", "2026-11-30", i3, rectoria)},
 			seleccion: seleccionDePrueba(i3),
 			inicio:    "2026-11-10T00:00:00.000Z", fin: "2026-11-30T00:00:00.000Z",
 		},
 		{
 			nombre:    "Ids repetidos en un registro se quitan todos (F6)",
-			registros: []map[string]interface{}{periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", ingenieria, ingenieria, rectoria)},
+			registros: []map[string]interface{}{periodoDePrueba("A", "2026-11-10", "2026-11-30", ingenieria, ingenieria, rectoria)},
 			seleccion: seleccionDePrueba(ingenieria),
 			inicio:    "2026-11-20T00:00:00.000Z", fin: "2026-12-10T00:00:00.000Z",
 			quiereActuales: []esperado{{"A", []int{7}, true}},
@@ -340,7 +341,7 @@ func TestRepartirUnidades(t *testing.T) {
 		},
 		{
 			nombre:    "Ids repetidos en el destino quedan una sola vez (F6)",
-			registros: []map[string]interface{}{periodoDePrueba("B", "12", "2026-11-20", "2026-12-10", ingenieria, ingenieria)},
+			registros: []map[string]interface{}{periodoDePrueba("B", "2026-11-20", "2026-12-10", ingenieria, ingenieria)},
 			seleccion: seleccionDePrueba(ciencias),
 			inicio:    "2026-11-20T00:00:00.000Z", fin: "2026-12-10T00:00:00.000Z",
 			quiereActuales: []esperado{{"B", []int{14, 21}, true}},
@@ -356,11 +357,7 @@ func TestRepartirUnidades(t *testing.T) {
 	for _, caso := range casos {
 		t.Run(caso.nombre, func(t *testing.T) {
 			inicio, fin := fecha(caso.inicio), fecha(caso.fin)
-			vigencia := caso.vigencia
-			if vigencia == "" {
-				vigencia = "12"
-			}
-			actualizar, crear := repartirUnidades(caso.registros, caso.seleccion, vigencia, inicio, fin)
+			actualizar, crear := repartirUnidades(caso.registros, caso.seleccion, inicio, fin)
 
 			if len(actualizar) != len(caso.quiereActuales) {
 				t.Fatalf("se esperaban %d registros para actualizar y llegaron %d: %v", len(caso.quiereActuales), len(actualizar), actualizar)
@@ -399,18 +396,21 @@ func TestRepartirUnidades(t *testing.T) {
 			if !fecha(crear["fecha_inicio"].(string)).Equal(inicio) || !fecha(crear["fecha_fin"].(string)).Equal(fin) {
 				t.Fatalf("registro nuevo: las fechas deben ser las enviadas: %v", crear)
 			}
+			if _, tieneVigencia := crear["periodo_id"]; tieneVigencia {
+				t.Fatalf("registro nuevo: no lleva vigencia: %v", crear)
+			}
 		})
 	}
 }
 
 func TestRepartirUnidadesNoModificaLosRegistrosRecibidos(t *testing.T) {
 	registros := []map[string]interface{}{
-		periodoDePrueba("A", "12", "2026-11-10", "2026-11-30", rectoria, ingenieria),
-		periodoDePrueba("B", "12", "2026-11-20", "2026-12-10", ciencias),
+		periodoDePrueba("A", "2026-11-10", "2026-11-30", rectoria, ingenieria),
+		periodoDePrueba("B", "2026-11-20", "2026-12-10", ciencias),
 	}
 	antes := []map[string]interface{}{copiarRegistro(registros[0]), copiarRegistro(registros[1])}
 
-	repartirUnidades(registros, seleccionDePrueba(ingenieria), "12", fecha("2026-11-20T00:00:00.000Z"), fecha("2026-12-10T00:00:00.000Z"))
+	repartirUnidades(registros, seleccionDePrueba(ingenieria), fecha("2026-11-20T00:00:00.000Z"), fecha("2026-12-10T00:00:00.000Z"))
 
 	if !reflect.DeepEqual(registros, antes) {
 		t.Fatalf("los registros recibidos cambiaron:\nantes:   %v\ndespués: %v", antes, registros)
@@ -419,17 +419,15 @@ func TestRepartirUnidadesNoModificaLosRegistrosRecibidos(t *testing.T) {
 
 func TestEjemploAyBQuedaCadaUnidadEnUnSoloRegistro(t *testing.T) {
 	// 1. Rectoría e Ingeniería del 10 al 30 de noviembre: se crea A.
-	_, crearA := repartirUnidades(nil, seleccionDePrueba(rectoria, ingenieria), "12", fecha("2026-11-10T00:00:00.000Z"), fecha("2026-11-30T00:00:00.000Z"))
+	_, crearA := repartirUnidades(nil, seleccionDePrueba(rectoria, ingenieria), fecha("2026-11-10T00:00:00.000Z"), fecha("2026-11-30T00:00:00.000Z"))
 	crearA["_id"] = "A"
-	crearA["periodo_id"] = "12"
 
 	// 2. Ingeniería pasa al 20 de noviembre-10 de diciembre: A se queda con Rectoría y se crea B.
-	actualizar, crearB := repartirUnidades([]map[string]interface{}{crearA}, seleccionDePrueba(ingenieria), "12", fecha("2026-11-20T00:00:00.000Z"), fecha("2026-12-10T00:00:00.000Z"))
+	actualizar, crearB := repartirUnidades([]map[string]interface{}{crearA}, seleccionDePrueba(ingenieria), fecha("2026-11-20T00:00:00.000Z"), fecha("2026-12-10T00:00:00.000Z"))
 	if len(actualizar) != 1 || crearB == nil {
 		t.Fatalf("se esperaba actualizar A y crear B: %v %v", actualizar, crearB)
 	}
 	crearB["_id"] = "B"
-	crearB["periodo_id"] = "12"
 	periodos := []map[string]interface{}{actualizar[0], crearB}
 
 	// 3. El 25 de noviembre las dos unidades están habilitadas, cada una por su registro.
@@ -466,12 +464,11 @@ func (b *baseDePrueba) activos() []map[string]interface{} {
 }
 
 // calcular lee los registros activos y reparte la selección como al habilitar, sin guardar.
-func (b *baseDePrueba) calcular(vigencia, inicio, fin string, unidades ...string) ([]map[string]interface{}, map[string]interface{}) {
-	actualizar, crear := repartirUnidades(b.activos(), seleccionDePrueba(unidades...), vigencia, fecha(inicio+"T00:00:00.000Z"), fecha(fin+"T00:00:00.000Z"))
+func (b *baseDePrueba) calcular(inicio, fin string, unidades ...string) ([]map[string]interface{}, map[string]interface{}) {
+	actualizar, crear := repartirUnidades(b.activos(), seleccionDePrueba(unidades...), fecha(inicio+"T00:00:00.000Z"), fecha(fin+"T00:00:00.000Z"))
 	if crear != nil {
 		b.creados++
 		crear["_id"] = fmt.Sprintf("nuevo-%d", b.creados)
-		crear["periodo_id"] = vigencia
 	}
 	return actualizar, crear
 }
@@ -494,12 +491,12 @@ func (b *baseDePrueba) escribir(actualizar []map[string]interface{}, crear map[s
 	}
 }
 
-func (b *baseDePrueba) habilitar(vigencia, inicio, fin string, unidades ...string) {
-	b.escribir(b.calcular(vigencia, inicio, fin, unidades...))
+func (b *baseDePrueba) habilitar(inicio, fin string, unidades ...string) {
+	b.escribir(b.calcular(inicio, fin, unidades...))
 }
 
-// Entre vigencias vale lo último que se guarda, sea para abrir o para cerrar.
-func TestEntreVigenciasValeLoUltimoQueSeGuarda(t *testing.T) {
+// Vale lo último que se guarda, sea para abrir o para cerrar.
+func TestValeLoUltimoQueSeGuarda(t *testing.T) {
 	hoy := enBogota("2026-11-24", 10, 0)
 	base := &baseDePrueba{}
 	exigir := func(paso string, quiere bool) {
@@ -512,20 +509,20 @@ func TestEntreVigenciasValeLoUltimoQueSeGuarda(t *testing.T) {
 		}
 	}
 
-	// 1. Rectoría e Ingeniería se abren en la vigencia 83 del 17 al 30 de noviembre.
-	base.habilitar("83", "2026-11-17", "2026-11-30", rectoria, ingenieria)
-	exigir("abrir en la 83", true)
+	// 1. Rectoría e Ingeniería se abren del 17 al 30 de noviembre.
+	base.habilitar("2026-11-17", "2026-11-30", rectoria, ingenieria)
+	exigir("abrir", true)
 
-	// 2. Se cierran en la vigencia 39 con un rango que ya pasó: salen del registro de la 83.
-	base.habilitar("39", "2026-11-10", "2026-11-14", rectoria, ingenieria)
-	if activos := base.activos(); len(activos) != 1 || activos[0]["periodo_id"] != "39" {
-		t.Fatalf("solo debe quedar activo el registro de la 39: %v", activos)
+	// 2. Se cierran con un rango que ya pasó: salen del registro que las abría.
+	base.habilitar("2026-11-10", "2026-11-14", rectoria, ingenieria)
+	if activos := base.activos(); len(activos) != 1 || activos[0]["fecha_fin"] != fecha("2026-11-14T00:00:00.000Z").Format(time.RFC3339Nano) {
+		t.Fatalf("solo debe quedar activo el registro que las cierra: %v", activos)
 	}
-	exigir("cerrar en la 39", false)
+	exigir("cerrar", false)
 
-	// 3. Se vuelven a abrir en la 83.
-	base.habilitar("83", "2026-11-17", "2026-11-30", rectoria, ingenieria)
-	exigir("volver a abrir en la 83", true)
+	// 3. Se vuelven a abrir.
+	base.habilitar("2026-11-17", "2026-11-30", rectoria, ingenieria)
+	exigir("volver a abrir", true)
 }
 
 // Si dos personas guardan al mismo tiempo, las dos leen los mismos registros y la unidad queda
@@ -534,8 +531,8 @@ func TestDosGuardadosAlMismoTiempoRigeElUltimo(t *testing.T) {
 	for _, abrirDeUltimo := range []bool{false, true} {
 		t.Run(fmt.Sprintf("abrir de último: %v", abrirDeUltimo), func(t *testing.T) {
 			base := &baseDePrueba{}
-			abrirActualizar, abrirCrear := base.calcular("83", "2026-11-17", "2026-11-30", ingenieria)
-			cerrarActualizar, cerrarCrear := base.calcular("39", "2026-11-10", "2026-11-14", ingenieria)
+			abrirActualizar, abrirCrear := base.calcular("2026-11-17", "2026-11-30", ingenieria)
+			cerrarActualizar, cerrarCrear := base.calcular("2026-11-10", "2026-11-14", ingenieria)
 			if abrirDeUltimo {
 				base.escribir(cerrarActualizar, cerrarCrear)
 				base.escribir(abrirActualizar, abrirCrear)
