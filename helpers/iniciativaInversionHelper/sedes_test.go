@@ -56,10 +56,10 @@ func TestLasSedesSalenDeOikosActivasPorNombreYConOtraAlFinal(t *testing.T) {
 }
 
 func TestLosDemasCatalogosSiguenSaliendoDelCrud(t *testing.T) {
-	crud := &repoCatalogosContado{items: []ItemCatalogo{{Codigo: "45", Nombre: "Transporte"}}}
+	crud := &repoCatalogosContado{items: []ItemCatalogo{{Codigo: "2202001", Nombre: "Documentos de planeación"}}}
 	repo := NuevoRepositorioConSedes(crud, NuevoClienteSedesOikos("host-que-no-se-usa"))
 
-	items, err := repo.ElementosDeCatalogo("sectores_pnd")
+	items, err := repo.ElementosDeCatalogo("productos")
 	if err != nil || len(items) != 1 || crud.consultas != 1 {
 		t.Fatalf("debía consultar el crud: items %v, err %v, consultas %d", items, err, crud.consultas)
 	}

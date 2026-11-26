@@ -189,10 +189,10 @@ func TestLosCatalogosDeUnInstrumentoSalenDeUnaSolaLectura(t *testing.T) {
 
 func TestLosDemasCatalogosNoLeenPlanes(t *testing.T) {
 	crud := crudConPED()
-	base := &repoCatalogosContado{items: []ItemCatalogo{{Codigo: "22", Nombre: "EDUCACIÓN"}}}
+	base := &repoCatalogosContado{items: []ItemCatalogo{{Codigo: "2202001", Nombre: "Documentos de planeación"}}}
 	repo := NuevoRepositorioConInstrumentos(base, crud, time.Minute, 4)
 
-	items, err := repo.ElementosDeCatalogo("sectores_pnd")
+	items, err := repo.ElementosDeCatalogo("productos")
 	if err != nil || len(items) != 1 || base.consultas != 1 || crud.llamadas != 0 {
 		t.Fatalf("debía consultar solo el repositorio base: items %v, err %v, consultas %d, llamadas a planes %d", items, err, base.consultas, crud.llamadas)
 	}

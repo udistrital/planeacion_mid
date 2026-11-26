@@ -6,7 +6,6 @@
     "producto_principal": "2202051"
   },
   "articulacion_pnd": {
-    "pnd": { "sector": "22", "programa": "2202" },
     "pdd": { "plan": "pdd-1", "objetivo_estrategico": ["pdd-1-o1"], "estrategia": ["pdd-1-o1-e1"], "programa_intersectorial": ["pdd-1-o1-e1-p1"] },
     "ped": { "plan": "ped-1", "lineamiento_estrategico": ["ped-1-l1"], "meta_estrategica": ["ped-1-l1-m1"] },
     "pi": { "plan": "pi-1", "eje_transformador": ["pi-1-e1"], "lineamiento_accion": ["pi-1-e1-l1"], "estrategia": ["pi-1-e1-l1-s1"] }

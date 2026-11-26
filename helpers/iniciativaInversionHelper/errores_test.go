@@ -60,7 +60,7 @@ func TestSinPlantillaElUsuarioNoVeElScriptDeCarga(t *testing.T) {
 }
 
 func TestCatalogoVacioElUsuarioNoVeElScriptDeCarga(t *testing.T) {
-	_, err := NuevosCatalogosConCache(&repoCatalogosContado{}, time.Hour).Catalogo("sectores_pnd")
+	_, err := NuevosCatalogosConCache(&repoCatalogosContado{}, time.Hour).Catalogo("productos")
 	exigirStatus(t, err, http.StatusNotFound)
 	exigirMensajeParaUsuario(t, err, "cargar-catalogos.js")
 }
@@ -105,7 +105,7 @@ func TestLaAccionNoPermitidaSeNombraComoEnPantalla(t *testing.T) {
 
 func TestElCatalogoDependienteNombraElCampoYNoSuClave(t *testing.T) {
 	iniciativa := iniciativaDeEjemplo(t)
-	iniciativa["articulacion_pnd"]["pnd"].(map[string]interface{})["sector"] = ""
+	iniciativa["localizacion"]["ubicacion"].(map[string]interface{})["departamento"] = ""
 
-	exigirError(t, validarIniciativa(t, definicionDePrueba(t), iniciativa)["articulacion_pnd"], "pnd.programa", "primero seleccione «Sector»")
+	exigirError(t, validarIniciativa(t, definicionDePrueba(t), iniciativa)["localizacion"], "ubicacion.municipio", "primero seleccione «Departamento»")
 }

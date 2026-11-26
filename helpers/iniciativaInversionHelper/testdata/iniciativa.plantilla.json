@@ -67,12 +67,12 @@
                 {
                   "nombre": "Sector",
                   "descripcion": "Sector del Plan Nacional de Desarrollo.",
-                  "dato": { "clave": "sector", "type": "catalogo", "required": "true", "catalogo": "sectores_pnd" }
+                  "dato": { "clave": "sector", "type": "calculado", "required": "false", "plantilla": "22 - EDUCACIÓN" }
                 },
                 {
                   "nombre": "Programa",
-                  "descripcion": "Programa del sector seleccionado.",
-                  "dato": { "clave": "programa", "type": "catalogo", "required": "true", "catalogo": "programas_pnd", "depende_de": "sector" }
+                  "descripcion": "Programa del sector Educación.",
+                  "dato": { "clave": "programa", "type": "calculado", "required": "false", "plantilla": "2202 - Calidad y fomento de la educación superior" }
                 }
               ]
             },

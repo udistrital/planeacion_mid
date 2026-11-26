@@ -47,13 +47,13 @@ func (r *repoCatalogosContado) ElementosDeCatalogo(string) ([]ItemCatalogo, erro
 }
 
 func TestElCatalogoSeGuardaEnMemoriaHastaQueVence(t *testing.T) {
-	repo := &repoCatalogosContado{items: []ItemCatalogo{{Codigo: "45", Nombre: "Educación"}}}
+	repo := &repoCatalogosContado{items: []ItemCatalogo{{Codigo: "2202001", Nombre: "Documentos de planeación"}}}
 	proveedor := NuevosCatalogosConCache(repo, 10*time.Minute)
 	reloj := time.Date(2026, 11, 4, 8, 0, 0, 0, time.UTC)
 	proveedor.ahora = func() time.Time { return reloj }
 
 	for i := 0; i < 3; i++ {
-		if _, err := proveedor.Catalogo("sectores_pnd"); err != nil {
+		if _, err := proveedor.Catalogo("productos"); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -62,12 +62,12 @@ func TestElCatalogoSeGuardaEnMemoriaHastaQueVence(t *testing.T) {
 	}
 
 	reloj = reloj.Add(11 * time.Minute)
-	catalogo, err := proveedor.Catalogo("sectores_pnd")
+	catalogo, err := proveedor.Catalogo("productos")
 	if err != nil || repo.consultas != 2 {
 		t.Fatalf("al vencer se vuelve a consultar: %d consultas, %v", repo.consultas, err)
 	}
-	if item, existe := catalogo.Buscar("45"); !existe || item.Nombre != "Educación" {
-		t.Fatalf("Buscar(45) = %+v, %v", item, existe)
+	if item, existe := catalogo.Buscar("2202001"); !existe || item.Nombre != "Documentos de planeación" {
+		t.Fatalf("Buscar(2202001) = %+v, %v", item, existe)
 	}
 }
 
@@ -107,10 +107,10 @@ func TestNombreDeCatalogoInvalidoResponde400(t *testing.T) {
 }
 
 func TestFiltrarPorPadre(t *testing.T) {
-	catalogo := NuevoCatalogo("programas_pnd", []ItemCatalogo{
-		{Codigo: "4501", Nombre: "a", Padre: "45"}, {Codigo: "4502", Nombre: "b", Padre: "45"}, {Codigo: "2301", Nombre: "c", Padre: "23"},
+	catalogo := NuevoCatalogo("municipios", []ItemCatalogo{
+		{Codigo: "Boyacá/Tunja", Nombre: "Tunja", Padre: "Boyacá"}, {Codigo: "Boyacá/Duitama", Nombre: "Duitama", Padre: "Boyacá"}, {Codigo: "Meta/Villavicencio", Nombre: "Villavicencio", Padre: "Meta"},
 	})
-	if len(catalogo.Filtrar("45")) != 2 || len(catalogo.Filtrar("")) != 3 || len(catalogo.Filtrar("99")) != 0 {
+	if len(catalogo.Filtrar("Boyacá")) != 2 || len(catalogo.Filtrar("")) != 3 || len(catalogo.Filtrar("Vaupés")) != 0 {
 		t.Fatalf("filtro por padre incorrecto")
 	}
 }

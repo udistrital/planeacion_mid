@@ -249,9 +249,9 @@ func (c *IniciativaInversionController) EjecutarAccion() {
 
 // ObtenerCatalogo ...
 // @Title ObtenerCatalogo
-// @Description Elementos de un catálogo de las iniciativas (procesos, sectores_pnd, programas_pnd, productos...)
+// @Description Elementos de un catálogo de las iniciativas (procesos, productos, municipios...)
 // @Param	nombre	path	string	true	"Nombre del catálogo"
-// @Param	padre	query	string	false	"Código del padre para filtrar (p. ej. sector de los programas)"
+// @Param	padre	query	string	false	"Código del padre para filtrar (p. ej. departamento de los municipios)"
 // @Success 200 {object} []iniciativaInversionHelper.ItemCatalogo
 // @router /catalogos/:nombre [get]
 func (c *IniciativaInversionController) ObtenerCatalogo() {

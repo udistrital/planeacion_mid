@@ -54,12 +54,24 @@ func TestCadaAlternativaExigeSuDescripcion(t *testing.T) {
 	exigirError(t, errores, "alternativas_solucion[as-2].descripcion_alternativa", "es obligatorio")
 }
 
-func TestElProgramaDebePertenecerAlSectorElegido(t *testing.T) {
+func TestElMunicipioDebePertenecerAlDepartamentoElegido(t *testing.T) {
 	iniciativa := iniciativaDeEjemplo(t)
-	iniciativa["articulacion_pnd"]["pnd"].(map[string]interface{})["programa"] = "4599" // programa del sector 45, no del 22
+	iniciativa["localizacion"]["ubicacion"].(map[string]interface{})["municipio"] = "Antioquia/Medellín" // el departamento es Bogotá
 
-	errores := validarIniciativa(t, definicionDePrueba(t), iniciativa)["articulacion_pnd"]
-	exigirError(t, errores, "pnd.programa", "no pertenece")
+	errores := validarIniciativa(t, definicionDePrueba(t), iniciativa)["localizacion"]
+	exigirError(t, errores, "ubicacion.municipio", "no pertenece")
+}
+
+func TestElSectorYElProgramaDelPlanNacionalSonTextoFijo(t *testing.T) {
+	iniciativa := iniciativaDeEjemplo(t)
+	iniciativa["articulacion_pnd"]["pnd"] = map[string]interface{}{"sector": "45", "programa": "4599"}
+
+	submodulo := definicionDePrueba(t).Submodulo("articulacion_pnd")
+	pnd, _ := NuevoNormalizador(catalogosDePrueba()).Normalizar(submodulo, iniciativa["articulacion_pnd"])["pnd"].(Datos)
+	if pnd["sector"] != "22 - EDUCACIÓN" || pnd["programa"] != "2202 - Calidad y fomento de la educación superior" {
+		t.Fatalf("el Plan Nacional de Desarrollo no se elige: quedó %v", pnd)
+	}
+	exigirSinErrores(t, "articulacion_pnd", validarIniciativa(t, definicionDePrueba(t), iniciativa)["articulacion_pnd"])
 }
 
 func TestCodigoInexistenteEnCatalogo(t *testing.T) {
