@@ -219,7 +219,9 @@ func TestSinPlanesConNodosNiFallasSeInventanOpciones(t *testing.T) {
 }
 
 // Como en la armonización de Formulación, en cada nivel se seleccionan varios elementos (multiple),
-// cada uno debajo de alguno de los seleccionados en el nivel de arriba.
+// cada uno debajo de alguno de los seleccionados en el nivel de arriba. Se exigen el plan y al menos
+// un elemento del árbol, que puede quedarse en cualquier nivel: al marcar uno se marcan los de
+// arriba, así que basta con exigir el primer nivel.
 func TestLaValidacionEncadenaPlanLineamientosYMetas(t *testing.T) {
 	repo := NuevoRepositorioConInstrumentos(&repoCatalogosContado{}, crudConPED(), time.Minute, 4)
 	validador := NuevoValidador(NuevosCatalogosConCache(repo, time.Hour))
@@ -229,7 +231,7 @@ func TestLaValidacionEncadenaPlanLineamientosYMetas(t *testing.T) {
 			campoDePrueba("lineamiento_estrategico", TipoCatalogo,
 				Dato{Requerido: true, Catalogo: "lineamientos_ped", DependeDe: "plan", SinCodigo: true, Multiple: true}),
 			campoDePrueba("meta_estrategica", TipoCatalogo,
-				Dato{Requerido: true, Catalogo: "metas_ped", DependeDe: "lineamiento_estrategico", SinCodigo: true, Multiple: true}),
+				Dato{Catalogo: "metas_ped", DependeDe: "lineamiento_estrategico", SinCodigo: true, Multiple: true}),
 		}},
 	}}
 	lista := func(codigos ...string) []interface{} {
@@ -247,10 +249,12 @@ func TestLaValidacionEncadenaPlanLineamientosYMetas(t *testing.T) {
 
 	exigirSinErrores(t, "articulacion", validar("ped-1", lista("l-1"), lista("m-2")))
 	exigirSinErrores(t, "articulacion", validar("ped-1", lista("l-1", "l-2"), lista("m-1", "m-2", "m-3")))
+	exigirSinErrores(t, "articulacion", validar("ped-1", lista("l-1"), lista()))
+	exigirSinErrores(t, "articulacion", validar("ped-1", lista("l-1", "l-2"), lista("m-2")))
+	exigirError(t, validar("ped-1", lista(), lista()), "ped.lineamiento_estrategico", "es obligatorio")
 	exigirError(t, validar("ped-1", lista("l-1"), lista("m-1", "m-3")), "ped.meta_estrategica", "no pertenece")
-	exigirError(t, validar("ped-1", lista(), lista("m-1")), "ped.lineamiento_estrategico", "es obligatorio")
 	exigirError(t, validar("ped-1", lista(), lista("m-1")), "ped.meta_estrategica", "primero seleccione")
-	exigirError(t, validar("ped-1", lista("l-1"), lista()), "ped.meta_estrategica", "es obligatorio")
+	exigirError(t, validar("", lista(), lista()), "ped.plan", "es obligatorio")
 	exigirError(t, validar("ped-vacio", lista("l-1"), lista("m-1")), "ped.plan", "no existe en la lista")
 }
 

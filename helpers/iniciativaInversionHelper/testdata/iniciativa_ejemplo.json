@@ -436,6 +436,8 @@
         "id": "po-1",
         "origen": "oe-1",
         "producto": "2202051",
+        "indicador_producto": "Número de sedes",
+        "unidad_medida_producto": "Número",
         "actividades": [
           {
             "id": "ac-1",
@@ -473,6 +475,8 @@
         "id": "po-2",
         "origen": "oe-2",
         "producto": "2202050",
+        "indicador_producto": "Número de procesos",
+        "unidad_medida_producto": "Número",
         "actividades": [
           {
             "id": "ac-4",
@@ -499,6 +503,8 @@
         "id": "po-3",
         "origen": "oe-3",
         "producto": "2202054",
+        "indicador_producto": "Sistemas de información implementados",
+        "unidad_medida_producto": "Número",
         "actividades": [
           {
             "id": "ac-6",

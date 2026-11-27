@@ -94,12 +94,12 @@
                 {
                   "nombre": "Estrategia",
                   "descripcion": "Estrategias de los objetivos seleccionados.",
-                  "dato": { "clave": "estrategia", "type": "catalogo", "required": "true", "catalogo": "estrategias_pdd", "depende_de": "objetivo_estrategico", "sin_codigo": true, "multiple": true }
+                  "dato": { "clave": "estrategia", "type": "catalogo", "required": "false", "catalogo": "estrategias_pdd", "depende_de": "objetivo_estrategico", "sin_codigo": true, "multiple": true }
                 },
                 {
                   "nombre": "Programa intersectorial",
                   "descripcion": "Programas intersectoriales de las estrategias seleccionadas.",
-                  "dato": { "clave": "programa_intersectorial", "type": "catalogo", "required": "true", "catalogo": "programas_pdd", "depende_de": "estrategia", "sin_codigo": true, "multiple": true }
+                  "dato": { "clave": "programa_intersectorial", "type": "catalogo", "required": "false", "catalogo": "programas_pdd", "depende_de": "estrategia", "sin_codigo": true, "multiple": true }
                 }
               ]
             },
@@ -121,7 +121,7 @@
                 {
                   "nombre": "Meta estratégica",
                   "descripcion": "Metas de los lineamientos seleccionados.",
-                  "dato": { "clave": "meta_estrategica", "type": "catalogo", "required": "true", "catalogo": "metas_ped", "depende_de": "lineamiento_estrategico", "sin_codigo": true, "multiple": true }
+                  "dato": { "clave": "meta_estrategica", "type": "catalogo", "required": "false", "catalogo": "metas_ped", "depende_de": "lineamiento_estrategico", "sin_codigo": true, "multiple": true }
                 }
               ]
             },
@@ -143,12 +143,12 @@
                 {
                   "nombre": "Lineamiento de acción",
                   "descripcion": "Lineamientos de los ejes seleccionados.",
-                  "dato": { "clave": "lineamiento_accion", "type": "catalogo", "required": "true", "catalogo": "lineamientos_pi", "depende_de": "eje_transformador", "sin_codigo": true, "multiple": true }
+                  "dato": { "clave": "lineamiento_accion", "type": "catalogo", "required": "false", "catalogo": "lineamientos_pi", "depende_de": "eje_transformador", "sin_codigo": true, "multiple": true }
                 },
                 {
                   "nombre": "Estrategia",
                   "descripcion": "Estrategias de los lineamientos seleccionados.",
-                  "dato": { "clave": "estrategia", "type": "catalogo", "required": "true", "catalogo": "estrategias_pi", "depende_de": "lineamiento_accion", "sin_codigo": true, "multiple": true }
+                  "dato": { "clave": "estrategia", "type": "catalogo", "required": "false", "catalogo": "estrategias_pi", "depende_de": "lineamiento_accion", "sin_codigo": true, "multiple": true }
                 }
               ]
             }
@@ -948,13 +948,13 @@
                 },
                 {
                   "nombre": "Indicador de producto",
-                  "descripcion": "Indicador principal del producto elegido. No se diligencia: se llena solo con el producto.",
-                  "dato": { "clave": "indicador_producto", "type": "calculado", "required": "false", "plantilla": "" }
+                  "descripcion": "Indicador principal con el que se mide el producto (por ejemplo, número de sedes dotadas).",
+                  "dato": { "clave": "indicador_producto", "type": "input", "required": "true", "maxlength": 300 }
                 },
                 {
                   "nombre": "Unidad de medida",
-                  "descripcion": "Unidad de medida del indicador del producto. No se diligencia: se llena sola con el producto.",
-                  "dato": { "clave": "unidad_medida_producto", "type": "calculado", "required": "false", "plantilla": "" }
+                  "descripcion": "Unidad en que se mide el indicador del producto.",
+                  "dato": { "clave": "unidad_medida_producto", "type": "catalogo", "required": "true", "catalogo": "unidades_medida_cadena_valor" }
                 },
                 {
                   "nombre": "Actividades",
