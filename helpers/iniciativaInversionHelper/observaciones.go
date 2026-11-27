@@ -10,18 +10,17 @@ import (
 // MaximoTextoObservacion es el largo máximo de una observación (igual que en planes_crud).
 const MaximoTextoObservacion = 4000
 
-// AgregarObservacion publica un comentario en el historial del submódulo. No cambia
-// la versión del submódulo, así que no choca con quien está editando los datos.
-// Quién publica y qué pasa lo decide el estado de la iniciativa (tareasPorEstado):
-//   - 01, 02 y 06: comenta el formulador; el estado del submódulo no cambia.
-//   - 03: observa el Jefe y 05: observa la OAP, sobre submódulos ya formulados (también un
-//     aprobado, que así se desaprueba); el submódulo queda Con observaciones. En 05 es el
-//     veredicto «Con observaciones», y la iniciativa puede cambiar de estado sola (cerrarRevision).
-//   - En los demás estados no recibe observaciones.
+// AgregarObservacion publica una observación en el historial del submódulo y lo deja Con
+// observaciones, para que la unidad lo corrija. Pueden publicar:
+//   - el Jefe, con la iniciativa Por aprobar;
+//   - la OAP, con la iniciativa En revisión OAP. Es su veredicto «Con observaciones»; si es el
+//     último, la iniciativa cambia de estado sola (cerrarRevision).
 //
-// La observación queda firmada con el rol del carril con el que se publica. El nombre de quien
-// publica se busca en Terceros con su documento; si no está o Terceros no responde, la
-// observación se publica sin nombre.
+// En los demás estados nadie publica. Solo se observa un submódulo ya formulado (también uno
+// aprobado, que así deja de estarlo). La versión del submódulo no cambia.
+//
+// La observación queda firmada con el rol con el que se publica y con el nombre de quien la
+// publica, que se busca en Terceros; si no se encuentra, se publica sin nombre.
 func (s *Servicio) AgregarObservacion(iniciativaID, clave string, solicitud SolicitudObservacion) (*SubmoduloVista, error) {
 	texto, err := textoObservacionValido(solicitud.Texto)
 	if err != nil {
@@ -40,28 +39,22 @@ func (s *Servicio) AgregarObservacion(iniciativaID, clave string, solicitud Soli
 		return nil, err
 	}
 
-	nueva := NuevaObservacion{Texto: texto, Usuario: q.Usuario}
-	tareasDelEstado := tareasPorEstado[ctx.estado.Codigo]
-	switch {
-	case tareasDelEstado.editar != nil:
-		if nueva.Rol, err = s.autorizar(q, ctx, tareasDelEstado.editar); err != nil {
-			return nil, err
-		}
-	case tareasDelEstado.observar != nil:
-		if nueva.Rol, err = s.autorizar(q, ctx, tareasDelEstado.observar); err != nil {
-			return nil, err
-		}
-		if err := s.exigirRevisable(nodo, documento); err != nil {
-			return nil, err
-		}
-		conObservaciones, err := s.sistema.EstadoSubmodulo(EstadoSubmoduloConObservaciones)
-		if err != nil {
-			return nil, err
-		}
-		nueva.EstadoSubmoduloID = conObservaciones.ID
-	default:
-		return nil, errorConflicto("La iniciativa está «%s»; ya no recibe observaciones.", ctx.estado.Nombre)
+	carril := tareasPorEstado[ctx.estado.Codigo].observar
+	if carril == nil {
+		return nil, errorConflicto("La iniciativa está «%s»; en este estado no recibe observaciones.", ctx.estado.Nombre)
 	}
+	rol, err := s.autorizar(q, ctx, carril)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.exigirRevisable(nodo, documento); err != nil {
+		return nil, err
+	}
+	conObservaciones, err := s.sistema.EstadoSubmodulo(EstadoSubmoduloConObservaciones)
+	if err != nil {
+		return nil, err
+	}
+	nueva := NuevaObservacion{Texto: texto, Rol: rol, Usuario: q.Usuario, EstadoSubmoduloID: conObservaciones.ID}
 
 	nombre, err := s.nombreTercero(nueva.Usuario)
 	if err != nil {

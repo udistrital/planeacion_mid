@@ -278,7 +278,8 @@ type Totales struct {
 // Plan es la vista del documento plan que usa este paquete. Al actualizar se
 // reenvía completo porque PUT /plan/:id del crud valida el documento entero. En
 // una iniciativa, Responsable es el documento de quien la creó y ResponsableNombre,
-// su nombre en Terceros al crearla (vacío si no se obtuvo).
+// su nombre en Terceros al crearla (vacío si no se obtuvo). MotivoRechazo es el motivo
+// del último rechazo de la OAP.
 type Plan struct {
 	ID                string `json:"_id,omitempty"`
 	Nombre            string `json:"nombre"`
@@ -292,6 +293,7 @@ type Plan struct {
 	FormatoID         string `json:"formato_id,omitempty"`
 	DependenciaID     string `json:"dependencia_id,omitempty"`
 	EstadoPlanID      string `json:"estado_plan_id,omitempty"`
+	MotivoRechazo     string `json:"motivo_rechazo,omitempty"`
 	VigenciaAplica    string `json:"vigencia_aplica,omitempty"`
 	FechaCreacion     string `json:"fecha_creacion,omitempty"`
 	FechaModificacion string `json:"fecha_modificacion,omitempty"`
@@ -321,7 +323,7 @@ type Estado struct {
 	Color  string `json:"color,omitempty"`
 }
 
-// Observacion es una entrada del historial de comentarios de un submódulo (siempre
+// Observacion es una entrada del historial de observaciones de un submódulo (siempre
 // sobre el submódulo completo). Se agregan y nunca se reemplazan.
 type Observacion struct {
 	ID            string `json:"_id,omitempty"`
@@ -332,14 +334,14 @@ type Observacion struct {
 	Fecha         string `json:"fecha,omitempty"`
 }
 
-// NuevaObservacion es el cuerpo para agregar una observación en planes_crud. Si
-// EstadoSubmoduloID no es vacío, el estado del submódulo cambia en la misma operación.
+// NuevaObservacion es el cuerpo para agregar una observación en planes_crud. El submódulo
+// pasa a EstadoSubmoduloID (Con observaciones) en la misma operación.
 type NuevaObservacion struct {
 	Texto             string `json:"texto"`
 	Rol               string `json:"rol"`
 	Usuario           string `json:"usuario"`
 	UsuarioNombre     string `json:"usuario_nombre,omitempty"`
-	EstadoSubmoduloID string `json:"estado_submodulo_id,omitempty"`
+	EstadoSubmoduloID string `json:"estado_submodulo_id"`
 }
 
 // SubmoduloIniciativa es un documento de la colección submodulo_iniciativa.
@@ -418,7 +420,7 @@ type SolicitudObservacion struct {
 }
 
 // SolicitudAccion es el cuerpo de PUT /iniciativas/:id/acciones/:accion. Motivo es obligatorio
-// al rechazar; no se guarda (va en la notificación que manda el cliente).
+// al rechazar: queda en el plan y el cliente lo manda también en la notificación.
 type SolicitudAccion struct {
 	Actor
 	Motivo string `json:"motivo,omitempty"`
@@ -455,16 +457,15 @@ type IniciativaListado struct {
 
 // ResumenSubmodulo es una fila de la vista general de la iniciativa.
 //   - Accion: lo que quien consulta hace con el submódulo: formular, revisar o consultar.
+//   - Observaciones: cuántas tiene en su historial.
 //   - Dependientes: claves de los submódulos que leen datos de este (para avisar al guardarlo).
-//   - UltimaObservacion: la más reciente, solo si el submódulo está Con observaciones.
 type ResumenSubmodulo struct {
-	Clave             string       `json:"clave"`
-	Nombre            string       `json:"nombre"`
-	Estado            Estado       `json:"estado"`
-	Accion            string       `json:"accion"`
-	Observaciones     int          `json:"observaciones"`
-	UltimaObservacion *Observacion `json:"ultima_observacion,omitempty"`
-	Dependientes      []string     `json:"dependientes"`
+	Clave         string   `json:"clave"`
+	Nombre        string   `json:"nombre"`
+	Estado        Estado   `json:"estado"`
+	Accion        string   `json:"accion"`
+	Observaciones int      `json:"observaciones"`
+	Dependientes  []string `json:"dependientes"`
 }
 
 // ResumenModulo agrupa los submódulos de un módulo en la vista general.
@@ -477,12 +478,14 @@ type ResumenModulo struct {
 // ResumenIniciativa es la vista general: estado de la iniciativa y de cada submódulo, por módulo,
 // y lo que quien consulta puede hacer con ella (Permisos). FueraDeFechas, como en el listado,
 // indica que tendría algo que hacer en este estado, pero hoy no hay fechas de formulación
-// habilitadas para la unidad: solo la consulta.
+// habilitadas para la unidad: solo la consulta. MotivoRechazo va solo mientras la iniciativa está
+// Rechazada.
 type ResumenIniciativa struct {
 	ID            string          `json:"id"`
 	Nombre        string          `json:"nombre"`
 	DependenciaID string          `json:"dependencia_id"`
 	Estado        Estado          `json:"estado"`
+	MotivoRechazo string          `json:"motivo_rechazo,omitempty"`
 	FueraDeFechas bool            `json:"fuera_de_fechas"`
 	Permisos      Permisos        `json:"permisos"`
 	Modulos       []ResumenModulo `json:"modulos"`
@@ -490,16 +493,14 @@ type ResumenIniciativa struct {
 
 // Permisos es lo que quien consulta puede hacer hoy con la iniciativa, según el estado, sus roles,
 // su unidad y las fechas (ver permisos.go).
-//   - Editar: guarda los submódulos no aprobados, sube anexos y comenta (formulador en 01, 02 y 06).
-//   - Observar: sus observaciones dejan el submódulo Con observaciones (Jefe en 03, OAP en 05).
-//   - AprobarSubmodulos: da el veredicto Aprobado (OAP en 05).
-//   - RolObservaciones: el rol con el que firma lo que publique; vacío si no publica.
+//   - Editar: guarda los submódulos no aprobados y sube anexos (el formulador, mientras formula o corrige).
+//   - Observar: publica observaciones, que dejan el submódulo Con observaciones (el Jefe y la OAP, cuando revisan).
+//   - AprobarSubmodulos: da el veredicto Aprobado (la OAP, cuando revisa).
 //   - Acciones: las acciones de su carril en este estado, habilitadas o con el motivo por el que no.
 type Permisos struct {
 	Editar            bool               `json:"editar"`
 	Observar          bool               `json:"observar"`
 	AprobarSubmodulos bool               `json:"aprobar_submodulos"`
-	RolObservaciones  string             `json:"rol_observaciones,omitempty"`
 	Acciones          []AccionDisponible `json:"acciones"`
 }
 

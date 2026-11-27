@@ -176,9 +176,7 @@ func (r *repoMemoria) AgregarObservacion(id string, nueva NuevaObservacion) (*Su
 	submodulo.Observaciones = append(submodulo.Observaciones, Observacion{
 		ID: r.nuevoID("obs"), Texto: nueva.Texto, Rol: nueva.Rol, Usuario: nueva.Usuario, UsuarioNombre: nueva.UsuarioNombre,
 	})
-	if nueva.EstadoSubmoduloID != "" {
-		submodulo.EstadoSubmoduloID = nueva.EstadoSubmoduloID
-	}
+	submodulo.EstadoSubmoduloID = nueva.EstadoSubmoduloID
 	copia := *submodulo
 	copia.Observaciones = append([]Observacion(nil), submodulo.Observaciones...)
 	return &copia, nil
@@ -902,15 +900,15 @@ func TestFlujoCompletoHastaAprobado(t *testing.T) {
 	id := crearIniciativaDePrueba(t, servicio).ID
 	formularTodo(t, servicio, id)
 
-	// 02 → 03: desde que la envía, el formulador ya no edita.
+	// Se envía al Jefe: desde ese momento el formulador ya no edita.
 	if resumen := ejecutar(t, servicio, id, AccionEnviar, formulador()); resumen.Estado.Codigo != EstadoIniciativaPorAprobar || resumen.Permisos.Editar {
 		t.Fatalf("enviar: %+v", resumen)
 	}
 	_, err := intentarGuardar(t, servicio, id, "nombre", iniciativaDeEjemplo(t)["nombre"])
 	exigirStatus(t, err, http.StatusConflict)
 
-	// 03: el Jefe observa; con observaciones no aprueba, devuelve.
-	comentar(t, servicio, id, "problematica", observacion(jefe(), "Precisar la fuente."))
+	// El Jefe observa un submódulo: ya no puede aprobar, solo devolver.
+	publicarObservacion(t, servicio, id, "problematica", observacion(jefe(), "Precisar la fuente."))
 	if acciones := accionesDe(resumenDe(t, servicio, id, jefe()).Permisos); strings.Join(acciones, ",") != "devolver,aprobar!" {
 		t.Fatalf("acciones del Jefe con observaciones = %v", acciones)
 	}
@@ -918,7 +916,7 @@ func TestFlujoCompletoHastaAprobado(t *testing.T) {
 	exigirStatus(t, err, http.StatusConflict)
 	ejecutar(t, servicio, id, AccionDevolver, jefe())
 
-	// 06 → 03 → 04 → 05: corrige, reenvía, el Jefe aprueba y la OAP inicia la revisión.
+	// La unidad corrige y la reenvía; el Jefe aprueba y la OAP inicia la revisión.
 	_, err = servicio.EjecutarAccion(id, AccionEnviar, SolicitudAccion{Actor: formulador()})
 	exigirStatus(t, err, http.StatusConflict) // problemática sigue Con observaciones
 	guardar(t, servicio, id, "problematica", iniciativaDeEjemplo(t)["problematica"])
@@ -928,7 +926,7 @@ func TestFlujoCompletoHastaAprobado(t *testing.T) {
 		t.Fatalf("iniciar revisión: %+v", resumen.Estado)
 	}
 
-	// 05: aprueba todo menos problemática; el último veredicto (Con observaciones) la pasa a 06.
+	// La OAP aprueba todo menos problemática, que observa al final: la iniciativa pasa sola a Por corregir.
 	for _, submodulo := range definicionDePrueba(t).Submodulos() {
 		if submodulo.Clave() != "problematica" {
 			if vista := aprobarSubmodulo(t, servicio, id, submodulo.Clave()); vista.EstadoIniciativa != nil {
@@ -936,26 +934,26 @@ func TestFlujoCompletoHastaAprobado(t *testing.T) {
 			}
 		}
 	}
-	vista := comentar(t, servicio, id, "problematica", observacion(oap(), "Falta la fuente del dato."))
+	vista := publicarObservacion(t, servicio, id, "problematica", observacion(oap(), "Falta la fuente del dato."))
 	if vista.EstadoIniciativa == nil || vista.EstadoIniciativa.Codigo != EstadoIniciativaPorCorregir {
 		t.Fatalf("el último veredicto debió pasarla a Por corregir: %+v", vista.EstadoIniciativa)
 	}
 
-	// 06: solo se edita lo no aprobado.
+	// Al corregir solo se editan los submódulos no aprobados.
 	_, err = intentarGuardar(t, servicio, id, "nombre", iniciativaDeEjemplo(t)["nombre"])
 	exigirStatus(t, err, http.StatusConflict)
 	guardar(t, servicio, id, "problematica", iniciativaDeEjemplo(t)["problematica"])
 	ejecutar(t, servicio, id, AccionEnviar, formulador())
 
-	// 03: el Jefe observa un aprobado (lo desaprueba) y la devuelve; se corrige y vuelve a subir.
-	comentar(t, servicio, id, "nombre", observacion(jefe(), "Ajustar el nombre."))
+	// El Jefe observa un submódulo aprobado, que deja de estarlo, y la devuelve; se corrige y vuelve a la OAP.
+	publicarObservacion(t, servicio, id, "nombre", observacion(jefe(), "Ajustar el nombre."))
 	ejecutar(t, servicio, id, AccionDevolver, jefe())
 	guardar(t, servicio, id, "nombre", iniciativaDeEjemplo(t)["nombre"])
 	ejecutar(t, servicio, id, AccionEnviar, formulador())
 	ejecutar(t, servicio, id, AccionAprobar, jefe())
 	ejecutar(t, servicio, id, AccionIniciarRevision, oap())
 
-	// 05: con los dos que faltaban aprobados, pasa sola a Aprobado.
+	// La OAP aprueba los dos que faltaban: la iniciativa pasa sola a Aprobado.
 	aprobarSubmodulo(t, servicio, id, "nombre")
 	vista = aprobarSubmodulo(t, servicio, id, "problematica")
 	if vista.EstadoIniciativa == nil || vista.EstadoIniciativa.Codigo != EstadoIniciativaAprobada {
@@ -970,8 +968,9 @@ func TestFlujoCompletoHastaAprobado(t *testing.T) {
 	exigirStatus(t, err, http.StatusConflict)
 }
 
-// La OAP rechaza con motivo; la rechazada no se inactiva, nadie la edita y solo la OAP se
-// retracta, lo que la devuelve a Por corregir.
+// La OAP rechaza con motivo, que queda en el plan y se ve en la vista general mientras está
+// rechazada; la rechazada no se inactiva, nadie la edita y solo la OAP se retracta, lo que la
+// devuelve a Por corregir.
 func TestRechazoYRetraccion(t *testing.T) {
 	servicio, repo := nuevoServicioDePrueba(t)
 	id := crearIniciativaDePrueba(t, servicio).ID
@@ -987,6 +986,12 @@ func TestRechazoYRetraccion(t *testing.T) {
 	if !repo.planes[id].Activo {
 		t.Fatal("la rechazada no se inactiva")
 	}
+	if motivo := repo.planes[id].MotivoRechazo; motivo != "Motivo de prueba." {
+		t.Fatalf("el motivo queda en el plan y quedó %q", motivo)
+	}
+	if motivo := resumenDe(t, servicio, id, formulador()).MotivoRechazo; motivo != "Motivo de prueba." {
+		t.Fatalf("la unidad ve el motivo en la vista general y vio %q", motivo)
+	}
 	_, err := intentarGuardar(t, servicio, id, "nombre", iniciativaDeEjemplo(t)["nombre"])
 	exigirStatus(t, err, http.StatusConflict)
 	listado, err := servicio.ListarIniciativas(formulador())
@@ -997,10 +1002,10 @@ func TestRechazoYRetraccion(t *testing.T) {
 	_, err = servicio.EjecutarAccion(id, AccionRetractarRechazo, SolicitudAccion{Actor: jefe()})
 	exigirStatus(t, err, http.StatusForbidden)
 	if acciones := accionesDe(resumenDe(t, servicio, id, oap()).Permisos); strings.Join(acciones, ",") != AccionRetractarRechazo {
-		t.Fatalf("en 08 la OAP solo se retracta: %v", acciones)
+		t.Fatalf("en una rechazada la OAP solo se retracta: %v", acciones)
 	}
-	if resumen := ejecutar(t, servicio, id, AccionRetractarRechazo, oap()); resumen.Estado.Codigo != EstadoIniciativaPorCorregir {
-		t.Fatalf("retractar: %+v", resumen.Estado)
+	if resumen := ejecutar(t, servicio, id, AccionRetractarRechazo, oap()); resumen.Estado.Codigo != EstadoIniciativaPorCorregir || resumen.MotivoRechazo != "" {
+		t.Fatalf("retractar: ya no está rechazada ni muestra el motivo: %+v %q", resumen.Estado, resumen.MotivoRechazo)
 	}
 	if acciones := accionesDe(resumenDe(t, servicio, id, formulador()).Permisos); strings.Join(acciones, ",") != AccionEnviar {
 		t.Fatalf("tras la retracción el formulador la reenvía: %v", acciones)
@@ -1058,18 +1063,18 @@ func TestElJefeDeOtraUnidadNiActuaNiConsulta(t *testing.T) {
 	exigirStatus(t, err, http.StatusForbidden)
 }
 
-// Con varios roles se suman los carriles: el mismo usuario observa como Jefe en 03 y como OAP en
-// 05, y cada observación queda firmada con el rol de ese carril. Como tiene un rol de la OAP,
-// consulta las iniciativas de todas las unidades.
+// Con varios roles se suman los carriles: el mismo usuario observa como Jefe cuando la iniciativa
+// está Por aprobar y como OAP cuando está En revisión OAP, y cada observación queda firmada con el
+// rol con que la publicó. Como tiene un rol de la OAP, consulta las iniciativas de todas las unidades.
 func TestConVariosRolesSeSumanLosCarriles(t *testing.T) {
 	servicio, _ := nuevoServicioDePrueba(t)
 	id := crearIniciativaDePrueba(t, servicio).ID
 	formularTodo(t, servicio, id)
 	ejecutar(t, servicio, id, AccionEnviar, formulador())
 
-	comoJefe := comentar(t, servicio, id, "nombre", observacion(jefeYOAP(), "Como Jefe."))
+	comoJefe := publicarObservacion(t, servicio, id, "nombre", observacion(jefeYOAP(), "Como Jefe."))
 	if rol := comoJefe.Observaciones[len(comoJefe.Observaciones)-1].Rol; rol != RolJefeDependencia {
-		t.Fatalf("en 03 firma como Jefe y firmó %s", rol)
+		t.Fatalf("Por aprobar firma como Jefe y firmó %s", rol)
 	}
 	ejecutar(t, servicio, id, AccionDevolver, jefeYOAP())
 	guardar(t, servicio, id, "nombre", iniciativaDeEjemplo(t)["nombre"])
@@ -1077,9 +1082,9 @@ func TestConVariosRolesSeSumanLosCarriles(t *testing.T) {
 	ejecutar(t, servicio, id, AccionAprobar, jefeYOAP())
 	ejecutar(t, servicio, id, AccionIniciarRevision, jefeYOAP())
 
-	comoOAP := comentar(t, servicio, id, "nombre", observacion(jefeYOAP(), "Como OAP."))
+	comoOAP := publicarObservacion(t, servicio, id, "nombre", observacion(jefeYOAP(), "Como OAP."))
 	if rol := comoOAP.Observaciones[len(comoOAP.Observaciones)-1].Rol; rol != RolAsistentePlaneacion {
-		t.Fatalf("en 05 firma como OAP y firmó %s", rol)
+		t.Fatalf("En revisión OAP firma como OAP y firmó %s", rol)
 	}
 	otra := crearEnDependencia(t, servicio, "dep-2")
 	if _, err := servicio.Resumen(otra.ID, jefeYOAP()); err != nil {
@@ -1100,7 +1105,7 @@ func TestFueraDeFechasNadieActua(t *testing.T) {
 		t.Fatalf("fuera de fechas el Jefe solo consulta: %+v", resumen)
 	}
 	if resumen := resumenDe(t, servicio, id, oap()); resumen.FueraDeFechas {
-		t.Fatal("la OAP no tiene nada que hacer en 03: no se le avisa de las fechas")
+		t.Fatal("la OAP no tiene nada que hacer en una iniciativa Por aprobar: no se le avisa de las fechas")
 	}
 	_, err := servicio.EjecutarAccion(id, AccionAprobar, SolicitudAccion{Actor: jefe()})
 	exigirFueraDeFechas(t, err)
@@ -1130,7 +1135,7 @@ func llevarAPorCorregirConObjetivosAprobados(t *testing.T, servicio *Servicio) s
 			aprobarSubmodulo(t, servicio, id, submodulo.Clave())
 		}
 	}
-	comentar(t, servicio, id, "problematica", observacion(oap(), "Agregar la causa que falta."))
+	publicarObservacion(t, servicio, id, "problematica", observacion(oap(), "Agregar la causa que falta."))
 	return id
 }
 
@@ -1151,19 +1156,19 @@ func TestUnAprobadoNoSeRevalidaNiSeEdita(t *testing.T) {
 	exigirStatus(t, err, http.StatusConflict)
 }
 
-// En Por corregir el resumen trae la última observación de cada submódulo Con observaciones.
-func TestEnPorCorregirElResumenTraeLaUltimaObservacion(t *testing.T) {
+// Al corregir, el submódulo Con observaciones se formula y los aprobados solo se consultan.
+func TestAlCorregirSeFormulaLoObservado(t *testing.T) {
 	servicio, _ := nuevoServicioDePrueba(t)
 	id := llevarAPorCorregirConObjetivosAprobados(t, servicio)
 
 	for _, submodulo := range submodulosDe(resumenDe(t, servicio, id, formulador())) {
 		switch {
 		case submodulo.Clave == "problematica":
-			if submodulo.UltimaObservacion == nil || submodulo.UltimaObservacion.Texto != "Agregar la causa que falta." || submodulo.Accion != AccionSubmoduloFormular {
+			if submodulo.Estado.Codigo != EstadoSubmoduloConObservaciones || submodulo.Observaciones != 1 || submodulo.Accion != AccionSubmoduloFormular {
 				t.Fatalf("problemática: %+v", submodulo)
 			}
-		case submodulo.UltimaObservacion != nil || submodulo.Accion != AccionSubmoduloConsultar:
-			t.Fatalf("%s está aprobado: se consulta y no trae observación por atender: %+v", submodulo.Clave, submodulo)
+		case submodulo.Accion != AccionSubmoduloConsultar:
+			t.Fatalf("%s está aprobado: solo se consulta: %+v", submodulo.Clave, submodulo)
 		}
 	}
 }
@@ -1176,7 +1181,7 @@ func observacion(actor Actor, texto string) SolicitudObservacion {
 	return SolicitudObservacion{Actor: actor, Texto: texto}
 }
 
-func comentar(t *testing.T, servicio *Servicio, iniciativaID, clave string, solicitud SolicitudObservacion) *SubmoduloVista {
+func publicarObservacion(t *testing.T, servicio *Servicio, iniciativaID, clave string, solicitud SolicitudObservacion) *SubmoduloVista {
 	t.Helper()
 	vista, err := servicio.AgregarObservacion(iniciativaID, clave, solicitud)
 	if err != nil {
@@ -1205,7 +1210,7 @@ func TestLaOAPObservaYElSubmoduloQuedaConObservacionesSinCambiarLaVersion(t *tes
 	llevarARevision(t, servicio, id)
 	antes, _ := servicio.ObtenerSubmodulo(id, "poblacion")
 
-	vista := comentar(t, servicio, id, "poblacion", observacion(oap(), "  Revisar el total de juventud.  "))
+	vista := publicarObservacion(t, servicio, id, "poblacion", observacion(oap(), "  Revisar el total de juventud.  "))
 
 	if vista.Estado.Codigo != EstadoSubmoduloConObservaciones || vista.Version != antes.Submodulo.Version {
 		t.Fatalf("estado %s, versión %d (antes %d)", vista.Estado.Codigo, vista.Version, antes.Submodulo.Version)
@@ -1213,22 +1218,6 @@ func TestLaOAPObservaYElSubmoduloQuedaConObservacionesSinCambiarLaVersion(t *tes
 	esperada := Observacion{ID: vista.Observaciones[0].ID, Texto: "Revisar el total de juventud.", Rol: RolPlaneacion, Usuario: documentoOAP, UsuarioNombre: personasDePrueba[documentoOAP]}
 	if len(vista.Observaciones) != 1 || vista.Observaciones[0] != esperada {
 		t.Fatalf("observaciones = %+v", vista.Observaciones)
-	}
-}
-
-func TestElFormuladorComentaMientrasFormulaSinChocarConSuEdicion(t *testing.T) {
-	servicio, _ := nuevoServicioDePrueba(t)
-	iniciativa := crearIniciativaDePrueba(t, servicio)
-	abierta, _ := servicio.ObtenerSubmodulo(iniciativa.ID, "nombre")
-
-	vista := comentar(t, servicio, iniciativa.ID, "nombre", observacion(formulador(), "El nombre se ajustó con la OAP."))
-	if vista.Estado.Codigo != EstadoSubmoduloSinFormular || vista.Version != abierta.Submodulo.Version || vista.Observaciones[0].Rol != RolAsistenteDependencia {
-		t.Fatalf("el comentario del formulador no cambia estado ni versión: %s v%d %+v", vista.Estado.Codigo, vista.Version, vista.Observaciones)
-	}
-
-	// Guarda con la versión que tenía abierta antes de comentar: no hay 409.
-	if _, err := servicio.GuardarSubmodulo(iniciativa.ID, "nombre", SolicitudGuardarSubmodulo{Actor: formulador(), Version: abierta.Submodulo.Version, Datos: iniciativaDeEjemplo(t)["nombre"]}); err != nil {
-		t.Fatalf("guardar tras comentar: %v", err)
 	}
 }
 
@@ -1241,16 +1230,22 @@ func TestLaOAPNoObservaUnSubmoduloSinFormular(t *testing.T) {
 	exigirStatus(t, err, http.StatusConflict)
 }
 
-// Fuera de su carril nadie publica: la OAP no comenta mientras se formula y el formulador no
-// observa en revisión.
+// Solo observan el Jefe y la OAP cuando revisan. Mientras la iniciativa se formula o se corrige
+// nadie publica observaciones, y en la revisión de la OAP el formulador tampoco.
 func TestSoloPublicaElCarrilDelEstado(t *testing.T) {
-	servicio, _ := nuevoServicioDePrueba(t)
+	servicio, repo := nuevoServicioDePrueba(t)
 	id := crearIniciativaDePrueba(t, servicio).ID
-	_, err := servicio.AgregarObservacion(id, "nombre", observacion(oap(), "Mientras se formula."))
-	exigirStatus(t, err, http.StatusForbidden)
+	for _, estado := range []string{"ep-sf", "ep-ef", "ep-pc"} {
+		repo.planes[id].EstadoPlanID = estado
+		for _, actor := range []Actor{formulador(), jefe(), oap()} {
+			_, err := servicio.AgregarObservacion(id, "nombre", observacion(actor, "Mientras se formula."))
+			exigirStatus(t, err, http.StatusConflict)
+		}
+	}
 
+	repo.planes[id].EstadoPlanID = "ep-sf"
 	llevarARevision(t, servicio, id)
-	_, err = servicio.AgregarObservacion(id, "nombre", observacion(formulador(), "En revisión."))
+	_, err := servicio.AgregarObservacion(id, "nombre", observacion(formulador(), "En revisión."))
 	exigirStatus(t, err, http.StatusForbidden)
 }
 
@@ -1279,11 +1274,12 @@ func TestObservacionInvalidaResponde400(t *testing.T) {
 
 func TestLaObservacionSePublicaSinNombreSiTercerosNoResponde(t *testing.T) {
 	servicio, _ := nuevoServicioDePrueba(t)
-	iniciativa := crearIniciativaDePrueba(t, servicio)
+	id := crearIniciativaDePrueba(t, servicio).ID
+	llevarARevision(t, servicio, id)
 	tercerosCaidos(servicio)
 
-	vista := comentar(t, servicio, iniciativa.ID, "nombre", observacion(formulador(), "El nombre se ajustó con la OAP."))
-	if len(vista.Observaciones) != 1 || vista.Observaciones[0].Usuario != responsableDePrueba || vista.Observaciones[0].UsuarioNombre != "" {
+	vista := publicarObservacion(t, servicio, id, "nombre", observacion(oap(), "Ajustar el nombre."))
+	if len(vista.Observaciones) != 1 || vista.Observaciones[0].Usuario != documentoOAP || vista.Observaciones[0].UsuarioNombre != "" {
 		t.Fatalf("observaciones = %+v", vista.Observaciones)
 	}
 }

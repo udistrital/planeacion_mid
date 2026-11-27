@@ -11,9 +11,12 @@ import (
 //
 // El flujo está en docs/Máquina de estados - Iniciativas de inversión.md:
 //
-//	01 Sin formular → 02 En formulación → 03 Por aprobar (Jefe) → 04 Por revisar OAP → 05 En revisión OAP
-//	05 → 07 Aprobado (todos los submódulos aprobados) · 05 → 06 Por corregir (alguno con observaciones)
-//	03 → 06 (el Jefe la devuelve) · 06 → 03 (se reenvía) · 05 → 08 Rechazada · 08 → 06 (la OAP se retracta)
+//	Sin formular → En formulación → Por aprobar → Por revisar OAP → En revisión OAP
+//	En revisión OAP → Aprobado, si todos los submódulos quedan aprobados
+//	En revisión OAP → Por corregir, si alguno queda con observaciones
+//	Por aprobar → Por corregir, cuando el Jefe la devuelve
+//	Por corregir → Por aprobar, cuando la unidad la reenvía
+//	En revisión OAP → Rechazada → Por corregir, cuando la OAP se retracta
 const (
 	CodigoTipoPlanIniciativa = "IPI_SP"
 

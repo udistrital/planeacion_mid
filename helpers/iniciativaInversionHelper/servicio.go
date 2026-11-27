@@ -32,7 +32,7 @@ type Servicio struct {
 	// Si es nil, el listado sale sin nombre de dependencia.
 	dependencias FuenteNombreDependencia
 
-	// terceros consulta en Terceros el nombre de quien crea la iniciativa, comenta o sube
+	// terceros consulta en Terceros el nombre de quien crea la iniciativa, observa o sube
 	// un anexo. Si es nil, se guardan sin nombre.
 	terceros FuenteNombreTercero
 
@@ -62,7 +62,7 @@ func NuevoServicio(repo Repositorio, definiciones FuenteDefiniciones, catalogos 
 // elemento_catalogo; para el catálogo sedes, los espacios físicos de tipo SEDE de Oikos, y para
 // los del Plan Distrital de Desarrollo, el Plan Estratégico de Desarrollo y el Plan Indicativo,
 // el árbol de esos planes. Oikos también da el nombre de la dependencia en el listado de
-// iniciativas, y Terceros, el de quien crea la iniciativa, comenta o sube un anexo, y las unidades
+// iniciativas, y Terceros, el de quien crea la iniciativa, observa o sube un anexo, y las unidades
 // de cada usuario.
 func NuevoServicioPorDefecto(hostCrud, hostTerceros, hostOikos, hostGestor string) *Servicio {
 	crud := NuevoClienteCrud(hostCrud)
@@ -416,18 +416,17 @@ func (s *Servicio) Resumen(iniciativaID string, actor Actor) (*ResumenIniciativa
 				return nil, err
 			}
 			resumenModulo.Submodulos = append(resumenModulo.Submodulos, ResumenSubmodulo{
-				Clave:             nodo.Clave(),
-				Nombre:            nodo.Nombre,
-				Estado:            estado,
-				Accion:            accionDeSubmodulo(permisos, estado.Codigo),
-				Observaciones:     len(documento.Observaciones),
-				UltimaObservacion: ultimaObservacionPorAtender(estado.Codigo, documento.Observaciones),
-				Dependientes:      dependientes[nodo.Clave()],
+				Clave:         nodo.Clave(),
+				Nombre:        nodo.Nombre,
+				Estado:        estado,
+				Accion:        accionDeSubmodulo(permisos, estado.Codigo),
+				Observaciones: len(documento.Observaciones),
+				Dependientes:  dependientes[nodo.Clave()],
 			})
 		}
 		modulos = append(modulos, resumenModulo)
 	}
-	return &ResumenIniciativa{
+	resumen := &ResumenIniciativa{
 		ID:            ctx.plan.ID,
 		Nombre:        ctx.plan.Nombre,
 		DependenciaID: ctx.plan.DependenciaID,
@@ -435,17 +434,11 @@ func (s *Servicio) Resumen(iniciativaID string, actor Actor) (*ResumenIniciativa
 		FueraDeFechas: fueraDeFechas,
 		Permisos:      permisos,
 		Modulos:       modulos,
-	}, nil
-}
-
-// ultimaObservacionPorAtender es la observación más reciente de un submódulo Con observaciones;
-// nil en los demás estados.
-func ultimaObservacionPorAtender(estadoSubmodulo string, observaciones []Observacion) *Observacion {
-	if estadoSubmodulo != EstadoSubmoduloConObservaciones || len(observaciones) == 0 {
-		return nil
 	}
-	ultima := observaciones[len(observaciones)-1]
-	return &ultima
+	if ctx.estado.Codigo == EstadoIniciativaRechazada {
+		resumen.MotivoRechazo = ctx.plan.MotivoRechazo
+	}
+	return resumen, nil
 }
 
 // dependientesPorSubmodulo da, por clave de submódulo, las claves de los submódulos que leen datos
@@ -601,8 +594,8 @@ func (s *Servicio) submoduloParaEditar(iniciativaID, clave string, actor Actor) 
 	return ctx, nodo, documento, nil
 }
 
-// RevisarSubmodulo es el veredicto «Aprobado» de la OAP sobre un submódulo formulado, mientras
-// revisa la iniciativa (05). El veredicto «Con observaciones» se da con AgregarObservacion, y el
+// RevisarSubmodulo es el veredicto «Aprobado» de la OAP sobre un submódulo formulado, con la
+// iniciativa En revisión OAP. El veredicto «Con observaciones» se da con AgregarObservacion, y el
 // historial de observaciones no se borra. Después de cada veredicto la iniciativa puede cambiar de
 // estado sola (ver cerrarRevision).
 func (s *Servicio) RevisarSubmodulo(iniciativaID, clave string, solicitud SolicitudRevisarSubmodulo) (*SubmoduloVista, error) {
@@ -681,7 +674,7 @@ func (s *Servicio) cerrarRevision(iniciativaID string) *Estado {
 
 // EjecutarAccion cambia el estado general de la iniciativa con una acción (ver transiciones). La
 // ejecuta el carril de la acción, dentro de las fechas de la unidad. Enviar revalida los
-// submódulos; rechazar exige el motivo, que no se guarda (va en la notificación).
+// submódulos; rechazar exige el motivo, que queda en el plan junto con el estado.
 func (s *Servicio) EjecutarAccion(iniciativaID, accion string, solicitud SolicitudAccion) (*ResumenIniciativa, error) {
 	t, existe := transiciones[accion]
 	if !existe {
@@ -713,6 +706,9 @@ func (s *Servicio) EjecutarAccion(iniciativaID, accion string, solicitud Solicit
 		if err := s.exigirSubmodulosValidos(ctx); err != nil {
 			return nil, err
 		}
+	}
+	if accion == AccionRechazar {
+		ctx.plan.MotivoRechazo = strings.TrimSpace(solicitud.Motivo)
 	}
 	if _, err := s.cambiarEstado(ctx, destino); err != nil {
 		return nil, err

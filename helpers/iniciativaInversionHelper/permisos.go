@@ -34,7 +34,7 @@ type Carril struct {
 var (
 	// CarrilFormulador crea, diligencia, corrige y envía las iniciativas de sus unidades.
 	CarrilFormulador = Carril{"formulador", []string{RolJefeDependencia, RolAsistenteDependencia, RolAsistentePlaneacion}, true}
-	// CarrilJefe aprueba o devuelve, en 03, las iniciativas de su unidad.
+	// CarrilJefe aprueba o devuelve las iniciativas de su unidad cuando están Por aprobar.
 	CarrilJefe = Carril{"jefe de unidad", []string{RolJefeDependencia}, true}
 	// CarrilOAP revisa las iniciativas de todas las unidades.
 	CarrilOAP = Carril{"OAP", []string{RolPlaneacion, RolAsistentePlaneacion}, false}
@@ -54,7 +54,7 @@ func (c Carril) rolEn(roles []string) string {
 // tareas dice qué carril hace cada cosa con los submódulos en un estado de la iniciativa; nil si
 // en ese estado nadie la hace.
 type tareas struct {
-	// editar: guarda los submódulos no aprobados, sube anexos y comenta sin cambiar el estado del submódulo.
+	// editar: guarda los submódulos no aprobados y sube anexos.
 	editar *Carril
 	// observar: publica observaciones que dejan el submódulo Con observaciones (también un aprobado).
 	observar *Carril
@@ -251,10 +251,6 @@ func (s *Servicio) permisosDe(q *solicitante, plan *Plan, estado string, estados
 	permisos.Editar = rolEditar != ""
 	permisos.Observar = rolObservar != ""
 	permisos.AprobarSubmodulos = rolAprobar != ""
-	permisos.RolObservaciones = rolEditar
-	if permisos.RolObservaciones == "" {
-		permisos.RolObservaciones = rolObservar
-	}
 	return permisos, false, nil
 }
 

@@ -40,7 +40,7 @@ func TestFueraDeFechasNoSeCreaLaIniciativa(t *testing.T) {
 	}
 }
 
-// Fuera de fechas la iniciativa solo se consulta: no se guarda, no se comenta ni se envía.
+// Fuera de fechas la iniciativa solo se consulta: no se guarda ni se envía.
 func TestFueraDeFechasSoloSeConsulta(t *testing.T) {
 	servicio, repo := nuevoServicioDePrueba(t)
 	iniciativa := crearIniciativaDePrueba(t, servicio)
@@ -51,7 +51,7 @@ func TestFueraDeFechasSoloSeConsulta(t *testing.T) {
 	cerrarFechas(repo)
 
 	resumen := resumenDe(t, servicio, iniciativa.ID, formulador())
-	if !resumen.FueraDeFechas || resumen.Permisos.Editar || resumen.Permisos.RolObservaciones != "" || strings.Join(accionesDe(resumen.Permisos), ",") != AccionEnviar+"!" {
+	if !resumen.FueraDeFechas || resumen.Permisos.Editar || strings.Join(accionesDe(resumen.Permisos), ",") != AccionEnviar+"!" {
 		t.Fatalf("fuera de fechas no se edita ni se envía: %+v", resumen)
 	}
 	if resumen.Permisos.Acciones[0].Motivo != mensajeFueraDeFechas {
@@ -59,8 +59,6 @@ func TestFueraDeFechasSoloSeConsulta(t *testing.T) {
 	}
 	exigirFueraDeFechas(t, guardarNombre(t, servicio, iniciativa.ID))
 	_, err := servicio.EjecutarAccion(iniciativa.ID, AccionEnviar, SolicitudAccion{Actor: formulador()})
-	exigirFueraDeFechas(t, err)
-	_, err = servicio.AgregarObservacion(iniciativa.ID, "nombre", observacion(formulador(), "Se ajusta cuando se habiliten las fechas."))
 	exigirFueraDeFechas(t, err)
 	if estado := repo.planes[iniciativa.ID].EstadoPlanID; estado != "ep-ef" {
 		t.Fatalf("la iniciativa no debió cambiar de estado y quedó %s", estado)
@@ -77,7 +75,7 @@ func TestFueraDeFechasLaOAPNoRevisa(t *testing.T) {
 
 	repo.consultasPeriodos = 0
 	if resumen := resumenDe(t, servicio, iniciativa.ID, formulador()); resumen.FueraDeFechas || repo.consultasPeriodos != 0 {
-		t.Fatalf("el formulador no actúa en 05: fuera_de_fechas=%v consultas=%d", resumen.FueraDeFechas, repo.consultasPeriodos)
+		t.Fatalf("el formulador no actúa en la revisión de la OAP: fuera_de_fechas=%v consultas=%d", resumen.FueraDeFechas, repo.consultasPeriodos)
 	}
 	if resumen := resumenDe(t, servicio, iniciativa.ID, oap()); !resumen.FueraDeFechas || resumen.Permisos.AprobarSubmodulos {
 		t.Fatalf("fuera de fechas la OAP no revisa: %+v", resumen)

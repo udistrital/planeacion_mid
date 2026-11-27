@@ -126,7 +126,7 @@ func (u *Unidades) idsDe(documento string) ([]int, error) {
 }
 
 // CacheDependencias guarda en memoria, por un tiempo, las unidades de cada usuario: se consultan
-// en cada escritura (guardar, comentar, cambiar el estado) y no cambian a menudo. Las fallas no se
+// en cada escritura (guardar, observar, cambiar el estado) y no cambian a menudo. Las fallas no se
 // guardan.
 type CacheDependencias struct {
 	fuente   FuenteDependenciasUsuario

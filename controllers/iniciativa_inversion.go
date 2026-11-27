@@ -204,14 +204,14 @@ func (c *IniciativaInversionController) SubirDocumento() {
 
 // AgregarObservacion ...
 // @Title AgregarObservacion
-// @Description Publica una observación en el historial del submódulo sin cambiar su versión. En 01, 02 y 06 comenta el formulador; en 03 observa el Jefe y en 05 la OAP, y el submódulo queda Con observaciones (en 05 la iniciativa puede cambiar de estado sola: va en estado_iniciativa)
+// @Description Publica una observación en el historial del submódulo y lo deja Con observaciones, sin cambiar su versión. Publican el Jefe, con la iniciativa Por aprobar, y la OAP, con la iniciativa En revisión OAP; en los demás estados nadie publica. Con el último veredicto de la OAP la iniciativa cambia de estado sola: va en estado_iniciativa
 // @Param	id	path	string	true	"Id de la iniciativa"
 // @Param	clave	path	string	true	"Clave del submódulo"
 // @Param	body	body	iniciativaInversionHelper.SolicitudObservacion	true	"usuario, roles y texto"
 // @Success 201 {object} iniciativaInversionHelper.SubmoduloVista
 // @Failure 400 Solicitud inválida
 // @Failure 403 El usuario no actúa en el carril de este estado
-// @Failure 409 El estado de la iniciativa o del submódulo no permite comentar, o está fuera de fechas
+// @Failure 409 El estado de la iniciativa o del submódulo no permite observar, o está fuera de fechas
 // @router /iniciativas/:id/submodulos/:clave/observaciones [post]
 func (c *IniciativaInversionController) AgregarObservacion() {
 	defer helpers.ErrorController(c.Controller, "IniciativaInversionController")
@@ -245,7 +245,7 @@ func (c *IniciativaInversionController) RevisarSubmodulo() {
 
 // EjecutarAccion ...
 // @Title EjecutarAccion
-// @Description Cambia el estado general de la iniciativa con una acción del carril del usuario
+// @Description Cambia el estado general de la iniciativa con una acción del carril del usuario. Al rechazar, el motivo queda en la iniciativa y la vista general lo trae (motivo_rechazo) mientras está Rechazada
 // @Param	id	path	string	true	"Id de la iniciativa"
 // @Param	accion	path	string	true	"enviar | aprobar | devolver | iniciar-revision | rechazar | retractar-rechazo"
 // @Param	body	body	iniciativaInversionHelper.SolicitudAccion	true	"usuario, roles y, al rechazar, motivo"
