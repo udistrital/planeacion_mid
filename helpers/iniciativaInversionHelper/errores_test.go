@@ -34,9 +34,9 @@ func exigirMensajeParaUsuario(t *testing.T, err error, detalleEsperado string) *
 func TestSinTipoDePlanElUsuarioNoVeElScriptDeCarga(t *testing.T) {
 	repo := nuevoRepoMemoria()
 	delete(repo.catalogos, RecursoTipoPlan)
-	servicio := NuevoServicio(repo, definicionFija{definicionDePrueba(t)}, catalogosDePrueba(), nil)
+	servicio := conPersonasDePrueba(NuevoServicio(repo, definicionFija{definicionDePrueba(t)}, catalogosDePrueba(), nil))
 
-	_, err := servicio.ListarIniciativas(nil)
+	_, err := servicio.ListarIniciativas(oap())
 	negocio := exigirMensajeParaUsuario(t, err, "cargar-estados.js")
 	if negocio.Mensaje != mensajeConfiguracion {
 		t.Fatalf("mensaje = %q", negocio.Mensaje)
@@ -46,15 +46,15 @@ func TestSinTipoDePlanElUsuarioNoVeElScriptDeCarga(t *testing.T) {
 func TestSinEstadoDeSubmoduloElUsuarioNoVeElScriptDeCarga(t *testing.T) {
 	repo := nuevoRepoMemoria()
 	repo.catalogos[RecursoEstadoSubmodulo] = repo.catalogos[RecursoEstadoSubmodulo][1:]
-	servicio := NuevoServicio(repo, definicionFija{definicionDePrueba(t)}, catalogosDePrueba(), nil)
+	servicio := conPersonasDePrueba(NuevoServicio(repo, definicionFija{definicionDePrueba(t)}, catalogosDePrueba(), nil))
 
-	_, err := servicio.ListarIniciativas(nil)
+	_, err := servicio.ListarIniciativas(oap())
 	exigirMensajeParaUsuario(t, err, "cargar-estados.js")
 }
 
 func TestSinPlantillaElUsuarioNoVeElScriptDeCarga(t *testing.T) {
-	servicio := NuevoServicio(nuevoRepoMemoria(), definicionesPorPlantilla{}, catalogosDePrueba(), nil)
-	_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{DependenciaID: "dep-1", Responsable: responsableDePrueba})
+	servicio := conPersonasDePrueba(NuevoServicio(nuevoRepoMemoria(), definicionesPorPlantilla{}, catalogosDePrueba(), nil))
+	_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{Actor: formulador(), DependenciaID: "dep-1"})
 	exigirStatus(t, err, http.StatusConflict)
 	exigirMensajeParaUsuario(t, err, "cargar-construccion.js")
 }
@@ -97,8 +97,8 @@ func TestUnErrorDesconocidoNoMuestraSuTexto(t *testing.T) {
 }
 
 func TestLaAccionNoPermitidaSeNombraComoEnPantalla(t *testing.T) {
-	_, motivo := EvaluarAccion(AccionAvalar, EstadoIniciativaFormulacionIniciada, nil)
-	if !strings.Contains(motivo, "«Avalar»") {
+	_, motivo := EvaluarAccion(AccionRetractarRechazo, EstadoIniciativaEnFormulacion, nil)
+	if !strings.Contains(motivo, "«Retractar rechazo»") {
 		t.Fatalf("motivo = %q", motivo)
 	}
 }

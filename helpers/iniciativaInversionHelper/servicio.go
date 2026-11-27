@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/astaxie/beego/logs"
 )
@@ -34,7 +35,14 @@ type Servicio struct {
 	// terceros consulta en Terceros el nombre de quien crea la iniciativa, comenta o sube
 	// un anexo. Si es nil, se guardan sin nombre.
 	terceros FuenteNombreTercero
+
+	// unidades da las unidades de cada usuario, con las que se decide qué iniciativas consulta y
+	// sobre cuáles actúa como formulador o Jefe (ver permisos.go).
+	unidades FuenteDependenciasUsuario
 }
+
+// duracionCacheUnidades es cuánto se guardan en memoria las unidades de un usuario.
+const duracionCacheUnidades = 5 * time.Minute
 
 // NuevoServicio arma el servicio con sus dependencias.
 func NuevoServicio(repo Repositorio, definiciones FuenteDefiniciones, catalogos ProveedorCatalogos, gestor GestorDocumental) *Servicio {
@@ -54,7 +62,8 @@ func NuevoServicio(repo Repositorio, definiciones FuenteDefiniciones, catalogos 
 // elemento_catalogo; para el catálogo sedes, los espacios físicos de tipo SEDE de Oikos, y para
 // los del Plan Distrital de Desarrollo, el Plan Estratégico de Desarrollo y el Plan Indicativo,
 // el árbol de esos planes. Oikos también da el nombre de la dependencia en el listado de
-// iniciativas, y Terceros, el de quien crea la iniciativa, comenta o sube un anexo.
+// iniciativas, y Terceros, el de quien crea la iniciativa, comenta o sube un anexo, y las unidades
+// de cada usuario.
 func NuevoServicioPorDefecto(hostCrud, hostTerceros, hostOikos, hostGestor string) *Servicio {
 	crud := NuevoClienteCrud(hostCrud)
 	definiciones := NuevaCacheDefiniciones(NuevoCargadorDefiniciones(crud, crud, 8))
@@ -63,6 +72,7 @@ func NuevoServicioPorDefecto(hostCrud, hostTerceros, hostOikos, hostGestor strin
 	personas := NuevoClienteUnidades(hostTerceros, hostOikos)
 	servicio.dependencias = personas
 	servicio.terceros = personas
+	servicio.unidades = NuevaCacheDependencias(NuevasUnidades(personas), duracionCacheUnidades)
 	return servicio
 }
 
@@ -120,11 +130,14 @@ func (s *Servicio) motivoPlantillaNoUsable(plantillaID string) string {
 	return ""
 }
 
-// ListarIniciativas lista las iniciativas activas, de la más reciente a la más
-// antigua, con su número, su estado general y si están fuera de las fechas de
-// formulación de su unidad. Si se indican dependencias, solo las de esas dependencias.
-func (s *Servicio) ListarIniciativas(dependencias []string) ([]IniciativaListado, error) {
-
+// ListarIniciativas lista las iniciativas activas que el usuario consulta (la OAP, todas; los
+// demás, las de sus unidades), de la más reciente a la más antigua, con su número, su estado
+// general, lo que el usuario hace con cada una y si está fuera de las fechas de su unidad.
+func (s *Servicio) ListarIniciativas(actor Actor) ([]IniciativaListado, error) {
+	q, err := s.solicitante(actor)
+	if err != nil {
+		return nil, err
+	}
 	tipo, err := s.sistema.TipoPlanIniciativa()
 	if err != nil {
 		return nil, err
@@ -135,19 +148,27 @@ func (s *Servicio) ListarIniciativas(dependencias []string) ([]IniciativaListado
 		return nil, err
 	}
 	numeros := numerarPorCreacion(planes)
-	deInteres := map[string]bool{}
-	for _, dependencia := range dependencias {
-		deInteres[dependencia] = true
-	}
 
 	nombresDeDependencias := nombresDependencias{fuente: s.dependencias, nombres: map[string]string{}}
 	fechas := fechasDeConsulta{servicio: s}
 	iniciativas := make([]IniciativaListado, 0, len(planes))
-	for _, plan := range planes {
-		if !plan.Activo || (len(deInteres) > 0 && !deInteres[plan.DependenciaID]) {
+	for i := range planes {
+		plan := &planes[i]
+		if !plan.Activo {
+			continue
+		}
+		visible, err := q.puedeConsultar(plan.DependenciaID)
+		if err != nil {
+			return nil, err
+		}
+		if !visible {
 			continue
 		}
 		estado, err := s.sistema.EstadoIniciativaPorID(plan.EstadoPlanID)
+		if err != nil {
+			return nil, err
+		}
+		permisos, fueraDeFechas, err := s.permisosDe(q, plan, estado.Codigo, nil, &fechas)
 		if err != nil {
 			return nil, err
 		}
@@ -159,8 +180,8 @@ func (s *Servicio) ListarIniciativas(dependencias []string) ([]IniciativaListado
 			DependenciaNombre: nombresDeDependencias.de(plan.ID, plan.DependenciaID),
 			Responsable:       plan.ResponsableNombre,
 			Estado:            estado,
-			PermiteEditar:     PermiteEditar(estado.Codigo),
-			FueraDeFechas:     fechas.fueraDeFechas(&plan, estado.Codigo),
+			Accion:            accionEnListado(permisos),
+			FueraDeFechas:     fueraDeFechas,
 			FechaCreacion:     plan.FechaCreacion,
 		})
 	}
@@ -238,28 +259,38 @@ func numerarPorCreacion(planes []Plan) map[string]int {
 
 // CrearIniciativa crea el plan de la iniciativa y un submódulo vacío por cada
 // submódulo de la plantilla (la indicada o, si no se indica, la más reciente). Si
-// falla la creación de los submódulos, desactiva el plan. Fuera de las fechas de
-// formulación de la unidad responde 409.
+// falla la creación de los submódulos, desactiva el plan. La crea el carril del
+// formulador, para una de sus unidades (403 si no) y dentro de las fechas de
+// formulación de esa unidad (409 si no).
 //
 // El plan guarda el documento del responsable (quien la crea) y su nombre en Terceros,
 // que el listado muestra sin volver a consultarlo. Si no se obtiene el nombre, la
 // iniciativa se crea igual, sin él, y el motivo va al log.
 func (s *Servicio) CrearIniciativa(solicitud SolicitudCrearIniciativa) (*ResumenIniciativa, error) {
-	if strings.TrimSpace(solicitud.DependenciaID) == "" {
+	dependenciaID := strings.TrimSpace(solicitud.DependenciaID)
+	if dependenciaID == "" {
 		return nil, errorSolicitud("Seleccione la unidad para la que se crea la iniciativa.")
 	}
-	responsable := strings.TrimSpace(solicitud.Responsable)
-	if !patronDocumento.MatchString(responsable) {
-		return nil, errorSolicitud("No se pudo identificar su documento. Vuelva a iniciar sesión e intente de nuevo.").
-			conDetalle("responsable debe ser el documento de quien crea la iniciativa: solo letras y números, máximo 20")
+	q, err := s.solicitante(solicitud.Actor)
+	if err != nil {
+		return nil, err
 	}
 	vigencias, err := textoVigencias(solicitud.Vigencias)
 	if err != nil {
 		return nil, err
 	}
-	if err := s.exigirFechasHabilitadas(solicitud.DependenciaID); err != nil {
+	rol, err := q.rolEn(&CarrilFormulador, dependenciaID)
+	if err != nil {
 		return nil, err
 	}
+	if rol == "" {
+		return nil, errorProhibido("Solo puede crear iniciativas para sus unidades y con un rol de formulador.").
+			conDetalle("el usuario %s con roles %v no formula en la dependencia %s", q.Usuario, q.Roles, dependenciaID)
+	}
+	if err := s.exigirFechasHabilitadas(dependenciaID); err != nil {
+		return nil, err
+	}
+	responsable := q.Usuario
 	tipo, err := s.sistema.TipoPlanIniciativa()
 	if err != nil {
 		return nil, err
@@ -297,7 +328,7 @@ func (s *Servicio) CrearIniciativa(solicitud SolicitudCrearIniciativa) (*Resumen
 	}
 	responsableNombre, err := s.nombreTercero(responsable)
 	if err != nil {
-		logs.Warn("iniciativaInversion: la iniciativa de la dependencia %s se crea sin el nombre de su responsable: %v", solicitud.DependenciaID, err)
+		logs.Warn("iniciativaInversion: la iniciativa de la dependencia %s se crea sin el nombre de su responsable: %v", dependenciaID, err)
 	}
 	creado, err := s.repo.CrearPlan(Plan{
 		Nombre:            nombre,
@@ -309,7 +340,7 @@ func (s *Servicio) CrearIniciativa(solicitud SolicitudCrearIniciativa) (*Resumen
 		Activo:            true,
 		Formato:           false,
 		FormatoID:         definicion.PlantillaID,
-		DependenciaID:     solicitud.DependenciaID,
+		DependenciaID:     dependenciaID,
 		EstadoPlanID:      iniciativaSinFormular.ID,
 		VigenciaAplica:    vigencias,
 	})
@@ -327,7 +358,7 @@ func (s *Servicio) CrearIniciativa(solicitud SolicitudCrearIniciativa) (*Resumen
 		}
 		return nil, err
 	}
-	return s.Resumen(creado.ID)
+	return s.Resumen(creado.ID, q.Actor)
 }
 
 // textoVigencias valida que las vigencias sean una lista JSON y la devuelve como
@@ -343,15 +374,36 @@ func textoVigencias(vigencias json.RawMessage) (string, error) {
 	return string(vigencias), nil
 }
 
-// Resumen arma la vista general: estado de la iniciativa y de cada submódulo, por módulo.
-// Fuera de las fechas de formulación de la unidad no ofrece enviar a revisión.
-func (s *Servicio) Resumen(iniciativaID string) (*ResumenIniciativa, error) {
+// Resumen arma la vista general: estado de la iniciativa y de cada submódulo, por módulo, y lo que
+// el usuario puede hacer con ella y con cada submódulo. Quien no es de la OAP solo consulta las
+// iniciativas de sus unidades (403 si no).
+func (s *Servicio) Resumen(iniciativaID string, actor Actor) (*ResumenIniciativa, error) {
+	q, err := s.solicitante(actor)
+	if err != nil {
+		return nil, err
+	}
 	ctx, err := s.cargarIniciativa(iniciativaID)
 	if err != nil {
 		return nil, err
 	}
+	visible, err := q.puedeConsultar(ctx.plan.DependenciaID)
+	if err != nil {
+		return nil, err
+	}
+	if !visible {
+		return nil, errorProhibido("Solo puede consultar las iniciativas de sus unidades.").
+			conDetalle("el usuario %s con roles %v no ve la dependencia %s de la iniciativa %s", q.Usuario, q.Roles, ctx.plan.DependenciaID, ctx.plan.ID)
+	}
+	codigos, err := ctx.codigosEstadoSubmodulos(s.sistema)
+	if err != nil {
+		return nil, err
+	}
+	permisos, fueraDeFechas, err := s.permisosDe(q, ctx.plan, ctx.estado.Codigo, codigos, &fechasDeConsulta{servicio: s})
+	if err != nil {
+		return nil, err
+	}
+	dependientes := dependientesPorSubmodulo(ctx.definicion)
 	modulos := make([]ResumenModulo, 0, len(ctx.definicion.Modulos))
-	codigos := []string{}
 	for _, modulo := range ctx.definicion.Modulos {
 		resumenModulo := ResumenModulo{Clave: modulo.Clave(), Nombre: modulo.Nombre, Submodulos: []ResumenSubmodulo{}}
 		for _, nodo := range modulo.Hijos {
@@ -363,43 +415,55 @@ func (s *Servicio) Resumen(iniciativaID string) (*ResumenIniciativa, error) {
 			if err != nil {
 				return nil, err
 			}
-			codigos = append(codigos, estado.Codigo)
 			resumenModulo.Submodulos = append(resumenModulo.Submodulos, ResumenSubmodulo{
-				Clave:         nodo.Clave(),
-				Nombre:        nodo.Nombre,
-				Estado:        estado,
-				Observaciones: len(documento.Observaciones),
+				Clave:             nodo.Clave(),
+				Nombre:            nodo.Nombre,
+				Estado:            estado,
+				Accion:            accionDeSubmodulo(permisos, estado.Codigo),
+				Observaciones:     len(documento.Observaciones),
+				UltimaObservacion: ultimaObservacionPorAtender(estado.Codigo, documento.Observaciones),
+				Dependientes:      dependientes[nodo.Clave()],
 			})
 		}
 		modulos = append(modulos, resumenModulo)
 	}
-	fechas := fechasDeConsulta{servicio: s}
-	fueraDeFechas := fechas.fueraDeFechas(ctx.plan, ctx.estado.Codigo)
-	acciones := AccionesPosibles(ctx.estado.Codigo, codigos)
-	if fueraDeFechas {
-		acciones = sinAccion(acciones, AccionEnviar)
-	}
 	return &ResumenIniciativa{
-		ID:               ctx.plan.ID,
-		Nombre:           ctx.plan.Nombre,
-		Estado:           ctx.estado,
-		PermiteEditar:    PermiteEditar(ctx.estado.Codigo),
-		PermiteRevisar:   PermiteRevisar(ctx.estado.Codigo),
-		FueraDeFechas:    fueraDeFechas,
-		AccionesPosibles: acciones,
-		Modulos:          modulos,
+		ID:            ctx.plan.ID,
+		Nombre:        ctx.plan.Nombre,
+		DependenciaID: ctx.plan.DependenciaID,
+		Estado:        ctx.estado,
+		FueraDeFechas: fueraDeFechas,
+		Permisos:      permisos,
+		Modulos:       modulos,
 	}, nil
 }
 
-// sinAccion devuelve las acciones sin la indicada.
-func sinAccion(acciones []string, quitar string) []string {
-	resultado := make([]string, 0, len(acciones))
-	for _, accion := range acciones {
-		if accion != quitar {
-			resultado = append(resultado, accion)
+// ultimaObservacionPorAtender es la observación más reciente de un submódulo Con observaciones;
+// nil en los demás estados.
+func ultimaObservacionPorAtender(estadoSubmodulo string, observaciones []Observacion) *Observacion {
+	if estadoSubmodulo != EstadoSubmoduloConObservaciones || len(observaciones) == 0 {
+		return nil
+	}
+	ultima := observaciones[len(observaciones)-1]
+	return &ultima
+}
+
+// dependientesPorSubmodulo da, por clave de submódulo, las claves de los submódulos que leen datos
+// de él, en el orden de la plantilla (nunca nil).
+func dependientesPorSubmodulo(definicion *Definicion) map[string][]string {
+	submodulos := definicion.Submodulos()
+	dependientes := make(map[string][]string, len(submodulos))
+	for _, submodulo := range submodulos {
+		dependientes[submodulo.Clave()] = []string{}
+	}
+	for _, submodulo := range submodulos {
+		for origen := range dependenciasDe(submodulo) {
+			if lista, existe := dependientes[origen]; existe {
+				dependientes[origen] = append(lista, submodulo.Clave())
+			}
 		}
 	}
-	return resultado
+	return dependientes
 }
 
 // Definicion devuelve la construcción de la plantilla de la iniciativa.
@@ -470,21 +534,12 @@ func catalogosEspejadosDe(submodulo *Nodo) map[string]bool {
 
 // GuardarSubmodulo guarda los datos aunque tengan errores (borrador). El submódulo
 // queda Formulado solo si no tiene errores; si no, Formulando (con información) o Sin
-// formular (vacío). La iniciativa pasa de Sin formular a Formulación iniciada con la primera
-// información. Si otra persona la cambió desde que se consultó, o si está fuera de las fechas de
-// formulación de su unidad, responde 409.
+// formular (vacío). La iniciativa pasa de Sin formular a En formulación con la primera
+// información. Responde 409 si el estado no deja editarla, si el submódulo está aprobado, si
+// otra persona lo cambió desde que se consultó o si está fuera de las fechas de su unidad, y 403
+// si el usuario no la formula.
 func (s *Servicio) GuardarSubmodulo(iniciativaID, clave string, solicitud SolicitudGuardarSubmodulo) (*SubmoduloVista, error) {
-	ctx, err := s.cargarIniciativa(iniciativaID)
-	if err != nil {
-		return nil, err
-	}
-	if !PermiteEditar(ctx.estado.Codigo) {
-		return nil, errorConflicto("La iniciativa está «%s»; no se puede editar.", ctx.estado.Nombre)
-	}
-	if err := s.exigirFechasHabilitadas(ctx.plan.DependenciaID); err != nil {
-		return nil, err
-	}
-	nodo, documento, err := ctx.submodulo(clave)
+	ctx, nodo, documento, err := s.submoduloParaEditar(iniciativaID, clave, solicitud.Actor)
 	if err != nil {
 		return nil, err
 	}
@@ -513,21 +568,64 @@ func (s *Servicio) GuardarSubmodulo(iniciativaID, clave string, solicitud Solici
 	return s.vista(*guardada, errores)
 }
 
-// RevisarSubmodulo da el submódulo por revisado sin observaciones. Las observaciones
-// se registran con AgregarObservacion, y su historial no se borra.
-func (s *Servicio) RevisarSubmodulo(iniciativaID, clave string, solicitud SolicitudRevisarSubmodulo) (*SubmoduloVista, error) {
-	if tieneTexto(solicitud.Observaciones) {
-		return nil, errorFormatoSolicitud("la revisión no recibe observaciones; se registran con POST /iniciativas/%s/submodulos/%s/observaciones", iniciativaID, clave)
+// submoduloParaEditar carga la iniciativa y el submódulo que el usuario quiere guardar o al que
+// quiere subir un anexo: el estado debe dejar editarla, el usuario debe formularla (su carril y su
+// unidad), la unidad debe estar dentro de sus fechas y el submódulo no puede estar aprobado.
+func (s *Servicio) submoduloParaEditar(iniciativaID, clave string, actor Actor) (*contextoIniciativa, *Nodo, *SubmoduloIniciativa, error) {
+	q, err := s.solicitante(actor)
+	if err != nil {
+		return nil, nil, nil, err
 	}
 	ctx, err := s.cargarIniciativa(iniciativaID)
 	if err != nil {
+		return nil, nil, nil, err
+	}
+	carril := tareasPorEstado[ctx.estado.Codigo].editar
+	if carril == nil {
+		return nil, nil, nil, errorConflicto("La iniciativa está «%s»; no se puede editar.", ctx.estado.Nombre)
+	}
+	if _, err := s.autorizar(q, ctx, carril); err != nil {
+		return nil, nil, nil, err
+	}
+	nodo, documento, err := ctx.submodulo(clave)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	estado, err := s.sistema.EstadoSubmoduloPorID(documento.EstadoSubmoduloID)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	if estado.Codigo == EstadoSubmoduloAprobado {
+		return nil, nil, nil, errorConflicto("El submódulo está aprobado; no se puede editar.")
+	}
+	return ctx, nodo, documento, nil
+}
+
+// RevisarSubmodulo es el veredicto «Aprobado» de la OAP sobre un submódulo formulado, mientras
+// revisa la iniciativa (05). El veredicto «Con observaciones» se da con AgregarObservacion, y el
+// historial de observaciones no se borra. Después de cada veredicto la iniciativa puede cambiar de
+// estado sola (ver cerrarRevision).
+func (s *Servicio) RevisarSubmodulo(iniciativaID, clave string, solicitud SolicitudRevisarSubmodulo) (*SubmoduloVista, error) {
+	q, err := s.solicitante(solicitud.Actor)
+	if err != nil {
+		return nil, err
+	}
+	ctx, err := s.cargarIniciativa(iniciativaID)
+	if err != nil {
+		return nil, err
+	}
+	carril := tareasPorEstado[ctx.estado.Codigo].aprobar
+	if carril == nil {
+		return nil, errorConflicto("Los submódulos se aprueban mientras la OAP revisa la iniciativa; esta está «%s».", ctx.estado.Nombre)
+	}
+	if _, err := s.autorizar(q, ctx, carril); err != nil {
 		return nil, err
 	}
 	nodo, documento, err := ctx.submodulo(clave)
 	if err != nil {
 		return nil, err
 	}
-	if err := s.exigirRevisable(ctx, nodo, documento); err != nil {
+	if err := s.exigirRevisable(nodo, documento); err != nil {
 		return nil, err
 	}
 
@@ -542,14 +640,59 @@ func (s *Servicio) RevisarSubmodulo(iniciativaID, clave string, solicitud Solici
 	if err != nil {
 		return nil, err
 	}
-	return s.vista(*guardada, s.validador.ValidarSubmodulo(nodo, ctx.datosIniciativa()))
+	vista, err := s.vista(*guardada, s.validador.ValidarSubmodulo(nodo, ctx.datosIniciativa()))
+	if err != nil {
+		return nil, err
+	}
+	vista.EstadoIniciativa = s.cerrarRevision(iniciativaID)
+	return vista, nil
 }
 
-// EjecutarAccion cambia el estado general de la iniciativa (enviar, devolver, avalar). Enviar
-// exige que la unidad esté dentro de sus fechas de formulación.
-func (s *Servicio) EjecutarAccion(iniciativaID, accion string) (*ResumenIniciativa, error) {
-	if _, existe := transiciones[accion]; !existe {
+// cerrarRevision aplica el cambio automático de una iniciativa En revisión OAP tras un veredicto
+// (EstadoTrasRevision) y devuelve el estado al que pasó, o nil si no cambió. Relee la iniciativa
+// para ver los veredictos de todos los revisores: si dos dan a la vez los dos últimos, el segundo
+// la encuentra ya fuera de En revisión OAP y no hace nada. Si falla, el veredicto ya quedó: solo
+// se avisa en el log, y el cambio se aplica con el siguiente veredicto.
+func (s *Servicio) cerrarRevision(iniciativaID string) *Estado {
+	ctx, err := s.cargarIniciativa(iniciativaID)
+	if err != nil {
+		logs.Warn("iniciativaInversion: no se pudo releer la iniciativa %s para cerrar la revisión: %v", iniciativaID, err)
+		return nil
+	}
+	if ctx.estado.Codigo != EstadoIniciativaEnRevision {
+		return nil
+	}
+	codigos, err := ctx.codigosEstadoSubmodulos(s.sistema)
+	if err != nil {
+		logs.Warn("iniciativaInversion: no se pudo cerrar la revisión de la iniciativa %s: %v", iniciativaID, err)
+		return nil
+	}
+	destino := EstadoTrasRevision(codigos)
+	if destino == "" {
+		return nil
+	}
+	estado, err := s.cambiarEstado(ctx, destino)
+	if err != nil {
+		logs.Warn("iniciativaInversion: no se pudo cerrar la revisión de la iniciativa %s: %v", iniciativaID, err)
+		return nil
+	}
+	return &estado
+}
+
+// EjecutarAccion cambia el estado general de la iniciativa con una acción (ver transiciones). La
+// ejecuta el carril de la acción, dentro de las fechas de la unidad. Enviar revalida los
+// submódulos; rechazar exige el motivo, que no se guarda (va en la notificación).
+func (s *Servicio) EjecutarAccion(iniciativaID, accion string, solicitud SolicitudAccion) (*ResumenIniciativa, error) {
+	t, existe := transiciones[accion]
+	if !existe {
 		return nil, errorFormatoSolicitud("la acción %q no existe; las válidas son %s", accion, strings.Join(ordenAcciones, ", "))
+	}
+	if err := motivoValido(accion, solicitud.Motivo); err != nil {
+		return nil, err
+	}
+	q, err := s.solicitante(solicitud.Actor)
+	if err != nil {
+		return nil, err
 	}
 	ctx, err := s.cargarIniciativa(iniciativaID)
 	if err != nil {
@@ -563,34 +706,67 @@ func (s *Servicio) EjecutarAccion(iniciativaID, accion string) (*ResumenIniciati
 	if motivo != "" {
 		return nil, errorConflicto("%s", motivo)
 	}
+	if _, err := s.autorizar(q, ctx, &t.carril); err != nil {
+		return nil, err
+	}
 	if accion == AccionEnviar {
-		if err := s.exigirFechasHabilitadas(ctx.plan.DependenciaID); err != nil {
-			return nil, err
-		}
 		if err := s.exigirSubmodulosValidos(ctx); err != nil {
 			return nil, err
 		}
 	}
-	estado, err := s.sistema.EstadoIniciativa(destino)
-	if err != nil {
+	if _, err := s.cambiarEstado(ctx, destino); err != nil {
 		return nil, err
+	}
+	return s.Resumen(iniciativaID, q.Actor)
+}
+
+// motivoValido exige el motivo al rechazar, con el mismo largo máximo que una observación.
+func motivoValido(accion, motivo string) error {
+	if accion != AccionRechazar {
+		return nil
+	}
+	motivo = strings.TrimSpace(motivo)
+	if motivo == "" {
+		return errorSolicitud("Escriba el motivo del rechazo.")
+	}
+	if utf8.RuneCountInString(motivo) > MaximoTextoObservacion {
+		return errorSolicitud("El motivo no puede superar %d caracteres.", MaximoTextoObservacion)
+	}
+	return nil
+}
+
+// cambiarEstado deja la iniciativa en el estado con ese código y devuelve el registro del estado.
+func (s *Servicio) cambiarEstado(ctx *contextoIniciativa, codigo string) (Estado, error) {
+	estado, err := s.sistema.EstadoIniciativa(codigo)
+	if err != nil {
+		return Estado{}, err
 	}
 	plan := *ctx.plan
 	plan.EstadoPlanID = estado.ID
 	if err := s.repo.ActualizarPlan(plan); err != nil {
-		return nil, err
+		return Estado{}, err
 	}
-	return s.Resumen(iniciativaID)
+	ctx.plan.EstadoPlanID = estado.ID
+	ctx.estado = estado
+	return estado, nil
 }
 
-// exigirSubmodulosValidos vuelve a validar todos los submódulos antes de enviar la
+// exigirSubmodulosValidos vuelve a validar los submódulos no aprobados antes de enviar la
 // iniciativa, porque el estado guardado puede no estar al día: si al guardar un
 // submódulo falló devolver a Formulando uno que depende de él (revalidarDependientes),
-// ese sigue Formulado con datos que ya no son válidos.
+// ese sigue Formulado con datos que ya no son válidos. Los aprobados no se revalidan: si una
+// corrección los dejó desactualizados, quien revisa decide si los vuelve a observar.
 func (s *Servicio) exigirSubmodulosValidos(ctx *contextoIniciativa) error {
+	aprobado, err := s.sistema.EstadoSubmodulo(EstadoSubmoduloAprobado)
+	if err != nil {
+		return err
+	}
 	iniciativa := ctx.datosIniciativa()
 	conPendientes := []string{}
 	for _, nodo := range ctx.definicion.Submodulos() {
+		if ctx.submodulos[nodo.Clave()].EstadoSubmoduloID == aprobado.ID {
+			continue
+		}
 		if len(s.validador.ValidarSubmodulo(nodo, iniciativa)) > 0 {
 			conPendientes = append(conPendientes, "«"+nodo.Nombre+"»")
 		}
@@ -622,7 +798,8 @@ func (s *Servicio) Catalogo(nombre, padre string) ([]ItemCatalogo, error) {
 
 // revalidarDependientes devuelve a Formulando (o a Sin formular, si están vacíos) los
 // submódulos que dependen del que cambió y dejaron de ser válidos (p. ej. Objetivos si se
-// agregó una causa). Los que ya estaban sin formular o formulando no cambian.
+// agregó una causa). Los que ya estaban sin formular o formulando no cambian, y los aprobados
+// tampoco: nadie los edita, y quien revisa decide si los vuelve a observar.
 func (s *Servicio) revalidarDependientes(ctx *contextoIniciativa, cambiada string, iniciativa map[string]Datos) {
 	sinFormular, err := s.sistema.EstadoSubmodulo(EstadoSubmoduloSinFormular)
 	if err != nil {
@@ -632,11 +809,17 @@ func (s *Servicio) revalidarDependientes(ctx *contextoIniciativa, cambiada strin
 	if err != nil {
 		return
 	}
+	aprobado, err := s.sistema.EstadoSubmodulo(EstadoSubmoduloAprobado)
+	if err != nil {
+		return
+	}
 	for _, nodo := range ctx.definicion.Submodulos() {
 		clave := nodo.Clave()
 		documento, existe := ctx.submodulos[clave]
-		if clave == cambiada || !existe || documento.EstadoSubmoduloID == sinFormular.ID || documento.EstadoSubmoduloID == formulando.ID ||
-			!dependenciasDe(nodo)[cambiada] {
+		if clave == cambiada || !existe || !dependenciasDe(nodo)[cambiada] {
+			continue
+		}
+		if actual := documento.EstadoSubmoduloID; actual == sinFormular.ID || actual == formulando.ID || actual == aprobado.ID {
 			continue
 		}
 		if len(s.validador.ValidarSubmodulo(nodo, iniciativa)) == 0 {
@@ -653,28 +836,18 @@ func (s *Servicio) revalidarDependientes(ctx *contextoIniciativa, cambiada strin
 	}
 }
 
-// actualizarEstadoIniciativa pasa la iniciativa de Sin formular a Formulación iniciada cuando un
+// actualizarEstadoIniciativa pasa la iniciativa de Sin formular a En formulación cuando un
 // submódulo se guarda con información. Si falla, el guardado del submódulo ya quedó: solo se avisa
-// en el log, y se vuelve a intentar en el siguiente guardado.
+// en el log, y se vuelve a intentar en el siguiente guardado. cambiarEstado deja al día el plan
+// del contexto: actualizarNombrePlan parte de él y no debe devolver el estado.
 func (s *Servicio) actualizarEstadoIniciativa(ctx *contextoIniciativa, conInformacion bool) {
 	destino := EstadoIniciativaTrasGuardar(ctx.estado.Codigo, conInformacion)
 	if destino == "" {
 		return
 	}
-	estado, err := s.sistema.EstadoIniciativa(destino)
-	if err != nil {
-		logs.Warn("iniciativaInversion: no se encontró el estado %s: %v", destino, err)
-		return
+	if _, err := s.cambiarEstado(ctx, destino); err != nil {
+		logs.Warn("iniciativaInversion: no se pudo pasar la iniciativa %s a %s: %v", ctx.plan.ID, destino, err)
 	}
-	plan := *ctx.plan
-	plan.EstadoPlanID = estado.ID
-	if err := s.repo.ActualizarPlan(plan); err != nil {
-		logs.Warn("iniciativaInversion: no se pudo pasar la iniciativa %s a %s: %v", plan.ID, estado.Nombre, err)
-		return
-	}
-	// El plan del contexto queda al día: actualizarNombrePlan parte de él y no debe devolver el estado.
-	ctx.plan.EstadoPlanID = estado.ID
-	ctx.estado = estado
 }
 
 // actualizarNombrePlan copia al plan el valor del campo marcado con nombre_plan.

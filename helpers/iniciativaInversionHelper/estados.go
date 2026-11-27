@@ -9,29 +9,28 @@ import (
 // estado-submodulo de planes_crud). Son propios de las iniciativas de inversión
 // para no mezclarse con los proyectos MACRO (PRI_SP) ni con Formulación.
 //
-// Los estados son los de la «Relación de estados» del mockup (docs/Refinamiento mockup
-// para Banco de proyectos OAP.pdf). Cada estado general va con uno detallado (submódulo):
+// El flujo está en docs/Máquina de estados - Iniciativas de inversión.md:
 //
-//	General               Submódulo          Cuándo
-//	Sin formular          Sin formular       nada diligenciado todavía
-//	Formulación iniciada  Formulando         con información, sin enviar (el submódulo, incompleto)
-//	Enviado a revisión    Formulado          todo formulado y enviado a Planeación (el submódulo, completo)
-//	Avalado               Aprobado           todo revisado y aprobado por Planeación
-//	Por corregir          Con observaciones  al menos un submódulo con observaciones por atender
+//	01 Sin formular → 02 En formulación → 03 Por aprobar (Jefe) → 04 Por revisar OAP → 05 En revisión OAP
+//	05 → 07 Aprobado (todos los submódulos aprobados) · 05 → 06 Por corregir (alguno con observaciones)
+//	03 → 06 (el Jefe la devuelve) · 06 → 03 (se reenvía) · 05 → 08 Rechazada · 08 → 06 (la OAP se retracta)
 const (
 	CodigoTipoPlanIniciativa = "IPI_SP"
 
-	EstadoIniciativaSinFormular         = "SF_IPI"
-	EstadoIniciativaFormulacionIniciada = "EF_IPI"
-	EstadoIniciativaEnRevision          = "ER_IPI"
-	EstadoIniciativaPorCorregir         = "PC_IPI"
-	EstadoIniciativaAvalado             = "AV_IPI"
+	EstadoIniciativaSinFormular   = "SF_IPI"
+	EstadoIniciativaEnFormulacion = "EF_IPI"
+	EstadoIniciativaPorAprobar    = "PA_IPI"
+	EstadoIniciativaPorRevisar    = "PR_IPI"
+	EstadoIniciativaEnRevision    = "ER_IPI"
+	EstadoIniciativaPorCorregir   = "PC_IPI"
+	EstadoIniciativaAprobada      = "APR_IPI"
+	EstadoIniciativaRechazada     = "RCH_IPI"
 
 	EstadoSubmoduloSinFormular      = "SF_SUB"
 	EstadoSubmoduloFormulando       = "FN_SUB"
 	EstadoSubmoduloFormulado        = "FOR_SUB"
 	EstadoSubmoduloConObservaciones = "CO_SUB"
-	EstadoSubmoduloAprobado         = "SO_SUB"
+	EstadoSubmoduloAprobado         = "APR_SUB"
 
 	// CodigoTipoSeguimientoFormulacion es el tipo de seguimiento de las fechas de formulación
 	// de iniciativas (ver fechas.go).
@@ -40,10 +39,13 @@ const (
 
 var codigosEstadoIniciativa = []string{
 	EstadoIniciativaSinFormular,
-	EstadoIniciativaFormulacionIniciada,
+	EstadoIniciativaEnFormulacion,
+	EstadoIniciativaPorAprobar,
+	EstadoIniciativaPorRevisar,
 	EstadoIniciativaEnRevision,
 	EstadoIniciativaPorCorregir,
-	EstadoIniciativaAvalado,
+	EstadoIniciativaAprobada,
+	EstadoIniciativaRechazada,
 }
 
 var codigosEstadoSubmodulo = []string{
@@ -54,58 +56,76 @@ var codigosEstadoSubmodulo = []string{
 	EstadoSubmoduloAprobado,
 }
 
-// Acciones sobre el estado general de la iniciativa.
+// Acciones sobre el estado general de la iniciativa (PUT /iniciativas/:id/acciones/:accion).
 const (
-	AccionEnviar   = "enviar"
-	AccionDevolver = "devolver"
-	AccionAvalar   = "avalar"
+	AccionEnviar           = "enviar"
+	AccionAprobar          = "aprobar"
+	AccionDevolver         = "devolver"
+	AccionIniciarRevision  = "iniciar-revision"
+	AccionRechazar         = "rechazar"
+	AccionRetractarRechazo = "retractar-rechazo"
 )
 
-// transicion describe una acción: desde qué estados se permite, a cuál lleva y
-// qué deben cumplir los submódulos.
+// transicion describe una acción: desde qué estados se permite, a cuál lleva, qué carril la
+// ejecuta y qué deben cumplir los submódulos.
 type transicion struct {
 	desde     []string
 	hacia     string
+	carril    Carril
 	requisito func(estadosSubmodulos []string) string // "" si se cumple; si no, el motivo
 }
 
 var transiciones = map[string]transicion{
 	AccionEnviar: {
-		desde:     []string{EstadoIniciativaFormulacionIniciada, EstadoIniciativaPorCorregir},
-		hacia:     EstadoIniciativaEnRevision,
+		desde:     []string{EstadoIniciativaEnFormulacion, EstadoIniciativaPorCorregir},
+		hacia:     EstadoIniciativaPorAprobar,
+		carril:    CarrilFormulador,
 		requisito: todasEn("Todos los submódulos deben estar formulados.", EstadoSubmoduloFormulado, EstadoSubmoduloAprobado),
 	},
+	AccionAprobar: {
+		desde:     []string{EstadoIniciativaPorAprobar},
+		hacia:     EstadoIniciativaPorRevisar,
+		carril:    CarrilJefe,
+		requisito: ningunaEn("Hay submódulos con observaciones: devuelva la iniciativa para que se corrijan.", EstadoSubmoduloConObservaciones),
+	},
 	AccionDevolver: {
-		desde:     []string{EstadoIniciativaEnRevision},
+		desde:     []string{EstadoIniciativaPorAprobar},
 		hacia:     EstadoIniciativaPorCorregir,
-		requisito: algunaEn("Debe haber al menos un submódulo con observaciones.", EstadoSubmoduloConObservaciones),
+		carril:    CarrilJefe,
+		requisito: algunaEn("Para devolverla, deje al menos una observación en un submódulo.", EstadoSubmoduloConObservaciones),
 	},
-	AccionAvalar: {
+	AccionIniciarRevision: {
+		desde:     []string{EstadoIniciativaPorRevisar},
+		hacia:     EstadoIniciativaEnRevision,
+		carril:    CarrilOAP,
+		requisito: sinRequisito,
+	},
+	AccionRechazar: {
 		desde:     []string{EstadoIniciativaEnRevision},
-		hacia:     EstadoIniciativaAvalado,
-		requisito: todasEn("Todos los submódulos deben estar revisados y aprobados.", EstadoSubmoduloAprobado),
+		hacia:     EstadoIniciativaRechazada,
+		carril:    CarrilOAP,
+		requisito: sinRequisito,
+	},
+	AccionRetractarRechazo: {
+		desde:     []string{EstadoIniciativaRechazada},
+		hacia:     EstadoIniciativaPorCorregir,
+		carril:    CarrilOAP,
+		requisito: sinRequisito,
 	},
 }
 
-// ordenAcciones fija el orden en que se listan las acciones posibles.
-var ordenAcciones = []string{AccionEnviar, AccionDevolver, AccionAvalar}
+// ordenAcciones fija el orden en que se listan las acciones.
+var ordenAcciones = []string{AccionEnviar, AccionDevolver, AccionAprobar, AccionIniciarRevision, AccionRechazar, AccionRetractarRechazo}
 
-// nombresAcciones son los nombres con que el usuario ve las acciones (los botones
-// del cliente, ACCIONES_INICIATIVA); los mensajes no muestran la clave del API.
+// nombresAcciones son los nombres con que el usuario ve las acciones (los botones del cliente,
+// ACCIONES_INICIATIVA); los mensajes no muestran la clave del API.
 var nombresAcciones = map[string]string{
-	AccionEnviar:   "Enviar a revisión",
-	AccionDevolver: "Devolver para corregir",
-	AccionAvalar:   "Avalar",
-}
-
-// PermiteEditar indica si en ese estado de la iniciativa se pueden guardar submódulos.
-func PermiteEditar(estadoIniciativa string) bool {
-	return contiene([]string{EstadoIniciativaSinFormular, EstadoIniciativaFormulacionIniciada, EstadoIniciativaPorCorregir}, estadoIniciativa)
-}
-
-// PermiteRevisar indica si en ese estado de la iniciativa se pueden revisar submódulos.
-func PermiteRevisar(estadoIniciativa string) bool {
-	return estadoIniciativa == EstadoIniciativaEnRevision
+	AccionEnviar:           "Enviar a revisión",
+	AccionAprobar:          "Aprobar",
+	AccionDevolver:         "Devolver",
+	AccionIniciarRevision:  "Iniciar revisión",
+	AccionRechazar:         "Rechazar",
+	AccionRetractarRechazo: "Retractar rechazo",
 }
 
 // EstadoTrasGuardar: un submódulo sin errores queda Formulado; con errores, Formulando si ya
@@ -121,16 +141,31 @@ func EstadoTrasGuardar(errores []ErrorCampo, conInformacion bool) string {
 	}
 }
 
-// EstadoIniciativaTrasGuardar: la iniciativa Sin formular pasa a Formulación iniciada en cuanto
-// algún submódulo tiene información. En los demás estados no cambia ("" = sin cambio).
+// EstadoIniciativaTrasGuardar: la iniciativa Sin formular pasa a En formulación en cuanto algún
+// submódulo tiene información. En los demás estados no cambia ("" = sin cambio).
 func EstadoIniciativaTrasGuardar(estadoIniciativa string, conInformacion bool) string {
 	if estadoIniciativa == EstadoIniciativaSinFormular && conInformacion {
-		return EstadoIniciativaFormulacionIniciada
+		return EstadoIniciativaEnFormulacion
 	}
 	return ""
 }
 
-// EvaluarAccion devuelve el estado destino o el motivo por el que no se puede.
+// EstadoTrasRevision es el cambio automático de una iniciativa En revisión OAP después de cada
+// veredicto: con todos los submódulos aprobados pasa a Aprobado; con todos con veredicto y alguno
+// con observaciones, a Por corregir. Mientras falte algún veredicto no cambia ("").
+func EstadoTrasRevision(estadosSubmodulos []string) string {
+	switch {
+	case todosEn(estadosSubmodulos, EstadoSubmoduloAprobado):
+		return EstadoIniciativaAprobada
+	case todosEn(estadosSubmodulos, EstadoSubmoduloAprobado, EstadoSubmoduloConObservaciones):
+		return EstadoIniciativaPorCorregir
+	default:
+		return ""
+	}
+}
+
+// EvaluarAccion devuelve el estado destino o el motivo por el que no se puede, según el estado de
+// la iniciativa y de sus submódulos (no mira quién la ejecuta: eso es del carril, ver permisos.go).
 func EvaluarAccion(accion, estadoIniciativa string, estadosSubmodulos []string) (string, string) {
 	t, existe := transiciones[accion]
 	if !existe {
@@ -145,45 +180,59 @@ func EvaluarAccion(accion, estadoIniciativa string, estadosSubmodulos []string) 
 	return t.hacia, ""
 }
 
-// AccionesPosibles lista las acciones que hoy se pueden ejecutar.
-func AccionesPosibles(estadoIniciativa string, estadosSubmodulos []string) []string {
-	posibles := []string{}
-	for _, accion := range ordenAcciones {
-		if _, motivo := EvaluarAccion(accion, estadoIniciativa, estadosSubmodulos); motivo == "" {
-			posibles = append(posibles, accion)
-		}
-	}
-	return posibles
-}
-
-// SubmoduloRevisable indica si un submódulo en ese estado se puede revisar (ya está formulado).
+// SubmoduloRevisable indica si un submódulo en ese estado se puede observar o aprobar: ya está
+// formulado (Formulado, Con observaciones o Aprobado).
 func SubmoduloRevisable(estadoSubmodulo string) bool {
 	return estadoSubmodulo != EstadoSubmoduloSinFormular && estadoSubmodulo != EstadoSubmoduloFormulando
 }
 
+// Requisitos de las transiciones sobre los estados de los submódulos: devuelven "" si se cumplen
+// y, si no, el motivo.
+
+func sinRequisito([]string) string { return "" }
+
 func todasEn(motivo string, permitidos ...string) func([]string) string {
-	return func(estados []string) string {
-		if len(estados) == 0 {
-			return motivo
-		}
-		for _, estado := range estados {
-			if !contiene(permitidos, estado) {
-				return motivo
-			}
-		}
-		return ""
-	}
+	return requisito(motivo, func(estados []string) bool { return todosEn(estados, permitidos...) })
 }
 
 func algunaEn(motivo string, buscados ...string) func([]string) string {
+	return requisito(motivo, func(estados []string) bool { return algunoEn(estados, buscados...) })
+}
+
+func ningunaEn(motivo string, prohibidos ...string) func([]string) string {
+	return requisito(motivo, func(estados []string) bool { return !algunoEn(estados, prohibidos...) })
+}
+
+func requisito(motivo string, cumple func([]string) bool) func([]string) string {
 	return func(estados []string) string {
-		for _, estado := range estados {
-			if contiene(buscados, estado) {
-				return ""
-			}
+		if cumple(estados) {
+			return ""
 		}
 		return motivo
 	}
+}
+
+// todosEn indica si hay estados y todos son de los permitidos.
+func todosEn(estados []string, permitidos ...string) bool {
+	if len(estados) == 0 {
+		return false
+	}
+	for _, estado := range estados {
+		if !contiene(permitidos, estado) {
+			return false
+		}
+	}
+	return true
+}
+
+// algunoEn indica si alguno de los estados es de los buscados.
+func algunoEn(estados []string, buscados ...string) bool {
+	for _, estado := range estados {
+		if contiene(buscados, estado) {
+			return true
+		}
+	}
+	return false
 }
 
 func contiene(lista []string, valor string) bool {

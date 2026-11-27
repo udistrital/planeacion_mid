@@ -39,17 +39,20 @@ func nuevoRepoMemoria() *repoMemoria {
 			RecursoTipoPlan:        {estado(tipoPlanDePrueba, CodigoTipoPlanIniciativa, "Iniciativa de inversión")},
 			RecursoEstadoPlan: {
 				estado("ep-sf", EstadoIniciativaSinFormular, "Sin formular"),
-				estado("ep-ef", EstadoIniciativaFormulacionIniciada, "Formulación iniciada"),
-				estado("ep-er", EstadoIniciativaEnRevision, "Enviado a revisión"),
+				estado("ep-ef", EstadoIniciativaEnFormulacion, "En formulación"),
+				estado("ep-pa", EstadoIniciativaPorAprobar, "Por aprobar (Jefe de unidad)"),
+				estado("ep-pr", EstadoIniciativaPorRevisar, "Por revisar OAP"),
+				estado("ep-er", EstadoIniciativaEnRevision, "En revisión OAP"),
 				estado("ep-pc", EstadoIniciativaPorCorregir, "Por corregir"),
-				estado("ep-av", EstadoIniciativaAvalado, "Avalado"),
+				estado("ep-apr", EstadoIniciativaAprobada, "Aprobado"),
+				estado("ep-rch", EstadoIniciativaRechazada, "Rechazada"),
 			},
 			RecursoEstadoSubmodulo: {
 				estado("es-sf", EstadoSubmoduloSinFormular, "Sin formular"),
 				estado("es-fn", EstadoSubmoduloFormulando, "Formulando"),
 				estado("es-for", EstadoSubmoduloFormulado, "Formulado"),
 				estado("es-co", EstadoSubmoduloConObservaciones, "Con observaciones"),
-				estado("es-so", EstadoSubmoduloAprobado, "Aprobado"),
+				estado("es-apr", EstadoSubmoduloAprobado, "Aprobado"),
 			},
 		},
 	}
@@ -212,14 +215,44 @@ type definicionFija struct{ definicion *Definicion }
 
 func (d definicionFija) Definicion(string) (*Definicion, error) { return d.definicion, nil }
 
-// responsableDePrueba es el documento de quien crea las iniciativas de prueba.
-const responsableDePrueba = "52123456"
+// ---------------------------------------------------------------------------
+// Usuarios de las pruebas
+// ---------------------------------------------------------------------------
+
+// Documentos de los usuarios de las pruebas.
+const (
+	responsableDePrueba = "52123456"   // formulador (ASISTENTE_DEPENDENCIA) de dep-1, dep-2, 41 y 42
+	documentoJefe       = "79876543"   // JEFE_DEPENDENCIA de dep-1
+	documentoOAP        = "1012345678" // PLANEACION, de la dependencia 11
+	documentoJefeYOAP   = "80111222"   // JEFE_DEPENDENCIA y ASISTENTE_PLANEACION de dep-1
+)
 
 // personasDePrueba son los terceros que conocen las pruebas: documento -> nombre completo.
 var personasDePrueba = map[string]string{
 	responsableDePrueba: "LAURA GOMEZ RIOS",
-	"1012345678":        "CARLOS RUIZ PENA", // Planeación (dePlaneacion)
-	"79876543":          "MARTA LOPEZ DIAZ", // gestor de la unidad (delGestor)
+	documentoJefe:       "MARTA LOPEZ DIAZ",
+	documentoOAP:        "CARLOS RUIZ PENA",
+	documentoJefeYOAP:   "ANDRES MORA VEGA",
+}
+
+// unidadesDePrueba son las unidades de cada usuario de las pruebas.
+var unidadesDePrueba = map[string][]string{
+	responsableDePrueba: {"dep-1", "dep-2", "41", "42"},
+	documentoJefe:       {"dep-1"},
+	documentoOAP:        {"11"},
+	documentoJefeYOAP:   {"dep-1"},
+}
+
+func formulador() Actor {
+	return Actor{Usuario: responsableDePrueba, Roles: []string{RolAsistenteDependencia}}
+}
+
+func jefe() Actor { return Actor{Usuario: documentoJefe, Roles: []string{RolJefeDependencia}} }
+
+func oap() Actor { return Actor{Usuario: documentoOAP, Roles: []string{RolPlaneacion}} }
+
+func jefeYOAP() Actor {
+	return Actor{Usuario: documentoJefeYOAP, Roles: []string{RolJefeDependencia, RolAsistentePlaneacion}}
 }
 
 // tercerosFalsos imita a Terceros (nombre por documento) y cuenta las consultas. Un documento
@@ -245,6 +278,25 @@ func tercerosCaidos(servicio *Servicio) *tercerosFalsos {
 	return caidos
 }
 
+// unidadesFalsas imita las unidades de los usuarios (Terceros) y cuenta las consultas.
+type unidadesFalsas struct {
+	porUsuario map[string][]string
+	consultas  int
+	err        error
+}
+
+func (u *unidadesFalsas) DependenciasDe(documento string) ([]string, error) {
+	u.consultas++
+	return u.porUsuario[documento], u.err
+}
+
+// conPersonasDePrueba conecta el servicio con los terceros y las unidades de las pruebas.
+func conPersonasDePrueba(servicio *Servicio) *Servicio {
+	servicio.terceros = &tercerosFalsos{nombres: personasDePrueba}
+	servicio.unidades = &unidadesFalsas{porUsuario: unidadesDePrueba}
+	return servicio
+}
+
 // dependenciasFalsas imita a Oikos (nombre de una dependencia por id) y cuenta las
 // consultas de cada una. Un id que no está en nombres responde con error, como si
 // Oikos fallara.
@@ -267,36 +319,47 @@ func (o *dependenciasFalsas) NombreDependencia(id int) (string, error) {
 }
 
 // ---------------------------------------------------------------------------
+// Ayudantes
+// ---------------------------------------------------------------------------
 
 func nuevoServicioDePrueba(t *testing.T) (*Servicio, *repoMemoria) {
 	t.Helper()
 	repo := nuevoRepoMemoria()
-	servicio := NuevoServicio(repo, definicionFija{definicionDePrueba(t)}, catalogosDePrueba(), nil)
-	servicio.terceros = &tercerosFalsos{nombres: personasDePrueba}
+	servicio := conPersonasDePrueba(NuevoServicio(repo, definicionFija{definicionDePrueba(t)}, catalogosDePrueba(), nil))
 	return servicio, repo
 }
 
-func crearIniciativaDePrueba(t *testing.T, servicio *Servicio) *ResumenIniciativa {
+func crearEnDependencia(t *testing.T, servicio *Servicio, dependencia string) *ResumenIniciativa {
 	t.Helper()
-	resumen, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: "dep-1", Responsable: responsableDePrueba, Vigencias: []byte(`[{"Id":1,"Nombre":"2026"}]`)})
+	resumen, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{Actor: formulador(), PlantillaID: "plantilla-1", DependenciaID: dependencia})
 	if err != nil {
 		t.Fatal(err)
 	}
 	return resumen
 }
 
-// guardar guarda el submódulo con la versión vigente y devuelve la vista.
+func crearIniciativaDePrueba(t *testing.T, servicio *Servicio) *ResumenIniciativa {
+	t.Helper()
+	return crearEnDependencia(t, servicio, "dep-1")
+}
+
+// guardar guarda el submódulo como formulador, con la versión vigente, y devuelve la vista.
 func guardar(t *testing.T, servicio *Servicio, iniciativaID, clave string, datos Datos) *SubmoduloVista {
+	t.Helper()
+	vista, err := intentarGuardar(t, servicio, iniciativaID, clave, datos)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return vista
+}
+
+func intentarGuardar(t *testing.T, servicio *Servicio, iniciativaID, clave string, datos Datos) (*SubmoduloVista, error) {
 	t.Helper()
 	actual, err := servicio.ObtenerSubmodulo(iniciativaID, clave)
 	if err != nil {
 		t.Fatal(err)
 	}
-	vista, err := servicio.GuardarSubmodulo(iniciativaID, clave, SolicitudGuardarSubmodulo{Version: actual.Submodulo.Version, Datos: datos})
-	if err != nil {
-		t.Fatal(err)
-	}
-	return vista
+	return servicio.GuardarSubmodulo(iniciativaID, clave, SolicitudGuardarSubmodulo{Actor: formulador(), Version: actual.Submodulo.Version, Datos: datos})
 }
 
 // formularTodo guarda, en el orden de la plantilla, todos los submódulos del ejemplo y exige
@@ -312,13 +375,38 @@ func formularTodo(t *testing.T, servicio *Servicio, iniciativaID string) {
 	}
 }
 
-func estadoDeSubmodulo(t *testing.T, servicio *Servicio, iniciativaID, clave string) string {
+// ejecutar ejecuta la acción como el actor y exige que pase.
+func ejecutar(t *testing.T, servicio *Servicio, iniciativaID, accion string, actor Actor) *ResumenIniciativa {
 	t.Helper()
-	resumen, err := servicio.Resumen(iniciativaID)
+	resumen, err := servicio.EjecutarAccion(iniciativaID, accion, SolicitudAccion{Actor: actor, Motivo: "Motivo de prueba."})
+	if err != nil {
+		t.Fatalf("%s: %v", accion, err)
+	}
+	return resumen
+}
+
+// llevarARevision formula toda la iniciativa y la lleva hasta En revisión OAP: el formulador la
+// envía, el Jefe la aprueba y la OAP inicia la revisión.
+func llevarARevision(t *testing.T, servicio *Servicio, iniciativaID string) *ResumenIniciativa {
+	t.Helper()
+	formularTodo(t, servicio, iniciativaID)
+	ejecutar(t, servicio, iniciativaID, AccionEnviar, formulador())
+	ejecutar(t, servicio, iniciativaID, AccionAprobar, jefe())
+	return ejecutar(t, servicio, iniciativaID, AccionIniciarRevision, oap())
+}
+
+func resumenDe(t *testing.T, servicio *Servicio, iniciativaID string, actor Actor) *ResumenIniciativa {
+	t.Helper()
+	resumen, err := servicio.Resumen(iniciativaID, actor)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, submodulo := range submodulosDe(resumen) {
+	return resumen
+}
+
+func estadoDeSubmodulo(t *testing.T, servicio *Servicio, iniciativaID, clave string) string {
+	t.Helper()
+	for _, submodulo := range submodulosDe(resumenDe(t, servicio, iniciativaID, oap())) {
 		if submodulo.Clave == clave {
 			return submodulo.Estado.Codigo
 		}
@@ -335,25 +423,40 @@ func exigirStatus(t *testing.T, err error, status int) {
 	}
 }
 
+// accionesDe resume las acciones de los permisos como "accion" (habilitada) o "accion!" (no).
+func accionesDe(permisos Permisos) []string {
+	acciones := []string{}
+	for _, accion := range permisos.Acciones {
+		if accion.Habilitada {
+			acciones = append(acciones, accion.Accion)
+		} else {
+			acciones = append(acciones, accion.Accion+"!")
+		}
+	}
+	return acciones
+}
+
+// ---------------------------------------------------------------------------
+// Crear
 // ---------------------------------------------------------------------------
 
 func TestCrearIniciativaCreaUnSubmoduloSinFormularPorSubmoduloDeLaPlantilla(t *testing.T) {
 	servicio, _ := nuevoServicioDePrueba(t)
 	resumen := crearIniciativaDePrueba(t, servicio)
 
-	if resumen.Estado.Codigo != EstadoIniciativaSinFormular || !resumen.PermiteEditar {
-		t.Fatalf("estado inicial = %+v", resumen.Estado)
+	if resumen.Estado.Codigo != EstadoIniciativaSinFormular || !resumen.Permisos.Editar || resumen.DependenciaID != "dep-1" {
+		t.Fatalf("resumen inicial = %+v", resumen)
 	}
 	if esperados := len(definicionDePrueba(t).Submodulos()); len(submodulosDe(resumen)) != esperados {
 		t.Fatalf("se esperaban %d submódulos y hay %d", esperados, len(submodulosDe(resumen)))
 	}
 	for _, submodulo := range submodulosDe(resumen) {
-		if submodulo.Estado.Codigo != EstadoSubmoduloSinFormular {
-			t.Fatalf("%s quedó %s", submodulo.Clave, submodulo.Estado.Codigo)
+		if submodulo.Estado.Codigo != EstadoSubmoduloSinFormular || submodulo.Accion != AccionSubmoduloFormular {
+			t.Fatalf("%s quedó %s (%s)", submodulo.Clave, submodulo.Estado.Codigo, submodulo.Accion)
 		}
 	}
-	if len(resumen.AccionesPosibles) != 0 {
-		t.Fatalf("no debería poder enviarse: %v", resumen.AccionesPosibles)
+	if len(resumen.Permisos.Acciones) != 0 {
+		t.Fatalf("Sin formular no tiene acciones: %v", accionesDe(resumen.Permisos))
 	}
 }
 
@@ -361,7 +464,7 @@ func TestCrearIniciativaDesactivaElPlanSiFallanLosSubmodulos(t *testing.T) {
 	servicio, repo := nuevoServicioDePrueba(t)
 	repo.fallarSubmodulos = true
 
-	if _, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: "dep-1", Responsable: responsableDePrueba}); err == nil {
+	if _, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{Actor: formulador(), PlantillaID: "plantilla-1", DependenciaID: "dep-1"}); err == nil {
 		t.Fatal("se esperaba un error")
 	}
 	for _, plan := range repo.planes {
@@ -373,22 +476,57 @@ func TestCrearIniciativaDesactivaElPlanSiFallanLosSubmodulos(t *testing.T) {
 
 func TestCrearIniciativaExigeDependencia(t *testing.T) {
 	servicio, _ := nuevoServicioDePrueba(t)
-	_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", Responsable: responsableDePrueba})
+	_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{Actor: formulador(), PlantillaID: "plantilla-1"})
 	exigirStatus(t, err, http.StatusBadRequest)
 }
 
-// El responsable es el documento de quien la crea: sin él, o con algo que no es un documento,
-// no se crea nada ni se consulta Terceros.
-func TestCrearIniciativaExigeElDocumentoDelResponsable(t *testing.T) {
+// Sin un documento válido o sin roles no se crea nada ni se consulta Terceros.
+func TestCrearIniciativaExigeElUsuarioYSusRoles(t *testing.T) {
 	servicio, repo := nuevoServicioDePrueba(t)
 	terceros := servicio.terceros.(*tercerosFalsos)
-	for _, responsable := range []string{"", "   ", "123,Activo:false", "12 34", "123456789012345678901"} {
-		_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: "dep-1", Responsable: responsable})
+	actores := []Actor{
+		{Usuario: "", Roles: []string{RolAsistenteDependencia}},
+		{Usuario: "   ", Roles: []string{RolAsistenteDependencia}},
+		{Usuario: "123,Activo:false", Roles: []string{RolAsistenteDependencia}},
+		{Usuario: "12 34", Roles: []string{RolAsistenteDependencia}},
+		{Usuario: "123456789012345678901", Roles: []string{RolAsistenteDependencia}},
+		{Usuario: responsableDePrueba},
+		{Usuario: responsableDePrueba, Roles: []string{" "}},
+	}
+	for _, actor := range actores {
+		_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{Actor: actor, PlantillaID: "plantilla-1", DependenciaID: "dep-1"})
 		exigirStatus(t, err, http.StatusBadRequest)
-		exigirMensajeParaUsuario(t, err, "responsable")
+		exigirMensajeParaUsuario(t, err, "roles")
 	}
 	if len(repo.planes) != 0 || terceros.consultas != 0 {
 		t.Fatalf("planes = %d, consultas a Terceros = %d; se esperaba 0 y 0", len(repo.planes), terceros.consultas)
+	}
+}
+
+// Crea el carril del formulador (también el Jefe, que formula) y solo para sus unidades; la OAP
+// sin un rol de formulador no crea.
+func TestSoloElFormuladorCreaYSoloEnSusUnidades(t *testing.T) {
+	servicio, repo := nuevoServicioDePrueba(t)
+	for nombre, caso := range map[string]struct {
+		actor       Actor
+		dependencia string
+	}{
+		"la OAP":             {oap(), "dep-1"},
+		"en otra unidad":     {formulador(), "dep-9"},
+		"el Jefe en otra":    {jefe(), "dep-2"},
+		"un rol desconocido": {Actor{Usuario: responsableDePrueba, Roles: []string{"ADMINISTRADOR"}}, "dep-1"},
+	} {
+		_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{Actor: caso.actor, PlantillaID: "plantilla-1", DependenciaID: caso.dependencia})
+		if negocio := ComoErrorNegocio(err); err == nil || negocio.Status != http.StatusForbidden {
+			t.Errorf("%s: se esperaba 403 y llegó %v", nombre, err)
+		}
+	}
+	if len(repo.planes) != 0 {
+		t.Fatalf("no debió crearse ningún plan: %d", len(repo.planes))
+	}
+	creada, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{Actor: jefe(), PlantillaID: "plantilla-1", DependenciaID: "dep-1"})
+	if err != nil || repo.planes[creada.ID].Responsable != documentoJefe {
+		t.Fatalf("el Jefe formula en su unidad: %+v %v", creada, err)
 	}
 }
 
@@ -397,7 +535,9 @@ func TestCrearIniciativaExigeElDocumentoDelResponsable(t *testing.T) {
 func TestElNombreDelResponsableSeGuardaAlCrearYElListadoNoConsultaTerceros(t *testing.T) {
 	servicio, repo := nuevoServicioDePrueba(t)
 	terceros := servicio.terceros.(*tercerosFalsos)
-	resumen, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: "dep-1", Responsable: " " + responsableDePrueba + " "})
+	actor := formulador()
+	actor.Usuario = " " + actor.Usuario + " "
+	resumen, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{Actor: actor, PlantillaID: "plantilla-1", DependenciaID: "dep-1"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -406,7 +546,7 @@ func TestElNombreDelResponsableSeGuardaAlCrearYElListadoNoConsultaTerceros(t *te
 	}
 
 	terceros.consultas = 0
-	listado, err := servicio.ListarIniciativas(nil)
+	listado, err := servicio.ListarIniciativas(oap())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -424,7 +564,7 @@ func TestSiTercerosNoRespondeLaIniciativaSeCreaSinNombre(t *testing.T) {
 	if plan := repo.planes[resumen.ID]; plan.Responsable != responsableDePrueba || plan.ResponsableNombre != "" {
 		t.Fatalf("responsable = %q, nombre = %q", plan.Responsable, plan.ResponsableNombre)
 	}
-	listado, err := servicio.ListarIniciativas(nil)
+	listado, err := servicio.ListarIniciativas(oap())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -439,9 +579,9 @@ func TestSinPlantillaSeCreaConLaMasReciente(t *testing.T) {
 	repo.planes["reciente"] = &Plan{ID: "reciente", TipoPlanID: tipoPlanDePrueba, Formato: true, Activo: true, FechaCreacion: "2026-11-01T00:00:00.000Z"}
 	anterior, reciente := definicionDePrueba(t), definicionDePrueba(t)
 	anterior.PlantillaID, reciente.PlantillaID = "anterior", "reciente"
-	servicio := NuevoServicio(repo, definicionesPorPlantilla{"anterior": anterior, "reciente": reciente}, catalogosDePrueba(), nil)
+	servicio := conPersonasDePrueba(NuevoServicio(repo, definicionesPorPlantilla{"anterior": anterior, "reciente": reciente}, catalogosDePrueba(), nil))
 
-	resumen, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{DependenciaID: "dep-1", Responsable: responsableDePrueba})
+	resumen, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{Actor: formulador(), DependenciaID: "dep-1"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -451,48 +591,40 @@ func TestSinPlantillaSeCreaConLaMasReciente(t *testing.T) {
 }
 
 func TestSinPlantillasNoSeCreaLaIniciativa(t *testing.T) {
-	servicio := NuevoServicio(nuevoRepoMemoria(), definicionesPorPlantilla{}, catalogosDePrueba(), nil)
-	_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{DependenciaID: "dep-1", Responsable: responsableDePrueba})
+	servicio := conPersonasDePrueba(NuevoServicio(nuevoRepoMemoria(), definicionesPorPlantilla{}, catalogosDePrueba(), nil))
+	_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{Actor: formulador(), DependenciaID: "dep-1"})
 	exigirStatus(t, err, http.StatusConflict)
 }
 
-func TestListarNumeraYFiltraPorUnidad(t *testing.T) {
+// ---------------------------------------------------------------------------
+// Listado
+// ---------------------------------------------------------------------------
+
+// La OAP ve todas las iniciativas activas; los demás, las de sus unidades.
+func TestListarNumeraYMuestraACadaUnoLasQueConsulta(t *testing.T) {
 	servicio, repo := nuevoServicioDePrueba(t)
-	crear := func(dependencia string) string {
-		t.Helper()
-		resumen, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: dependencia, Responsable: responsableDePrueba})
-		if err != nil {
-			t.Fatal(err)
-		}
-		return resumen.ID
-	}
-	desactivada, activa, otraUnidad := crear("dep-1"), crear("dep-1"), crear("dep-2")
+	desactivada := crearEnDependencia(t, servicio, "dep-1").ID
+	activa := crearEnDependencia(t, servicio, "dep-1").ID
+	otraUnidad := crearEnDependencia(t, servicio, "dep-2").ID
 	repo.planes[desactivada].Activo = false
 
-	todas, err := servicio.ListarIniciativas(nil)
+	todas, err := servicio.ListarIniciativas(oap())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(todas) != 2 || todas[0].ID != otraUnidad || todas[0].Numero != 3 || todas[1].ID != activa || todas[1].Numero != 2 {
 		t.Fatalf("listado = %+v", todas)
 	}
-	if todas[1].Estado.Codigo != EstadoIniciativaSinFormular || !todas[1].PermiteEditar || todas[1].Responsable != personasDePrueba[responsableDePrueba] {
-		t.Fatalf("iniciativa = %+v", todas[1])
+	if todas[1].Estado.Codigo != EstadoIniciativaSinFormular || todas[1].Accion != AccionSubmoduloConsultar || todas[1].Responsable != personasDePrueba[responsableDePrueba] {
+		t.Fatalf("la OAP solo consulta una iniciativa Sin formular: %+v", todas[1])
 	}
 
-	deUnaUnidad, err := servicio.ListarIniciativas([]string{"dep-1"})
+	deSuUnidad, err := servicio.ListarIniciativas(jefe())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(deUnaUnidad) != 1 || deUnaUnidad[0].ID != activa {
-		t.Fatalf("listado de dep-1 = %+v", deUnaUnidad)
-	}
-}
-
-func crearEnDependencia(t *testing.T, servicio *Servicio, dependencia string) {
-	t.Helper()
-	if _, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: dependencia, Responsable: responsableDePrueba}); err != nil {
-		t.Fatal(err)
+	if len(deSuUnidad) != 1 || deSuUnidad[0].ID != activa || deSuUnidad[0].Accion != AccionSubmoduloFormular {
+		t.Fatalf("el Jefe ve solo las de dep-1, y las formula: %+v", deSuUnidad)
 	}
 }
 
@@ -506,7 +638,7 @@ func TestListarTraeElNombreDeLaDependenciaYLaConsultaUnaSolaVez(t *testing.T) {
 	crearEnDependencia(t, servicio, "41")
 	crearEnDependencia(t, servicio, "42") // Oikos no la conoce
 
-	listado, err := servicio.ListarIniciativas(nil)
+	listado, err := servicio.ListarIniciativas(oap())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -535,7 +667,7 @@ func TestListarNoConsultaOikosConUnaDependenciaQueNoEsNumero(t *testing.T) {
 	servicio.dependencias = oikos
 	crearEnDependencia(t, servicio, "dep-1")
 
-	listado, err := servicio.ListarIniciativas(nil)
+	listado, err := servicio.ListarIniciativas(oap())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -549,7 +681,7 @@ func TestListarSaleSinNombreDeDependenciaSiNoHayFuente(t *testing.T) {
 	servicio, _ := nuevoServicioDePrueba(t)
 	crearEnDependencia(t, servicio, "41")
 
-	listado, err := servicio.ListarIniciativas(nil)
+	listado, err := servicio.ListarIniciativas(oap())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -557,6 +689,28 @@ func TestListarSaleSinNombreDeDependenciaSiNoHayFuente(t *testing.T) {
 		t.Fatalf("listado = %+v", listado)
 	}
 }
+
+// Las unidades del usuario se consultan una sola vez por listado, y la OAP sin otro rol no las
+// necesita.
+func TestListarConsultaLasUnidadesUnaSolaVez(t *testing.T) {
+	servicio, _ := nuevoServicioDePrueba(t)
+	unidades := servicio.unidades.(*unidadesFalsas)
+	crearEnDependencia(t, servicio, "dep-1")
+	crearEnDependencia(t, servicio, "dep-2")
+
+	unidades.consultas = 0
+	if _, err := servicio.ListarIniciativas(formulador()); err != nil || unidades.consultas != 1 {
+		t.Fatalf("formulador: err = %v, consultas = %d", err, unidades.consultas)
+	}
+	unidades.consultas = 0
+	if _, err := servicio.ListarIniciativas(oap()); err != nil || unidades.consultas != 0 {
+		t.Fatalf("OAP: err = %v, consultas = %d", err, unidades.consultas)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Guardar
+// ---------------------------------------------------------------------------
 
 func TestGuardarNombreLoFormulaYActualizaElNombreDelPlan(t *testing.T) {
 	servicio, repo := nuevoServicioDePrueba(t)
@@ -587,7 +741,7 @@ func TestGuardarConErroresGuardaElBorradorFormulando(t *testing.T) {
 		t.Fatal("el borrador debió guardarse aunque tenga errores")
 	}
 	if estado := repo.planes[iniciativa.ID].EstadoPlanID; estado != "ep-ef" {
-		t.Fatalf("con la primera información la iniciativa debió pasar a Formulación iniciada y está %s", estado)
+		t.Fatalf("con la primera información la iniciativa debió pasar a En formulación y está %s", estado)
 	}
 }
 
@@ -605,7 +759,7 @@ func TestGuardarVacioDejaSinFormularElSubmoduloYLaIniciativa(t *testing.T) {
 	}
 }
 
-func TestPasarAFormulacionIniciadaConservaElNombreQueSePropone(t *testing.T) {
+func TestPasarAEnFormulacionConservaElNombreQueSePropone(t *testing.T) {
 	servicio, repo := nuevoServicioDePrueba(t)
 	iniciativa := crearIniciativaDePrueba(t, servicio)
 
@@ -613,7 +767,7 @@ func TestPasarAFormulacionIniciadaConservaElNombreQueSePropone(t *testing.T) {
 
 	plan := repo.planes[iniciativa.ID]
 	if plan.EstadoPlanID != "ep-ef" || plan.Nombre != vista.Datos["nombre_proyecto"] {
-		t.Fatalf("el plan debió quedar en Formulación iniciada y con el nombre propuesto: estado=%s nombre=%q", plan.EstadoPlanID, plan.Nombre)
+		t.Fatalf("el plan debió quedar En formulación y con el nombre propuesto: estado=%s nombre=%q", plan.EstadoPlanID, plan.Nombre)
 	}
 }
 
@@ -622,8 +776,20 @@ func TestGuardarConUnaVersionViejaResponde409(t *testing.T) {
 	iniciativa := crearIniciativaDePrueba(t, servicio)
 	guardar(t, servicio, iniciativa.ID, "nombre", iniciativaDeEjemplo(t)["nombre"]) // versión pasa de 0 a 1
 
-	_, err := servicio.GuardarSubmodulo(iniciativa.ID, "nombre", SolicitudGuardarSubmodulo{Version: 0, Datos: Datos{}})
+	_, err := servicio.GuardarSubmodulo(iniciativa.ID, "nombre", SolicitudGuardarSubmodulo{Actor: formulador(), Version: 0, Datos: Datos{}})
 	exigirStatus(t, err, http.StatusConflict)
+}
+
+// Guarda solo el formulador de la unidad: ni la OAP ni el Jefe de otra unidad.
+func TestSoloGuardaElFormuladorDeLaUnidad(t *testing.T) {
+	servicio, _ := nuevoServicioDePrueba(t)
+	deOtraUnidad := crearEnDependencia(t, servicio, "dep-2")
+	for nombre, actor := range map[string]Actor{"la OAP": oap(), "el Jefe de otra unidad": jefe()} {
+		_, err := servicio.GuardarSubmodulo(deOtraUnidad.ID, "nombre", SolicitudGuardarSubmodulo{Actor: actor, Datos: iniciativaDeEjemplo(t)["nombre"]})
+		if negocio := ComoErrorNegocio(err); err == nil || negocio.Status != http.StatusForbidden {
+			t.Errorf("%s: se esperaba 403 y llegó %v", nombre, err)
+		}
+	}
 }
 
 func TestAgregarUnaCausaDirectaDevuelveObjetivosAFormulando(t *testing.T) {
@@ -663,23 +829,27 @@ func TestEnviarRevalidaLosSubmodulosAunqueSuEstadoDigaFormulado(t *testing.T) {
 	iniciativa := crearIniciativaDePrueba(t, servicio)
 	formularTodo(t, servicio, iniciativa.ID)
 
-	problematica := problematicaConOtraCausa(t)
-	for _, documento := range repo.submodulos {
-		if documento.PlanID == iniciativa.ID && documento.Submodulo == "problematica" {
-			documento.Datos = problematica
-		}
-	}
+	cambiarDatos(repo, iniciativa.ID, "problematica", problematicaConOtraCausa(t))
 	if estado := estadoDeSubmodulo(t, servicio, iniciativa.ID, "objetivos"); estado != EstadoSubmoduloFormulado {
 		t.Fatalf("la prueba supone objetivos Formulado y está %s", estado)
 	}
 
-	_, err := servicio.EjecutarAccion(iniciativa.ID, AccionEnviar)
+	_, err := servicio.EjecutarAccion(iniciativa.ID, AccionEnviar, SolicitudAccion{Actor: formulador()})
 	exigirStatus(t, err, http.StatusConflict)
 	if !strings.Contains(err.Error(), "«"+definicionDePrueba(t).Submodulo("objetivos").Nombre+"»") {
 		t.Fatalf("el mensaje debe nombrar el submódulo con pendientes: %v", err)
 	}
 	if estado := repo.planes[iniciativa.ID].EstadoPlanID; estado != "ep-ef" {
 		t.Fatalf("la iniciativa no debió cambiar de estado y quedó %s", estado)
+	}
+}
+
+// cambiarDatos cambia los datos guardados de un submódulo sin pasar por el servicio.
+func cambiarDatos(repo *repoMemoria, iniciativaID, clave string, datos Datos) {
+	for _, documento := range repo.submodulos {
+		if documento.PlanID == iniciativaID && documento.Submodulo == clave {
+			documento.Datos = datos
+		}
 	}
 }
 
@@ -703,49 +873,298 @@ func TestObtenerSubmoduloIncluyeLosSubmodulosDeLasQueDepende(t *testing.T) {
 	}
 }
 
-func TestFlujoDeRevisionConObservacionesYAval(t *testing.T) {
+// El resumen dice qué submódulos leen datos de cada uno (Cronograma lee de Cadena de valor).
+func TestElResumenTraeLosDependientesDeCadaSubmodulo(t *testing.T) {
 	servicio, _ := nuevoServicioDePrueba(t)
 	iniciativa := crearIniciativaDePrueba(t, servicio)
-	formularTodo(t, servicio, iniciativa.ID)
 
-	resumen, err := servicio.EjecutarAccion(iniciativa.ID, AccionEnviar)
-	if err != nil || resumen.Estado.Codigo != EstadoIniciativaEnRevision || resumen.PermiteEditar {
-		t.Fatalf("enviar: %+v %v", resumen, err)
+	for _, submodulo := range submodulosDe(iniciativa) {
+		if submodulo.Dependientes == nil {
+			t.Fatalf("%s: dependientes nil", submodulo.Clave)
+		}
+		if submodulo.Clave == "cadena_valor" && !contiene(submodulo.Dependientes, "cronograma") {
+			t.Fatalf("cronograma lee de cadena_valor: %v", submodulo.Dependientes)
+		}
+		if submodulo.Clave == "participantes" && len(submodulo.Dependientes) != 0 {
+			t.Fatalf("nadie lee de participantes: %v", submodulo.Dependientes)
+		}
 	}
-	_, err = servicio.GuardarSubmodulo(iniciativa.ID, "nombre", SolicitudGuardarSubmodulo{Version: 1, Datos: Datos{}})
-	exigirStatus(t, err, http.StatusConflict) // en revisión no se edita
+}
 
-	for _, submodulo := range submodulosDe(resumen) {
-		sinObservaciones(t, servicio, iniciativa.ID, submodulo.Clave)
-	}
-	comentar(t, servicio, iniciativa.ID, "problematica", dePlaneacion("Precisar la fuente."))
+// ---------------------------------------------------------------------------
+// Máquina de estados
+// ---------------------------------------------------------------------------
 
-	resumen, err = servicio.EjecutarAccion(iniciativa.ID, AccionDevolver)
-	if err != nil || resumen.Estado.Codigo != EstadoIniciativaPorCorregir {
-		t.Fatalf("devolver: %+v %v", resumen, err)
+// El recorrido completo: el Jefe devuelve, la OAP observa (la iniciativa pasa sola a Por
+// corregir), el Jefe desaprueba un aprobado y, al final, todo aprobado (pasa sola a Aprobado).
+func TestFlujoCompletoHastaAprobado(t *testing.T) {
+	servicio, _ := nuevoServicioDePrueba(t)
+	id := crearIniciativaDePrueba(t, servicio).ID
+	formularTodo(t, servicio, id)
+
+	// 02 → 03: desde que la envía, el formulador ya no edita.
+	if resumen := ejecutar(t, servicio, id, AccionEnviar, formulador()); resumen.Estado.Codigo != EstadoIniciativaPorAprobar || resumen.Permisos.Editar {
+		t.Fatalf("enviar: %+v", resumen)
 	}
-	if _, err := servicio.EjecutarAccion(iniciativa.ID, AccionEnviar); err == nil {
-		t.Fatal("no debe enviarse con un submódulo con observaciones sin corregir")
+	_, err := intentarGuardar(t, servicio, id, "nombre", iniciativaDeEjemplo(t)["nombre"])
+	exigirStatus(t, err, http.StatusConflict)
+
+	// 03: el Jefe observa; con observaciones no aprueba, devuelve.
+	comentar(t, servicio, id, "problematica", observacion(jefe(), "Precisar la fuente."))
+	if acciones := accionesDe(resumenDe(t, servicio, id, jefe()).Permisos); strings.Join(acciones, ",") != "devolver,aprobar!" {
+		t.Fatalf("acciones del Jefe con observaciones = %v", acciones)
+	}
+	_, err = servicio.EjecutarAccion(id, AccionAprobar, SolicitudAccion{Actor: jefe()})
+	exigirStatus(t, err, http.StatusConflict)
+	ejecutar(t, servicio, id, AccionDevolver, jefe())
+
+	// 06 → 03 → 04 → 05: corrige, reenvía, el Jefe aprueba y la OAP inicia la revisión.
+	_, err = servicio.EjecutarAccion(id, AccionEnviar, SolicitudAccion{Actor: formulador()})
+	exigirStatus(t, err, http.StatusConflict) // problemática sigue Con observaciones
+	guardar(t, servicio, id, "problematica", iniciativaDeEjemplo(t)["problematica"])
+	ejecutar(t, servicio, id, AccionEnviar, formulador())
+	ejecutar(t, servicio, id, AccionAprobar, jefe())
+	if resumen := ejecutar(t, servicio, id, AccionIniciarRevision, oap()); resumen.Estado.Codigo != EstadoIniciativaEnRevision {
+		t.Fatalf("iniciar revisión: %+v", resumen.Estado)
 	}
 
-	comentar(t, servicio, iniciativa.ID, "problematica", delGestor("Se agregó la fuente."))
-	guardar(t, servicio, iniciativa.ID, "problematica", iniciativaDeEjemplo(t)["problematica"])
-	if _, err := servicio.EjecutarAccion(iniciativa.ID, AccionEnviar); err != nil {
-		t.Fatalf("reenviar: %v", err)
+	// 05: aprueba todo menos problemática; el último veredicto (Con observaciones) la pasa a 06.
+	for _, submodulo := range definicionDePrueba(t).Submodulos() {
+		if submodulo.Clave() != "problematica" {
+			if vista := aprobarSubmodulo(t, servicio, id, submodulo.Clave()); vista.EstadoIniciativa != nil {
+				t.Fatalf("la iniciativa cambió antes del último veredicto: %+v", vista.EstadoIniciativa)
+			}
+		}
 	}
-	sinObservaciones(t, servicio, iniciativa.ID, "problematica")
-	resumen, err = servicio.EjecutarAccion(iniciativa.ID, AccionAvalar)
-	if err != nil || resumen.Estado.Codigo != EstadoIniciativaAvalado || len(resumen.AccionesPosibles) != 0 {
-		t.Fatalf("avalar: %+v %v", resumen, err)
+	vista := comentar(t, servicio, id, "problematica", observacion(oap(), "Falta la fuente del dato."))
+	if vista.EstadoIniciativa == nil || vista.EstadoIniciativa.Codigo != EstadoIniciativaPorCorregir {
+		t.Fatalf("el último veredicto debió pasarla a Por corregir: %+v", vista.EstadoIniciativa)
 	}
 
-	problematica, err := servicio.ObtenerSubmodulo(iniciativa.ID, "problematica")
-	if err != nil {
-		t.Fatal(err)
+	// 06: solo se edita lo no aprobado.
+	_, err = intentarGuardar(t, servicio, id, "nombre", iniciativaDeEjemplo(t)["nombre"])
+	exigirStatus(t, err, http.StatusConflict)
+	guardar(t, servicio, id, "problematica", iniciativaDeEjemplo(t)["problematica"])
+	ejecutar(t, servicio, id, AccionEnviar, formulador())
+
+	// 03: el Jefe observa un aprobado (lo desaprueba) y la devuelve; se corrige y vuelve a subir.
+	comentar(t, servicio, id, "nombre", observacion(jefe(), "Ajustar el nombre."))
+	ejecutar(t, servicio, id, AccionDevolver, jefe())
+	guardar(t, servicio, id, "nombre", iniciativaDeEjemplo(t)["nombre"])
+	ejecutar(t, servicio, id, AccionEnviar, formulador())
+	ejecutar(t, servicio, id, AccionAprobar, jefe())
+	ejecutar(t, servicio, id, AccionIniciarRevision, oap())
+
+	// 05: con los dos que faltaban aprobados, pasa sola a Aprobado.
+	aprobarSubmodulo(t, servicio, id, "nombre")
+	vista = aprobarSubmodulo(t, servicio, id, "problematica")
+	if vista.EstadoIniciativa == nil || vista.EstadoIniciativa.Codigo != EstadoIniciativaAprobada {
+		t.Fatalf("con todo aprobado debió pasar a Aprobado: %+v", vista.EstadoIniciativa)
 	}
-	historial := problematica.Submodulo.Observaciones
-	if len(historial) != 2 || historial[0].Rol != "PLANEACION" || historial[1].Rol != "JEFE_DEPENDENCIA" {
-		t.Fatalf("«Sin observaciones» no debe borrar el historial: %+v", historial)
+	for _, actor := range []Actor{formulador(), jefe(), oap()} {
+		if permisos := resumenDe(t, servicio, id, actor).Permisos; permisos.Editar || permisos.Observar || len(permisos.Acciones) != 0 {
+			t.Fatalf("en Aprobado nadie hace nada: %+v", permisos)
+		}
+	}
+	_, err = servicio.AgregarObservacion(id, "nombre", observacion(oap(), "Después de aprobada."))
+	exigirStatus(t, err, http.StatusConflict)
+}
+
+// La OAP rechaza con motivo; la rechazada no se inactiva, nadie la edita y solo la OAP se
+// retracta, lo que la devuelve a Por corregir.
+func TestRechazoYRetraccion(t *testing.T) {
+	servicio, repo := nuevoServicioDePrueba(t)
+	id := crearIniciativaDePrueba(t, servicio).ID
+	llevarARevision(t, servicio, id)
+
+	for _, motivo := range []string{"", "   ", strings.Repeat("a", MaximoTextoObservacion+1)} {
+		_, err := servicio.EjecutarAccion(id, AccionRechazar, SolicitudAccion{Actor: oap(), Motivo: motivo})
+		exigirStatus(t, err, http.StatusBadRequest)
+	}
+	if resumen := ejecutar(t, servicio, id, AccionRechazar, oap()); resumen.Estado.Codigo != EstadoIniciativaRechazada {
+		t.Fatalf("rechazar: %+v", resumen.Estado)
+	}
+	if !repo.planes[id].Activo {
+		t.Fatal("la rechazada no se inactiva")
+	}
+	_, err := intentarGuardar(t, servicio, id, "nombre", iniciativaDeEjemplo(t)["nombre"])
+	exigirStatus(t, err, http.StatusConflict)
+	listado, err := servicio.ListarIniciativas(formulador())
+	if err != nil || len(listado) != 1 || listado[0].Accion != AccionSubmoduloConsultar {
+		t.Fatalf("la rechazada sigue en el listado, para consultarla: %+v %v", listado, err)
+	}
+
+	_, err = servicio.EjecutarAccion(id, AccionRetractarRechazo, SolicitudAccion{Actor: jefe()})
+	exigirStatus(t, err, http.StatusForbidden)
+	if acciones := accionesDe(resumenDe(t, servicio, id, oap()).Permisos); strings.Join(acciones, ",") != AccionRetractarRechazo {
+		t.Fatalf("en 08 la OAP solo se retracta: %v", acciones)
+	}
+	if resumen := ejecutar(t, servicio, id, AccionRetractarRechazo, oap()); resumen.Estado.Codigo != EstadoIniciativaPorCorregir {
+		t.Fatalf("retractar: %+v", resumen.Estado)
+	}
+	if acciones := accionesDe(resumenDe(t, servicio, id, formulador()).Permisos); strings.Join(acciones, ",") != AccionEnviar {
+		t.Fatalf("tras la retracción el formulador la reenvía: %v", acciones)
+	}
+}
+
+// En cada estado solo actúa su carril: los demás consultan.
+func TestCadaEstadoLoTrabajaSuCarril(t *testing.T) {
+	servicio, _ := nuevoServicioDePrueba(t)
+	id := crearIniciativaDePrueba(t, servicio).ID
+	formularTodo(t, servicio, id)
+
+	esperado := func(estado string, actor Actor, editar, observar, aprobar bool, acciones string) {
+		t.Helper()
+		resumen := resumenDe(t, servicio, id, actor)
+		if resumen.Estado.Codigo != estado {
+			t.Fatalf("la prueba supone %s y está %s", estado, resumen.Estado.Codigo)
+		}
+		p := resumen.Permisos
+		if p.Editar != editar || p.Observar != observar || p.AprobarSubmodulos != aprobar || strings.Join(accionesDe(p), ",") != acciones {
+			t.Fatalf("%s, %s: editar=%v observar=%v aprobar=%v acciones=%v", estado, actor.Usuario, p.Editar, p.Observar, p.AprobarSubmodulos, accionesDe(p))
+		}
+	}
+	esperado(EstadoIniciativaEnFormulacion, formulador(), true, false, false, AccionEnviar)
+	esperado(EstadoIniciativaEnFormulacion, jefe(), true, false, false, AccionEnviar)
+	esperado(EstadoIniciativaEnFormulacion, oap(), false, false, false, "")
+
+	ejecutar(t, servicio, id, AccionEnviar, formulador())
+	esperado(EstadoIniciativaPorAprobar, formulador(), false, false, false, "")
+	esperado(EstadoIniciativaPorAprobar, jefe(), false, true, false, "devolver!,aprobar")
+	esperado(EstadoIniciativaPorAprobar, oap(), false, false, false, "")
+
+	ejecutar(t, servicio, id, AccionAprobar, jefe())
+	esperado(EstadoIniciativaPorRevisar, jefe(), false, false, false, "")
+	esperado(EstadoIniciativaPorRevisar, oap(), false, false, false, AccionIniciarRevision)
+
+	ejecutar(t, servicio, id, AccionIniciarRevision, oap())
+	esperado(EstadoIniciativaEnRevision, formulador(), false, false, false, "")
+	esperado(EstadoIniciativaEnRevision, jefe(), false, false, false, "")
+	esperado(EstadoIniciativaEnRevision, oap(), false, true, true, AccionRechazar)
+}
+
+// Un Jefe no actúa ni consulta las iniciativas de otras unidades.
+func TestElJefeDeOtraUnidadNiActuaNiConsulta(t *testing.T) {
+	servicio, _ := nuevoServicioDePrueba(t)
+	id := crearEnDependencia(t, servicio, "dep-2").ID
+	formularTodo(t, servicio, id)
+	ejecutar(t, servicio, id, AccionEnviar, formulador())
+
+	_, err := servicio.Resumen(id, jefe())
+	exigirStatus(t, err, http.StatusForbidden)
+	_, err = servicio.EjecutarAccion(id, AccionAprobar, SolicitudAccion{Actor: jefe()})
+	exigirStatus(t, err, http.StatusForbidden)
+	_, err = servicio.AgregarObservacion(id, "nombre", observacion(jefe(), "No es de su unidad."))
+	exigirStatus(t, err, http.StatusForbidden)
+}
+
+// Con varios roles se suman los carriles: el mismo usuario observa como Jefe en 03 y como OAP en
+// 05, y cada observación queda firmada con el rol de ese carril. Como tiene un rol de la OAP,
+// consulta las iniciativas de todas las unidades.
+func TestConVariosRolesSeSumanLosCarriles(t *testing.T) {
+	servicio, _ := nuevoServicioDePrueba(t)
+	id := crearIniciativaDePrueba(t, servicio).ID
+	formularTodo(t, servicio, id)
+	ejecutar(t, servicio, id, AccionEnviar, formulador())
+
+	comoJefe := comentar(t, servicio, id, "nombre", observacion(jefeYOAP(), "Como Jefe."))
+	if rol := comoJefe.Observaciones[len(comoJefe.Observaciones)-1].Rol; rol != RolJefeDependencia {
+		t.Fatalf("en 03 firma como Jefe y firmó %s", rol)
+	}
+	ejecutar(t, servicio, id, AccionDevolver, jefeYOAP())
+	guardar(t, servicio, id, "nombre", iniciativaDeEjemplo(t)["nombre"])
+	ejecutar(t, servicio, id, AccionEnviar, formulador())
+	ejecutar(t, servicio, id, AccionAprobar, jefeYOAP())
+	ejecutar(t, servicio, id, AccionIniciarRevision, jefeYOAP())
+
+	comoOAP := comentar(t, servicio, id, "nombre", observacion(jefeYOAP(), "Como OAP."))
+	if rol := comoOAP.Observaciones[len(comoOAP.Observaciones)-1].Rol; rol != RolAsistentePlaneacion {
+		t.Fatalf("en 05 firma como OAP y firmó %s", rol)
+	}
+	otra := crearEnDependencia(t, servicio, "dep-2")
+	if _, err := servicio.Resumen(otra.ID, jefeYOAP()); err != nil {
+		t.Fatalf("con un rol de la OAP consulta las de todas las unidades: %v", err)
+	}
+}
+
+// Fuera de las fechas de la unidad nadie hace nada, ni el Jefe ni la OAP: todo queda congelado.
+func TestFueraDeFechasNadieActua(t *testing.T) {
+	servicio, repo := nuevoServicioDePrueba(t)
+	id := crearIniciativaDePrueba(t, servicio).ID
+	formularTodo(t, servicio, id)
+	ejecutar(t, servicio, id, AccionEnviar, formulador())
+	cerrarFechas(repo)
+
+	resumen := resumenDe(t, servicio, id, jefe())
+	if !resumen.FueraDeFechas || resumen.Permisos.Observar || strings.Join(accionesDe(resumen.Permisos), ",") != "devolver!,aprobar!" {
+		t.Fatalf("fuera de fechas el Jefe solo consulta: %+v", resumen)
+	}
+	if resumen := resumenDe(t, servicio, id, oap()); resumen.FueraDeFechas {
+		t.Fatal("la OAP no tiene nada que hacer en 03: no se le avisa de las fechas")
+	}
+	_, err := servicio.EjecutarAccion(id, AccionAprobar, SolicitudAccion{Actor: jefe()})
+	exigirFueraDeFechas(t, err)
+	_, err = servicio.AgregarObservacion(id, "nombre", observacion(jefe(), "Fuera de fechas."))
+	exigirFueraDeFechas(t, err)
+}
+
+func TestAccionInexistenteResponde400(t *testing.T) {
+	servicio, _ := nuevoServicioDePrueba(t)
+	iniciativa := crearIniciativaDePrueba(t, servicio)
+	_, err := servicio.EjecutarAccion(iniciativa.ID, "borrar", SolicitudAccion{Actor: formulador()})
+	exigirStatus(t, err, http.StatusBadRequest)
+}
+
+// ---------------------------------------------------------------------------
+// Submódulos aprobados
+// ---------------------------------------------------------------------------
+
+// llevarAPorCorregirConObjetivosAprobados deja la iniciativa en Por corregir con Problemática
+// observada y los demás submódulos aprobados.
+func llevarAPorCorregirConObjetivosAprobados(t *testing.T, servicio *Servicio) string {
+	t.Helper()
+	id := crearIniciativaDePrueba(t, servicio).ID
+	llevarARevision(t, servicio, id)
+	for _, submodulo := range definicionDePrueba(t).Submodulos() {
+		if submodulo.Clave() != "problematica" {
+			aprobarSubmodulo(t, servicio, id, submodulo.Clave())
+		}
+	}
+	comentar(t, servicio, id, "problematica", observacion(oap(), "Agregar la causa que falta."))
+	return id
+}
+
+// Un aprobado no se revalida al guardar otro submódulo ni al enviar: quien revisa decide si lo
+// vuelve a observar.
+func TestUnAprobadoNoSeRevalidaNiSeEdita(t *testing.T) {
+	servicio, _ := nuevoServicioDePrueba(t)
+	id := llevarAPorCorregirConObjetivosAprobados(t, servicio)
+
+	guardar(t, servicio, id, "problematica", problematicaConOtraCausa(t))
+	if estado := estadoDeSubmodulo(t, servicio, id, "objetivos"); estado != EstadoSubmoduloAprobado {
+		t.Fatalf("objetivos sigue aprobado aunque le falte la nueva causa y quedó %s", estado)
+	}
+	if resumen := ejecutar(t, servicio, id, AccionEnviar, formulador()); resumen.Estado.Codigo != EstadoIniciativaPorAprobar {
+		t.Fatalf("se envía sin revalidar los aprobados: %+v", resumen.Estado)
+	}
+	_, err := intentarGuardar(t, servicio, id, "objetivos", iniciativaDeEjemplo(t)["objetivos"])
+	exigirStatus(t, err, http.StatusConflict)
+}
+
+// En Por corregir el resumen trae la última observación de cada submódulo Con observaciones.
+func TestEnPorCorregirElResumenTraeLaUltimaObservacion(t *testing.T) {
+	servicio, _ := nuevoServicioDePrueba(t)
+	id := llevarAPorCorregirConObjetivosAprobados(t, servicio)
+
+	for _, submodulo := range submodulosDe(resumenDe(t, servicio, id, formulador())) {
+		switch {
+		case submodulo.Clave == "problematica":
+			if submodulo.UltimaObservacion == nil || submodulo.UltimaObservacion.Texto != "Agregar la causa que falta." || submodulo.Accion != AccionSubmoduloFormular {
+				t.Fatalf("problemática: %+v", submodulo)
+			}
+		case submodulo.UltimaObservacion != nil || submodulo.Accion != AccionSubmoduloConsultar:
+			t.Fatalf("%s está aprobado: se consulta y no trae observación por atender: %+v", submodulo.Clave, submodulo)
+		}
 	}
 }
 
@@ -753,12 +1172,8 @@ func TestFlujoDeRevisionConObservacionesYAval(t *testing.T) {
 // Observaciones
 // ---------------------------------------------------------------------------
 
-func dePlaneacion(texto string) SolicitudObservacion {
-	return SolicitudObservacion{Texto: texto, Rol: "PLANEACION", Usuario: "1012345678"}
-}
-
-func delGestor(texto string) SolicitudObservacion {
-	return SolicitudObservacion{Texto: texto, Rol: "JEFE_DEPENDENCIA", Usuario: "79876543"}
+func observacion(actor Actor, texto string) SolicitudObservacion {
+	return SolicitudObservacion{Actor: actor, Texto: texto}
 }
 
 func comentar(t *testing.T, servicio *Servicio, iniciativaID, clave string, solicitud SolicitudObservacion) *SubmoduloVista {
@@ -770,81 +1185,73 @@ func comentar(t *testing.T, servicio *Servicio, iniciativaID, clave string, soli
 	return vista
 }
 
-func sinObservaciones(t *testing.T, servicio *Servicio, iniciativaID, clave string) *SubmoduloVista {
+// aprobarSubmodulo da el veredicto Aprobado como la OAP, con la versión vigente.
+func aprobarSubmodulo(t *testing.T, servicio *Servicio, iniciativaID, clave string) *SubmoduloVista {
 	t.Helper()
 	actual, err := servicio.ObtenerSubmodulo(iniciativaID, clave)
 	if err != nil {
 		t.Fatal(err)
 	}
-	vista, err := servicio.RevisarSubmodulo(iniciativaID, clave, SolicitudRevisarSubmodulo{Version: actual.Submodulo.Version})
+	vista, err := servicio.RevisarSubmodulo(iniciativaID, clave, SolicitudRevisarSubmodulo{Actor: oap(), Version: actual.Submodulo.Version})
 	if err != nil {
 		t.Fatal(err)
 	}
 	return vista
 }
 
-func TestPlaneacionComentaYElSubmoduloQuedaConObservacionesSinCambiarLaVersion(t *testing.T) {
+func TestLaOAPObservaYElSubmoduloQuedaConObservacionesSinCambiarLaVersion(t *testing.T) {
 	servicio, _ := nuevoServicioDePrueba(t)
-	iniciativa := crearIniciativaDePrueba(t, servicio)
-	formularTodo(t, servicio, iniciativa.ID)
-	if _, err := servicio.EjecutarAccion(iniciativa.ID, AccionEnviar); err != nil {
-		t.Fatal(err)
-	}
-	antes, _ := servicio.ObtenerSubmodulo(iniciativa.ID, "poblacion")
+	id := crearIniciativaDePrueba(t, servicio).ID
+	llevarARevision(t, servicio, id)
+	antes, _ := servicio.ObtenerSubmodulo(id, "poblacion")
 
-	vista := comentar(t, servicio, iniciativa.ID, "poblacion", dePlaneacion("  Revisar el total de juventud.  "))
+	vista := comentar(t, servicio, id, "poblacion", observacion(oap(), "  Revisar el total de juventud.  "))
 
 	if vista.Estado.Codigo != EstadoSubmoduloConObservaciones || vista.Version != antes.Submodulo.Version {
 		t.Fatalf("estado %s, versión %d (antes %d)", vista.Estado.Codigo, vista.Version, antes.Submodulo.Version)
 	}
-	esperada := Observacion{ID: vista.Observaciones[0].ID, Texto: "Revisar el total de juventud.", Rol: "PLANEACION", Usuario: "1012345678", UsuarioNombre: personasDePrueba["1012345678"]}
+	esperada := Observacion{ID: vista.Observaciones[0].ID, Texto: "Revisar el total de juventud.", Rol: RolPlaneacion, Usuario: documentoOAP, UsuarioNombre: personasDePrueba[documentoOAP]}
 	if len(vista.Observaciones) != 1 || vista.Observaciones[0] != esperada {
 		t.Fatalf("observaciones = %+v", vista.Observaciones)
 	}
 }
 
-func TestElGestorComentaMientrasFormulaSinChocarConSuEdicion(t *testing.T) {
+func TestElFormuladorComentaMientrasFormulaSinChocarConSuEdicion(t *testing.T) {
 	servicio, _ := nuevoServicioDePrueba(t)
 	iniciativa := crearIniciativaDePrueba(t, servicio)
 	abierta, _ := servicio.ObtenerSubmodulo(iniciativa.ID, "nombre")
 
-	vista := comentar(t, servicio, iniciativa.ID, "nombre", delGestor("El nombre se ajustó con la OAPC."))
-	if vista.Estado.Codigo != EstadoSubmoduloSinFormular || vista.Version != abierta.Submodulo.Version {
-		t.Fatalf("el comentario del gestor no cambia estado ni versión: %s v%d", vista.Estado.Codigo, vista.Version)
+	vista := comentar(t, servicio, iniciativa.ID, "nombre", observacion(formulador(), "El nombre se ajustó con la OAP."))
+	if vista.Estado.Codigo != EstadoSubmoduloSinFormular || vista.Version != abierta.Submodulo.Version || vista.Observaciones[0].Rol != RolAsistenteDependencia {
+		t.Fatalf("el comentario del formulador no cambia estado ni versión: %s v%d %+v", vista.Estado.Codigo, vista.Version, vista.Observaciones)
 	}
 
 	// Guarda con la versión que tenía abierta antes de comentar: no hay 409.
-	if _, err := servicio.GuardarSubmodulo(iniciativa.ID, "nombre", SolicitudGuardarSubmodulo{Version: abierta.Submodulo.Version, Datos: iniciativaDeEjemplo(t)["nombre"]}); err != nil {
+	if _, err := servicio.GuardarSubmodulo(iniciativa.ID, "nombre", SolicitudGuardarSubmodulo{Actor: formulador(), Version: abierta.Submodulo.Version, Datos: iniciativaDeEjemplo(t)["nombre"]}); err != nil {
 		t.Fatalf("guardar tras comentar: %v", err)
 	}
 }
 
-func TestUnaIniciativaAvaladaNoRecibeObservaciones(t *testing.T) {
-	servicio, _ := nuevoServicioDePrueba(t)
-	iniciativa := crearIniciativaDePrueba(t, servicio)
-	formularTodo(t, servicio, iniciativa.ID)
-	resumen, err := servicio.EjecutarAccion(iniciativa.ID, AccionEnviar)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, submodulo := range submodulosDe(resumen) {
-		sinObservaciones(t, servicio, iniciativa.ID, submodulo.Clave)
-	}
-	if _, err := servicio.EjecutarAccion(iniciativa.ID, AccionAvalar); err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = servicio.AgregarObservacion(iniciativa.ID, "nombre", dePlaneacion("Después del aval."))
-	exigirStatus(t, err, http.StatusConflict)
-}
-
-func TestPlaneacionNoComentaUnSubmoduloSinFormular(t *testing.T) {
+func TestLaOAPNoObservaUnSubmoduloSinFormular(t *testing.T) {
 	servicio, repo := nuevoServicioDePrueba(t)
 	iniciativa := crearIniciativaDePrueba(t, servicio)
 	repo.planes[iniciativa.ID].EstadoPlanID = "ep-er" // en revisión, con todo sin formular
 
-	_, err := servicio.AgregarObservacion(iniciativa.ID, "nombre", dePlaneacion("x"))
+	_, err := servicio.AgregarObservacion(iniciativa.ID, "nombre", observacion(oap(), "x"))
 	exigirStatus(t, err, http.StatusConflict)
+}
+
+// Fuera de su carril nadie publica: la OAP no comenta mientras se formula y el formulador no
+// observa en revisión.
+func TestSoloPublicaElCarrilDelEstado(t *testing.T) {
+	servicio, _ := nuevoServicioDePrueba(t)
+	id := crearIniciativaDePrueba(t, servicio).ID
+	_, err := servicio.AgregarObservacion(id, "nombre", observacion(oap(), "Mientras se formula."))
+	exigirStatus(t, err, http.StatusForbidden)
+
+	llevarARevision(t, servicio, id)
+	_, err = servicio.AgregarObservacion(id, "nombre", observacion(formulador(), "En revisión."))
+	exigirStatus(t, err, http.StatusForbidden)
 }
 
 func TestObservacionInvalidaResponde400(t *testing.T) {
@@ -855,11 +1262,11 @@ func TestObservacionInvalidaResponde400(t *testing.T) {
 		largo[i] = 'á'
 	}
 	casos := map[string]SolicitudObservacion{
-		"sin texto":                   {Texto: "   ", Rol: "R", Usuario: "U"},
-		"texto muy largo":             {Texto: string(largo), Rol: "R", Usuario: "U"},
-		"sin rol":                     {Texto: "x", Usuario: "U"},
-		"sin usuario":                 {Texto: "x", Rol: "R"},
-		"usuario que no es documento": {Texto: "x", Rol: "R", Usuario: "123,Activo:false"},
+		"sin texto":                   observacion(formulador(), "   "),
+		"texto muy largo":             observacion(formulador(), string(largo)),
+		"sin roles":                   observacion(Actor{Usuario: responsableDePrueba}, "x"),
+		"sin usuario":                 observacion(Actor{Roles: []string{RolAsistenteDependencia}}, "x"),
+		"usuario que no es documento": observacion(Actor{Usuario: "123,Activo:false", Roles: []string{RolAsistenteDependencia}}, "x"),
 	}
 	for nombre, solicitud := range casos {
 		if _, err := servicio.AgregarObservacion(iniciativa.ID, "nombre", solicitud); err == nil {
@@ -875,19 +1282,15 @@ func TestLaObservacionSePublicaSinNombreSiTercerosNoResponde(t *testing.T) {
 	iniciativa := crearIniciativaDePrueba(t, servicio)
 	tercerosCaidos(servicio)
 
-	vista := comentar(t, servicio, iniciativa.ID, "nombre", delGestor("El nombre se ajustó con la OAPC."))
-	if len(vista.Observaciones) != 1 || vista.Observaciones[0].Usuario != "79876543" || vista.Observaciones[0].UsuarioNombre != "" {
+	vista := comentar(t, servicio, iniciativa.ID, "nombre", observacion(formulador(), "El nombre se ajustó con la OAP."))
+	if len(vista.Observaciones) != 1 || vista.Observaciones[0].Usuario != responsableDePrueba || vista.Observaciones[0].UsuarioNombre != "" {
 		t.Fatalf("observaciones = %+v", vista.Observaciones)
 	}
 }
 
-func TestRevisarConObservacionesResponde400(t *testing.T) {
-	servicio, _ := nuevoServicioDePrueba(t)
-	iniciativa := crearIniciativaDePrueba(t, servicio)
-
-	_, err := servicio.RevisarSubmodulo(iniciativa.ID, "nombre", SolicitudRevisarSubmodulo{Observaciones: []Observacion{{Texto: "x"}}})
-	exigirStatus(t, err, http.StatusBadRequest)
-}
+// ---------------------------------------------------------------------------
+// Plantillas y consultas
+// ---------------------------------------------------------------------------
 
 // definicionesPorPlantilla sirve una definición distinta (o un error) por plantilla.
 type definicionesPorPlantilla map[string]*Definicion
@@ -919,18 +1322,11 @@ func TestSoloSeOfrecenPlantillasUsables(t *testing.T) {
 	}
 }
 
-func TestAccionInexistenteResponde400(t *testing.T) {
-	servicio, _ := nuevoServicioDePrueba(t)
-	iniciativa := crearIniciativaDePrueba(t, servicio)
-	_, err := servicio.EjecutarAccion(iniciativa.ID, "borrar")
-	exigirStatus(t, err, http.StatusBadRequest)
-}
-
 func TestUnaPlantillaNoSeConsultaComoIniciativa(t *testing.T) {
 	servicio, repo := nuevoServicioDePrueba(t)
 	repo.planes["plantilla-1"] = &Plan{ID: "plantilla-1", TipoPlanID: tipoPlanDePrueba, Formato: true, Activo: true}
 
-	_, err := servicio.Resumen("plantilla-1")
+	_, err := servicio.Resumen("plantilla-1", oap())
 	exigirStatus(t, err, http.StatusNotFound)
 }
 
@@ -941,14 +1337,14 @@ func TestUnPlanDeOtroTipoNoEsIniciativa(t *testing.T) {
 	iniciativa := crearIniciativaDePrueba(t, servicio)
 	repo.planes["macro-1"] = &Plan{ID: "macro-1", Nombre: "Proyecto MACRO", TipoPlanID: "tipo-macro", FormatoID: "plantilla-1", Activo: true}
 
-	iniciativas, err := servicio.ListarIniciativas(nil)
+	iniciativas, err := servicio.ListarIniciativas(oap())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(iniciativas) != 1 || iniciativas[0].ID != iniciativa.ID {
 		t.Fatalf("iniciativas listadas = %+v", iniciativas)
 	}
-	_, err = servicio.Resumen("macro-1")
+	_, err = servicio.Resumen("macro-1", oap())
 	exigirStatus(t, err, http.StatusNotFound)
 }
 
@@ -958,7 +1354,7 @@ func TestIniciativaInexistenteResponde404AunqueFalleElListado(t *testing.T) {
 	servicio, repo := nuevoServicioDePrueba(t)
 	repo.fallarListado = true
 
-	_, err := servicio.Resumen("no-existe")
+	_, err := servicio.Resumen("no-existe", oap())
 	exigirStatus(t, err, http.StatusNotFound)
 }
 
@@ -967,6 +1363,16 @@ func TestSiFallaElListadoDeSubmodulosSeReporta(t *testing.T) {
 	iniciativa := crearIniciativaDePrueba(t, servicio)
 	repo.fallarListado = true
 
-	_, err := servicio.Resumen(iniciativa.ID)
+	_, err := servicio.Resumen(iniciativa.ID, oap())
+	exigirStatus(t, err, http.StatusBadGateway)
+}
+
+// Si no se pueden consultar las unidades del usuario, lo que las necesita responde el error.
+func TestSiFallanLasUnidadesSeReporta(t *testing.T) {
+	servicio, _ := nuevoServicioDePrueba(t)
+	iniciativa := crearIniciativaDePrueba(t, servicio)
+	servicio.unidades = &unidadesFalsas{err: errorServicio("Terceros no respondió")}
+
+	_, err := servicio.Resumen(iniciativa.ID, formulador())
 	exigirStatus(t, err, http.StatusBadGateway)
 }

@@ -49,6 +49,18 @@ func TestUnidadesSoloConLosCargosDeFormulacionYSinRepetir(t *testing.T) {
 	}
 }
 
+// DependenciasDe da los mismos ids que De, como texto (igual que la dependencia_id de las iniciativas).
+func TestDependenciasDeDaLosIdsComoTexto(t *testing.T) {
+	fuente := fuenteUnidadesFija{
+		terceros:      map[string]int{"1020": 7},
+		vinculaciones: map[int][]VinculacionTercero{7: {{CargoID: 320, DependenciaID: 41}, {CargoID: 312, DependenciaID: 60}}},
+	}
+	ids, err := NuevasUnidades(fuente).DependenciasDe("1020")
+	if err != nil || len(ids) != 2 || ids[0] != "41" || ids[1] != "60" {
+		t.Fatalf("ids = %v, err = %v", ids, err)
+	}
+}
+
 func TestSinTerceroNoHayUnidades(t *testing.T) {
 	unidades, err := NuevasUnidades(fuenteUnidadesFija{}).De("123")
 	if err != nil || unidades == nil || len(unidades) != 0 {

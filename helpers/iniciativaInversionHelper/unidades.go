@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -63,6 +64,38 @@ func NuevasUnidadesPorDefecto(hostTerceros, hostOikos string) *Unidades {
 // vinculaciones. Si el documento no tiene tercero o vinculaciones con esos cargos,
 // la lista va vacía (no es un error).
 func (u *Unidades) De(documento string) ([]Unidad, error) {
+	ids, err := u.idsDe(documento)
+	if err != nil {
+		return nil, err
+	}
+	unidades := make([]Unidad, 0, len(ids))
+	for _, id := range ids {
+		nombre, err := u.fuente.NombreDependencia(id)
+		if err != nil {
+			return nil, err
+		}
+		unidades = append(unidades, Unidad{ID: id, Nombre: nombre})
+	}
+	return unidades, nil
+}
+
+// DependenciasDe devuelve los ids de las unidades del usuario como texto, igual que la
+// dependencia_id de las iniciativas, sin consultar sus nombres.
+func (u *Unidades) DependenciasDe(documento string) ([]string, error) {
+	ids, err := u.idsDe(documento)
+	if err != nil {
+		return nil, err
+	}
+	dependencias := make([]string, 0, len(ids))
+	for _, id := range ids {
+		dependencias = append(dependencias, strconv.Itoa(id))
+	}
+	return dependencias, nil
+}
+
+// idsDe devuelve los ids de las dependencias de las vinculaciones activas del usuario con los
+// cargos de cargosConUnidad, sin repetir y en el orden de sus vinculaciones.
+func (u *Unidades) idsDe(documento string) ([]int, error) {
 	documento = strings.TrimSpace(documento)
 	if !patronDocumento.MatchString(documento) {
 		return nil, errorSolicitud("No se pudo identificar su documento. Vuelva a iniciar sesión e intente de nuevo.").
@@ -72,9 +105,9 @@ func (u *Unidades) De(documento string) ([]Unidad, error) {
 	if err != nil {
 		return nil, err
 	}
-	unidades := []Unidad{}
+	ids := []int{}
 	if terceroID == 0 {
-		return unidades, nil
+		return ids, nil
 	}
 	vinculaciones, err := u.fuente.VinculacionesActivas(terceroID)
 	if err != nil {
@@ -87,13 +120,49 @@ func (u *Unidades) De(documento string) ([]Unidad, error) {
 			continue
 		}
 		vistas[dependencia] = true
-		nombre, err := u.fuente.NombreDependencia(dependencia)
-		if err != nil {
-			return nil, err
-		}
-		unidades = append(unidades, Unidad{ID: dependencia, Nombre: nombre})
+		ids = append(ids, dependencia)
 	}
-	return unidades, nil
+	return ids, nil
+}
+
+// CacheDependencias guarda en memoria, por un tiempo, las unidades de cada usuario: se consultan
+// en cada escritura (guardar, comentar, cambiar el estado) y no cambian a menudo. Las fallas no se
+// guardan.
+type CacheDependencias struct {
+	fuente   FuenteDependenciasUsuario
+	duracion time.Duration
+	ahora    func() time.Time
+
+	mu       sync.Mutex
+	usuarios map[string]dependenciasEnCache
+}
+
+type dependenciasEnCache struct {
+	ids    []string
+	vencen time.Time
+}
+
+// NuevaCacheDependencias envuelve la fuente con una caché de la duración indicada.
+func NuevaCacheDependencias(fuente FuenteDependenciasUsuario, duracion time.Duration) *CacheDependencias {
+	return &CacheDependencias{fuente: fuente, duracion: duracion, ahora: time.Now, usuarios: map[string]dependenciasEnCache{}}
+}
+
+// DependenciasDe devuelve las unidades del usuario desde la caché o, si vencieron, desde la fuente.
+func (c *CacheDependencias) DependenciasDe(documento string) ([]string, error) {
+	c.mu.Lock()
+	guardadas, existe := c.usuarios[documento]
+	c.mu.Unlock()
+	if existe && c.ahora().Before(guardadas.vencen) {
+		return guardadas.ids, nil
+	}
+	ids, err := c.fuente.DependenciasDe(documento)
+	if err != nil {
+		return nil, err
+	}
+	c.mu.Lock()
+	c.usuarios[documento] = dependenciasEnCache{ids: ids, vencen: c.ahora().Add(c.duracion)}
+	c.mu.Unlock()
+	return ids, nil
 }
 
 // ---------------------------------------------------------------------------

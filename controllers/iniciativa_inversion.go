@@ -88,22 +88,26 @@ func (c *IniciativaInversionController) ListarPlantillas() {
 
 // ListarIniciativas ...
 // @Title ListarIniciativas
-// @Description Iniciativas activas con su número y su estado general, de la más reciente a la más antigua. Opcionalmente solo las de unas dependencias
-// @Param	dependencias	query	string	false	"Ids de dependencia (Oikos) separados por coma"
+// @Description Iniciativas activas que consulta el usuario (la OAP, todas; los demás, las de sus unidades), con su número, su estado general y lo que el usuario hace con cada una, de la más reciente a la más antigua
+// @Param	usuario	query	string	true	"Documento del usuario"
+// @Param	roles	query	string	true	"Roles del usuario separados por coma"
 // @Success 200 {object} []iniciativaInversionHelper.IniciativaListado
+// @Failure 400 Falta el usuario o sus roles
 // @router /iniciativas [get]
 func (c *IniciativaInversionController) ListarIniciativas() {
 	defer helpers.ErrorController(c.Controller, "IniciativaInversionController")
-	iniciativas, err := servicioIniciativas().ListarIniciativas(listaDeIds(c.GetString("dependencias")))
+	iniciativas, err := servicioIniciativas().ListarIniciativas(c.actorDeConsulta())
 	c.responder(http.StatusOK, iniciativas, err)
 }
 
 // CrearIniciativa ...
 // @Title CrearIniciativa
-// @Description Crea una iniciativa con todos sus submódulos sin formular. Si no se indica la plantilla, usa la más reciente
-// @Param	body	body	iniciativaInversionHelper.SolicitudCrearIniciativa	true	"dependencia_id, plantilla_id (opcional), nombre (opcional), vigencias (opcional, lista JSON)"
+// @Description Crea una iniciativa con todos sus submódulos sin formular, a nombre de quien la crea. Si no se indica la plantilla, usa la más reciente
+// @Param	body	body	iniciativaInversionHelper.SolicitudCrearIniciativa	true	"usuario, roles, dependencia_id, plantilla_id (opcional), nombre (opcional), vigencias (opcional, lista JSON)"
 // @Success 201 {object} iniciativaInversionHelper.ResumenIniciativa
 // @Failure 400 Solicitud inválida
+// @Failure 403 El usuario no formula en esa unidad
+// @Failure 409 Fuera de las fechas de formulación de la unidad
 // @router /iniciativas [post]
 func (c *IniciativaInversionController) CrearIniciativa() {
 	defer helpers.ErrorController(c.Controller, "IniciativaInversionController")
@@ -117,14 +121,17 @@ func (c *IniciativaInversionController) CrearIniciativa() {
 
 // ObtenerIniciativa ...
 // @Title ObtenerIniciativa
-// @Description Vista general: estado de la iniciativa, estado y semáforo de cada submódulo y acciones posibles
+// @Description Vista general: estado de la iniciativa y de cada submódulo, y lo que el usuario puede hacer con ella (permisos y acciones)
 // @Param	id	path	string	true	"Id de la iniciativa"
+// @Param	usuario	query	string	true	"Documento del usuario"
+// @Param	roles	query	string	true	"Roles del usuario separados por coma"
 // @Success 200 {object} iniciativaInversionHelper.ResumenIniciativa
+// @Failure 403 La iniciativa es de una unidad que el usuario no consulta
 // @Failure 404 No existe
 // @router /iniciativas/:id [get]
 func (c *IniciativaInversionController) ObtenerIniciativa() {
 	defer helpers.ErrorController(c.Controller, "IniciativaInversionController")
-	resumen, err := servicioIniciativas().Resumen(c.Ctx.Input.Param(":id"))
+	resumen, err := servicioIniciativas().Resumen(c.Ctx.Input.Param(":id"), c.actorDeConsulta())
 	c.responder(http.StatusOK, resumen, err)
 }
 
@@ -158,9 +165,10 @@ func (c *IniciativaInversionController) ObtenerSubmodulo() {
 // @Description Guarda los datos de un submódulo. Responde los errores de validación; el submódulo queda Formulado solo si no hay errores
 // @Param	id	path	string	true	"Id de la iniciativa"
 // @Param	clave	path	string	true	"Clave del submódulo"
-// @Param	body	body	iniciativaInversionHelper.SolicitudGuardarSubmodulo	true	"version (la consultada) y datos"
+// @Param	body	body	iniciativaInversionHelper.SolicitudGuardarSubmodulo	true	"usuario, roles, version (la consultada) y datos"
 // @Success 200 {object} iniciativaInversionHelper.SubmoduloVista
-// @Failure 409 La iniciativa no se puede editar o el submódulo cambió desde que se consultó
+// @Failure 403 El usuario no formula la iniciativa
+// @Failure 409 La iniciativa no se puede editar, el submódulo está aprobado o cambió desde que se consultó, o está fuera de fechas
 // @router /iniciativas/:id/submodulos/:clave [put]
 func (c *IniciativaInversionController) GuardarSubmodulo() {
 	defer helpers.ErrorController(c.Controller, "IniciativaInversionController")
@@ -177,10 +185,11 @@ func (c *IniciativaInversionController) GuardarSubmodulo() {
 // @Description Sube el archivo de un campo documento (Anexos) al gestor documental y responde su referencia. No cambia el submódulo: la referencia queda en la iniciativa al guardarlo (PUT .../submodulos/:clave)
 // @Param	id	path	string	true	"Id de la iniciativa"
 // @Param	clave	path	string	true	"Clave del submódulo (p. ej. anexos)"
-// @Param	body	body	iniciativaInversionHelper.SolicitudDocumento	true	"clave (ruta del campo sin ids de fila, p. ej. otros_anexos.archivo), nombre, archivo (base64) y usuario (documento)"
+// @Param	body	body	iniciativaInversionHelper.SolicitudDocumento	true	"usuario, roles, clave (ruta del campo sin ids de fila, p. ej. otros_anexos.archivo), nombre y archivo (base64)"
 // @Success 201 {object} iniciativaInversionHelper.ReferenciaDocumento
 // @Failure 400 Formato no permitido, archivo vacío o más grande de lo permitido
-// @Failure 409 La iniciativa no se puede editar
+// @Failure 403 El usuario no formula la iniciativa
+// @Failure 409 La iniciativa o el submódulo no se pueden editar, o está fuera de fechas
 // @Failure 502 Error en el gestor documental
 // @router /iniciativas/:id/submodulos/:clave/documentos [post]
 func (c *IniciativaInversionController) SubirDocumento() {
@@ -195,13 +204,14 @@ func (c *IniciativaInversionController) SubirDocumento() {
 
 // AgregarObservacion ...
 // @Title AgregarObservacion
-// @Description Publica una observación en el historial del submódulo sin cambiar su versión. Mientras la iniciativa se formula o está por corregir comenta la dependencia; en revisión comenta Planeación y el submódulo queda Con observaciones
+// @Description Publica una observación en el historial del submódulo sin cambiar su versión. En 01, 02 y 06 comenta el formulador; en 03 observa el Jefe y en 05 la OAP, y el submódulo queda Con observaciones (en 05 la iniciativa puede cambiar de estado sola: va en estado_iniciativa)
 // @Param	id	path	string	true	"Id de la iniciativa"
 // @Param	clave	path	string	true	"Clave del submódulo"
-// @Param	body	body	iniciativaInversionHelper.SolicitudObservacion	true	"texto, rol y usuario (documento)"
+// @Param	body	body	iniciativaInversionHelper.SolicitudObservacion	true	"usuario, roles y texto"
 // @Success 201 {object} iniciativaInversionHelper.SubmoduloVista
 // @Failure 400 Solicitud inválida
-// @Failure 409 El estado de la iniciativa o del submódulo no permite comentar
+// @Failure 403 El usuario no actúa en el carril de este estado
+// @Failure 409 El estado de la iniciativa o del submódulo no permite comentar, o está fuera de fechas
 // @router /iniciativas/:id/submodulos/:clave/observaciones [post]
 func (c *IniciativaInversionController) AgregarObservacion() {
 	defer helpers.ErrorController(c.Controller, "IniciativaInversionController")
@@ -215,13 +225,13 @@ func (c *IniciativaInversionController) AgregarObservacion() {
 
 // RevisarSubmodulo ...
 // @Title RevisarSubmodulo
-// @Description Planeación aprueba el submódulo (queda Aprobado). Las observaciones se registran con POST .../observaciones y su historial no se borra
+// @Description La OAP aprueba el submódulo (veredicto Aprobado) mientras revisa la iniciativa. El veredicto Con observaciones se da con POST .../observaciones. Con el último veredicto la iniciativa cambia de estado sola: va en estado_iniciativa
 // @Param	id	path	string	true	"Id de la iniciativa"
 // @Param	clave	path	string	true	"Clave del submódulo"
-// @Param	body	body	iniciativaInversionHelper.SolicitudRevisarSubmodulo	true	"version (la consultada)"
+// @Param	body	body	iniciativaInversionHelper.SolicitudRevisarSubmodulo	true	"usuario, roles y version (la consultada)"
 // @Success 200 {object} iniciativaInversionHelper.SubmoduloVista
-// @Failure 400 Se enviaron observaciones (van por POST .../observaciones)
-// @Failure 409 La iniciativa no está en revisión o el submódulo no está formulado
+// @Failure 403 El usuario no es de la OAP
+// @Failure 409 La iniciativa no está En revisión OAP, el submódulo no está formulado o está fuera de fechas
 // @router /iniciativas/:id/submodulos/:clave/revision [put]
 func (c *IniciativaInversionController) RevisarSubmodulo() {
 	defer helpers.ErrorController(c.Controller, "IniciativaInversionController")
@@ -235,15 +245,22 @@ func (c *IniciativaInversionController) RevisarSubmodulo() {
 
 // EjecutarAccion ...
 // @Title EjecutarAccion
-// @Description Cambia el estado general de la iniciativa: enviar, devolver o avalar
+// @Description Cambia el estado general de la iniciativa con una acción del carril del usuario
 // @Param	id	path	string	true	"Id de la iniciativa"
-// @Param	accion	path	string	true	"enviar | devolver | avalar"
+// @Param	accion	path	string	true	"enviar | aprobar | devolver | iniciar-revision | rechazar | retractar-rechazo"
+// @Param	body	body	iniciativaInversionHelper.SolicitudAccion	true	"usuario, roles y, al rechazar, motivo"
 // @Success 200 {object} iniciativaInversionHelper.ResumenIniciativa
-// @Failure 409 La acción no se permite en el estado actual
+// @Failure 400 La acción no existe o falta el motivo del rechazo
+// @Failure 403 El usuario no actúa en el carril de la acción
+// @Failure 409 La acción no se permite en el estado actual o está fuera de fechas
 // @router /iniciativas/:id/acciones/:accion [put]
 func (c *IniciativaInversionController) EjecutarAccion() {
 	defer helpers.ErrorController(c.Controller, "IniciativaInversionController")
-	resumen, err := servicioIniciativas().EjecutarAccion(c.Ctx.Input.Param(":id"), c.Ctx.Input.Param(":accion"))
+	var solicitud iniciativaInversionHelper.SolicitudAccion
+	if !c.leerCuerpo(&solicitud) {
+		return
+	}
+	resumen, err := servicioIniciativas().EjecutarAccion(c.Ctx.Input.Param(":id"), c.Ctx.Input.Param(":accion"), solicitud)
 	c.responder(http.StatusOK, resumen, err)
 }
 
@@ -260,15 +277,21 @@ func (c *IniciativaInversionController) ObtenerCatalogo() {
 	c.responder(http.StatusOK, items, err)
 }
 
-// listaDeIds separa "1, 2,3" en ["1", "2", "3"], sin vacíos.
-func listaDeIds(texto string) []string {
-	ids := []string{}
-	for _, id := range strings.Split(texto, ",") {
-		if id = strings.TrimSpace(id); id != "" {
-			ids = append(ids, id)
+// actorDeConsulta toma de la consulta (?usuario=...&roles=A,B) quién hace una solicitud de lectura;
+// las que escriben lo traen en el cuerpo. El servicio valida que no falten.
+func (c *IniciativaInversionController) actorDeConsulta() iniciativaInversionHelper.Actor {
+	return iniciativaInversionHelper.Actor{Usuario: c.GetString("usuario"), Roles: listaSeparadaPorComas(c.GetString("roles"))}
+}
+
+// listaSeparadaPorComas separa "A, B,C" en ["A", "B", "C"], sin vacíos.
+func listaSeparadaPorComas(texto string) []string {
+	elementos := []string{}
+	for _, elemento := range strings.Split(texto, ",") {
+		if elemento = strings.TrimSpace(elemento); elemento != "" {
+			elementos = append(elementos, elemento)
 		}
 	}
-	return ids
+	return elementos
 }
 
 // leerCuerpo decodifica el JSON del cuerpo; si es inválido responde 400.

@@ -52,6 +52,12 @@ func errorNoEncontrado(formato string, args ...interface{}) *ErrorNegocio {
 	return nuevoError(http.StatusNotFound, formato, args...)
 }
 
+// errorProhibido se usa cuando el usuario no puede hacer la operación: ninguno de sus roles es del
+// carril que actúa en ese estado o la iniciativa es de una unidad que no es suya.
+func errorProhibido(formato string, args ...interface{}) *ErrorNegocio {
+	return nuevoError(http.StatusForbidden, formato, args...)
+}
+
 // errorConflicto se usa cuando el estado actual no permite la operación.
 func errorConflicto(formato string, args ...interface{}) *ErrorNegocio {
 	return nuevoError(http.StatusConflict, formato, args...)

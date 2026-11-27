@@ -48,8 +48,7 @@ func servicioConAnexos(t *testing.T) (*Servicio, *repoMemoria, *gestorMemoria, s
 	t.Helper()
 	repo := nuevoRepoMemoria()
 	gestor := &gestorMemoria{}
-	servicio := NuevoServicio(repo, definicionFija{definicionConAnexos(t)}, catalogosDePrueba(), gestor)
-	servicio.terceros = &tercerosFalsos{nombres: personasDePrueba}
+	servicio := conPersonasDePrueba(NuevoServicio(repo, definicionFija{definicionConAnexos(t)}, catalogosDePrueba(), gestor))
 	return servicio, repo, gestor, crearIniciativaDePrueba(t, servicio).ID
 }
 
@@ -70,7 +69,7 @@ func TestSubirDocumentoRespondeLaReferenciaSinCambiarElSubmodulo(t *testing.T) {
 	}
 
 	referencia, err := servicio.SubirDocumento(iniciativaID, "anexos", SolicitudDocumento{
-		Clave: "otros_anexos.archivo", Nombre: " Cotización.PDF ", Archivo: archivoDePrueba(bytesMinimos), Usuario: responsableDePrueba,
+		Clave: "otros_anexos.archivo", Nombre: " Cotización.PDF ", Archivo: archivoDePrueba(bytesMinimos), Actor: formulador(),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -103,15 +102,16 @@ func TestSubirDocumentoRechazaSinLlamarAlGestor(t *testing.T) {
 		status    int
 		mensaje   string
 	}{
-		{"campo que no es documento", SolicitudDocumento{Clave: "otros_anexos.nombre", Nombre: "a.pdf", Archivo: archivoDePrueba(1), Usuario: "1020"}, http.StatusBadRequest, mensajeSolicitudInvalida},
-		{"campo que no existe", SolicitudDocumento{Clave: "presupuesto", Nombre: "a.pdf", Archivo: archivoDePrueba(1), Usuario: "1020"}, http.StatusBadRequest, mensajeSolicitudInvalida},
-		{"sin usuario", SolicitudDocumento{Clave: "carta_presentacion", Nombre: "a.pdf", Archivo: archivoDePrueba(1)}, http.StatusBadRequest, mensajeSolicitudInvalida},
-		{"archivo que no es base64", SolicitudDocumento{Clave: "carta_presentacion", Nombre: "a.pdf", Archivo: "no es base64", Usuario: "1020"}, http.StatusBadRequest, mensajeSolicitudInvalida},
-		{"formato no permitido", SolicitudDocumento{Clave: "carta_presentacion", Nombre: "foto.png", Archivo: archivoDePrueba(1), Usuario: "1020"}, http.StatusBadRequest, "«foto.png» no es un formato permitido. Use: pdf, docx."},
-		{"sin extensión", SolicitudDocumento{Clave: "carta_presentacion", Nombre: "carta", Archivo: archivoDePrueba(1), Usuario: "1020"}, http.StatusBadRequest, "«carta» no es un formato permitido. Use: pdf, docx."},
-		{"archivo vacío", SolicitudDocumento{Clave: "carta_presentacion", Nombre: "a.pdf", Archivo: "", Usuario: "1020"}, http.StatusBadRequest, "«a.pdf» está vacío."},
-		{"archivo más pequeño de lo que recibe el gestor", SolicitudDocumento{Clave: "carta_presentacion", Nombre: "corto.pdf", Archivo: archivoDePrueba(bytesMinimos - 1), Usuario: "1020"}, http.StatusBadRequest, "«corto.pdf» es demasiado pequeño para guardarlo. Use un archivo con más contenido."},
-		{"archivo más grande que el máximo", SolicitudDocumento{Clave: "otros_anexos.archivo", Nombre: "grande.docx", Archivo: archivoDePrueba(1024*1024 + 1), Usuario: "1020"}, http.StatusBadRequest, "«grande.docx» pasa de 1 MB."},
+		{"campo que no es documento", SolicitudDocumento{Clave: "otros_anexos.nombre", Nombre: "a.pdf", Archivo: archivoDePrueba(1), Actor: formulador()}, http.StatusBadRequest, mensajeSolicitudInvalida},
+		{"campo que no existe", SolicitudDocumento{Clave: "presupuesto", Nombre: "a.pdf", Archivo: archivoDePrueba(1), Actor: formulador()}, http.StatusBadRequest, mensajeSolicitudInvalida},
+		{"sin usuario", SolicitudDocumento{Clave: "carta_presentacion", Nombre: "a.pdf", Archivo: archivoDePrueba(1)}, http.StatusBadRequest, "No se pudo identificar su usuario o sus roles. Vuelva a iniciar sesión e intente de nuevo."},
+		{"sin nombre", SolicitudDocumento{Actor: formulador(), Clave: "carta_presentacion", Archivo: archivoDePrueba(1)}, http.StatusBadRequest, mensajeSolicitudInvalida},
+		{"archivo que no es base64", SolicitudDocumento{Clave: "carta_presentacion", Nombre: "a.pdf", Archivo: "no es base64", Actor: formulador()}, http.StatusBadRequest, mensajeSolicitudInvalida},
+		{"formato no permitido", SolicitudDocumento{Clave: "carta_presentacion", Nombre: "foto.png", Archivo: archivoDePrueba(1), Actor: formulador()}, http.StatusBadRequest, "«foto.png» no es un formato permitido. Use: pdf, docx."},
+		{"sin extensión", SolicitudDocumento{Clave: "carta_presentacion", Nombre: "carta", Archivo: archivoDePrueba(1), Actor: formulador()}, http.StatusBadRequest, "«carta» no es un formato permitido. Use: pdf, docx."},
+		{"archivo vacío", SolicitudDocumento{Clave: "carta_presentacion", Nombre: "a.pdf", Archivo: "", Actor: formulador()}, http.StatusBadRequest, "«a.pdf» está vacío."},
+		{"archivo más pequeño de lo que recibe el gestor", SolicitudDocumento{Clave: "carta_presentacion", Nombre: "corto.pdf", Archivo: archivoDePrueba(bytesMinimos - 1), Actor: formulador()}, http.StatusBadRequest, "«corto.pdf» es demasiado pequeño para guardarlo. Use un archivo con más contenido."},
+		{"archivo más grande que el máximo", SolicitudDocumento{Clave: "otros_anexos.archivo", Nombre: "grande.docx", Archivo: archivoDePrueba(1024*1024 + 1), Actor: formulador()}, http.StatusBadRequest, "«grande.docx» pasa de 1 MB."},
 	}
 	for _, caso := range casos {
 		t.Run(caso.nombre, func(t *testing.T) {
@@ -133,9 +133,29 @@ func TestSubirDocumentoEnIniciativaQueNoSePuedeEditar(t *testing.T) {
 	servicio, repo, gestor, iniciativaID := servicioConAnexos(t)
 	repo.planes[iniciativaID].EstadoPlanID = "ep-er" // enviada a revisión
 
-	_, err := servicio.SubirDocumento(iniciativaID, "anexos", SolicitudDocumento{Clave: "carta_presentacion", Nombre: "carta.pdf", Archivo: archivoDePrueba(1), Usuario: "1020"})
+	_, err := servicio.SubirDocumento(iniciativaID, "anexos", SolicitudDocumento{Clave: "carta_presentacion", Nombre: "carta.pdf", Archivo: archivoDePrueba(1), Actor: formulador()})
 
 	if negocio := ComoErrorNegocio(err); err == nil || negocio.Status != http.StatusConflict || !strings.Contains(negocio.Mensaje, "no se puede editar") {
+		t.Fatalf("error = %v; se esperaba 409", err)
+	}
+	if len(gestor.subidos) != 0 {
+		t.Fatalf("se subió al gestor: %+v", gestor.subidos)
+	}
+}
+
+// En Por corregir se suben anexos solo a los submódulos que no están aprobados.
+func TestSubirDocumentoEnUnSubmoduloAprobado(t *testing.T) {
+	servicio, repo, gestor, iniciativaID := servicioConAnexos(t)
+	repo.planes[iniciativaID].EstadoPlanID = "ep-pc"
+	for _, documento := range repo.submodulos {
+		if documento.PlanID == iniciativaID && documento.Submodulo == "anexos" {
+			documento.EstadoSubmoduloID = "es-apr"
+		}
+	}
+
+	_, err := servicio.SubirDocumento(iniciativaID, "anexos", SolicitudDocumento{Actor: formulador(), Clave: "carta_presentacion", Nombre: "carta.pdf", Archivo: archivoDePrueba(bytesMinimos)})
+
+	if negocio := ComoErrorNegocio(err); err == nil || negocio.Status != http.StatusConflict || !strings.Contains(negocio.Mensaje, "aprobado") {
 		t.Fatalf("error = %v; se esperaba 409", err)
 	}
 	if len(gestor.subidos) != 0 {
@@ -147,7 +167,7 @@ func TestSubirDocumentoSinNombreSiTercerosNoResponde(t *testing.T) {
 	servicio, _, gestor, iniciativaID := servicioConAnexos(t)
 	tercerosCaidos(servicio)
 
-	referencia, err := servicio.SubirDocumento(iniciativaID, "anexos", SolicitudDocumento{Clave: "carta_presentacion", Nombre: "carta.pdf", Archivo: archivoDePrueba(bytesMinimos), Usuario: responsableDePrueba})
+	referencia, err := servicio.SubirDocumento(iniciativaID, "anexos", SolicitudDocumento{Clave: "carta_presentacion", Nombre: "carta.pdf", Archivo: archivoDePrueba(bytesMinimos), Actor: formulador()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +180,7 @@ func TestSubirDocumentoCuandoFallaElGestor(t *testing.T) {
 	servicio, _, gestor, iniciativaID := servicioConAnexos(t)
 	gestor.err = errorServicio("el gestor documental respondió 500")
 
-	_, err := servicio.SubirDocumento(iniciativaID, "anexos", SolicitudDocumento{Clave: "carta_presentacion", Nombre: "carta.pdf", Archivo: archivoDePrueba(bytesMinimos), Usuario: "1020"})
+	_, err := servicio.SubirDocumento(iniciativaID, "anexos", SolicitudDocumento{Clave: "carta_presentacion", Nombre: "carta.pdf", Archivo: archivoDePrueba(bytesMinimos), Actor: formulador()})
 
 	if negocio := ComoErrorNegocio(err); err == nil || negocio.Status != http.StatusBadGateway {
 		t.Fatalf("error = %v; se esperaba 502", err)

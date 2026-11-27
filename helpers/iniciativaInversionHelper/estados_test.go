@@ -1,7 +1,6 @@
 package iniciativaInversionHelper
 
 import (
-	"reflect"
 	"testing"
 )
 
@@ -15,17 +14,25 @@ func TestEvaluarAccion(t *testing.T) {
 		destino    string
 		permitida  bool
 	}{
-		{"enviar con todo formulado", AccionEnviar, EstadoIniciativaFormulacionIniciada, formuladas, EstadoIniciativaEnRevision, true},
-		{"enviar con un submódulo sin formular", AccionEnviar, EstadoIniciativaFormulacionIniciada, []string{EstadoSubmoduloFormulado, EstadoSubmoduloSinFormular}, "", false},
-		{"enviar con un submódulo formulando", AccionEnviar, EstadoIniciativaFormulacionIniciada, []string{EstadoSubmoduloFormulado, EstadoSubmoduloFormulando}, "", false},
+		{"enviar con todo formulado", AccionEnviar, EstadoIniciativaEnFormulacion, formuladas, EstadoIniciativaPorAprobar, true},
+		{"enviar con un submódulo sin formular", AccionEnviar, EstadoIniciativaEnFormulacion, []string{EstadoSubmoduloFormulado, EstadoSubmoduloSinFormular}, "", false},
+		{"enviar con un submódulo formulando", AccionEnviar, EstadoIniciativaEnFormulacion, []string{EstadoSubmoduloFormulado, EstadoSubmoduloFormulando}, "", false},
 		{"enviar sin haber empezado", AccionEnviar, EstadoIniciativaSinFormular, formuladas, "", false},
-		{"reenviar tras corregir", AccionEnviar, EstadoIniciativaPorCorregir, []string{EstadoSubmoduloAprobado, EstadoSubmoduloFormulado}, EstadoIniciativaEnRevision, true},
+		{"reenviar tras corregir", AccionEnviar, EstadoIniciativaPorCorregir, []string{EstadoSubmoduloAprobado, EstadoSubmoduloFormulado}, EstadoIniciativaPorAprobar, true},
 		{"reenviar con observaciones pendientes", AccionEnviar, EstadoIniciativaPorCorregir, []string{EstadoSubmoduloConObservaciones}, "", false},
-		{"enviar estando en revisión", AccionEnviar, EstadoIniciativaEnRevision, formuladas, "", false},
-		{"devolver con observaciones", AccionDevolver, EstadoIniciativaEnRevision, []string{EstadoSubmoduloAprobado, EstadoSubmoduloConObservaciones}, EstadoIniciativaPorCorregir, true},
-		{"devolver sin observaciones", AccionDevolver, EstadoIniciativaEnRevision, []string{EstadoSubmoduloAprobado}, "", false},
-		{"avalar todo aprobado", AccionAvalar, EstadoIniciativaEnRevision, []string{EstadoSubmoduloAprobado, EstadoSubmoduloAprobado}, EstadoIniciativaAvalado, true},
-		{"avalar con submódulos sin revisar", AccionAvalar, EstadoIniciativaEnRevision, []string{EstadoSubmoduloAprobado, EstadoSubmoduloFormulado}, "", false},
+		{"enviar estando por aprobar", AccionEnviar, EstadoIniciativaPorAprobar, formuladas, "", false},
+		{"el Jefe aprueba sin observaciones", AccionAprobar, EstadoIniciativaPorAprobar, []string{EstadoSubmoduloAprobado, EstadoSubmoduloFormulado}, EstadoIniciativaPorRevisar, true},
+		{"el Jefe no aprueba con observaciones", AccionAprobar, EstadoIniciativaPorAprobar, []string{EstadoSubmoduloConObservaciones, EstadoSubmoduloFormulado}, "", false},
+		{"el Jefe devuelve con observaciones", AccionDevolver, EstadoIniciativaPorAprobar, []string{EstadoSubmoduloAprobado, EstadoSubmoduloConObservaciones}, EstadoIniciativaPorCorregir, true},
+		{"el Jefe no devuelve sin observaciones", AccionDevolver, EstadoIniciativaPorAprobar, formuladas, "", false},
+		{"devolver en revisión OAP", AccionDevolver, EstadoIniciativaEnRevision, []string{EstadoSubmoduloConObservaciones}, "", false},
+		{"iniciar la revisión", AccionIniciarRevision, EstadoIniciativaPorRevisar, formuladas, EstadoIniciativaEnRevision, true},
+		{"iniciar la revisión dos veces", AccionIniciarRevision, EstadoIniciativaEnRevision, formuladas, "", false},
+		{"rechazar en revisión", AccionRechazar, EstadoIniciativaEnRevision, formuladas, EstadoIniciativaRechazada, true},
+		{"rechazar antes de revisar", AccionRechazar, EstadoIniciativaPorRevisar, formuladas, "", false},
+		{"retractar el rechazo", AccionRetractarRechazo, EstadoIniciativaRechazada, formuladas, EstadoIniciativaPorCorregir, true},
+		{"retractar sin rechazo", AccionRetractarRechazo, EstadoIniciativaEnRevision, formuladas, "", false},
+		{"nada sale de Aprobado", AccionRetractarRechazo, EstadoIniciativaAprobada, formuladas, "", false},
 		{"acción inexistente", "borrar", EstadoIniciativaEnRevision, formuladas, "", false},
 	}
 	for _, caso := range casos {
@@ -38,13 +45,22 @@ func TestEvaluarAccion(t *testing.T) {
 	}
 }
 
-func TestAccionesPosibles(t *testing.T) {
-	enRevision := []string{EstadoSubmoduloAprobado, EstadoSubmoduloConObservaciones}
-	if got := AccionesPosibles(EstadoIniciativaEnRevision, enRevision); !reflect.DeepEqual(got, []string{AccionDevolver}) {
-		t.Fatalf("acciones = %v", got)
+func TestEstadoTrasRevision(t *testing.T) {
+	casos := []struct {
+		nombre     string
+		submodulos []string
+		destino    string
+	}{
+		{"todos aprobados", []string{EstadoSubmoduloAprobado, EstadoSubmoduloAprobado}, EstadoIniciativaAprobada},
+		{"todos con veredicto y uno con observaciones", []string{EstadoSubmoduloAprobado, EstadoSubmoduloConObservaciones}, EstadoIniciativaPorCorregir},
+		{"falta un veredicto", []string{EstadoSubmoduloAprobado, EstadoSubmoduloFormulado}, ""},
+		{"falta un veredicto aunque haya observaciones", []string{EstadoSubmoduloConObservaciones, EstadoSubmoduloFormulado}, ""},
+		{"sin submódulos", nil, ""},
 	}
-	if got := AccionesPosibles(EstadoIniciativaAvalado, enRevision); len(got) != 0 {
-		t.Fatalf("una iniciativa avalada no debe tener acciones: %v", got)
+	for _, caso := range casos {
+		if destino := EstadoTrasRevision(caso.submodulos); destino != caso.destino {
+			t.Errorf("%s: destino = %q, se esperaba %q", caso.nombre, destino, caso.destino)
+		}
 	}
 }
 
@@ -56,25 +72,22 @@ func TestEstadosDeSubmodulo(t *testing.T) {
 	if EstadoTrasGuardar(conErrores, true) != EstadoSubmoduloFormulando || EstadoTrasGuardar(conErrores, false) != EstadoSubmoduloSinFormular {
 		t.Fatal("con errores, Formulando si tiene información y Sin formular si está vacío")
 	}
-	if SubmoduloRevisable(EstadoSubmoduloFormulando) || SubmoduloRevisable(EstadoSubmoduloSinFormular) || !SubmoduloRevisable(EstadoSubmoduloFormulado) {
-		t.Fatal("solo se revisa lo formulado")
-	}
-	if !PermiteEditar(EstadoIniciativaSinFormular) || !PermiteEditar(EstadoIniciativaFormulacionIniciada) || !PermiteEditar(EstadoIniciativaPorCorregir) ||
-		PermiteEditar(EstadoIniciativaEnRevision) || !PermiteRevisar(EstadoIniciativaEnRevision) {
-		t.Fatal("permisos por estado incorrectos")
+	if SubmoduloRevisable(EstadoSubmoduloFormulando) || SubmoduloRevisable(EstadoSubmoduloSinFormular) ||
+		!SubmoduloRevisable(EstadoSubmoduloFormulado) || !SubmoduloRevisable(EstadoSubmoduloAprobado) || !SubmoduloRevisable(EstadoSubmoduloConObservaciones) {
+		t.Fatal("se revisa lo formulado: Formulado, Con observaciones o Aprobado")
 	}
 }
 
-func TestLaIniciativaPasaAFormulacionIniciadaConLaPrimeraInformacion(t *testing.T) {
-	if EstadoIniciativaTrasGuardar(EstadoIniciativaSinFormular, true) != EstadoIniciativaFormulacionIniciada {
-		t.Fatal("con información, de Sin formular a Formulación iniciada")
+func TestLaIniciativaPasaAEnFormulacionConLaPrimeraInformacion(t *testing.T) {
+	if EstadoIniciativaTrasGuardar(EstadoIniciativaSinFormular, true) != EstadoIniciativaEnFormulacion {
+		t.Fatal("con información, de Sin formular a En formulación")
 	}
 	for _, sinCambio := range []struct {
 		estado         string
 		conInformacion bool
 	}{
 		{EstadoIniciativaSinFormular, false},
-		{EstadoIniciativaFormulacionIniciada, true},
+		{EstadoIniciativaEnFormulacion, true},
 		{EstadoIniciativaPorCorregir, true},
 	} {
 		if destino := EstadoIniciativaTrasGuardar(sinCambio.estado, sinCambio.conInformacion); destino != "" {

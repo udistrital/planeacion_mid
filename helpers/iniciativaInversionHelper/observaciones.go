@@ -12,17 +12,22 @@ const MaximoTextoObservacion = 4000
 
 // AgregarObservacion publica un comentario en el historial del submódulo. No cambia
 // la versión del submódulo, así que no choca con quien está editando los datos.
-// Quién comenta y qué pasa lo decide el estado de la iniciativa:
-//   - Sin formular, Formulación iniciada o Por corregir: comenta la dependencia; el
-//     estado del submódulo no cambia.
-//   - Enviado a revisión: comenta Planeación, solo sobre submódulos formulados; el
-//     submódulo queda "Con observaciones".
-//   - Avalado: no recibe observaciones.
+// Quién publica y qué pasa lo decide el estado de la iniciativa (tareasPorEstado):
+//   - 01, 02 y 06: comenta el formulador; el estado del submódulo no cambia.
+//   - 03: observa el Jefe y 05: observa la OAP, sobre submódulos ya formulados (también un
+//     aprobado, que así se desaprueba); el submódulo queda Con observaciones. En 05 es el
+//     veredicto «Con observaciones», y la iniciativa puede cambiar de estado sola (cerrarRevision).
+//   - En los demás estados no recibe observaciones.
 //
-// El nombre de quien comenta se busca en Terceros con su documento. Si no está o
-// Terceros no responde, la observación se publica sin nombre.
+// La observación queda firmada con el rol del carril con el que se publica. El nombre de quien
+// publica se busca en Terceros con su documento; si no está o Terceros no responde, la
+// observación se publica sin nombre.
 func (s *Servicio) AgregarObservacion(iniciativaID, clave string, solicitud SolicitudObservacion) (*SubmoduloVista, error) {
-	nueva, err := observacionValida(solicitud)
+	texto, err := textoObservacionValido(solicitud.Texto)
+	if err != nil {
+		return nil, err
+	}
+	q, err := s.solicitante(solicitud.Actor)
 	if err != nil {
 		return nil, err
 	}
@@ -35,9 +40,18 @@ func (s *Servicio) AgregarObservacion(iniciativaID, clave string, solicitud Soli
 		return nil, err
 	}
 
+	nueva := NuevaObservacion{Texto: texto, Usuario: q.Usuario}
+	tareasDelEstado := tareasPorEstado[ctx.estado.Codigo]
 	switch {
-	case PermiteRevisar(ctx.estado.Codigo):
-		if err := s.exigirRevisable(ctx, nodo, documento); err != nil {
+	case tareasDelEstado.editar != nil:
+		if nueva.Rol, err = s.autorizar(q, ctx, tareasDelEstado.editar); err != nil {
+			return nil, err
+		}
+	case tareasDelEstado.observar != nil:
+		if nueva.Rol, err = s.autorizar(q, ctx, tareasDelEstado.observar); err != nil {
+			return nil, err
+		}
+		if err := s.exigirRevisable(nodo, documento); err != nil {
 			return nil, err
 		}
 		conObservaciones, err := s.sistema.EstadoSubmodulo(EstadoSubmoduloConObservaciones)
@@ -45,8 +59,6 @@ func (s *Servicio) AgregarObservacion(iniciativaID, clave string, solicitud Soli
 			return nil, err
 		}
 		nueva.EstadoSubmoduloID = conObservaciones.ID
-	case PermiteEditar(ctx.estado.Codigo):
-		// La dependencia comenta mientras formula o corrige.
 	default:
 		return nil, errorConflicto("La iniciativa está «%s»; ya no recibe observaciones.", ctx.estado.Nombre)
 	}
@@ -61,15 +73,18 @@ func (s *Servicio) AgregarObservacion(iniciativaID, clave string, solicitud Soli
 	if err != nil {
 		return nil, err
 	}
-	return s.vista(*guardada, s.validador.ValidarSubmodulo(nodo, ctx.datosIniciativa()))
+	vista, err := s.vista(*guardada, s.validador.ValidarSubmodulo(nodo, ctx.datosIniciativa()))
+	if err != nil {
+		return nil, err
+	}
+	if ctx.estado.Codigo == EstadoIniciativaEnRevision {
+		vista.EstadoIniciativa = s.cerrarRevision(iniciativaID)
+	}
+	return vista, nil
 }
 
-// exigirRevisable comprueba que Planeación pueda revisar el submódulo: la iniciativa
-// debe estar en revisión y el submódulo, formulado.
-func (s *Servicio) exigirRevisable(ctx *contextoIniciativa, nodo *Nodo, documento *SubmoduloIniciativa) error {
-	if !PermiteRevisar(ctx.estado.Codigo) {
-		return errorConflicto("Solo se revisan iniciativas enviadas a revisión; esta está «%s».", ctx.estado.Nombre)
-	}
+// exigirRevisable comprueba que el submódulo ya esté formulado para observarlo o aprobarlo.
+func (s *Servicio) exigirRevisable(nodo *Nodo, documento *SubmoduloIniciativa) error {
 	actual, err := s.sistema.EstadoSubmoduloPorID(documento.EstadoSubmoduloID)
 	if err != nil {
 		return err
@@ -80,35 +95,14 @@ func (s *Servicio) exigirRevisable(ctx *contextoIniciativa, nodo *Nodo, document
 	return nil
 }
 
-// observacionValida limpia la solicitud y exige texto, rol y usuario; el usuario es
-// el documento de quien comenta.
-func observacionValida(solicitud SolicitudObservacion) (NuevaObservacion, error) {
-	nueva := NuevaObservacion{
-		Texto:   strings.TrimSpace(solicitud.Texto),
-		Rol:     strings.TrimSpace(solicitud.Rol),
-		Usuario: strings.TrimSpace(solicitud.Usuario),
-	}
+// textoObservacionValido limpia el texto y exige que no esté vacío ni pase del máximo.
+func textoObservacionValido(texto string) (string, error) {
+	texto = strings.TrimSpace(texto)
 	switch {
-	case nueva.Texto == "":
-		return nueva, errorSolicitud("Escriba la observación.")
-	case utf8.RuneCountInString(nueva.Texto) > MaximoTextoObservacion:
-		return nueva, errorSolicitud("La observación no puede superar %d caracteres.", MaximoTextoObservacion)
-	case nueva.Rol == "" || nueva.Usuario == "":
-		return nueva, errorSolicitud("No se pudo identificar quién publica la observación. Vuelva a iniciar sesión e intente de nuevo.").
-			conDetalle("rol y usuario son obligatorios (rol vacío: %t, usuario vacío: %t)", nueva.Rol == "", nueva.Usuario == "")
-	case !patronDocumento.MatchString(nueva.Usuario):
-		return nueva, errorSolicitud("No se pudo identificar quién publica la observación. Vuelva a iniciar sesión e intente de nuevo.").
-			conDetalle("el usuario no cumple el formato de documento: solo letras y números, máximo 20")
+	case texto == "":
+		return texto, errorSolicitud("Escriba la observación.")
+	case utf8.RuneCountInString(texto) > MaximoTextoObservacion:
+		return texto, errorSolicitud("La observación no puede superar %d caracteres.", MaximoTextoObservacion)
 	}
-	return nueva, nil
-}
-
-// tieneTexto indica si alguna observación trae texto.
-func tieneTexto(observaciones []Observacion) bool {
-	for _, observacion := range observaciones {
-		if strings.TrimSpace(observacion.Texto) != "" {
-			return true
-		}
-	}
-	return false
+	return texto, nil
 }

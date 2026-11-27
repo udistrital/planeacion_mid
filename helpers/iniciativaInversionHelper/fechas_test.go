@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -21,14 +22,10 @@ func exigirFueraDeFechas(t *testing.T, err error) {
 	}
 }
 
-// guardarNombre guarda el Nombre del ejemplo con la versión vigente y devuelve el error.
+// guardarNombre guarda el Nombre del ejemplo como formulador, con la versión vigente, y devuelve el error.
 func guardarNombre(t *testing.T, servicio *Servicio, iniciativaID string) error {
 	t.Helper()
-	abierta, err := servicio.ObtenerSubmodulo(iniciativaID, "nombre")
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = servicio.GuardarSubmodulo(iniciativaID, "nombre", SolicitudGuardarSubmodulo{Version: abierta.Submodulo.Version, Datos: iniciativaDeEjemplo(t)["nombre"]})
+	_, err := intentarGuardar(t, servicio, iniciativaID, "nombre", iniciativaDeEjemplo(t)["nombre"])
 	return err
 }
 
@@ -36,74 +33,70 @@ func TestFueraDeFechasNoSeCreaLaIniciativa(t *testing.T) {
 	servicio, repo := nuevoServicioDePrueba(t)
 	cerrarFechas(repo)
 
-	_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: "dep-1", Responsable: responsableDePrueba})
+	_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{Actor: formulador(), PlantillaID: "plantilla-1", DependenciaID: "dep-1"})
 	exigirFueraDeFechas(t, err)
 	if len(repo.planes) != 0 {
 		t.Fatalf("no debió crearse ningún plan: %v", repo.planes)
 	}
 }
 
-// Fuera de fechas la iniciativa se consulta y la dependencia comenta, pero no se guarda ni se envía.
-func TestFueraDeFechasNoSeGuardaNiSeEnviaPeroSeConsultaYSeComenta(t *testing.T) {
+// Fuera de fechas la iniciativa solo se consulta: no se guarda, no se comenta ni se envía.
+func TestFueraDeFechasSoloSeConsulta(t *testing.T) {
 	servicio, repo := nuevoServicioDePrueba(t)
 	iniciativa := crearIniciativaDePrueba(t, servicio)
 	formularTodo(t, servicio, iniciativa.ID)
-	if resumen, _ := servicio.Resumen(iniciativa.ID); resumen.FueraDeFechas || len(resumen.AccionesPosibles) != 1 || resumen.AccionesPosibles[0] != AccionEnviar {
-		t.Fatalf("dentro de fechas, con todo formulado, se ofrece enviar: %+v", resumen)
+	if resumen := resumenDe(t, servicio, iniciativa.ID, formulador()); resumen.FueraDeFechas || strings.Join(accionesDe(resumen.Permisos), ",") != AccionEnviar {
+		t.Fatalf("dentro de fechas, con todo formulado, se envía: %+v", resumen)
 	}
 	cerrarFechas(repo)
 
-	resumen, err := servicio.Resumen(iniciativa.ID)
-	if err != nil {
-		t.Fatal(err)
+	resumen := resumenDe(t, servicio, iniciativa.ID, formulador())
+	if !resumen.FueraDeFechas || resumen.Permisos.Editar || resumen.Permisos.RolObservaciones != "" || strings.Join(accionesDe(resumen.Permisos), ",") != AccionEnviar+"!" {
+		t.Fatalf("fuera de fechas no se edita ni se envía: %+v", resumen)
 	}
-	if !resumen.FueraDeFechas || !resumen.PermiteEditar || len(resumen.AccionesPosibles) != 0 {
-		t.Fatalf("fuera de fechas no se ofrece enviar: fuera_de_fechas=%v permite_editar=%v acciones=%v", resumen.FueraDeFechas, resumen.PermiteEditar, resumen.AccionesPosibles)
+	if resumen.Permisos.Acciones[0].Motivo != mensajeFueraDeFechas {
+		t.Fatalf("enviar debe decir que está fuera de fechas: %+v", resumen.Permisos.Acciones[0])
 	}
 	exigirFueraDeFechas(t, guardarNombre(t, servicio, iniciativa.ID))
-	_, err = servicio.EjecutarAccion(iniciativa.ID, AccionEnviar)
+	_, err := servicio.EjecutarAccion(iniciativa.ID, AccionEnviar, SolicitudAccion{Actor: formulador()})
+	exigirFueraDeFechas(t, err)
+	_, err = servicio.AgregarObservacion(iniciativa.ID, "nombre", observacion(formulador(), "Se ajusta cuando se habiliten las fechas."))
 	exigirFueraDeFechas(t, err)
 	if estado := repo.planes[iniciativa.ID].EstadoPlanID; estado != "ep-ef" {
 		t.Fatalf("la iniciativa no debió cambiar de estado y quedó %s", estado)
 	}
-	comentar(t, servicio, iniciativa.ID, "nombre", delGestor("Se ajusta cuando se habiliten las fechas."))
 }
 
-// La revisión de Planeación no depende de las fechas; al devolverla, Por corregir sí.
-func TestFueraDeFechasPlaneacionRevisaYLaCorreccionQuedaCerrada(t *testing.T) {
+// La revisión de la OAP también depende de las fechas de la unidad; quien no tiene nada que
+// hacer en el estado no consulta las fechas.
+func TestFueraDeFechasLaOAPNoRevisa(t *testing.T) {
 	servicio, repo := nuevoServicioDePrueba(t)
 	iniciativa := crearIniciativaDePrueba(t, servicio)
-	formularTodo(t, servicio, iniciativa.ID)
-	if _, err := servicio.EjecutarAccion(iniciativa.ID, AccionEnviar); err != nil {
-		t.Fatal(err)
-	}
+	llevarARevision(t, servicio, iniciativa.ID)
 	cerrarFechas(repo)
-	repo.consultasPeriodos = 0
 
-	resumen, err := servicio.Resumen(iniciativa.ID)
+	repo.consultasPeriodos = 0
+	if resumen := resumenDe(t, servicio, iniciativa.ID, formulador()); resumen.FueraDeFechas || repo.consultasPeriodos != 0 {
+		t.Fatalf("el formulador no actúa en 05: fuera_de_fechas=%v consultas=%d", resumen.FueraDeFechas, repo.consultasPeriodos)
+	}
+	if resumen := resumenDe(t, servicio, iniciativa.ID, oap()); !resumen.FueraDeFechas || resumen.Permisos.AprobarSubmodulos {
+		t.Fatalf("fuera de fechas la OAP no revisa: %+v", resumen)
+	}
+	actual, err := servicio.ObtenerSubmodulo(iniciativa.ID, "nombre")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resumen.FueraDeFechas || repo.consultasPeriodos != 0 {
-		t.Fatalf("en revisión las fechas no cuentan ni se consultan: fuera_de_fechas=%v consultas=%d", resumen.FueraDeFechas, repo.consultasPeriodos)
-	}
-	sinObservaciones(t, servicio, iniciativa.ID, "nombre")
-	comentar(t, servicio, iniciativa.ID, "problematica", dePlaneacion("Precisar la fuente."))
-	resumen, err = servicio.EjecutarAccion(iniciativa.ID, AccionDevolver)
-	if err != nil || resumen.Estado.Codigo != EstadoIniciativaPorCorregir {
-		t.Fatalf("devolver: %+v %v", resumen, err)
-	}
-	if !resumen.FueraDeFechas {
-		t.Fatal("por corregir también depende de las fechas")
-	}
-	exigirFueraDeFechas(t, guardarNombre(t, servicio, iniciativa.ID))
+	_, err = servicio.RevisarSubmodulo(iniciativa.ID, "nombre", SolicitudRevisarSubmodulo{Actor: oap(), Version: actual.Submodulo.Version})
+	exigirFueraDeFechas(t, err)
+	_, err = servicio.EjecutarAccion(iniciativa.ID, AccionRechazar, SolicitudAccion{Actor: oap(), Motivo: "Fuera de fechas."})
+	exigirFueraDeFechas(t, err)
 }
 
 func TestFueraDeFechasNoSeSubenAnexos(t *testing.T) {
 	servicio, repo, gestor, iniciativaID := servicioConAnexos(t)
 	cerrarFechas(repo)
 
-	_, err := servicio.SubirDocumento(iniciativaID, "anexos", SolicitudDocumento{Clave: "carta_presentacion", Nombre: "carta.pdf", Archivo: archivoDePrueba(bytesMinimos), Usuario: responsableDePrueba})
+	_, err := servicio.SubirDocumento(iniciativaID, "anexos", SolicitudDocumento{Actor: formulador(), Clave: "carta_presentacion", Nombre: "carta.pdf", Archivo: archivoDePrueba(bytesMinimos)})
 	exigirFueraDeFechas(t, err)
 	if len(gestor.subidos) != 0 {
 		t.Fatalf("no debió llamarse al gestor documental: %d archivos", len(gestor.subidos))
@@ -114,10 +107,7 @@ func TestFueraDeFechasNoSeSubenAnexos(t *testing.T) {
 func TestCuentanLasFechasDeLaUnidadDeLaIniciativa(t *testing.T) {
 	servicio, repo := nuevoServicioDePrueba(t)
 	deUno := crearIniciativaDePrueba(t, servicio)
-	deDos, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: "dep-2", Responsable: responsableDePrueba})
-	if err != nil {
-		t.Fatal(err)
-	}
+	deDos := crearEnDependencia(t, servicio, "dep-2")
 	repo.periodos = []map[string]interface{}{periodoDeFormulacion(-30, -1, "dep-1"), periodoDeFormulacion(-1, 1, "dep-2")}
 
 	exigirFueraDeFechas(t, guardarNombre(t, servicio, deUno.ID))
@@ -126,7 +116,7 @@ func TestCuentanLasFechasDeLaUnidadDeLaIniciativa(t *testing.T) {
 	}
 
 	repo.consultasPeriodos = 0
-	listado, err := servicio.ListarIniciativas(nil)
+	listado, err := servicio.ListarIniciativas(formulador())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -162,11 +152,11 @@ func TestSiNoSePuedenRevisarLasFechasSoloSeConsulta(t *testing.T) {
 			iniciativa := crearIniciativaDePrueba(t, servicio)
 			caso.romper(repo)
 
-			resumen, err := servicio.Resumen(iniciativa.ID)
+			resumen, err := servicio.Resumen(iniciativa.ID, formulador())
 			if err != nil || !resumen.FueraDeFechas {
 				t.Fatalf("resumen = %+v, err = %v", resumen, err)
 			}
-			listado, err := servicio.ListarIniciativas(nil)
+			listado, err := servicio.ListarIniciativas(formulador())
 			if err != nil || len(listado) != 1 || !listado[0].FueraDeFechas {
 				t.Fatalf("listado = %+v, err = %v", listado, err)
 			}
@@ -183,7 +173,7 @@ func TestSinTipoDeSeguimientoNoSeFormulaHastaQueSeCargue(t *testing.T) {
 	tipos := repo.catalogos[RecursoTipoSeguimiento]
 	delete(repo.catalogos, RecursoTipoSeguimiento)
 
-	_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{PlantillaID: "plantilla-1", DependenciaID: "dep-1", Responsable: responsableDePrueba})
+	_, err := servicio.CrearIniciativa(SolicitudCrearIniciativa{Actor: formulador(), PlantillaID: "plantilla-1", DependenciaID: "dep-1"})
 	exigirStatus(t, err, http.StatusInternalServerError)
 	exigirMensajeParaUsuario(t, err, "cargar-estados.js")
 

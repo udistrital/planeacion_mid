@@ -383,36 +383,45 @@ type ErrorCampo struct {
 	Mensaje string `json:"mensaje"`
 }
 
-// SolicitudCrearIniciativa es el cuerpo de POST /iniciativas. Responsable es el documento
-// de quien la crea (obligatorio). Sin PlantillaID se usa la plantilla más reciente; Nombre
-// y Vigencias también son opcionales.
+// Las solicitudes que escriben llevan el Actor (usuario y roles) en el cuerpo, junto a sus campos.
+
+// SolicitudCrearIniciativa es el cuerpo de POST /iniciativas. El usuario del Actor queda como
+// responsable. Sin PlantillaID se usa la plantilla más reciente; Nombre y Vigencias también son
+// opcionales.
 type SolicitudCrearIniciativa struct {
+	Actor
 	PlantillaID   string          `json:"plantilla_id"`
 	DependenciaID string          `json:"dependencia_id"`
-	Responsable   string          `json:"responsable"`
 	Nombre        string          `json:"nombre"`
 	Vigencias     json.RawMessage `json:"vigencias"`
 }
 
 // SolicitudGuardarSubmodulo es el cuerpo de PUT /iniciativas/:id/submodulos/:clave.
 type SolicitudGuardarSubmodulo struct {
+	Actor
 	Version int   `json:"version"`
 	Datos   Datos `json:"datos"`
 }
 
-// SolicitudRevisarSubmodulo es el cuerpo de PUT /iniciativas/:id/submodulos/:clave/revision:
-// Planeación da el submódulo por revisado sin observaciones. Si trae Observaciones
-// responde 400: las observaciones se registran con POST .../observaciones.
+// SolicitudRevisarSubmodulo es el cuerpo de PUT /iniciativas/:id/submodulos/:clave/revision: la
+// OAP aprueba el submódulo. El veredicto «Con observaciones» se da publicando la observación.
 type SolicitudRevisarSubmodulo struct {
-	Version       int           `json:"version"`
-	Observaciones []Observacion `json:"observaciones,omitempty"`
+	Actor
+	Version int `json:"version"`
 }
 
-// SolicitudObservacion es el cuerpo de POST /iniciativas/:id/submodulos/:clave/observaciones.
+// SolicitudObservacion es el cuerpo de POST /iniciativas/:id/submodulos/:clave/observaciones. El
+// rol con el que queda firmada lo decide el mid según el estado (ver permisos.go).
 type SolicitudObservacion struct {
-	Texto   string `json:"texto"`
-	Rol     string `json:"rol"`
-	Usuario string `json:"usuario"`
+	Actor
+	Texto string `json:"texto"`
+}
+
+// SolicitudAccion es el cuerpo de PUT /iniciativas/:id/acciones/:accion. Motivo es obligatorio
+// al rechazar; no se guarda (va en la notificación que manda el cliente).
+type SolicitudAccion struct {
+	Actor
+	Motivo string `json:"motivo,omitempty"`
 }
 
 // PlantillaResumen describe una plantilla disponible para crear iniciativas.
@@ -428,9 +437,9 @@ type PlantillaResumen struct {
 //   - Estado: estado general de la iniciativa.
 //   - Responsable: nombre de quien la creó, el que se guardó al crearla (vacío si no se
 //     obtuvo de Terceros).
-//   - PermiteEditar: su estado permite editarla.
-//   - FueraDeFechas: su estado permite editarla, pero hoy no hay fechas de formulación
-//     habilitadas para su unidad, así que solo se consulta.
+//   - Accion: lo que quien consulta hace con ella: formular, revisar o consultar.
+//   - FueraDeFechas: quien consulta tendría algo que hacer en este estado, pero hoy no hay
+//     fechas de formulación habilitadas para la unidad, así que solo la consulta.
 type IniciativaListado struct {
 	ID                string `json:"id"`
 	Numero            int    `json:"numero"`
@@ -439,17 +448,23 @@ type IniciativaListado struct {
 	DependenciaNombre string `json:"dependencia_nombre"`
 	Responsable       string `json:"responsable"`
 	Estado            Estado `json:"estado"`
-	PermiteEditar     bool   `json:"permite_editar"`
+	Accion            string `json:"accion"`
 	FueraDeFechas     bool   `json:"fuera_de_fechas"`
 	FechaCreacion     string `json:"fecha_creacion"`
 }
 
 // ResumenSubmodulo es una fila de la vista general de la iniciativa.
+//   - Accion: lo que quien consulta hace con el submódulo: formular, revisar o consultar.
+//   - Dependientes: claves de los submódulos que leen datos de este (para avisar al guardarlo).
+//   - UltimaObservacion: la más reciente, solo si el submódulo está Con observaciones.
 type ResumenSubmodulo struct {
-	Clave         string `json:"clave"`
-	Nombre        string `json:"nombre"`
-	Estado        Estado `json:"estado"`
-	Observaciones int    `json:"observaciones"`
+	Clave             string       `json:"clave"`
+	Nombre            string       `json:"nombre"`
+	Estado            Estado       `json:"estado"`
+	Accion            string       `json:"accion"`
+	Observaciones     int          `json:"observaciones"`
+	UltimaObservacion *Observacion `json:"ultima_observacion,omitempty"`
+	Dependientes      []string     `json:"dependientes"`
 }
 
 // ResumenModulo agrupa los submódulos de un módulo en la vista general.
@@ -459,28 +474,53 @@ type ResumenModulo struct {
 	Submodulos []ResumenSubmodulo `json:"submodulos"`
 }
 
-// ResumenIniciativa es la vista general: estado de la iniciativa y de cada submódulo, por módulo.
-// PermiteEditar depende solo del estado; FueraDeFechas, como en el listado, indica que el estado
-// permite editarla pero hoy no hay fechas de formulación habilitadas para su unidad: no se guarda
-// ni se envía, aunque la dependencia sí puede comentar.
+// ResumenIniciativa es la vista general: estado de la iniciativa y de cada submódulo, por módulo,
+// y lo que quien consulta puede hacer con ella (Permisos). FueraDeFechas, como en el listado,
+// indica que tendría algo que hacer en este estado, pero hoy no hay fechas de formulación
+// habilitadas para la unidad: solo la consulta.
 type ResumenIniciativa struct {
-	ID               string          `json:"id"`
-	Nombre           string          `json:"nombre"`
-	Estado           Estado          `json:"estado"`
-	PermiteEditar    bool            `json:"permite_editar"`
-	PermiteRevisar   bool            `json:"permite_revisar"`
-	FueraDeFechas    bool            `json:"fuera_de_fechas"`
-	AccionesPosibles []string        `json:"acciones_posibles"`
-	Modulos          []ResumenModulo `json:"modulos"`
+	ID            string          `json:"id"`
+	Nombre        string          `json:"nombre"`
+	DependenciaID string          `json:"dependencia_id"`
+	Estado        Estado          `json:"estado"`
+	FueraDeFechas bool            `json:"fuera_de_fechas"`
+	Permisos      Permisos        `json:"permisos"`
+	Modulos       []ResumenModulo `json:"modulos"`
 }
 
-// SubmoduloVista es un submódulo con su estado, observaciones y errores vigentes.
+// Permisos es lo que quien consulta puede hacer hoy con la iniciativa, según el estado, sus roles,
+// su unidad y las fechas (ver permisos.go).
+//   - Editar: guarda los submódulos no aprobados, sube anexos y comenta (formulador en 01, 02 y 06).
+//   - Observar: sus observaciones dejan el submódulo Con observaciones (Jefe en 03, OAP en 05).
+//   - AprobarSubmodulos: da el veredicto Aprobado (OAP en 05).
+//   - RolObservaciones: el rol con el que firma lo que publique; vacío si no publica.
+//   - Acciones: las acciones de su carril en este estado, habilitadas o con el motivo por el que no.
+type Permisos struct {
+	Editar            bool               `json:"editar"`
+	Observar          bool               `json:"observar"`
+	AprobarSubmodulos bool               `json:"aprobar_submodulos"`
+	RolObservaciones  string             `json:"rol_observaciones,omitempty"`
+	Acciones          []AccionDisponible `json:"acciones"`
+}
+
+// AccionDisponible es una acción sobre la iniciativa que el usuario ejecuta en este estado. Si no
+// está habilitada (faltan submódulos por formular, hay observaciones, fuera de fechas), Motivo dice por qué.
+type AccionDisponible struct {
+	Accion     string `json:"accion"`
+	Habilitada bool   `json:"habilitada"`
+	Motivo     string `json:"motivo,omitempty"`
+}
+
+// SubmoduloVista es un submódulo con su estado, observaciones y errores vigentes. EstadoIniciativa
+// va solo cuando la operación cambió el estado de la iniciativa (el último veredicto de la OAP),
+// para que el cliente lo notifique.
 type SubmoduloVista struct {
-	Estado        Estado        `json:"estado"`
-	Datos         Datos         `json:"datos"`
-	Observaciones []Observacion `json:"observaciones"`
-	Version       int           `json:"version"`
-	Errores       []ErrorCampo  `json:"errores"`
+	Estado           Estado        `json:"estado"`
+	Datos            Datos         `json:"datos"`
+	Observaciones    []Observacion `json:"observaciones"`
+	Version          int           `json:"version"`
+	Errores          []ErrorCampo  `json:"errores"`
+	EstadoIniciativa *Estado       `json:"estado_iniciativa,omitempty"`
 }
 
 // SubmoduloConRelacionadas incluye los datos de los submódulos de los que depende

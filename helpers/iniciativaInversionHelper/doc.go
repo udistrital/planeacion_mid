@@ -17,6 +17,8 @@
 //   - normalizacion.go  limpieza de datos y cálculo de campos calculados
 //   - validacion.go     reglas por tipo de campo, espejos y referencias
 //   - estados.go        tipo de plan, estados de la iniciativa y de los submódulos, y sus transiciones
+//   - permisos.go       roles, carriles y qué puede hacer cada usuario en cada estado
+//   - fechas.go         fechas de formulación de cada unidad
 //   - servicio.go       casos de uso que consume el controlador
 //   - observaciones.go  historial de observaciones de cada submódulo
 //   - unidades.go       unidades del usuario (Terceros y Oikos)

@@ -44,12 +44,12 @@ type ReferenciaDocumento struct {
 
 // SolicitudDocumento es el cuerpo de POST /iniciativas/:id/submodulos/:clave/documentos. Clave es
 // la ruta del campo en el submódulo sin ids de fila ("carta_presentacion" u "otros_anexos.archivo");
-// Archivo, el contenido en base64.
+// Archivo, el contenido en base64. El usuario del Actor queda como quien subió el archivo.
 type SolicitudDocumento struct {
+	Actor
 	Clave   string `json:"clave"`
 	Nombre  string `json:"nombre"`
 	Archivo string `json:"archivo"`
-	Usuario string `json:"usuario"`
 }
 
 // DocumentoGestor es un archivo para subir al gestor documental (Contenido en base64).
@@ -70,31 +70,20 @@ type GestorDocumental interface {
 	Subir(documento DocumentoGestor) (*ArchivoGestor, error)
 }
 
-// SubirDocumento revisa que la iniciativa se pueda editar y esté dentro de las fechas de
-// formulación de su unidad, que clave sea un campo documento del submódulo y que el archivo cumpla
-// sus formatos y su tamaño máximo; lo sube al gestor y responde la referencia, con el nombre en
-// Terceros de quien lo sube. Si no se obtiene el nombre, la referencia va sin él y el motivo queda
-// en el log. No cambia el submódulo.
+// SubirDocumento revisa que el usuario pueda editar el submódulo (como al guardarlo), que clave sea
+// un campo documento del submódulo y que el archivo cumpla sus formatos y su tamaño máximo; lo sube
+// al gestor y responde la referencia, con el nombre en Terceros de quien lo sube. Si no se obtiene
+// el nombre, la referencia va sin él y el motivo queda en el log. No cambia el submódulo.
 func (s *Servicio) SubirDocumento(iniciativaID, claveSubmodulo string, solicitud SolicitudDocumento) (*ReferenciaDocumento, error) {
 	nombre := strings.TrimSpace(solicitud.Nombre)
+	if nombre == "" {
+		return nil, errorFormatoSolicitud("la carga de un documento necesita nombre (clave %q)", solicitud.Clave)
+	}
+	_, submodulo, _, err := s.submoduloParaEditar(iniciativaID, claveSubmodulo, solicitud.Actor)
+	if err != nil {
+		return nil, err
+	}
 	usuario := strings.TrimSpace(solicitud.Usuario)
-	if nombre == "" || usuario == "" {
-		return nil, errorFormatoSolicitud("la carga de un documento necesita nombre y usuario (clave %q)", solicitud.Clave)
-	}
-	ctx, err := s.cargarIniciativa(iniciativaID)
-	if err != nil {
-		return nil, err
-	}
-	if !PermiteEditar(ctx.estado.Codigo) {
-		return nil, errorConflicto("La iniciativa está «%s»; no se puede editar.", ctx.estado.Nombre)
-	}
-	if err := s.exigirFechasHabilitadas(ctx.plan.DependenciaID); err != nil {
-		return nil, err
-	}
-	submodulo, _, err := ctx.submodulo(claveSubmodulo)
-	if err != nil {
-		return nil, err
-	}
 	campo := campoEnRuta(submodulo, solicitud.Clave)
 	if campo == nil || campo.Dato.Tipo != TipoDocumento {
 		return nil, errorFormatoSolicitud("%q no es un campo documento del submódulo %s", solicitud.Clave, claveSubmodulo)
