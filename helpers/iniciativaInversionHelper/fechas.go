@@ -9,7 +9,7 @@ import (
 )
 
 // Las iniciativas se trabajan solo en las fechas que Planeación habilita para cada unidad: los
-// registros activos del tipo de seguimiento FIPI_SP en periodo_seguimiento (ver FECHAS.md).
+// registros activos del tipo de seguimiento FIPI_SP en periodo_seguimiento (ver documentacion/iniciativa-inversion.md).
 // Fuera de ellas nadie hace nada, ni el Jefe ni la OAP: no se crean iniciativas, no se guardan
 // submódulos ni se suben anexos, no se publican observaciones ni veredictos y no cambia el estado.
 // Todo queda congelado y solo se consulta; para seguir, Planeación amplía las fechas.

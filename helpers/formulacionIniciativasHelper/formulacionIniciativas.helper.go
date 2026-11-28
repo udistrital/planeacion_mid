@@ -42,6 +42,11 @@ func DefinirFechasIniciativasFormulacion(body map[string]interface{}) []interfac
 	if len(seleccion) == 0 {
 		panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "Debe elegir al menos una unidad", "status": "400"})
 	}
+	// Solo escribe fechas de iniciativas: con otro tipo de seguimiento cambiaría las de Formulación o
+	// Seguimiento, que están en la misma colección.
+	if tipoSeguimientoID != idTipoSeguimientoIniciativas("DefinirFechasIniciativasFormulacion") {
+		panic(map[string]interface{}{"funcion": "DefinirFechasIniciativasFormulacion", "err": "El tipo de seguimiento debe ser el de formulación de iniciativas (FIPI_SP)", "status": "400"})
+	}
 
 	// 2. Traer los registros activos del tipo de seguimiento
 	urlRegistros := beego.AppConfig.String("PlanesService") + "/periodo-seguimiento-iniciativas"
@@ -362,9 +367,7 @@ func ObtenerArrayUnidadesInteres(body map[string]interface{}) ([]map[string]inte
 // ConsultarFechasIniciativasFormulacion devuelve las fechas de formulación de una unidad
 // (dependenciaId): las del registro que la rige, el mismo que usa UnidadHabilitada.
 func ConsultarFechasIniciativasFormulacion(body map[string]interface{}) map[string]interface{} {
-	var resTipoSeguimiento map[string]interface{}
 	var resFechas map[string]interface{}
-	var tipoSeguimiento []map[string]interface{}
 	var fechas []map[string]interface{}
 	respuesta := map[string]interface{}{"encontrado": false}
 
@@ -374,17 +377,10 @@ func ConsultarFechasIniciativasFormulacion(body map[string]interface{}) map[stri
 	dependenciaId := textoID(body["dependenciaId"])
 
 	// 1. Obtener el tipo de seguimiento de formulación de iniciativas
-	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/tipo-seguimiento/?query=codigo_abreviacion:FIPI_SP", &resTipoSeguimiento); err != nil {
-		panic(map[string]interface{}{"funcion": "ConsultarFechasIniciativasFormulacion", "err": "Error al obtener el tipo de seguimiento", "status": "400", "log": err})
-	}
-	exigirExito(resTipoSeguimiento, "ConsultarFechasIniciativasFormulacion", "Error al obtener el tipo de seguimiento")
-	helpers.LimpiezaRespuestaRefactor(resTipoSeguimiento, &tipoSeguimiento)
-	if len(tipoSeguimiento) == 0 {
-		panic(map[string]interface{}{"funcion": "ConsultarFechasIniciativasFormulacion", "err": "No se encontró el tipo de seguimiento", "status": "404"})
-	}
+	tipoSeguimientoID := idTipoSeguimientoIniciativas("ConsultarFechasIniciativasFormulacion")
 
 	// 2. Traer los registros activos, el más reciente primero
-	consulta := "tipo_seguimiento_id:" + tipoSeguimiento[0]["_id"].(string) + ",activo:true"
+	consulta := "tipo_seguimiento_id:" + tipoSeguimientoID + ",activo:true"
 	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/periodo-seguimiento-iniciativas?query="+consulta+"&sortby=fecha_modificacion&order=desc&limit=0", &resFechas); err != nil {
 		panic(map[string]interface{}{"funcion": "ConsultarFechasIniciativasFormulacion", "err": "Error al obtener las fechas", "status": "400", "log": err})
 	}
@@ -401,6 +397,26 @@ func ConsultarFechasIniciativasFormulacion(body map[string]interface{}) map[stri
 		}
 	}
 	return respuesta
+}
+
+// idTipoSeguimientoIniciativas devuelve el _id del tipo de seguimiento FIPI_SP («Formulación de
+// Iniciativas de Inversión», lo crea cargar-estados.js). Sin él responde 404.
+func idTipoSeguimientoIniciativas(funcion string) string {
+	var respuesta map[string]interface{}
+	var tipos []map[string]interface{}
+	if err := request.GetJson(beego.AppConfig.String("PlanesService")+"/tipo-seguimiento/?query=codigo_abreviacion:FIPI_SP", &respuesta); err != nil {
+		panic(map[string]interface{}{"funcion": funcion, "err": "Error al obtener el tipo de seguimiento", "status": "400", "log": err})
+	}
+	exigirExito(respuesta, funcion, "Error al obtener el tipo de seguimiento")
+	helpers.LimpiezaRespuestaRefactor(respuesta, &tipos)
+	id := ""
+	if len(tipos) > 0 {
+		id, _ = tipos[0]["_id"].(string)
+	}
+	if id == "" {
+		panic(map[string]interface{}{"funcion": funcion, "err": "No se encontró el tipo de seguimiento", "status": "404"})
+	}
+	return id
 }
 
 // registroIncluyeUnidad indica si el registro tiene la unidad en unidades_interes.
